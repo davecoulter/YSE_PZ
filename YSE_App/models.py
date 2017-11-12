@@ -208,6 +208,8 @@ class Log(models.Model):
 class AlternateTransientNames(models.Model):
 	name = models.CharField(max_length=64)
 	obs_group = models.ForeignKey(ObservationGroup)
+	transient = models.ForeignKey(Transient, null=True, blank=True)
+
 
 class SpecData(models.Model):
 	wavelength = models.FloatField()
