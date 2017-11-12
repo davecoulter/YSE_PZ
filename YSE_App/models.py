@@ -1,26 +1,49 @@
+from datetime import datetime
+
 from django.db import models
 
 # Create your models here.
 class TransientHostRank(models.Model):
 	rank = models.IntegerField()
 
+	def __str__(self):
+		return self.rank
+
 class ObservationGroup(models.Model): # New
 	name = models.CharField(max_length=64)
+
+	def __str__(self):
+		return self.name
 
 class SEDType(models.Model):
 	name = models.CharField(max_length=64)
 
+	def __str__(self):
+		return self.name
+
 class HostMorphology(models.Model):
 	name = models.CharField(max_length=64)
+
+	def __str__(self):
+		return self.name
 
 class Phase(models.Model): # New
 	name = models.CharField(max_length=64)
 
+	def __str__(self):
+		return self.name
+
 class TransientClass(models.Model):
 	name = models.CharField(max_length=64)
 
+	def __str__(self):
+		return self.name
+
 class HostClass(models.Model): # New
 	name = models.CharField(max_length=64)
+	
+	def __str__(self):
+		return self.name
 
 class Observatory(models.Model):
 	name = models.CharField(max_length=64)
@@ -28,25 +51,40 @@ class Observatory(models.Model):
 	longitude = models.FloatField()
 	altitude = models.FloatField()
 
+	def __str__(self):
+		return self.name
+
 class Telescope(models.Model):
 	name = models.CharField(max_length=64)
 	observatory = models.ForeignKey(Observatory)
 	too_hours = models.FloatField(null=True, blank=True)
 	observing_nights = models.FloatField(null=True, blank=True)
 
+	def __str__(self):
+		return self.name
+
 class ObservingNightDates(models.Model):
 	observing_night = models.DateTimeField()
 	telescope = models.ForeignKey(Telescope)
 
+	def __str__(self):
+		return datetime.strptime(self.observing_night, "%m/%d/%Y") 
+
 class Instrument(models.Model):
 	name = models.CharField(max_length=64)
 	telescope = models.ForeignKey(Telescope)
+
+	def __str__(self):
+		return self.name
 
 class PhotometricBand(models.Model):
 	name = models.CharField(max_length=64)
 	lambda_eff = models.CharField(max_length=64)
 	throughput_file = models.TextField(null=True, blank=True)
 	telescope = models.ForeignKey(Telescope)
+
+	def __str__(self):
+		return '%s - %s' % (self.telescope.name, self.name)
 
 class Image(models.Model):
 	band = models.ForeignKey(PhotometricBand)
@@ -66,7 +104,7 @@ class Transient(models.Model):
 	redshift_err = models.FloatField(null=True, blank=True)
 	redshift_source = models.CharField(max_length=64, null=True, blank=True)
 	disc_date = models.DateTimeField()
-	date_modified = models.DateTimeField()
+	date_modified = models.DateTimeField(auto_now=True)
 	best_spec_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True)
 	photo_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True)
 	non_detect_date = models.DateTimeField(null=True, blank=True)
@@ -80,8 +118,12 @@ class Transient(models.Model):
 	abs_mag_peak_date = models.DateTimeField(null=True, blank=True)
 	postage_stamp_file = models.TextField(null=True, blank=True)
 
+	def __str__(self):
+		return self.name
+
 class Host(models.Model):
 	transient = models.ManyToManyField(Transient) # Different
+	name = models.CharField(max_length=64, null=True)
 	ra = models.FloatField()
 	dec = models.FloatField()
 	redshift = models.FloatField(null=True, blank=True)
@@ -98,6 +140,9 @@ class Host(models.Model):
 	photo_z_err = models.FloatField(null=True, blank=True)
 	photo_z_source = models.CharField(max_length=64)
 	transient_host_rank = models.ForeignKey(TransientHostRank, null=True, blank=True) # Modified to enforce uniqueness
+
+	def __str__(self):
+		return self.name
 
 class Spectrum(models.Model):
 	instrument = models.ForeignKey(Instrument)

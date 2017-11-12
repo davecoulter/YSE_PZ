@@ -1,0 +1,25 @@
+{% extends 'YSE_App/base.html' %}
+
+{% block content %}
+<h1>Welcome to YSE_PZ</h1>
+
+<h3>Transients</h3>
+<table>
+	<tr>
+		<th>Name</th>
+		<th>RA</th>
+		<th>DEC</th>
+		<th>Disc. Date</th>
+		<th>z</th>
+	</tr>
+	{% for t in all_transients %}
+		<tr>
+			<td><a href='transient_detail/{{t.id}}'>{{ t.name }}</a></td>
+			<td>{{ t.ra }}</td>
+			<td>{{ t.dec }}</td>
+			<td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+			<td>{{ t.redshift }}</td>
+		</tr>
+	{% endfor %}
+</table>
+{% endblock %}
