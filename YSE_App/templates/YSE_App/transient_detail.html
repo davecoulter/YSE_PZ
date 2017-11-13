@@ -5,4 +5,7 @@
 <h1>{{ transient.name }}</h1>
 <a href="{% url 'index' %}">Back</a>
 
+<p></p>
+<td style="vertical-align: middle; width: 50%;"><a href="http://skyservice.pha.jhu.edu/DR14/ImgCutout/getjpeg.aspx?ra={{ transient.ra }}&dec={{ transient.dec}}&scale=5.2734&width=2048&height=2048&opt=GL&query=&Grid=on&Label=on&"><img src=http://skyservice.pha.jhu.edu/DR14/ImgCutout/getjpeg.aspx?ra={{ transient.ra }}&dec={{ transient.dec }}&scale=0.1172&width=512&height=512&opt=LPST&query=&Label=on&PhotObjs=on&SpecObjs=on&TargetObjs=on&></a></td>
+
 {% endblock %}
