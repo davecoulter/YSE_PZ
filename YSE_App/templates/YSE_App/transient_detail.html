@@ -2,10 +2,83 @@
 
 {% block content %}
 
-<h1>{{ transient.name }}</h1>
-<a href="{% url 'index' %}">Back</a>
+<!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>
+        {{transient.name}}<br/>
+        <small><a href="{% url 'index' %}">Back</a></small>
+      </h1>
+      <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
+        <li><a href="#">{{transient.name}}</a></li>
+        <li class="active">Detail</li>
+      </ol>
+    </section>
 
-<p></p>
-<td style="vertical-align: middle; width: 50%;"><a href="http://skyservice.pha.jhu.edu/DR14/ImgCutout/getjpeg.aspx?ra={{ transient.ra }}&dec={{ transient.dec}}&scale=5.2734&width=2048&height=2048&opt=GL&query=&Grid=on&Label=on&"><img src=http://skyservice.pha.jhu.edu/DR14/ImgCutout/getjpeg.aspx?ra={{ transient.ra }}&dec={{ transient.dec }}&scale=0.1172&width=512&height=512&opt=LPST&query=&Label=on&PhotObjs=on&SpecObjs=on&TargetObjs=on&></a></td>
+    <!-- Main content -->
+    <section class="content">
+
+      <!-- Default box -->
+      <div class="box">
+        <div class="box-header with-border">
+          <h3 class="box-title">Detail</h3>
+        </div>
+        <div class="box-body">
+
+			<div class="row invoice-info">
+			    <div class="col-sm-5 invoice-col">
+			      <b>RA/DEC (2000)</b><br>
+			      {{transient.ra}} {{transient.dec}}<br>
+			      <br>
+			      <b>Best Spec. Class</b><br>
+			      {{transient.best_spec_class}}<br>
+			      <br>
+			      <b>Phot. Class</b><br>
+			      {{transient.photo_class}}<br>
+			    </div>
+			    <!-- /.col -->
+			    <div class="col-sm-4 invoice-col">
+			      <b>SDSS Footprint<b><br>
+			      <a href="http://skyservice.pha.jhu.edu/DR14/ImgCutout/getjpeg.aspx?ra={{ transient.ra }}&dec={{ transient.dec}}&scale=5.2734&width=2048&height=2048&opt=GL&query=&Grid=on&Label=on&" target="_blank"><img style='width:250px' src="http://skyservice.pha.jhu.edu/DR14/ImgCutout/getjpeg.aspx?ra={{ transient.ra }}&dec={{ transient.dec }}&scale=0.1172&width=512&height=512&opt=LPST&query=&Label=on&PhotObjs=on&SpecObjs=on&TargetObjs=on&"></a>
+			    </div>
+				<!-- /.col -->
+			</div>
+
+			<div class="col-md-9">
+			  <div class="nav-tabs-custom">
+			    <ul class="nav nav-tabs">
+			      <li class="active"><a href="#followup" data-toggle="tab">Follow-up</a></li>
+			      <li><a href="#photometry" data-toggle="tab">Photometry</a></li>
+			      <li><a href="#spectra" data-toggle="tab">Spectra</a></li>
+			    </ul>
+			    <div class="tab-content">
+			      <div class="active tab-pane" id="followup">
+			      	<h4>Follow-up for {{transient.name}}</h4>
+			      </div>
+			      <!-- /.tab-pane -->
+			      <div class="tab-pane" id="photometry">
+			        <h4>Photometry for {{transient.name}}</h4>
+			      </div>
+			      <!-- /.tab-pane -->
+
+			      <div class="tab-pane" id="spectra">
+			        <h4>Spectra for {{transient.name}}</h4>
+			      </div>
+			      <!-- /.tab-pane -->
+			    </div>
+			    <!-- /.tab-content -->
+			  </div>
+			  <!-- /.nav-tabs-custom -->
+			</div>
+    	</div>
+        <!-- /.box-body -->
+        <div class="box-footer">
+        </div>
+        <!-- /.box-footer-->
+      </div>
+      <!-- /.box -->
+
+    </section>
 
 {% endblock %}
+

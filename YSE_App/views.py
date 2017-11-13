@@ -12,6 +12,9 @@ def index(request):
 	}
 	return render(request, 'YSE_App/index.html', context)
 
+def index2(request):
+	return render(request, 'YSE_App/index2.html')
+
 def transient_detail(request, transient_id):
 	transient = get_object_or_404(Transient, pk=transient_id)
 	return render(request, 'YSE_App/transient_detail.html', 
