@@ -14,7 +14,7 @@
 	</tr>
 	{% for t in all_transients %}
 		<tr>
-			<td><a href='transient_detail/{{t.id}}'>{{ t.name }}</a></td>
+			<td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
 			<td>{{ t.ra }}</td>
 			<td>{{ t.dec }}</td>
 			<td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
