@@ -3,6 +3,8 @@ from django.http import HttpResponse
 from django.template import loader
 from django.views import generic
 import requests
+from astropy.coordinates import SkyCoord
+import astropy.units as u
 
 from .models import *
 
@@ -14,12 +16,16 @@ def index(request):
 	}
 	return render(request, 'YSE_App/index.html', context)
 
-        
+def index2(request):
+	return render(request, 'YSE_App/index2.html')
+
 def transient_detail(request, transient_id):
         transient = get_object_or_404(Transient, pk=transient_id)
+        ra,dec = get_coords_sexagesimal(transient.ra,transient.dec)
         return render(request, 'YSE_App/transient_detail.html', 
                       {'transient': transient,
-                       'jpegurl':get_psstamp_url(request, transient_id)})
+                       'jpegurl':get_psstamp_url(request, transient_id),
+                       'ra':ra,'dec':dec})
 
 def get_psstamp_url(request, transient_id):
         ps1url = "http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f%%2B%.7f&filter=color"%(
@@ -30,3 +36,8 @@ def get_psstamp_url(request, transient_id):
         jpegurl = "http:%s"%jpegurl
 
         return(jpegurl)
+
+def get_coords_sexagesimal(radeg,decdeg):
+        sc = SkyCoord(radeg,decdeg,unit=u.deg)
+        return('%02i:%02i:%02.2f'%(sc.ra.hms[0],sc.ra.hms[1],sc.ra.hms[2]),
+               '%02i:%02i:%02.2f'%(sc.dec.dms[0],sc.dec.dms[1],sc.dec.dms[2]))
