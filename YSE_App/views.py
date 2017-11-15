@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, render_to_response
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.views import generic
@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 
+import requests
 from .models import *
 
 from astroplan import Observer
@@ -34,19 +35,18 @@ def auth_login(request):
 		login(request, user)
 		
 		# Redirect to requested page
-		print("NEXT: %s" % next_page)
 		if next_page:
 			print('hello')
 			return HttpResponseRedirect(next_page)
 		else:
 			print('world')
-			return HttpResponseRedirect('/dashboard')
+			return render_to_response('dashboard')
 	else:
 		return render(request, 'YSE_App/login.html')
 
 def auth_logout(request):
 	logout(request)
-	return HttpResponseRedirect('/')
+	return render(request, 'YSE_App/index.html')
 
 @login_required
 def dashboard(request):
