@@ -1,5 +1,5 @@
-from datetime import datetime
-
+import datetime
+from django.utils import timezone
 
 from django.db import models
 
@@ -51,6 +51,9 @@ class Observatory(models.Model):
 	latitude = models.FloatField() # New
 	longitude = models.FloatField()
 	altitude = models.FloatField()
+	utoffset = models.FloatField(null=True, blank=True)
+	daylightsavingscode = models.IntegerField(null=True, blank=True)
+	timezonename = models.CharField(max_length=20,null=True)
 
 	def __str__(self):
 		return self.name
@@ -67,9 +70,13 @@ class Telescope(models.Model):
 class ObservingNightDates(models.Model):
 	observing_night = models.DateTimeField()
 	telescope = models.ForeignKey(Telescope)
+	observatory = models.ForeignKey(Observatory,null=True)
 
 	def __str__(self):
-		return datetime.strptime(self.observing_night, "%m/%d/%Y") 
+		return str(datetime.datetime.strptime(str(self.observing_night), "%Y-%m-%d %H:%M:%S+00:00") ).split()[0]
+	def happening_soon(self):
+		now = timezone.now()
+		return now + datetime.timedelta(days=14) >= self.observing_night >= now
 
 class Instrument(models.Model):
 	name = models.CharField(max_length=64)
