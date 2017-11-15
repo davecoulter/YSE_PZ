@@ -5,8 +5,6 @@ from django.views import generic
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 
-import requests
-
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 
