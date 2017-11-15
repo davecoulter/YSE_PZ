@@ -13,6 +13,7 @@ urlpatterns = [
 	url(r'^transient_detail/(?P<transient_id>[0-9]+)/$', 
 		views.transient_detail, name='transient_detail'),
 	url(r'^login/$', views.auth_login, name='auth_login'),
+	url(r'^logout/$', views.auth_logout, name='auth_logout'),
 	url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs>[a-zA-Z0-9_-]+)/(?P<observatory>[a-zA-Z0-9]+)", 
 		views.airmassplot, name='airmassplot'),
 ]

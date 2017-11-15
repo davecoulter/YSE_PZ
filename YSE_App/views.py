@@ -37,17 +37,21 @@ def auth_login(request):
 		
 		# Redirect to requested page
 		print("NEXT: %s" % next_page)
-		return HttpResponseRedirect(next_page)
+		if next_page:
+			print('hello')
+			return HttpResponseRedirect(next_page)
+		else:
+			print('world')
+			return HttpResponseRedirect('/dashboard')
 	else:
 		return render(request, 'YSE_App/login.html')
 
-def logout_view(request):
-    logout(request)
-    # Redirect to a success page.
+def auth_logout(request):
+	logout(request)
+	return HttpResponseRedirect('/')
 
 @login_required
 def dashboard(request):
-	logout(request)
 	all_transients = Transient.objects.order_by('id')
 	context = {
 		'all_transients': all_transients,
