@@ -9,9 +9,8 @@
         <small><a href="{% url 'index' %}">Back</a></small>
       </h1>
       <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
-        <li><a href="#">{{transient.name}}</a></li>
-        <li class="active">Details</li>
+        <li><a href="{% url 'dashboard' %}"><i class="fa fa-dashboard"></i> Home</a></li>
+        <li>{{transient.name}}</li>
       </ol>
     </section>
 
