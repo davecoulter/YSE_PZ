@@ -63,6 +63,28 @@
 			    <div class="tab-content">
 			      <div class="active tab-pane" id="followup">
 			      	<h4>Follow-up for {{transient.name}}</h4>
+				{% if observatory_list %}
+				<ul>
+				  <b>In the next two weeks, {{ transient }} can be observed with:</b><br>
+				  <ul>
+				    {% for observatory in observatory_list %}
+				    <b>{{ observatory }}</b><br>
+				    <ul>
+				      {% for obsnight in observing_nights %}
+				    {% if obsnight.0.happening_soon and obsnight.0.observatory == observatory and obsnight.1 %}
+				      <b>{{obsnight.0.telescope}} {{ obsnight.0 }}</b><br>
+				      {% with obsnight.0 as obs %}
+				      <img src="{% url 'airmassplot' transient.id obs observatory %}" style='width:240px' alt="" /><br>
+				      {% endwith %}
+				      {% endif %}
+				      {% endfor %}
+				    </ul>
+				    {% endfor %}
+				  </ul>
+				</ul>
+				{% else %}
+				<p>No observatories are in the database.</p>
+				{% endif %}
 			      </div>
 			      <!-- /.tab-pane -->
 			      <div class="tab-pane" id="photometry">
