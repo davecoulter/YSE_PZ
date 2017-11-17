@@ -56,7 +56,8 @@ def get_psstamp_url(request, transient_id):
 def get_coords_sexagesimal(radeg,decdeg):
         sc = SkyCoord(radeg,decdeg,unit=u.deg)
         return('%02i:%02i:%02.2f'%(sc.ra.hms[0],sc.ra.hms[1],sc.ra.hms[2]),
-               '%02i:%02i:%02.2f'%(sc.dec.dms[0],sc.dec.dms[1],sc.dec.dms[2]))
+               '%02i:%02i:%02.2f'%(sc.dec.dms[0],np.abs(sc.dec.dms[1]),
+                                   np.abs(sc.dec.dms[2])))
 
 def telescope_can_observe(ra,dec,date,tel):
         time = Time(date)
