@@ -178,14 +178,14 @@
 					</ul>
 				</ul>
 				{% else %}
-				<p>No observatories are in the database.</p>
-				{% endif %} -->
-			</div>
-			<!-- /.tab-pane -->
-			<div class="tab-pane" id="photometry">
-				<h4>Photometry for {{transient.name}}</h4>
-			</div>
-			<!-- /.tab-pane -->
+				<p>No upcoming observing nights for this target.</p>
+				{% endif %}
+			      </div>
+			      <!-- /.tab-pane -->
+			      <div class="tab-pane" id="photometry">
+			        <h4>Photometry for {{transient.name}}</h4>
+			      </div>
+			      <!-- /.tab-pane -->
 
 			<div class="tab-pane" id="spectra">
 				<h4>Spectra for {{transient.name}}</h4>
