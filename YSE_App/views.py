@@ -45,8 +45,11 @@ def get_psstamp_url(request, transient_id):
                 Transient.objects.get(pk=transient_id).ra,Transient.objects.get(pk=transient_id).dec)
         
         response = requests.get(url=ps1url)
-        jpegurl = response.content.decode('utf-8').split('<td><img src="')[1].split('" width="240" height="240" /></td>')[0]
-        jpegurl = "http:%s"%jpegurl
+        if "<td><img src=" in response.content.decode('utf-8'):
+                jpegurl = response.content.decode('utf-8').split('<td><img src="')[1].split('" width="240" height="240" /></td>')[0]
+                jpegurl = "http:%s"%jpegurl
+        else:
+                jpegurl=""
 
         return(jpegurl)
 
