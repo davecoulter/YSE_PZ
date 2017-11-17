@@ -39,7 +39,7 @@
   <header class="main-header">
 
     <!-- Logo -->
-    <a href="index2.html" class="logo">
+    <a href="{% url 'dashboard_example' %}" class="logo">
       <!-- mini logo for sidebar mini 50x50 pixels -->
       <span class="logo-mini"><b>A</b>LT</span>
       <!-- logo for regular state and mobile devices -->
@@ -341,9 +341,9 @@
           </a>
           <ul class="treeview-menu">
 
-            <!-- index.html -->
-            <li><a href="{% url 'index' %}"><i class="fa fa-circle-o"></i> Dashboard v1</a></li>
-            <li class="active"><a href="index2.html"><i class="fa fa-circle-o"></i> Dashboard v2</a></li>
+            <!-- dashboard -->
+            <li><a href="{% url 'dashboard' %}"><i class="fa fa-circle-o"></i> Dashboard v1</a></li>
+            <li class="active"><a href="{% url 'dashboard_example' %}"><i class="fa fa-circle-o"></i> Dashboard v2</a></li>
           </ul>
         </li>
         <li class="treeview">

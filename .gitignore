@@ -1,4 +1,5 @@
 settings.ini
 *.pyo
 *.pyc
+YSE_PZ/static/
 

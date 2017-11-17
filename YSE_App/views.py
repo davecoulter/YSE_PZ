@@ -1,11 +1,14 @@
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
+from django.shortcuts import render, get_object_or_404, render_to_response
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.views import generic
-import requests
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 
+import requests
 from .models import *
 
 from astroplan import Observer
@@ -13,45 +16,85 @@ from astropy.time import Time
 import numpy as np
 
 # Create your views here.
+
 def index(request):
+	return render(request, 'YSE_App/index.html')
+
+# Create your views here.
+def auth_login(request):
+	logout(request)
+	next_page = request.POST.get('next')
+
+	user = None
+	if request.POST:
+		username = request.POST['username']
+		password = request.POST['password']
+		user = authenticate(request, username=username, password=password)
+
+	if user is not None:
+		login(request, user)
+		
+		# Redirect to requested page
+		if next_page:
+			print('hello')
+			return HttpResponseRedirect(next_page)
+		else:
+			print('world')
+			return render_to_response('dashboard')
+	else:
+		return render(request, 'YSE_App/login.html')
+
+def auth_logout(request):
+	logout(request)
+	return render(request, 'YSE_App/index.html')
+
+@login_required
+def dashboard(request):
 	all_transients = Transient.objects.order_by('id')
 	context = {
 		'all_transients': all_transients,
 	}
-	return render(request, 'YSE_App/index.html', context)
+	return render(request, 'YSE_App/dashboard.html', context)
 
-def index2(request):
-	return render(request, 'YSE_App/index2.html')
+@login_required
+def dashboard_example(request):
+	return render(request, 'YSE_App/dashboard_example.html')
 
+@login_required
 def transient_detail(request, transient_id):
-        transient = get_object_or_404(Transient, pk=transient_id)
-        ra,dec = get_coords_sexagesimal(transient.ra,transient.dec)
-        obsnights,obslist = (),()
-        for o in ObservingNightDates.objects.order_by('-observing_night')[::-1]:
-                can_obs = telescope_can_observe(transient.ra,transient.dec,
-                                                str(o.observing_night).split()[0],str(o.observatory))
-                obsnights += ([o,can_obs],)
-                if can_obs and o.happening_soon() and o.observatory not in obslist: obslist += (o.observatory,)
-                
-        return render(request, 'YSE_App/transient_detail.html', 
-                      {'transient': transient,
-                       'observatory_list': obslist, #Observatory.objects.all(),
-                       'observing_nights': obsnights,
-                       'jpegurl':get_psstamp_url(request, transient_id),
-                       'ra':ra,'dec':dec})
+	transient = get_object_or_404(Transient, pk=transient_id)
+	ra,dec = get_coords_sexagesimal(transient.ra,transient.dec)
+	obsnights,obslist = (),()
+	for o in ObservingNightDates.objects.order_by('-observing_night')[::-1]:
+		can_obs = telescope_can_observe(transient.ra,transient.dec, 
+			str(o.observing_night).split()[0],str(o.observatory))
+		obsnights += ([o,can_obs],)
+		if can_obs and o.happening_soon() and o.observatory not in obslist: obslist += (o.observatory,)
+
+	return render(request, 'YSE_App/transient_detail.html', 
+		{'transient': transient,
+		 'observatory_list': obslist, #Observatory.objects.all(),
+		 'observing_nights': obsnights,
+		 'jpegurl':get_psstamp_url(request, transient_id),
+		 'ra':ra,'dec':dec})
 
 def get_psstamp_url(request, transient_id):
-        ps1url = "http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f%%2B%.7f&filter=color"%(
-                Transient.objects.get(pk=transient_id).ra,Transient.objects.get(pk=transient_id).dec)
-        
-        response = requests.get(url=ps1url)
-        if "<td><img src=" in response.content.decode('utf-8'):
-                jpegurl = response.content.decode('utf-8').split('<td><img src="')[1].split('" width="240" height="240" /></td>')[0]
-                jpegurl = "http:%s"%jpegurl
-        else:
-                jpegurl=""
 
-        return(jpegurl)
+	try:
+		t = Transient.objects.get(pk=transient_id)
+	except t.DoesNotExist:
+		raise Http404("Transient id does not exist")
+	
+	ps1url = "http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f%%2B%.7f&filter=color" % (t.ra,t.dec)
+	response = requests.get(url=ps1url)
+	response_text = response.content.decode('utf-8')
+
+	jpegurl = ""
+	if '<td><img src="' in response_text:
+		jpegurl = response_text.split('<td><img src=T"')[1].split('" width="240" height="240" /></td>')[0]
+		jpegurl = "http:%s" % jpegurl
+
+	return(jpegurl)
 
 def get_coords_sexagesimal(radeg,decdeg):
         sc = SkyCoord(radeg,decdeg,unit=u.deg)
@@ -60,22 +103,22 @@ def get_coords_sexagesimal(radeg,decdeg):
                                    np.abs(sc.dec.dms[2])))
 
 def telescope_can_observe(ra,dec,date,tel):
-        time = Time(date)
-        sc = SkyCoord(ra,dec,unit=u.deg)
-        tel = Observer.at_site(tel)
+    time = Time(date)
+    sc = SkyCoord(ra,dec,unit=u.deg)
+    tel = Observer.at_site(tel)
 
-        night_start = tel.twilight_evening_astronomical(time,which="previous")
-        night_end = tel.twilight_morning_astronomical(time,which="previous")
-        can_obs = False
-        for jd in np.arange(night_start.mjd,night_end.mjd,0.02):
-                time = Time(jd,format="mjd")
-                target_up = tel.target_is_up(time,sc)
-                if target_up:
-                        can_obs = True
-                        break
+    night_start = tel.twilight_evening_astronomical(time,which="previous")
+    night_end = tel.twilight_morning_astronomical(time,which="previous")
+    can_obs = False
+    for jd in np.arange(night_start.mjd,night_end.mjd,0.02):
+            time = Time(jd,format="mjd")
+            target_up = tel.target_is_up(time,sc)
+            if target_up:
+                    can_obs = True
+                    break
 
-        return(can_obs)
-        
+    return(can_obs)
+
 def airmassplot(request, transient_id, obs, observatory ):
     import random
     import django
