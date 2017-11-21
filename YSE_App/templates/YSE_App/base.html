@@ -66,21 +66,7 @@
       <!-- sidebar menu: : style can be found in sidebar.less -->
       <ul class="sidebar-menu" data-widget="tree">
         <li class="header">MAIN NAVIGATION</li>
-        <li class="treeview">
-          <a href="#">
-            <i class="fa fa-th"></i>
-            <span>Admin</span>
-            <span class="pull-right-container">
-              <i class="fa fa-angle-left pull-right"></i>
-            </span>
-          </a>
-          <ul class="treeview-menu">
-            <li><a href="{% url 'admin:YSE_App_transient_changelist' %}"><i class="fa fa-circle-o"></i> Transient</a></li>
-            <li><a href="{% url 'admin:YSE_App_followup_changelist' %}"><i class="fa fa-circle-o"></i> Follow-up</a></li>
-            <li><a href="{% url 'admin:YSE_App_observatory_changelist' %}"><i class="fa fa-circle-o"></i> Observatory</a></li>
-            <li><a href="{% url 'admin:YSE_App_telescope_changelist' %}"><i class="fa fa-circle-o"></i> Telescope</a></li>
-          </ul>
-        </li>
+        <li><a href="{% url 'admin:index' %}"><i class="fa fa-circle-o"></i> <span>Admin</span></a></li>
       </ul>
     </section>
     <!-- /.sidebar -->
@@ -98,10 +84,11 @@
   <!-- /.content-wrapper -->
 
   <footer class="main-footer">
+  	<strong>Site By:</strong> Dave Coulter
     <div class="pull-right hidden-xs">
-      <b>Version</b> 2.4.0
+      <b>Template Version</b> 2.4.0
     </div>
-    <strong>Copyright &copy; 2014-2016 <a href="https://adminlte.io">Almsaeed Studio</a>.</strong> All rights
+    <strong>Template Copyright &copy; 2014-2016 <a href="https://adminlte.io">Almsaeed Studio</a>.</strong> All rights
     reserved.
   </footer>
 </div>

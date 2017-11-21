@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, render_to_response
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.template import loader
 from django.views import generic
 from django.contrib.auth import authenticate, login, logout
@@ -50,9 +50,20 @@ def auth_logout(request):
 
 @login_required
 def dashboard(request):
-	all_transients = Transient.objects.order_by('id')
+	new_transients = None
+	inprocess_transients = None
+
+	status_new = Status.objects.filter(name='New')
+	if len(status_new) == 0:
+		new_transients = Transient.objects.filter(status=status_new[0])
+
+	status_inprocess = Status.objects.filter(name='InProcess')
+	if len(status_inprocess) == 0:
+		inprocess_transients = Transient.objects.filter(status=status_inprocess[0])
+	
 	context = {
-		'all_transients': all_transients,
+		'new_transients': new_transients,
+		'inprocess_transients': inprocess_transients,
 	}
 	return render(request, 'YSE_App/dashboard.html', context)
 
@@ -62,21 +73,38 @@ def dashboard_example(request):
 
 @login_required
 def transient_detail(request, transient_id):
-	transient = get_object_or_404(Transient, pk=transient_id)
-	ra,dec = get_coords_sexagesimal(transient.ra,transient.dec)
-	obsnights,obslist = (),()
-	for o in ObservingNightDates.objects.order_by('-observing_night')[::-1]:
-		can_obs = telescope_can_observe(transient.ra,transient.dec, 
-			str(o.observing_night).split()[0],str(o.observatory))
-		obsnights += ([o,can_obs],)
-		if can_obs and o.happening_soon() and o.observatory not in obslist: obslist += (o.observatory,)
+	# transient = get_object_or_404(Transient, pk=transient_id)
+	transient = Transient.objects.filter(id=transient_id)
+	obs = None
+	if len(transient) == 1:
+		# Get associated Observations
+		followups = Followup.objects.filter(transient__pk=transient_id)
 
-	return render(request, 'YSE_App/transient_detail.html', 
-		{'transient': transient,
-		 'observatory_list': obslist, #Observatory.objects.all(),
-		 'observing_nights': obsnights,
-		 'jpegurl':get_psstamp_url(request, transient_id),
-		 'ra':ra,'dec':dec})
+		context = {
+			'transient':transient[0],
+			'followups':followups
+		}
+
+		return render(request,
+			'YSE_App/transient_detail.html',
+			context)
+	else:
+		return Http404('Transient not found')
+
+	# ra,dec = get_coords_sexagesimal(transient.ra,transient.dec)
+	# obsnights,obslist = (),()
+	# for o in ObservingNightDates.objects.order_by('-observing_night')[::-1]:
+	# 	can_obs = telescope_can_observe(transient.ra,transient.dec, 
+	# 		str(o.observing_night).split()[0],str(o.observatory))
+	# 	obsnights += ([o,can_obs],)
+	# 	if can_obs and o.happening_soon() and o.observatory not in obslist: obslist += (o.observatory,)
+
+	# return render(request, 'YSE_App/transient_detail.html', 
+	# 	{'transient': transient,
+	# 	 'observatory_list': obslist, #Observatory.objects.all(),
+	# 	 'observing_nights': obsnights,
+	# 	 'jpegurl':get_psstamp_url(request, transient_id),
+	# 	 'ra':ra,'dec':dec})
 
 def get_psstamp_url(request, transient_id):
 
