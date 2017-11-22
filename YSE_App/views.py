@@ -108,6 +108,9 @@ def transient_detail(request, transient_id):
 
 def get_psstamp_url(request, transient_id):
 
+        ps1url = "http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f%%2B%.7f&filter=color"%(
+                Transient.objects.get(pk=transient_id).ra,Transient.objects.get(pk=transient_id).dec)
+
 	try:
 		t = Transient.objects.get(pk=transient_id)
 	except t.DoesNotExist:
@@ -117,10 +120,11 @@ def get_psstamp_url(request, transient_id):
 	response = requests.get(url=ps1url)
 	response_text = response.content.decode('utf-8')
 
-	jpegurl = ""
-	if '<td><img src="' in response_text:
-		jpegurl = response_text.split('<td><img src=T"')[1].split('" width="240" height="240" /></td>')[0]
-		jpegurl = "http:%s" % jpegurl
+        if "<td><img src=" in response.content.decode('utf-8'):
+                jpegurl = response.content.decode('utf-8').split('<td><img src="')[1].split('" width="240" height="240" /></td>')[0]
+                jpegurl = "http:%s"%jpegurl
+        else:
+                jpegurl=""
 
 	return(jpegurl)
 
