@@ -10,6 +10,7 @@ import astropy.units as u
 
 import requests
 from .models import *
+from .forms import *
 
 from astroplan import Observer
 from astropy.time import Time
@@ -105,6 +106,27 @@ def transient_detail(request, transient_id):
 	# 	 'observing_nights': obsnights,
 	# 	 'jpegurl':get_psstamp_url(request, transient_id),
 	# 	 'ra':ra,'dec':dec})
+
+
+def transient_edit(request, transient_id=None):
+	# if this is a POST request we need to process the form data
+	if request.method == 'POST':
+		# create a form instance and populate it with data from the request:
+		form = TransientForm(request.POST)
+		# check whether it's valid:
+		if form.is_valid():
+			# process the data in form.cleaned_data as required
+			# ...
+			# redirect to a new URL:
+			return HttpResponseRedirect('/thanks/')
+
+	# if a GET (or any other method) we'll create a blank form
+	else:
+		form = TransientForm()
+
+	return render(request, 'YSE_App/transient_edit.html', {'form': form})
+
+
 
 def get_psstamp_url(request, transient_id):
 

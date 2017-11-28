@@ -24,7 +24,7 @@ class Transient(BaseModel):
 	name = models.CharField(max_length=64)
 	ra = models.FloatField()
 	dec = models.FloatField()
-	disc_date = models.DateTimeField()
+	disc_date = models.DateTimeField(null=True, blank=True)
 
 	# Optional
 	redshift = models.FloatField(null=True, blank=True)
