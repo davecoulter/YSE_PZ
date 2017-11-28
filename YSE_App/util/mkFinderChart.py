@@ -78,8 +78,20 @@ class finder():
         
         imdata = fits.getdata(finderim)
         imshape = np.shape(imdata)
+
         from matplotlib.colors import LogNorm
-        plt.imshow(imdata,cmap='gray_r',norm=LogNorm(vmin=self.skystd))
+        ax.imshow(imdata,cmap='gray_r',norm=LogNorm(vmin=self.skystd))
+        ax.set_xlim([0,imshape[1]])
+        ax.set_ylim([0,imshape[0]])
+
+        ax.arrow(imshape[1]-imshape[1]/20,
+                 imshape[0]/20,0,imshape[0]/5.,color='k')
+        ax.arrow(imshape[1]-imshape[1]/20,imshape[0]/20,
+                 -imshape[1]/5.,0,color='k')
+        ax.text(imshape[1]-imshape[1]/20,imshape[0]/3.6,
+                'N',ha='center',va='center')
+        ax.text(imshape[0]-imshape[0]/3.6,imshape[0]/20,
+                'E',va='center',ha='center')
 
         if self.options.outputOffsetFileName:
             fout = open(self.options.outputOffsetFileName,'w')
@@ -116,7 +128,7 @@ class finder():
 
     def getOffsetStarsWrap(self,finderim,PS1=True):
         xpos,ypos,ralist,declist,mag,raofflist,decofflist = \
-            self.getOffsetStars(finderim,PS1=PS1,roundlo=-0.1,roundhi=0.1)
+            self.getOffsetStars(finderim,PS1=PS1,roundlo=-0.2,roundhi=0.2)
         if xpos is None:
             print('getOffsetStars failed!  Relaxing roundness limit and trying again')
             xpos,ypos,ralist,declist,mag,raofflist,decofflist = \
