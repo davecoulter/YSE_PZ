@@ -5,6 +5,7 @@ from rest_framework import routers, serializers, viewsets
 from django.contrib.auth.models import User
 
 from . import views
+from . import api_views
 
 
 # Serializers define the API representation.
@@ -41,9 +42,12 @@ urlpatterns = [
 		views.transient_detail, name='transient_detail'),
 	url(r'^login/$', views.auth_login, name='auth_login'),
 	url(r'^logout/$', views.auth_logout, name='auth_logout'),
-	url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs>[a-zA-Z0-9_-]+)/(?P<observatory>[a-zA-Z0-9]+)", 
-		views.airmassplot, name='airmassplot'),
+	# url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs>[a-zA-Z0-9_-]+)/(?P<observatory>[a-zA-Z0-9]+)", 
+	# 	views.airmassplot, name='airmassplot'),
 
-	url(r'^api/$', include(router.urls)),
-	url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+	url(r'^api/', include(router.urls)),
+	url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+
+	url(r'^api/all_transients$', api_views.transient_list),
+	url(r'^api/get_transient/(?P<pk>[0-9]+)/$', api_views.transient_detail),
 ]

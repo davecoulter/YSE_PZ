@@ -37,8 +37,8 @@
             {% for t in new_transients %}
               <tr>
                 <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
-                <td>{{ t.ra }}</td>
-                <td>{{ t.dec }}</td>
+                <td>{{ t.CoordString.0 }}</td>
+                <td>{{ t.CoordString.1 }}</td>
                 <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
                 <td>{{ t.obs_group.name }}</td>
               </tr>

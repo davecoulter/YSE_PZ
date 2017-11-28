@@ -3,6 +3,7 @@ from YSE_App.models.base import *
 from YSE_App.models.enums import *
 from YSE_App.models.photometric_band import *
 from YSE_App.models.host_models import *
+from YSE_App.common.utilities import GetSexigesimalString
 
 class Transient(BaseModel):
 	### Entity relationships ###
@@ -15,9 +16,8 @@ class Transient(BaseModel):
 	best_spec_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True)
 	photo_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True)
 	best_spectrum = models.ForeignKey('TransientSpectrum', related_name='+', null=True, blank=True)
-	best_host = models.ForeignKey('Host', related_name='+', null=True, blank=True)
+	host = models.ForeignKey(Host, null=True, blank=True)
 	abs_mag_peak_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True)
-	host = models.ManyToManyField(Host, blank=True) # To hold n hosts -- if we don't quite know which is the correct one
 
 	### Properties ###
 	# Required
@@ -27,6 +27,7 @@ class Transient(BaseModel):
 	disc_date = models.DateTimeField(null=True, blank=True)
 
 	# Optional
+	candidate_hosts = models.TextField(null=True, blank=True) # A string field to hold n hosts -- if we don't quite know which is the correct one
 	redshift = models.FloatField(null=True, blank=True)
 	redshift_err = models.FloatField(null=True, blank=True)
 	redshift_source = models.CharField(max_length=64, null=True, blank=True)
@@ -36,6 +37,9 @@ class Transient(BaseModel):
 	abs_mag_peak = models.FloatField(null=True, blank=True)
 	abs_mag_peak_date = models.DateTimeField(null=True, blank=True)
 	postage_stamp_file = models.CharField(max_length=512, null=True, blank=True)
+
+	def CoordString(self):
+		return GetSexigesimalString(self.ra, self.dec)
 
 	def __str__(self):
 		return self.name

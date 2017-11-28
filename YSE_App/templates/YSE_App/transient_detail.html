@@ -25,8 +25,8 @@
 			<div class="row invoice-info">
 				<div class="col-sm-5 invoice-col">
 					<b>RA/DEC (2000)</b><br>
-					{{ra}} {{dec}}<br>
-					{{transient.ra}} {{transient.dec}}<br>
+					{{ transient.CoordString.0 }} {{ transient.CoordString.1 }}<br>
+					{{ transient.ra }} {{ transient.dec }}<br>
 					<br>
 					<b>Best Spec. Class</b><br>
 					{{transient.best_spec_class}}<br>
