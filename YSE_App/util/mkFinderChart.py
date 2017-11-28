@@ -12,6 +12,8 @@ from astropy.stats import sigma_clipped_stats
 import numpy as np
 from photutils import CircularAperture,aperture_photometry
 import pylab as plt
+import time
+import wget
 
 class finder():
     def __init__(self):
@@ -61,24 +63,27 @@ class finder():
             self.options.ra = float(ra); self.options.dec = float(dec)
             
         finderim = panstamps_lite(ra,dec,options.finderFilt,options.finderSizeArcmin,outfile)
+        PS1 = True
         if not finderim:
             finderim = getDSSImage(ra,dec,options.finderFilt,options.finderSizeArcmin,outfile)
+            PS1 = False
             if not finderim: raise RuntimeError('Error : problem retrieving FITS image of field!')
             
-        xpos,ypos,ra,dec,mag,raoff,decoff = self.getOffsetStarsWrap(finderim)
+        xpos,ypos,ra,dec,mag,raoff,decoff = self.getOffsetStarsWrap(finderim,PS1=PS1)
 
-        self.mkPlot(finderim,xpos,ypos,ra,dec,mag,raoff,decoff,outfile)
+        self.mkPlot(finderim,xpos,ypos,ra,dec,mag,raoff,decoff,outfile,PS1=PS1)
         os.system('rm %s'%finderim)
         return()
         
-    def mkPlot(self,finderim,xpos,ypos,ra,dec,mag,raoff,decoff,outfile):
+    def mkPlot(self,finderim,xpos,ypos,ra,dec,mag,raoff,decoff,outfile,PS1=True):
         ax = plt.axes([0.2,0.3,0.6,0.6])
         ax.set_xticks([])
         ax.set_yticks([])
         
         imdata = fits.getdata(finderim)
         imshape = np.shape(imdata)
-
+        ImWCS = wcs.WCS(fits.getheader(finderim))
+        
         from matplotlib.colors import LogNorm
         ax.imshow(imdata,cmap='gray_r',norm=LogNorm(vmin=self.skystd))
         ax.set_xlim([0,imshape[1]])
@@ -93,15 +98,37 @@ class finder():
         ax.text(imshape[0]-imshape[0]/3.6,imshape[0]/20,
                 'E',va='center',ha='center')
 
+        if PS1:
+            ax.text(imshape[1]/20.,imshape[0]/20.,"PS1 Image")
+        else:
+            ax.text(imshape[1]/20.,imshape[0]/20.,"DSS Image")
+            
+        midx,midy = imshape[1]/2.,imshape[0]/20.
+        midra,middec = ImWCS.wcs_pix2world([(midx,midy)],0)[0]
+        midsc = SkyCoord(midra,middec,unit=u.deg)
+        arrowstart = SkyCoord(midra+0.5/60,middec,unit=u.deg)
+        arrowend = SkyCoord(midra-0.5/60,middec,unit=u.deg)
+        xstart,ystart = ImWCS.wcs_world2pix([(arrowstart.ra.deg,arrowstart.dec.deg)],0)[0]
+        xend,yend = ImWCS.wcs_world2pix([(arrowend.ra.deg,arrowend.dec.deg)],0)[0]
+        ax.arrow(midx,midy,xstart-midx,0)
+        ax.arrow(midx,midy,xend-midx,0)
+        ax.text(imshape[1]/2.,imshape[0]/13.,"1 arcmin",ha='center',va='center')
+        
         if self.options.outputOffsetFileName:
             fout = open(self.options.outputOffsetFileName,'w')
             print('# ID RA Dec RA_off Dec_off Mag',file=fout)
-        
+            sc = SkyCoord(self.options.ra,self.options.dec,unit=u.deg)
+            print("%s    %02i:%02i:%02.3f %02i:%02i:%02.3f -99 -99 -99"%(self.options.snid,
+                                                                         sc.ra.hms[0],sc.ra.hms[1],sc.ra.hms[2],
+                                                                         sc.dec.dms[0],np.abs(sc.dec.dms[1]),
+                                                                         np.abs(sc.dec.dms[2])),file=fout)
+
+            
         colors = ['C0','C1','C2','C3','C4','C5']
         ybase = -0.15; count = 0
         for x,y,r,d,m,ro,do,i,clr in zip(xpos,ypos,ra,dec,mag,raoff,decoff,range(1,len(xpos)+1),colors):
             ax.plot(x,y,'+',ms=30,color=clr)
-            ax.text(x-80,y+100,i,fontsize=15,color=clr,bbox={'alpha':0.3,'edgecolor':'1.0','facecolor':'1.0'})
+            ax.text(x-imshape[1]/20.,y+imshape[0]/20.,i,fontsize=15,color=clr,bbox={'alpha':0.3,'edgecolor':'1.0','facecolor':'1.0'})
 
             sc = SkyCoord(r,d,unit=u.deg)
             ax.text(0.5,ybase-count*0.15,r"""%i: $\alpha$=%02i:%02i:%02.3f $\delta$=%02i:%02i:%02.3f mag=%.3f
@@ -195,8 +222,6 @@ class finder():
 
 def panstamps_lite(ra,dec,filt,size,outfile):
     import requests
-    import wget
-    import time
     import re
     
     pos = """%(ra)s %(dec)s""" % locals()
@@ -209,8 +234,8 @@ def panstamps_lite(ra,dec,filt,size,outfile):
                 "pos": pos,
                 "filter": filt,
                 "filetypes": "stack",
-                "size": size*60*4,
-                "output_size": size*60*4,
+                "size": int(size)*60*4,
+                "output_size": int(size)*60*4,
                 "verbose": "0",
                 "autoscale": "99.500000",
                 "catlist": "",
@@ -237,7 +262,10 @@ def panstamps_lite(ra,dec,filt,size,outfile):
             fiturl = "http:" + fiturl
             mjd = item.group("mjd")
         stackFitsUrls.append(fiturl)
-
+        
+    if not len(stackFitsUrls):
+        return(None)
+        
     for s in stackFitsUrls:
         s = s.replace('plpsipp1v.stsci.edu//','')
         if not os.path.dirname(outfile):
@@ -252,10 +280,14 @@ def panstamps_lite(ra,dec,filt,size,outfile):
     else: return(None)
 
 def getDSSImage(ra,dec,filt,size,outfile):
-    QueryURL="http://archive.eso.org/dss/dss/image?ra=%s&dec=%s&x=4&y=4&Sky-Survey=2r&mime-type=download-fits"%(ra,dec)
-    outdlfile = '%s/%.7f_%.7f_%s.DSS.fits'%(os.path.dirname(outfile),ra,dec,time.time())
-    dlfile = wget.download(fitsurl,out=outdlfile)
+    QueryUrl="http://archive.eso.org/dss/dss/image?ra=%s&dec=%s&x=%i&y=%i&units=arcmin&Sky-Survey=2r&mime-type=download-fits"%(ra,dec,size,size)
+    if not os.path.dirname(outfile):
+        outdlfile = '%.7f_%.7f_%s.DSS.fits'%(ra,dec,time.time())
+    else:
+        outdlfile = '%s/%.7f_%.7f_%s.DSS.fits'%(os.path.dirname(outfile),ra,dec,time.time())
 
+    dlfile = wget.download(QueryUrl,out=outdlfile)
+    
     if os.path.exists(dlfile):
         return(dlfile)
     else: return(None)
