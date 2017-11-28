@@ -45,12 +45,16 @@
 							<img src="http://skyservice.pha.jhu.edu/DR14/ImgCutout/getjpeg.aspx?ra={{ transient.ra }}&dec={{ transient.dec }}&scale=0.5&width=200&height=200&opt=G&query=&Grid=on " style='width:240px' border="0">
 						</a>
 						<br>
-						<b>Pan-STARRS Footprint<b><br>
-							<a href="http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color" class="ps1-thumb" title="Link to PanSTARRS-1" target="_blank">
-								<img src="{{ jpegurl }}" style='width:240px' alt="" /></a><br>
-							</div>
-							<!-- /.col -->
-						</div>
+						{% if jpegurl %}
+						<b>Pan-STARRS Footprint</b><br>
+						<a href="http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color" class="ps1-thumb" title="Link to PanSTARRS-1" target="_blank">
+						  <img src="{{ jpegurl }}" style='width:240px' alt="" /></a><br>
+						{% else %}
+						<b>Coordinates are outside the PS1 footprint</b><br>
+						{% endif %}
+				</div>
+				<!-- /.col -->
+			</div>
 						<div class="col-xs-12"> <!-- col-md-9 -->
 							<div class="nav-tabs-custom">
 								<ul class="nav nav-tabs">
@@ -61,7 +65,6 @@
 
 								<div class="tab-content">
 									<div class="active tab-pane" id="followup">
-
 										<div class="box">
 											{% for f in followups %}
 											<div class="box-header">
@@ -156,7 +159,6 @@
 					</table> -->
 
 
-
 				<!-- {% if observatory_list %}
 				<ul>
 					<b>In the next two weeks, {{ transient }} can be observed with:</b><br>
@@ -177,14 +179,14 @@
 					</ul>
 				</ul>
 				{% else %}
-				<p>No observatories are in the database.</p>
-				{% endif %} -->
-			</div>
-			<!-- /.tab-pane -->
-			<div class="tab-pane" id="photometry">
-				<h4>Photometry for {{transient.name}}</h4>
-			</div>
-			<!-- /.tab-pane -->
+				<p>No upcoming observing nights for this target.</p>
+				{% endif %}
+			      </div>
+			      <!-- /.tab-pane -->
+			      <div class="tab-pane" id="photometry">
+			        <h4>Photometry for {{transient.name}}</h4>
+			      </div>
+			      <!-- /.tab-pane -->
 
 			<div class="tab-pane" id="spectra">
 				<h4>Spectra for {{transient.name}}</h4>
