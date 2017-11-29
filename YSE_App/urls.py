@@ -39,18 +39,19 @@ urlpatterns = [
 ]
 
 api_url_patterns = [
-	url(r'^api/all_transients$', api_views.transient_list),
-	url(r'^api/get_transient/(?P<pk>[0-9]+)/$', api_views.transient_detail),
-	url(r'^api/all_transienthostrank$', api_views.transienthostrank_list),
-	url(r'^api/all_status$', api_views.status_list),
-	url(r'^api/all_observationgroup$', api_views.observationgroup_list),
-	url(r'^api/all_sedtype$', api_views.sedtype_list),
-	url(r'^api/all_hostmorphology$', api_views.hostmorphology_list),
-	url(r'^api/all_phase$', api_views.phase_list),
-	url(r'^api/all_transientclass$', api_views.transientclass_list),
-	url(r'^api/all_hostclass$', api_views.hostclass_list),
-	url(r'^api/all_classicalnighttype$', api_views.classicalnighttype_list),
-	url(r'^api/all_informationsource$', api_views.informationsource_list),
+	url(r'^api/transients$', api_views.TransientList.as_view()),
+	url(r'^api/transients/(?P<pk>[0-9]+)/$', api_views.TransientDetail.as_view()),
+
+	url(r'^api/transienthostranks$', api_views.transienthostrank_list),
+	url(r'^api/statuses$', api_views.status_list),
+	url(r'^api/observationgroups$', api_views.observationgroup_list),
+	url(r'^api/sedtypes$', api_views.sedtype_list),
+	url(r'^api/hostmorphologies$', api_views.hostmorphology_list),
+	url(r'^api/phases$', api_views.phase_list),
+	url(r'^api/transientclasses$', api_views.transientclass_list),
+	url(r'^api/hostclasses$', api_views.hostclass_list),
+	url(r'^api/classicalnighttypes$', api_views.classicalnighttype_list),
+	url(r'^api/informationsources$', api_views.informationsource_list),
 ]
 
 api_url_patterns = format_suffix_patterns(api_url_patterns)

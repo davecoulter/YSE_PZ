@@ -6,12 +6,12 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 	status = serializers.PrimaryKeyRelatedField(queryset=Status.objects.all())
 	obs_group = serializers.PrimaryKeyRelatedField(queryset=ObservationGroup.objects.all())
 
-	non_detect_band = serializers.PrimaryKeyRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True)
-	best_spec_class = serializers.PrimaryKeyRelatedField(queryset=TransientClass.objects.all(), allow_null=True)
-	photo_class = serializers.PrimaryKeyRelatedField(queryset=TransientClass.objects.all(), allow_null=True)
-	best_spectrum = serializers.PrimaryKeyRelatedField(queryset=TransientSpectrum.objects.all(), allow_null=True)
-	host = serializers.PrimaryKeyRelatedField(queryset=Host.objects.all(), allow_null=True)
-	abs_mag_peak_band = serializers.PrimaryKeyRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True)
+	non_detect_band = serializers.PrimaryKeyRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True, required=False)
+	best_spec_class = serializers.PrimaryKeyRelatedField(queryset=TransientClass.objects.all(), allow_null=True, required=False)
+	photo_class = serializers.PrimaryKeyRelatedField(queryset=TransientClass.objects.all(), allow_null=True, required=False)
+	best_spectrum = serializers.PrimaryKeyRelatedField(queryset=TransientSpectrum.objects.all(), allow_null=True, required=False)
+	host = serializers.PrimaryKeyRelatedField(queryset=Host.objects.all(), allow_null=True, required=False)
+	abs_mag_peak_band = serializers.PrimaryKeyRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True, required=False)
 
 	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
