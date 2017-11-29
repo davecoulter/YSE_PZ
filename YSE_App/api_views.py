@@ -2,7 +2,9 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonRespons
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
-from rest_framework import serializers, viewsets
+from rest_framework import serializers, viewsets, status, permissions
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 
 from .models import *
 from .serializers import *
@@ -18,43 +20,39 @@ class TransientViewSet(viewsets.ModelViewSet):
 	serializer_class = TransientSerializer
 
 
-@csrf_exempt
-def transient_list(request):
+@api_view(['GET', 'POST'])
+@permission_classes((permissions.AllowAny, )) # IsAuthenticated
+def transient_list(request, format=None):
 	if request.method == 'GET':
 		transients = Transient.objects.all()
 		serializer = TransientSerializer(transients, many=True)
-		return JsonResponse(serializer.data, safe=False)
+		return Response(serializer.data)
 
 	elif request.method == 'POST':
-		data = JSONParser().parse(request)
-		serializer = TransientSerializer(data=data)
+		serializer = TransientSerializer(data=request.data, partial=True)
 		if serializer.is_valid():
 			serializer.save()
-			return JsonResponse(serializer.data, status=201)
-		return JsonResponse(serializer.errors, status=400)
+			return Response(serializer.data, status=status.HTTP_201_CREATED)
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@csrf_exempt
-def transient_detail(request, pk):
+@api_view(['GET', 'PUT'])
+@permission_classes((permissions.AllowAny, )) # IsAuthenticated
+def transient_detail(request, pk, format=None):
 	try:
 		transient = Transient.objects.get(pk=pk)
 	except Transient.DoesNotExist:
-		return HttpResponse(status=404)
+		return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
 	if request.method == 'GET':
 		serializer = TransientSerializer(transient)
-		return JsonResponse(serializer.data)
+		return Response(serializer.data)
 
 	elif request.method == 'PUT':
-		data = JSONParser().parse(request)
-		serializer = TransientSerializer(transient, data=data)
+		serializer = TransientSerializer(transient, data=request.data)
 		if serializer.is_valid():
 			serializer.save()
-			return JsonResponse(serializer.data)
-		return JsonResponse(serializer.errors, status=400)
-	# NO DELETES!
-	# elif request.method == 'DELETE':
-	# 	transient.delete()
-	# 	return HttpResponse(status=204)
+			return Response(serializer.data)
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @csrf_exempt

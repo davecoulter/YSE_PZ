@@ -2,6 +2,7 @@ from django.conf.urls import url, include
 from django.conf import settings
 from django.contrib.auth import views as auth_views
 from rest_framework import routers
+from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
 from . import api_views
@@ -33,10 +34,11 @@ urlpatterns = [
 	url(r'^logout/$', views.auth_logout, name='auth_logout'),
 	# url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs>[a-zA-Z0-9_-]+)/(?P<observatory>[a-zA-Z0-9]+)", 
 	# 	views.airmassplot, name='airmassplot'),
-
 	url(r'^api/', include(router.urls)),
 	url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+]
 
+api_url_patterns = [
 	url(r'^api/all_transients$', api_views.transient_list),
 	url(r'^api/get_transient/(?P<pk>[0-9]+)/$', api_views.transient_detail),
 	url(r'^api/all_transienthostrank$', api_views.transienthostrank_list),
@@ -50,3 +52,6 @@ urlpatterns = [
 	url(r'^api/all_classicalnighttype$', api_views.classicalnighttype_list),
 	url(r'^api/all_informationsource$', api_views.informationsource_list),
 ]
+
+api_url_patterns = format_suffix_patterns(api_url_patterns)
+urlpatterns += api_url_patterns
