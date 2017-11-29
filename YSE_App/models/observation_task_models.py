@@ -1,6 +1,6 @@
 from django.db import models
 from YSE_App.models.base import *
-from YSE_App.models.enums import *
+from YSE_App.models.enum_models import *
 from YSE_App.models.instrument_models import *
 from YSE_App.models.followup_models import *
 

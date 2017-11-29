@@ -1,7 +1,7 @@
 from django.db import models
 from YSE_App.models.base import *
-from YSE_App.models.enums import *
-from YSE_App.models.telescope_resources import *
+from YSE_App.models.enum_models import *
+from YSE_App.models.telescope_resource_models import *
 from YSE_App.models.transient_models import *
 from YSE_App.models.host_models import *
 

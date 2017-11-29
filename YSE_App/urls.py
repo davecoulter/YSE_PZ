@@ -1,27 +1,16 @@
 from django.conf.urls import url, include
 from django.conf import settings
 from django.contrib.auth import views as auth_views
-from rest_framework import routers, serializers, viewsets
-from django.contrib.auth.models import User
+from rest_framework import routers
 
 from . import views
 from . import api_views
 
 
-# Serializers define the API representation.
-class UserSerializer(serializers.HyperlinkedModelSerializer):
-	class Meta:
-		model = User
-		fields = ('url', 'username', 'email', 'is_staff')
-
-# ViewSets define the view behavior.
-class UserViewSet(viewsets.ModelViewSet):
-	queryset = User.objects.all()
-	serializer_class = UserSerializer
-
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
-router.register(r'users', UserViewSet)
+router.register(r'users', api_views.UserViewSet)
+router.register(r'transient', api_views.TransientViewSet)
 
 
 # Wire up our API using automatic URL routing.
@@ -50,4 +39,14 @@ urlpatterns = [
 
 	url(r'^api/all_transients$', api_views.transient_list),
 	url(r'^api/get_transient/(?P<pk>[0-9]+)/$', api_views.transient_detail),
+	url(r'^api/all_transienthostrank$', api_views.transienthostrank_list),
+	url(r'^api/all_status$', api_views.status_list),
+	url(r'^api/all_observationgroup$', api_views.observationgroup_list),
+	url(r'^api/all_sedtype$', api_views.sedtype_list),
+	url(r'^api/all_hostmorphology$', api_views.hostmorphology_list),
+	url(r'^api/all_phase$', api_views.phase_list),
+	url(r'^api/all_transientclass$', api_views.transientclass_list),
+	url(r'^api/all_hostclass$', api_views.hostclass_list),
+	url(r'^api/all_classicalnighttype$', api_views.classicalnighttype_list),
+	url(r'^api/all_informationsource$', api_views.informationsource_list),
 ]

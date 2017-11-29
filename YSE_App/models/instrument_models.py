@@ -1,6 +1,6 @@
 from django.db import models
 from YSE_App.models.base import *
-from YSE_App.models.telescope_model import *
+from YSE_App.models.telescope_models import *
 
 class Instrument(BaseModel):
 	### Entity relationships ###

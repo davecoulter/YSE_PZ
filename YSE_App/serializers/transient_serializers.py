@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import *
+from YSE_App.models import *
 from django.contrib.auth.models import User
 
 class TransientSerializer(serializers.HyperlinkedModelSerializer):
@@ -7,9 +7,9 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 	obs_group = serializers.PrimaryKeyRelatedField(queryset=ObservationGroup.objects.all())
 
 	non_detect_band = serializers.PrimaryKeyRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True)
-	best_spec_class = serializers.PrimaryKeyRelatedField(queryset=ObservationGroup.objects.all(), allow_null=True)
+	best_spec_class = serializers.PrimaryKeyRelatedField(queryset=TransientClass.objects.all(), allow_null=True)
 	photo_class = serializers.PrimaryKeyRelatedField(queryset=TransientClass.objects.all(), allow_null=True)
-	best_spectrum = serializers.PrimaryKeyRelatedField(queryset=TransientClass.objects.all(), allow_null=True)
+	best_spectrum = serializers.PrimaryKeyRelatedField(queryset=TransientSpectrum.objects.all(), allow_null=True)
 	host = serializers.PrimaryKeyRelatedField(queryset=Host.objects.all(), allow_null=True)
 	abs_mag_peak_band = serializers.PrimaryKeyRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True)
 
@@ -37,7 +37,8 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 		instance.best_spectrum_id = validated_data.get('best_spectrum', instance.best_spectrum)
 		instance.host_id = validated_data.get('host', instance.host)
 		instance.abs_mag_peak_band_id = validated_data.get('abs_mag_peak_band', instance.abs_mag_peak_band)
-
+		instance.created_by_id = validated_data.get('created_by', instance.created_by)
+		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 
 		instance.name = validated_data.get('name', instance.name)
 		instance.ra = validated_data.get('ra', instance.ra)
@@ -55,6 +56,34 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 		instance.abs_mag_peak_date = validated_data.get('abs_mag_peak_date', instance.abs_mag_peak_date)
 		instance.postage_stamp_file = validated_data.get('postage_stamp_file', instance.postage_stamp_file)
 
+		instance.save()
+
+		return instance
+
+
+class AlternateTransientNamesSerializer(serializers.HyperlinkedModelSerializer):
+	transient = serializers.PrimaryKeyRelatedField(queryset=Transient.objects.all())
+	obs_group = serializers.PrimaryKeyRelatedField(queryset=ObservationGroup.objects.all())
+
+	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+
+	class Meta:
+		model = AlternateTransientNames
+		fields = ('id', 'transient', 'obs_group', 'name', 'description', 'created_by', 'modified_by')
+
+	def create(self, validated_data):
+		return AlternateTransientNames.objects.create(**validated_data)
+
+	def update(self, instance, validated_data):
+		instance.transient_id = validated_data.get('transient', instance.transient)
+		instance.obs_group_id = validated_data.get('obs_group', instance.obs_group)
+		instance.created_by_id = validated_data.get('created_by', instance.created_by)
+		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
+		
+		instance.name = validated_data.get('name', instance.name)
+		instance.description = validated_data.get('description', instance.description)
+		
 		instance.save()
 
 		return instance

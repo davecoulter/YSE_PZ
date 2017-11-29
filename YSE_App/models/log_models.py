@@ -1,12 +1,12 @@
 from django.db import models
 from YSE_App.models.base import *
-from YSE_App.models.spectra import *
-from YSE_App.models.phot import *
+from YSE_App.models.spectra_models import *
+from YSE_App.models.phot_models import *
 from YSE_App.models.transient_models import *
 from YSE_App.models.host_models import *
-from YSE_App.models.additional_info import *
+from YSE_App.models.additional_info_models import *
 from YSE_App.models.followup_models import *
-from YSE_App.models.observation_tasks import *
+from YSE_App.models.observation_task_models import *
 
 class Log(BaseModel):
 	### Entity relationships ###

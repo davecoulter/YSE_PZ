@@ -7,7 +7,7 @@ class TransientHostRank(BaseModel):
 	rank = models.IntegerField()
 
 	def __str__(self):
-		return self.rank
+		return str(self.rank)
 
 class Status(BaseModel):
 	### Properties ###
