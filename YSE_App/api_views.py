@@ -20,6 +20,10 @@ class TransientViewSet(viewsets.ModelViewSet):
 	serializer_class = TransientSerializer
 
 
+
+
+
+
 @api_view(['GET', 'POST'])
 @permission_classes((permissions.AllowAny, )) # IsAuthenticated
 def transient_list(request, format=None):
@@ -48,11 +52,27 @@ def transient_detail(request, pk, format=None):
 		return Response(serializer.data)
 
 	elif request.method == 'PUT':
-		serializer = TransientSerializer(transient, data=request.data)
+		serializer = TransientSerializer(transient, data=request.data, partial=True)
 		if serializer.is_valid():
 			serializer.save()
+
+			# Hack - for some reason after TransientSerializer performs
+			# an update, it's `data` property contains object representations
+			# of PrimaryKeyRelatedField members. These cannot be serialized
+			# in the Response. Instead, I get a new reference to the newly
+			# updated transient, and get a fresh serialization. :( 
+			transient = Transient.objects.get(pk=pk)
+			serializer = TransientSerializer(transient)
 			return Response(serializer.data)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
+
 
 
 @csrf_exempt
