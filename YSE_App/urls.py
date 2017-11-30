@@ -9,9 +9,9 @@ from . import api_views
 
 
 # Routers provide an easy way of automatically determining the URL conf.
-router = routers.DefaultRouter()
-router.register(r'users', api_views.UserViewSet)
-router.register(r'transient', api_views.TransientViewSet)
+# router = routers.DefaultRouter()
+# router.register(r'users', api_views.UserViewSet)
+# router.register(r'transient', api_views.TransientViewSet)
 
 
 # Wire up our API using automatic URL routing.
@@ -34,24 +34,28 @@ urlpatterns = [
 	url(r'^logout/$', views.auth_logout, name='auth_logout'),
 	# url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs>[a-zA-Z0-9_-]+)/(?P<observatory>[a-zA-Z0-9]+)", 
 	# 	views.airmassplot, name='airmassplot'),
-	url(r'^api/', include(router.urls)),
-	url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+	# url(r'^api/', include(router.urls)),
+	# url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 
 api_url_patterns = [
-	url(r'^api/transients$', api_views.TransientList.as_view()),
-	url(r'^api/transients/(?P<pk>[0-9]+)/$', api_views.TransientDetail.as_view()),
+	url(r'^api/$', api_views.api_root),
+	url(r'^api/users/$', api_views.UserList.as_view(), name='user-list'),
+	url(r'^api/users/(?P<pk>[0-9]+)/$', api_views.UserDetail.as_view(), name='user-detail'),
+	url(r'^api/transients/$', api_views.TransientList.as_view(), name='transient-list'),
+	url(r'^api/transients/(?P<pk>[0-9]+)$', api_views.TransientDetail.as_view()),
+	url(r'^api/transienthostranks/$', api_views.TransientHostRankList.as_view(), name='transienthostrank-list'),
+	url(r'^api/statuses/$', api_views.StatusList.as_view(), name='status-list'),
+	url(r'^api/observationgroups/$', api_views.ObservationGroupList.as_view(), name='observationgroup-list'),
+	url(r'^api/sedtypes/$', api_views.SEDTypeList.as_view(), name='sedtype-list'),
+	url(r'^api/hostmorphologies/$', api_views.HostMorphologyList.as_view(), name='hostmorphology-list'),
+	url(r'^api/phases/$', api_views.PhaseList.as_view(), name='phase-list'),
+	url(r'^api/transientclasses/$', api_views.TransientClassList.as_view(), name='transientclass-list'),
+	url(r'^api/hostclasses/$', api_views.HostClassList.as_view(), name='hostclass-list'),
+	url(r'^api/classicalnighttypes/$', api_views.ClassicalNightTypeList.as_view(), name='classicalnighttype-list'),
+	url(r'^api/informationsources/$', api_views.InformationSourceList.as_view(), name='informationsource-list'),
 
-	url(r'^api/transienthostranks$', api_views.transienthostrank_list),
-	url(r'^api/statuses$', api_views.status_list),
-	url(r'^api/observationgroups$', api_views.observationgroup_list),
-	url(r'^api/sedtypes$', api_views.sedtype_list),
-	url(r'^api/hostmorphologies$', api_views.hostmorphology_list),
-	url(r'^api/phases$', api_views.phase_list),
-	url(r'^api/transientclasses$', api_views.transientclass_list),
-	url(r'^api/hostclasses$', api_views.hostclass_list),
-	url(r'^api/classicalnighttypes$', api_views.classicalnighttype_list),
-	url(r'^api/informationsources$', api_views.informationsource_list),
+	url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 
 api_url_patterns = format_suffix_patterns(api_url_patterns)
