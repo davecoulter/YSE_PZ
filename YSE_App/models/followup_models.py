@@ -12,12 +12,12 @@ class Followup(BaseModel):
 
 	### Entity relationships ###
 	# Required
-	status = models.ForeignKey(Status)
+	status = models.ForeignKey(FollowupStatus, on_delete=models.SET(get_sentinel_followupstatus))
 
 	# Optional
-	too_resource = models.ForeignKey(ToOResource, null=True, blank=True)
-	classical_resource = models.ForeignKey(ClassicalResource, null=True, blank=True)
-	queued_resource = models.ForeignKey(QueuedResource, null=True, blank=True)
+	too_resource = models.ForeignKey(ToOResource, null=True, blank=True, on_delete=models.SET_NULL)
+	classical_resource = models.ForeignKey(ClassicalResource, null=True, blank=True, on_delete=models.SET_NULL)
+	queued_resource = models.ForeignKey(QueuedResource, null=True, blank=True, on_delete=models.SET_NULL)
 
 	### Properties ###
 	# Required
@@ -35,22 +35,14 @@ class Followup(BaseModel):
 class TransientFollowup(Followup):
 	### Entity relationships ###
 	# Required
-	transient = models.ForeignKey(Transient)
+	transient = models.ForeignKey(Transient, on_delete=models.CASCADE)
 
 	def __str__(self):
 		return "Transient Followup: [%s]; Valid: %s to %s" % (self.transient.name, self.valid_start[0], self.valid_stop[0])
 
 class HostFollowup(Followup):
 	### Entity relationships ###
-	host = models.ForeignKey(Host)
+	host = models.ForeignKey(Host, on_delete=models.CASCADE)
 
 	def __str__(self):
-		ra_str, dec_str = GetSexigesimalString(self.host.ra, self.host.dec)
-		entity_str = ""
-
-		if self.host.name:
-			entity_str = "Host Followup: [%s; (%s, %s)]; Valid: %s to %s" % (self.host.name, ra_str, dec_str, self.valid_start[0], self.valid_stop[0])
-		else:
-			entity_str = "Host Followup: [(%s, %s)]; Valid: %s to %s" % (ra_str, dec_str, self.valid_start[0], self.valid_stop[0])
-
-		return entity_str
+		return "Host Followup: [%s]; Valid: %s to %s" % (self.host.HostString(), self.valid_start[0], self.valid_stop[0])

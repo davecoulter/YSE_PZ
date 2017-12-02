@@ -3,8 +3,8 @@ from YSE_App.models import *
 from django.contrib.auth.models import User
 
 class TransientHostRankSerializer(serializers.HyperlinkedModelSerializer):
-	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
 		model = TransientHostRank
@@ -20,17 +20,53 @@ class TransientHostRankSerializer(serializers.HyperlinkedModelSerializer):
 		instance.save()
 		return instance
 
-class StatusSerializer(serializers.HyperlinkedModelSerializer):
-	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+class TransientStatusSerializer(serializers.HyperlinkedModelSerializer):
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
-		model = Status
-		fields = ('id', 'name', 'created_by', 'created_date', 
+		model = TransientStatus
+		fields = ('url', 'id', 'name', 'created_by', 'created_date', 
 			'modified_by', 'modified_date')
 
 	def create(self, validated_data):
-		return Status.objects.create(**validated_data)
+		return TransientStatus.objects.create(**validated_data)
+
+	def update(self, instance, validated_data):
+		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
+		instance.name = validated_data.get('name', instance.name)
+		instance.save()
+		return instance
+
+class FollowupStatusSerializer(serializers.HyperlinkedModelSerializer):
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+
+	class Meta:
+		model = FollowupStatus
+		fields = ('url', 'id', 'name', 'created_by', 'created_date', 
+			'modified_by', 'modified_date')
+
+	def create(self, validated_data):
+		return FollowupStatus.objects.create(**validated_data)
+
+	def update(self, instance, validated_data):
+		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
+		instance.name = validated_data.get('name', instance.name)
+		instance.save()
+		return instance
+
+class TaskStatusSerializer(serializers.HyperlinkedModelSerializer):
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+
+	class Meta:
+		model = TaskStatus
+		fields = ('url', 'id', 'name', 'created_by', 'created_date', 
+			'modified_by', 'modified_date')
+
+	def create(self, validated_data):
+		return TaskStatus.objects.create(**validated_data)
 
 	def update(self, instance, validated_data):
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
@@ -39,8 +75,8 @@ class StatusSerializer(serializers.HyperlinkedModelSerializer):
 		return instance
 
 class ObservationGroupSerializer(serializers.HyperlinkedModelSerializer):
-	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
 		model = ObservationGroup
@@ -57,8 +93,8 @@ class ObservationGroupSerializer(serializers.HyperlinkedModelSerializer):
 		return instance
 
 class SEDTypeSerializer(serializers.HyperlinkedModelSerializer):
-	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
 		model = SEDType
@@ -75,8 +111,8 @@ class SEDTypeSerializer(serializers.HyperlinkedModelSerializer):
 		return instance
 
 class HostMorphologySerializer(serializers.HyperlinkedModelSerializer):
-	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
 		model = HostMorphology
@@ -93,8 +129,8 @@ class HostMorphologySerializer(serializers.HyperlinkedModelSerializer):
 		return instance
 
 class PhaseSerializer(serializers.HyperlinkedModelSerializer):
-	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
 		model = Phase
@@ -111,8 +147,8 @@ class PhaseSerializer(serializers.HyperlinkedModelSerializer):
 		return instance
 
 class TransientClassSerializer(serializers.HyperlinkedModelSerializer):
-	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
 		model = TransientClass
@@ -128,27 +164,9 @@ class TransientClassSerializer(serializers.HyperlinkedModelSerializer):
 		instance.save()
 		return instance
 
-class HostClassSerializer(serializers.HyperlinkedModelSerializer):
-	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-
-	class Meta:
-		model = HostClass
-		fields = ('id', 'name', 'created_by', 'created_date', 
-			'modified_by', 'modified_date')
-
-	def create(self, validated_data):
-		return HostClass.objects.create(**validated_data)
-
-	def update(self, instance, validated_data):
-		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
-		instance.name = validated_data.get('name', instance.name)
-		instance.save()
-		return instance
-
 class ClassicalNightTypeSerializer(serializers.HyperlinkedModelSerializer):
-	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
 		model = ClassicalNightType
@@ -165,8 +183,8 @@ class ClassicalNightTypeSerializer(serializers.HyperlinkedModelSerializer):
 		return instance
 
 class InformationSourceSerializer(serializers.HyperlinkedModelSerializer):
-	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
 		model = InformationSource

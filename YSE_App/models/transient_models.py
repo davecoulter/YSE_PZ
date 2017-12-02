@@ -8,25 +8,25 @@ from YSE_App.common.utilities import GetSexigesimalString
 class Transient(BaseModel):
 	### Entity relationships ###
 	# Required
-	status = models.ForeignKey(Status)
-	obs_group = models.ForeignKey(ObservationGroup)
+	status = models.ForeignKey(TransientStatus, models.SET(get_sentinel_transientstatus))
+	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
 
 	# Optional
-	non_detect_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True)
-	best_spec_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True)
-	photo_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True)
-	best_spectrum = models.ForeignKey('TransientSpectrum', related_name='+', null=True, blank=True)
-	host = models.ForeignKey(Host, null=True, blank=True)
-	abs_mag_peak_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True)
+	non_detect_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
+	best_spec_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
+	photo_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
+	best_spectrum = models.ForeignKey('TransientSpectrum', related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
+	host = models.ForeignKey(Host, null=True, blank=True, on_delete=models.SET_NULL)
+	abs_mag_peak_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 
 	### Properties ###
 	# Required
 	name = models.CharField(max_length=64)
 	ra = models.FloatField()
 	dec = models.FloatField()
-	disc_date = models.DateTimeField(null=True, blank=True)
 
 	# Optional
+	disc_date = models.DateTimeField(null=True, blank=True)
 	candidate_hosts = models.TextField(null=True, blank=True) # A string field to hold n hosts -- if we don't quite know which is the correct one
 	redshift = models.FloatField(null=True, blank=True)
 	redshift_err = models.FloatField(null=True, blank=True)
@@ -48,10 +48,10 @@ class Transient(BaseModel):
 class AlternateTransientNames(BaseModel):
 	### Entity relationships ###
 	# Required
-	transient = models.ForeignKey(Transient)
+	transient = models.ForeignKey(Transient, on_delete=models.CASCADE)
 
 	# Optional
-	obs_group = models.ForeignKey(ObservationGroup, null=True, blank=True)
+	obs_group = models.ForeignKey(ObservationGroup, null=True, blank=True, on_delete=models.SET_NULL)
 	
 	### Properities ###
 	# Required
@@ -59,3 +59,6 @@ class AlternateTransientNames(BaseModel):
 
 	# Optional
 	description = models.TextField(null=True, blank=True)
+
+	def __str__(self):
+		return self.name

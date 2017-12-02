@@ -5,7 +5,7 @@ from YSE_App.models.observatory_models import *
 class Telescope(BaseModel):
 	### Entity relationships ###
 	# Required
-	observatory = models.ForeignKey(Observatory)
+	observatory = models.ForeignKey(Observatory, on_delete=models.CASCADE)
 
 	### Properties ###
 	# Required

@@ -15,4 +15,4 @@ class Observatory(BaseModel):
 	DLS_end = models.DateTimeField(null=True, blank=True)
 
 	def __str__(self):
-		return self.name
+		return 'Observatory: %s' % self.name

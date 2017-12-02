@@ -9,7 +9,35 @@ class TransientHostRank(BaseModel):
 	def __str__(self):
 		return str(self.rank)
 
-class Status(BaseModel):
+# If a status gets accidentally deleted, create a proxy status created/modified by `admin` superuser (will always be user.id == 1)
+def get_sentinel_transientstatus():
+	return TransientStatus.objects.get_or_create(name='StatusDeleted', created_by_id='1', modified_by_id='1')[0]
+
+class TransientStatus(BaseModel):
+	### Properties ###
+	# Required
+	name = models.CharField(max_length=64)
+
+	def __str__(self):
+		return self.name
+
+# If a status gets accidentally deleted, create a proxy status created/modified by `admin` superuser (will always be user.id == 1)
+def get_sentinel_followupstatus():
+	return FollowupStatus.objects.get_or_create(name='StatusDeleted', created_by_id='1', modified_by_id='1')[0]
+
+class FollowupStatus(BaseModel):
+	### Properties ###
+	# Required
+	name = models.CharField(max_length=64)
+
+	def __str__(self):
+		return self.name
+
+# If a status gets accidentally deleted, create a proxy status created/modified by `admin` superuser (will always be user.id == 1)
+def get_sentinel_taskstatus():
+	return TaskStatus.objects.get_or_create(name='StatusDeleted', created_by_id='1', modified_by_id='1')[0]
+
+class TaskStatus(BaseModel):
 	### Properties ###
 	# Required
 	name = models.CharField(max_length=64)
@@ -57,14 +85,6 @@ class TransientClass(BaseModel):
 	def __str__(self):
 		return self.name
 
-class HostClass(BaseModel):
-	### Properties ###
-	# Required
-	name = models.CharField(max_length=64)
-	
-	def __str__(self):
-		return self.name
-
 class ClassicalNightType(BaseModel):
 	### Properties ###
 	# Required
@@ -78,3 +98,6 @@ class InformationSource(BaseModel):
 	### Properties ###
 	# Required
 	name = models.CharField(max_length=64)
+
+	def __str__(self):
+		return self.name

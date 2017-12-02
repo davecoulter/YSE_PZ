@@ -8,8 +8,8 @@ class ObservationalTask(BaseModel):
 	class Meta:
 		abstract = True
 
-	instrument_config = models.ForeignKey(InstrumentConfig)
-	status = models.ForeignKey(Status)
+	instrument_config = models.ForeignKey(InstrumentConfig, on_delete=models.CASCADE)
+	status = models.ForeignKey(TaskStatus, models.SET(get_sentinel_taskstatus))
 
 	### Properties ###
 	# Required
@@ -24,7 +24,7 @@ class ObservationalTask(BaseModel):
 class TransientObservationTask(ObservationalTask):
 	### Entity relationships ###
 	# Required
-	followup = models.ForeignKey(TransientFollowup)
+	followup = models.ForeignKey(TransientFollowup, on_delete=models.CASCADE)
 	
 	def __str__(self):
 		return "%s; %s; %s; %s to %s" % (self.followup.transient.name, 
@@ -36,7 +36,7 @@ class TransientObservationTask(ObservationalTask):
 class HostObservationTask(ObservationalTask):
 	### Entity relationships ###
 	# Required
-	followup = models.ForeignKey(HostFollowup)
+	followup = models.ForeignKey(HostFollowup, on_delete=models.CASCADE)
 	
 	def __str__(self):
 		return "%s; %s; %s; %s to %s" % (self.followup.host.name, 

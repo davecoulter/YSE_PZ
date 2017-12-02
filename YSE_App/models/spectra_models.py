@@ -9,23 +9,20 @@ from YSE_App.models.host_models import *
 class Spectrum(BaseModel):
 	class Meta:
 		abstract = True
-
 	### Entity relationships ###
 	# Required
-	instrument = models.ForeignKey(Instrument)
-	obs_group = models.ForeignKey(ObservationGroup)
-
+	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
+	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
+	
 	### Properties ###
 	# Required
 	ra = models.FloatField()
 	dec = models.FloatField()
 	obs_date = models.DateTimeField()
-
 	# Optional
 	redshift = models.FloatField(null=True, blank=True)
 	redshift_err = models.FloatField(null=True, blank=True)
 	redshift_quality = models.NullBooleanField(blank=True)
-	tdr = models.FloatField(null=True, blank=True)
 	spec_plot_file = models.CharField(max_length=512, null=True, blank=True)
 	spec_data_file = models.CharField(max_length=512, null=True, blank=True)
 	spectrum_notes = models.TextField(null=True, blank=True)
@@ -33,22 +30,36 @@ class Spectrum(BaseModel):
 class TransientSpectrum(Spectrum):
 	### Entity relationships ###
 	# Required
-	transient = models.ForeignKey(Transient)
-
+	transient = models.ForeignKey(Transient, on_delete=models.CASCADE)
 	# Optional
-	followup = models.ForeignKey(TransientFollowup, null=True, blank=True) # Can by null if data is from external source
-	spec_phase = models.ForeignKey(Phase, null=True, blank=True)
+	followup = models.ForeignKey(TransientFollowup, null=True, blank=True, on_delete=models.SET_NULL) # Can by null if data is from external source
+	spec_phase = models.ForeignKey(Phase, null=True, blank=True, on_delete=models.SET_NULL)
+
+	### Properties ###
+	# Optional
+	rlap = models.FloatField(null=True, blank=True)
 	snid_plot_file = models.CharField(max_length=512, null=True, blank=True)
+
+	def __str__(self):
+		return 'Spectrum: %s - %s' % (self.transient.name, self.followup.valid_start[0])
 
 class HostSpectrum(Spectrum):
 	### Entity relationships ###
 	# Required
-	host = models.ForeignKey(Host)
-
+	host = models.ForeignKey(Host, on_delete=models.CASCADE)
 	# Optional
-	followup = models.ForeignKey(HostFollowup, null=True, blank=True) # Can by null if data is from external source
+	followup = models.ForeignKey(HostFollowup, null=True, blank=True, on_delete=models.SET_NULL) # Can by null if data is from external source
+
+	### Properties ###
+	# Optional
+	tdr = models.FloatField(null=True, blank=True)
+
+	def __str__(self):
+		return 'Spectrum: %s - %s' % (self.host.HostString(), self.followup.valid_start[0])
 
 class SpecData(BaseModel):
+	class Meta:
+		abstract = True
 	### Properties ###
 	# Required
 	wavelength = models.FloatField()
@@ -61,9 +72,15 @@ class SpecData(BaseModel):
 class TransientSpecData(SpecData):
 	### Entity relationships ###
 	# Required
-	spectrum = models.ForeignKey(TransientSpectrum)
+	spectrum = models.ForeignKey(TransientSpectrum, on_delete=models.CASCADE)
+
+	def __str__(self):
+		return '%s - %s' % (self.wavelength, self.flux)
 
 class HostSpecData(SpecData):
 	### Entity relationships ###
 	# Required
-	spectrum = models.ForeignKey(HostSpectrum)
+	spectrum = models.ForeignKey(HostSpectrum, on_delete=models.CASCADE)
+
+	def __str__(self):
+		return '%s - %s' % (self.wavelength, self.flux)

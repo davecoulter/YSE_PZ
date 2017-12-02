@@ -5,7 +5,7 @@ from YSE_App.models.instrument_models import *
 class PhotometricBand(BaseModel):
 	### Entity relationships ###
 	# Required
-	instrument = models.ForeignKey(Instrument)
+	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
 
 	### Properties ###
 	# Required
@@ -16,4 +16,4 @@ class PhotometricBand(BaseModel):
 	throughput_file = models.CharField(max_length=512, null=True, blank=True)
 	
 	def __str__(self):
-		return '%s - %s' % (self.instrument.name, self.name)
+		return 'Band: %s - %s' % (self.instrument.name, self.name)

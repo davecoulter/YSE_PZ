@@ -8,7 +8,7 @@ class BaseModel(models.Model):
 		abstract = True
 
 	# Audit fields
-	created_by = models.ForeignKey(User, related_name='%(class)s_created_by')
+	created_by = models.ForeignKey(User, related_name='%(class)s_created_by', on_delete=models.PROTECT)
 	created_date = models.DateTimeField(auto_now_add=True)
-	modified_by = models.ForeignKey(User, related_name='%(class)s_modified_by')
+	modified_by = models.ForeignKey(User, related_name='%(class)s_modified_by', on_delete=models.PROTECT)
 	modified_date = models.DateTimeField(auto_now=True)

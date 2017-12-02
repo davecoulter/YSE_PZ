@@ -3,22 +3,22 @@ from YSE_App.models import *
 from django.contrib.auth.models import User
 
 class TransientSerializer(serializers.HyperlinkedModelSerializer):
-	status = serializers.PrimaryKeyRelatedField(queryset=Status.objects.all())
-	obs_group = serializers.PrimaryKeyRelatedField(queryset=ObservationGroup.objects.all())
+	status = serializers.HyperlinkedRelatedField(queryset=TransientStatus.objects.all(), view_name='transientstatus-detail')
+	obs_group = serializers.HyperlinkedRelatedField(queryset=ObservationGroup.objects.all(), view_name='observationgroup-detail')
 
-	non_detect_band = serializers.PrimaryKeyRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True, required=False)
-	best_spec_class = serializers.PrimaryKeyRelatedField(queryset=TransientClass.objects.all(), allow_null=True, required=False)
-	photo_class = serializers.PrimaryKeyRelatedField(queryset=TransientClass.objects.all(), allow_null=True, required=False)
-	best_spectrum = serializers.PrimaryKeyRelatedField(queryset=TransientSpectrum.objects.all(), allow_null=True, required=False)
-	host = serializers.PrimaryKeyRelatedField(queryset=Host.objects.all(), allow_null=True, required=False)
-	abs_mag_peak_band = serializers.PrimaryKeyRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True, required=False)
+	non_detect_band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True, required=False, view_name='photomericband-detail')
+	best_spec_class = serializers.HyperlinkedRelatedField(queryset=TransientClass.objects.all(), allow_null=True, required=False, view_name='transientclass-detail')
+	photo_class = serializers.HyperlinkedRelatedField(queryset=TransientClass.objects.all(), allow_null=True, required=False, view_name='transientclass-detail')
+	best_spectrum = serializers.HyperlinkedRelatedField(queryset=TransientSpectrum.objects.all(), allow_null=True, required=False, view_name='transientspectrum-detail')
+	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), allow_null=True, required=False, view_name='host-detail')
+	abs_mag_peak_band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True, required=False, view_name='photometricband-detail')
 
-	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
 		model = Transient
-		fields = ('id', 'status', 'obs_group', 'non_detect_band',
+		fields = ('url', 'id', 'status', 'obs_group', 'non_detect_band',
 			'best_spec_class', 'photo_class', 'best_spectrum', 'host',
 			'abs_mag_peak_band', 'name', 'ra', 'dec', 'disc_date',
 			'candidate_hosts', 'redshift', 'redshift_err', 'redshift_source',
@@ -63,16 +63,16 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class AlternateTransientNamesSerializer(serializers.HyperlinkedModelSerializer):
-	transient = serializers.PrimaryKeyRelatedField(queryset=Transient.objects.all())
-	obs_group = serializers.PrimaryKeyRelatedField(queryset=ObservationGroup.objects.all())
+	transient = serializers.HyperlinkedRelatedField(queryset=Transient.objects.all(), view_name='transient-detail')
+	obs_group = serializers.HyperlinkedRelatedField(queryset=ObservationGroup.objects.all(), view_name='observationgroup-detail')
 
-	created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-	modified_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
 		model = AlternateTransientNames
-		fields = ('id', 'transient', 'obs_group', 'name', 'description', 'created_by', 
-			'created_date', 'modified_by', 'modified_date')
+		fields = ('url', 'id', 'transient', 'obs_group', 'name', 'description', 
+			'created_by', 'created_date', 'modified_by', 'modified_date')
 
 	def create(self, validated_data):
 		return AlternateTransientNames.objects.create(**validated_data)

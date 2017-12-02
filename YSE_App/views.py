@@ -47,11 +47,11 @@ def dashboard(request):
 	new_transients = None
 	inprocess_transients = None
 
-	status_new = Status.objects.filter(name='New')
+	status_new = TransientStatus.objects.filter(name='New')
 	if len(status_new) == 1:
 		new_transients = Transient.objects.filter(status=status_new[0])
 
-	status_inprocess = Status.objects.filter(name='InProcess')
+	status_inprocess = TransientStatus.objects.filter(name='InProcess')
 	if len(status_inprocess) == 1:
 		inprocess_transients = Transient.objects.filter(status=status_inprocess[0])
 	

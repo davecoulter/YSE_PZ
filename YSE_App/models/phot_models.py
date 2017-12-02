@@ -7,32 +7,46 @@ from YSE_App.models.transient_models import *
 from YSE_App.models.host_models import *
 
 class Photometry(BaseModel):
+
+	class Meta:
+		abstract = True
+
 	### Entity relationships ###
 	# Required
-	instrument = models.ForeignKey(Instrument)
-	obs_group = models.ForeignKey(ObservationGroup)
+	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
+	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
 
 class TransientPhotometry(Photometry):
 	### Entity relationships ###
 	# Required
-	transient = models.ForeignKey(Transient)
+	transient = models.ForeignKey(Transient, on_delete=models.CASCADE)
 
 	# Optional
-	host = models.ForeignKey(Host, null=True, blank=True)
-	followup = models.ForeignKey(TransientFollowup, null=True, blank=True) # Can by null if data is from external source
+	host = models.ForeignKey(Host, null=True, blank=True, on_delete=models.SET_NULL)
+	followup = models.ForeignKey(TransientFollowup, null=True, blank=True, on_delete=models.SET_NULL) # Can by null if data is from external source
+
+	def __str__(self):
+		return 'Transient Phot: %s - %s' % (self.transient.name, self.followup.valid_start[0])
 
 class HostPhotometry(Photometry):
 	### Entity relationships ###
 	# Required
-	host = models.ForeignKey(Host)
+	host = models.ForeignKey(Host, on_delete=models.CASCADE)
 
 	# Optional
-	followup = models.ForeignKey(HostFollowup, null=True, blank=True) # Can by null if data is from external source
+	followup = models.ForeignKey(HostFollowup, null=True, blank=True, on_delete=models.SET_NULL) # Can by null if data is from external source
+
+	def __str__(self):
+		return 'Host Phot: %s - %s' % (self.host.HostString(), self.followup.valid_start[0])
 
 class PhotData(BaseModel):
+
+	class Meta:
+		abstract = True
+
 	# Entity relationships ###
 	# Required
-	band = models.ForeignKey(PhotometricBand)
+	band = models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
 
 	### Properties ###
 	# Required
@@ -51,14 +65,23 @@ class PhotData(BaseModel):
 class TransientPhotData(PhotData):
 	# Entity relationships ###
 	# Required
-	photometry = models.ForeignKey(TransientPhotometry)
+	photometry = models.ForeignKey(TransientPhotometry, on_delete=models.CASCADE)
+
+	def __str__(self):
+		return '%s - %s - %s' % (self.photometry.transient.name, self.band.name, self.obs_date[0])
 
 class HostPhotData(PhotData):
 	# Entity relationships ###
 	# Required
-	photometry = models.ForeignKey(HostPhotometry)
+	photometry = models.ForeignKey(HostPhotometry, on_delete=models.CASCADE)
+
+	def __str__(self):
+		return '%s - %s - %s' % (self.photometry.host.HostString(), self.band.name, self.obs_date[0])
 
 class Image(BaseModel):
+	class Meta:
+		abstract = True
+
 	### Properties ###
 	# Optional
 	img_file = models.CharField(max_length=512, null=True, blank=True)
@@ -71,9 +94,15 @@ class Image(BaseModel):
 class TransientImage(Image):
 	### Entity relationships ###
 	# Required
-	phot_data = models.ForeignKey(TransientPhotData)
+	phot_data = models.ForeignKey(TransientPhotData, on_delete=models.CASCADE)
+
+	def __str__(self):
+		return 'Img: %s - %s' % (self.phot_data.photometry.transient.name, self.phot_data.obs_date[0])
 
 class HostImage(Image):
 	### Entity relationships ###
 	# Required
-	phot_data = models.ForeignKey(HostPhotData)
+	phot_data = models.ForeignKey(HostPhotData, on_delete=models.CASCADE)
+
+	def __str__(self):
+		return 'Img: %s - %s' % (self.phot_data.photometry.host.HostString(), self.phot_data.obs_date[0])
