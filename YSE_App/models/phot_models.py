@@ -26,7 +26,7 @@ class TransientPhotometry(Photometry):
 	followup = models.ForeignKey(TransientFollowup, null=True, blank=True, on_delete=models.SET_NULL) # Can by null if data is from external source
 
 	def __str__(self):
-		return 'Transient Phot: %s - %s' % (self.transient.name, self.followup.valid_start[0])
+		return 'Transient Phot: %s' % (self.transient.name)
 
 class HostPhotometry(Photometry):
 	### Entity relationships ###
