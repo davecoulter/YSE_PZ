@@ -346,7 +346,7 @@ class DBOps():
         objectdata = runDBcommand(cmd)
 
         if type(objectdata) != list and 'url' not in objectdata:
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
             raise RuntimeError('Error : failure adding object')
         if return_full:
             return(objectdata)
@@ -363,7 +363,7 @@ class DBOps():
         objectdata = runDBcommand(cmd)
 
         if type(objectdata) != list and 'url' not in objectdata:
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
             raise RuntimeError('Error : failure adding object')
         if return_full:
             return(objectdata)
