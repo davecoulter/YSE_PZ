@@ -1,3 +1,4 @@
+import time
 import imaplib
 import socket
 import ssl
@@ -715,7 +716,9 @@ class processTNS():
         return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
         
 def runDBcommand(cmd):
-    return(json.loads(os.popen(cmd).read()))
+    tstart = time.time()
+    while time.time() - tstart < 20:
+        return(json.loads(os.popen(cmd).read()))
 if __name__ == "__main__":
     # execute only if run as a script
 
