@@ -43,6 +43,16 @@ class TaskStatusViewSet(viewsets.ReadOnlyModelViewSet):
 	serializer_class = TaskStatusSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+class AntaresClassificationViewSet(viewsets.ReadOnlyModelViewSet):
+	queryset = AntaresClassification.objects.all()
+	serializer_class = AntaresClassificationSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
+class InternalSurveyViewSet(viewsets.ReadOnlyModelViewSet):
+	queryset = InternalSurvey.objects.all()
+	serializer_class = InternalSurveySerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
 class ObservationGroupViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = ObservationGroup.objects.all()
 	serializer_class = ObservationGroupSerializer

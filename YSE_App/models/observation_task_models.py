@@ -30,8 +30,8 @@ class TransientObservationTask(ObservationalTask):
 		return "%s; %s; %s; %s to %s" % (self.followup.transient.name, 
 							self.instrument_config.instrument.name,
 							self.instrument_config.name,
-							self.followup.valid_start[0],
-							self.followup.valid_stop[0])
+							self.followup.valid_start.strftime('%m/%d/%Y'),
+							self.followup.valid_stop.strftime('%m/%d/%Y'))
 
 class HostObservationTask(ObservationalTask):
 	### Entity relationships ###
@@ -42,5 +42,5 @@ class HostObservationTask(ObservationalTask):
 		return "%s; %s; %s; %s to %s" % (self.followup.host.name, 
 							self.instrument_config.instrument.name,
 							self.instrument_config.name,
-							self.followup.valid_start[0],
-							self.followup.valid_stop[0])
+							self.followup.valid_start.strftime('%m/%d/%Y'),
+							self.followup.valid_stop.strftime('%m/%d/%Y'))

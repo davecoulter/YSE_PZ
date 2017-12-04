@@ -18,6 +18,8 @@ class Transient(BaseModel):
 	best_spectrum = models.ForeignKey('TransientSpectrum', related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 	host = models.ForeignKey(Host, null=True, blank=True, on_delete=models.SET_NULL)
 	abs_mag_peak_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
+	antares_classification = models.ForeignKey(AntaresClassification, null=True, blank=True, on_delete=models.SET_NULL)
+	internal_survey = models.ForeignKey(InternalSurvey, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 
 	### Properties ###
 	# Required

@@ -37,7 +37,7 @@ class HostPhotometry(Photometry):
 	followup = models.ForeignKey(HostFollowup, null=True, blank=True, on_delete=models.SET_NULL) # Can by null if data is from external source
 
 	def __str__(self):
-		return 'Host Phot: %s - %s' % (self.host.HostString(), self.followup.valid_start[0])
+		return 'Host Phot: %s - %s' % (self.host.HostString(), self.followup.valid_start.strftime('%m/%d/%Y'))
 
 class PhotData(BaseModel):
 
@@ -76,7 +76,7 @@ class HostPhotData(PhotData):
 	photometry = models.ForeignKey(HostPhotometry, on_delete=models.CASCADE)
 
 	def __str__(self):
-		return '%s - %s - %s' % (self.photometry.host.HostString(), self.band.name, self.obs_date[0])
+		return '%s - %s - %s' % (self.photometry.host.HostString(), self.band.name, self.obs_date.strftime('%m/%d/%Y'))
 
 class Image(BaseModel):
 	class Meta:
@@ -97,7 +97,7 @@ class TransientImage(Image):
 	phot_data = models.ForeignKey(TransientPhotData, on_delete=models.CASCADE)
 
 	def __str__(self):
-		return 'Img: %s - %s' % (self.phot_data.photometry.transient.name, self.phot_data.obs_date[0])
+		return 'Img: %s - %s' % (self.phot_data.photometry.transient.name, self.phot_data.obs_date.strftime('%m/%d/%Y'))
 
 class HostImage(Image):
 	### Entity relationships ###
@@ -105,4 +105,4 @@ class HostImage(Image):
 	phot_data = models.ForeignKey(HostPhotData, on_delete=models.CASCADE)
 
 	def __str__(self):
-		return 'Img: %s - %s' % (self.phot_data.photometry.host.HostString(), self.phot_data.obs_date[0])
+		return 'Img: %s - %s' % (self.phot_data.photometry.host.HostString(), self.phot_data.obs_date.strftime('%m/%d/%Y'))

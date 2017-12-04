@@ -38,11 +38,11 @@ class TransientFollowup(Followup):
 	transient = models.ForeignKey(Transient, on_delete=models.CASCADE)
 
 	def __str__(self):
-		return "Transient Followup: [%s]; Valid: %s to %s" % (self.transient.name, self.valid_start, self.valid_stop)
+		return "Transient Followup: [%s]; Valid: %s to %s" % (self.transient.name, self.valid_start.strftime('%m/%d/%Y'), self.valid_stop.strftime('%m/%d/%Y'))
 
 class HostFollowup(Followup):
 	### Entity relationships ###
 	host = models.ForeignKey(Host, on_delete=models.CASCADE)
 
 	def __str__(self):
-		return "Host Followup: [%s]; Valid: %s to %s" % (self.host.HostString(), self.valid_start, self.valid_stop)
+		return "Host Followup: [%s]; Valid: %s to %s" % (self.host.HostString(), self.valid_start.strftime('%m/%d/%Y'), self.valid_stop.strftime('%m/%d/%Y'))

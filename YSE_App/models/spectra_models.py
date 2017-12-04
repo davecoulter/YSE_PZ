@@ -41,7 +41,7 @@ class TransientSpectrum(Spectrum):
 	snid_plot_file = models.CharField(max_length=512, null=True, blank=True)
 
 	def __str__(self):
-		return 'Spectrum: %s - %s' % (self.transient.name, self.followup.valid_start[0])
+		return 'Spectrum: %s - %s' % (self.transient.name, self.followup.valid_start.strftime('%m/%d/%Y'))
 
 class HostSpectrum(Spectrum):
 	### Entity relationships ###
@@ -55,7 +55,7 @@ class HostSpectrum(Spectrum):
 	tdr = models.FloatField(null=True, blank=True)
 
 	def __str__(self):
-		return 'Spectrum: %s - %s' % (self.host.HostString(), self.followup.valid_start[0])
+		return 'Spectrum: %s - %s' % (self.host.HostString(), self.followup.valid_start.strftime('%m/%d/%Y'))
 
 class SpecData(BaseModel):
 	class Meta:

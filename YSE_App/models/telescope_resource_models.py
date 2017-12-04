@@ -27,7 +27,7 @@ class ToOResource(TelescopeResource):
 	used_too_hours = models.FloatField()
 
 	def __str__(self):
-		return "ToO Resource: %s; Valid: %s to %s" % (self.telescope.name, self.begin_date_valid, self.end_date_valid)
+		return "ToO Resource: %s; Valid: %s to %s" % (self.telescope.name, self.begin_date_valid.strftime('%m/%d/%Y'), self.end_date_valid.strftime('%m/%d/%Y'))
 
 class QueuedResource(TelescopeResource):
 	### Properites ###
@@ -36,12 +36,12 @@ class QueuedResource(TelescopeResource):
 	used_hours = models.FloatField(null=True, blank=True)
 
 	def __str__(self):
-		return "Queued Resource: %s; Valid: %s to %s" % (self.telescope.name, self.begin_date_valid, self.end_date_valid)
+		return "Queued Resource: %s; Valid: %s to %s" % (self.telescope.name, self.begin_date_valid.strftime('%m/%d/%Y'), self.end_date_valid.strftime('%m/%d/%Y'))
 
 class ClassicalResource(TelescopeResource):
 
 	def __str__(self):
-		return "Classical Resource: %s; Valid: %s to %s" % (self.telescope.name, self.begin_date_valid, self.end_date_valid)
+		return "Classical Resource: %s; Valid: %s to %s" % (self.telescope.name, self.begin_date_valid.strftime('%m/%d/%Y'), self.end_date_valid.strftime('%m/%d/%Y'))
 
 class ClassicalObservingDate(BaseModel):
 	### Entity relationships ###
@@ -58,4 +58,4 @@ class ClassicalObservingDate(BaseModel):
 		return (now + datetime.timedelta(days=14) >= self.observing_night >= now)
 
 	def __str__(self):
-		return "%s - %s" % (self.resource.telescope.name, self.observing_night[0])
+		return "%s - %s" % (self.resource.telescope.name, self.observing_night.strftime('%m/%d/%Y'))

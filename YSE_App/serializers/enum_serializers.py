@@ -74,6 +74,42 @@ class TaskStatusSerializer(serializers.HyperlinkedModelSerializer):
 		instance.save()
 		return instance
 
+class AntaresClassificationSerializer(serializers.HyperlinkedModelSerializer):
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+
+	class Meta:
+		model = AntaresClassification
+		fields = ('url', 'id', 'name', 'created_by', 'created_date', 
+			'modified_by', 'modified_date')
+
+	def create(self, validated_data):
+		return AntaresClassification.objects.create(**validated_data)
+
+	def update(self, instance, validated_data):
+		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
+		instance.name = validated_data.get('name', instance.name)
+		instance.save()
+		return instance
+
+class InternalSurveySerializer(serializers.HyperlinkedModelSerializer):
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+
+	class Meta:
+		model = InternalSurvey
+		fields = ('url', 'id', 'name', 'created_by', 'created_date', 
+			'modified_by', 'modified_date')
+
+	def create(self, validated_data):
+		return TaskStatus.objects.create(**validated_data)
+
+	def update(self, instance, validated_data):
+		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
+		instance.name = validated_data.get('name', instance.name)
+		instance.save()
+		return instance
+
 class ObservationGroupSerializer(serializers.HyperlinkedModelSerializer):
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')

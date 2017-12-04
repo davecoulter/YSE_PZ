@@ -12,6 +12,8 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 	best_spectrum = serializers.HyperlinkedRelatedField(queryset=TransientSpectrum.objects.all(), allow_null=True, required=False, view_name='transientspectrum-detail')
 	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), allow_null=True, required=False, view_name='host-detail')
 	abs_mag_peak_band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True, required=False, view_name='photometricband-detail')
+	antares_classification = serializers.HyperlinkedRelatedField(queryset=AntaresClassification.objects.all(), allow_null=True, required=False, view_name='antaresclassification-detail')
+	internal_survey = serializers.HyperlinkedRelatedField(queryset=InternalSurvey.objects.all(), allow_null=True, required=False, view_name='internalsurvey-detail')
 
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
@@ -23,8 +25,8 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 			'abs_mag_peak_band', 'name', 'ra', 'dec', 'disc_date',
 			'candidate_hosts', 'redshift', 'redshift_err', 'redshift_source',
 			'non_detect_date', 'non_detect_limit', 'mw_ebv', 'abs_mag_peak',
-			'abs_mag_peak_date', 'postage_stamp_file', 'created_by', 'created_date', 
-			'modified_by', 'modified_date')
+			'abs_mag_peak_date', 'antares_classification', 'internal_survey', 'postage_stamp_file', 
+			'created_by', 'created_date', 'modified_by', 'modified_date')
 
 	def create(self, validated_data):
 		return Transient.objects.create(**validated_data)
@@ -40,6 +42,8 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 		instance.abs_mag_peak_band_id = validated_data.get('abs_mag_peak_band', instance.abs_mag_peak_band)
 		instance.created_by_id = validated_data.get('created_by', instance.created_by)
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
+		instance.antares_classification_id = validated_data.get('antares_classification', instance.antares_classification)
+		instance.internal_survey_id = validated_data.get('internal_survey', instance.internal_survey)
 
 		instance.name = validated_data.get('name', instance.name)
 		instance.ra = validated_data.get('ra', instance.ra)

@@ -45,6 +45,22 @@ class TaskStatus(BaseModel):
 	def __str__(self):
 		return self.name
 
+class AntaresClassification(BaseModel):
+	### Properties ###
+	# Required
+	name = models.CharField(max_length=64)
+
+	def __str__(self):
+		return self.name
+
+class InternalSurvey(BaseModel):
+	### Properties ###
+	# Required
+	name = models.CharField(max_length=64)
+
+	def __str__(self):
+		return self.name
+
 class ObservationGroup(BaseModel):
 	### Properties ###
 	# Required
