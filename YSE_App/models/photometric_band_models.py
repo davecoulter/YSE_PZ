@@ -10,9 +10,9 @@ class PhotometricBand(BaseModel):
 	### Properties ###
 	# Required
 	name = models.CharField(max_length=64)
-	lambda_eff = models.CharField(max_length=64)
 
 	# Optional
+	lambda_eff = models.CharField(max_length=64, null=True, blank=True)
 	throughput_file = models.CharField(max_length=512, null=True, blank=True)
 	
 	def __str__(self):
