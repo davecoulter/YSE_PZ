@@ -15,8 +15,7 @@ class TransientPhotometrySerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = TransientPhotometry
-		fields = ('url', 'id', 'transient', 'instrument', 'obs_group', 'host', 'followup',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return TransientPhotometry.objects.create(**validated_data)
@@ -45,8 +44,7 @@ class HostPhotometrySerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = HostPhotometry
-		fields = ('url', 'id', 'host', 'instrument', 'obs_group', 'followup',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return HostPhotometry.objects.create(**validated_data)
@@ -71,9 +69,7 @@ class TransientPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = TransientPhotData
-		fields = ('url', 'id', 'photometry', 'band', 'obs_date', 'flux_zero_point', 
-			'flux', 'flux_err', 'mag', 'mag_err', 'forced', 'dq', 'created_by', 
-			'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return TransientPhotData.objects.create(**validated_data)
@@ -83,6 +79,7 @@ class TransientPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 		instance.band_id = validated_data.get('obs_group', instance.band)
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 		
+		instance.obs_date = validated_data.get('obs_date', instance.obs_date)
 		instance.flux_zero_point = validated_data.get('flux_zero_point', instance.flux_zero_point)
 		instance.flux = validated_data.get('flux', instance.flux)
 		instance.flux_err = validated_data.get('flux_err', instance.flux_err)
@@ -104,9 +101,7 @@ class HostPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = HostPhotometry
-		fields = ('url', 'id', 'photometry', 'band', 'obs_date', 'flux_zero_point', 
-			'flux', 'flux_err', 'mag', 'mag_err', 'forced', 'dq', 'created_by', 
-			'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return HostPhotometry.objects.create(**validated_data)
@@ -116,6 +111,7 @@ class HostPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 		instance.band_id = validated_data.get('obs_group', instance.band)
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 		
+		instance.obs_date = validated_data.get('obs_date', instance.obs_date)
 		instance.flux_zero_point = validated_data.get('flux_zero_point', instance.flux_zero_point)
 		instance.flux = validated_data.get('flux', instance.flux)
 		instance.flux_err = validated_data.get('flux_err', instance.flux_err)
@@ -136,9 +132,7 @@ class TransientImageSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = TransientImage
-		fields = ('url', 'id', 'phot_data', 'img_file', 'zero_point', 'zero_point_err', 
-			'sky', 'sky_rms', 'dcmp_file', 'created_by', 'created_date', 'modified_by', 
-			'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return TransientImage.objects.create(**validated_data)
@@ -165,9 +159,7 @@ class HostImageSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = HostImage
-		fields = ('url', 'id', 'phot_data', 'img_file', 'zero_point', 'zero_point_err', 
-			'sky', 'sky_rms', 'dcmp_file', 'created_by', 'created_date', 'modified_by', 
-			'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return HostImage.objects.create(**validated_data)

@@ -11,9 +11,7 @@ class TelescopeSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = Telescope
-		fields = ('url', 'id', 'observatory', 'name', 'latitude',
-			'longitude', 'elevation',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return Telescope.objects.create(**validated_data)

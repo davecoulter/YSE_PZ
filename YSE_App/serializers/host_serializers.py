@@ -7,17 +7,13 @@ class HostSerializer(serializers.HyperlinkedModelSerializer):
 	host_sed = serializers.HyperlinkedRelatedField(queryset=HostSED.objects.all(), allow_null=True, required=False, view_name='hostsed-detail')
 	band_sextract = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True, required=False, view_name='photometricband-detail')
 	best_spec = serializers.HyperlinkedRelatedField(queryset=HostSpectrum.objects.all(), allow_null=True, required=False, view_name='hostspectrum-detail')
-	transient_host_rank = serializers.HyperlinkedRelatedField(queryset=TransientHostRank.objects.all(), allow_null=True, required=False, view_name='transienthostrank-detail')
 	
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
 		model = Host
-		fields = ('url', 'id', 'host_morphology', 'host_sed', 'band_sextract', 'best_spec', 
-			'transient_host_rank', 'ra', 'dec', 'name', 'redshift', 'redshift_err',
-			'r_a', 'r_b', 'theta', 'eff_offset', 'photo_z', 'photo_z_err', 'photo_z_source',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return Host.objects.create(**validated_data)
@@ -27,7 +23,6 @@ class HostSerializer(serializers.HyperlinkedModelSerializer):
 		instance.host_sed_id = validated_data.get('host_sed', instance.host_sed)
 		instance.band_sextract_id = validated_data.get('band_sextract', instance.band_sextract)
 		instance.best_spec_id = validated_data.get('best_spec', instance.best_spec)
-		instance.transient_host_rank_id = validated_data.get('transient_host_rank', instance.transient_host_rank)
 
 		instance.ra = validated_data.get('ra', instance.ra)
 		instance.dec = validated_data.get('dec', instance.dec)
@@ -41,6 +36,7 @@ class HostSerializer(serializers.HyperlinkedModelSerializer):
 		instance.photo_z = validated_data.get('photo_z', instance.photo_z)
 		instance.photo_z_err = validated_data.get('photo_z_err', instance.photo_z_err)
 		instance.photo_z_source = validated_data.get('photo_z_source', instance.photo_z_source)
+		instance.transient_host_rank = validated_data.get('transient_host_rank', instance.transient_host_rank)
 
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 		
@@ -56,11 +52,7 @@ class HostSEDSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = HostSED
-		fields = ('url', 'id', 'sed_type', 'metalicity', 'metalicity_err',
-			'log_SFR', 'log_SFR_err', 'log_sSFR', 'log_sSFR_err', 'log_mass', 'log_mass_err',
-			'ebv', 'ebv_err', 'log_age', 'log_age_err', 'redshift', 'redshift_err',
-			'fit_chi2', 'fit_n', 'fit_plot_file',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return HostSED.objects.create(**validated_data)

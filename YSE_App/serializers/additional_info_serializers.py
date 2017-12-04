@@ -11,8 +11,7 @@ class TransientWebResourceSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = TransientWebResource
-		fields = ('url', 'id', 'transient', 'information_source', 'information_text',
-			'resource_url', 'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return TransientWebResource.objects.create(**validated_data)
@@ -39,8 +38,7 @@ class HostWebResourceSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = HostWebResource
-		fields = ('url', 'id', 'host', 'information_source', 'information_text',
-			'resource_url', 'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return HostWebResource.objects.create(**validated_data)

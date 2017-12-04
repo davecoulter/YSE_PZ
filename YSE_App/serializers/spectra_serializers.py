@@ -14,11 +14,7 @@ class TransientSpectrumSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = TransientSpectrum
-		fields = ('url', 'id', 'transient', 'instrument', 'obs_group', 'followup',
-			'spec_phase', 'ra', 'dec', 'obs_date', 'redshift',
-			'redshift_err', 'redshift_quality', 'spec_plot_file', 'spec_data_file', 
-			'spectrum_notes', 'rlap', 'snid_plot_file',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return TransientSpectrum.objects.create(**validated_data)
@@ -60,10 +56,7 @@ class HostSpectrumSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = HostSpectrum
-		fields = ('url', 'id', 'host', 'instrument', 'obs_group', 'followup',
-			'ra', 'dec', 'obs_date', 'redshift', 'redshift_err', 'redshift_quality',
-			'tdr', 'spec_plot_file', 'spec_data_file', 'spectrum_notes',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return HostSpectrum.objects.create(**validated_data)
@@ -99,9 +92,7 @@ class TransientSpecDataSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = TransientSpecData
-		fields = ('url', 'id', 'spectrum', 'wavelength', 'flux',
-			'wavelength_err', 'flux_err',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return TransientSpecData.objects.create(**validated_data)
@@ -128,9 +119,7 @@ class HostSpecDataSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = HostSpecData
-		fields = ('url', 'id', 'spectrum', 'wavelength', 'flux',
-			'wavelength_err', 'flux_err',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return HostSpecData.objects.create(**validated_data)

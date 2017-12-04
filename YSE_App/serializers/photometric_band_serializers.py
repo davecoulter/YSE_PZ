@@ -10,8 +10,7 @@ class PhotometricBandSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = PhotometricBand
-		fields = ('url', 'id', 'instrument', 'name', 'lambda_eff', 'throughput_file',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return PhotometricBand.objects.create(**validated_data)

@@ -44,7 +44,6 @@ class Host(BaseModel):
 	host_sed = models.ForeignKey(HostSED, null=True, blank=True, on_delete=models.SET_NULL)
 	band_sextract = models.ForeignKey(PhotometricBand, null=True, blank=True, on_delete=models.SET_NULL)
 	best_spec = models.ForeignKey('HostSpectrum', related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
-	transient_host_rank = models.ForeignKey(TransientHostRank, null=True, blank=True, on_delete=models.SET_NULL)
 
 	### Properties ###
 	# Required
@@ -62,6 +61,7 @@ class Host(BaseModel):
 	photo_z = models.FloatField(null=True, blank=True)
 	photo_z_err = models.FloatField(null=True, blank=True)
 	photo_z_source = models.CharField(max_length=64, null=True, blank=True)
+	transient_host_rank = models.IntegerField(null=True, blank=True)
 
 	def HostString(self):
 		ra_str, dec_str = GetSexigesimalString(self.ra, self.dec)

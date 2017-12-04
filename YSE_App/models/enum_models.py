@@ -1,14 +1,6 @@
 from django.db import models
 from YSE_App.models.base import *
 
-class TransientHostRank(BaseModel):
-	### Properties ###
-	# Required
-	rank = models.IntegerField()
-
-	def __str__(self):
-		return str(self.rank)
-
 # If a status gets accidentally deleted, create a proxy status created/modified by `admin` superuser (will always be user.id == 1)
 def get_sentinel_transientstatus():
 	return TransientStatus.objects.get_or_create(name='StatusDeleted', created_by_id='1', modified_by_id='1')[0]

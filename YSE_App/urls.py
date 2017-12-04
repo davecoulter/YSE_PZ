@@ -3,9 +3,12 @@ from django.conf import settings
 from django.contrib.auth import views as auth_views
 from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import DefaultRouter
+from rest_framework.schemas import get_schema_view
 
 from . import views
 from . import api_views
+
+schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
@@ -27,7 +30,6 @@ urlpatterns = [
 router = DefaultRouter()
 router.register(r'transientwebresources', api_views.TransientWebResourceViewSet)
 router.register(r'hostwebresources', api_views.HostWebResourceViewSet)
-router.register(r'transienthostranks', api_views.TransientHostRankViewSet)
 router.register(r'transientstatuses', api_views.TransientStatusViewSet)
 router.register(r'followupstatuses', api_views.FollowupStatusViewSet)
 router.register(r'taskstatuses', api_views.TaskStatusViewSet)
@@ -51,6 +53,7 @@ router.register(r'logs', api_views.LogViewSet)
 router.register(r'transientobservationtasks', api_views.TransientObservationTaskViewSet)
 router.register(r'hostobservationtasks', api_views.HostObservationTaskViewSet)
 router.register(r'observatories', api_views.ObservatoryViewSet)
+router.register(r'oncalldates', api_views.OnCallDateViewSet)
 router.register(r'transientphotometry', api_views.TransientPhotometryViewSet)
 router.register(r'hostphotometry', api_views.HostPhotometryViewSet)
 router.register(r'transientphotdata', api_views.TransientPhotDataViewSet)
@@ -58,6 +61,7 @@ router.register(r'hostphotdata', api_views.HostPhotDataViewSet)
 router.register(r'transientimages', api_views.TransientImageViewSet)
 router.register(r'hostimages', api_views.HostImageViewSet)
 router.register(r'photometricbands', api_views.PhotometricBandViewSet)
+router.register(r'principalinvestigators', api_views.PrincipalInvestigatorViewSet)
 router.register(r'transientspectra', api_views.TransientSpectrumViewSet)
 router.register(r'hostspectra', api_views.HostSpectrumViewSet)
 router.register(r'transientspectdata', api_views.TransientSpecDataViewSet)
@@ -73,6 +77,7 @@ router.register(r'users', api_views.UserViewSet)
 
 # Login/Logout
 api_url_patterns = [url(r'^api/', include(router.urls)), 
+					url(r'^api/schema/$', schema_view),
 					url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),]
 
 urlpatterns += api_url_patterns

@@ -23,11 +23,6 @@ class HostWebResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 
 ### `Enum` ViewSets ###
 # Only exposing GET
-class TransientHostRankViewSet(viewsets.ReadOnlyModelViewSet):
-	queryset = TransientHostRank.objects.all()
-	serializer_class = TransientHostRankSerializer
-	permission_classes = (permissions.IsAuthenticated,)
-
 class TransientStatusViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = TransientStatus.objects.all()
 	serializer_class = TransientStatusSerializer
@@ -149,6 +144,12 @@ class ObservatoryViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	serializer_class = ObservatorySerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+### `On Call Date` ViewSets ###
+class OnCallDateViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = OnCallDate.objects.all()
+	serializer_class = OnCallDateSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
 ### `Phot` ViewSets ###
 class TransientPhotometryViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = TransientPhotometry.objects.all()
@@ -184,6 +185,12 @@ class HostImageViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 class PhotometricBandViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = PhotometricBand.objects.all()
 	serializer_class = PhotometricBandSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
+### `Principal Investigator` ViewSets ###
+class PrincipalInvestigatorViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = PrincipalInvestigator.objects.all()
+	serializer_class = PrincipalInvestigatorSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
 ### `Spectra` ViewSets ###

@@ -8,9 +8,7 @@ class ObservatorySerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = Observatory
-		fields = ('url', 'id', 'name', 'utc_offset', 'tz_name',
-			'DLS_utc_offset', 'DLS_tz_name', 'DLS_start', 'DLS_end',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return Observatory.objects.create(**validated_data)

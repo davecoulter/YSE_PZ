@@ -6,8 +6,10 @@ from YSE_App.serializers.instrument_serializers import *
 from YSE_App.serializers.log_serializers import *
 from YSE_App.serializers.observation_task_models import *
 from YSE_App.serializers.observatory_serializers import *
+from YSE_App.serializers.on_call_date_serializers import *
 from YSE_App.serializers.phot_serializers import *
 from YSE_App.serializers.photometric_band_serializers import *
+from YSE_App.serializers.principal_investigator_serializers import *
 from YSE_App.serializers.spectra_serializers import *
 from YSE_App.serializers.telescope_resource_serializers import *
 from YSE_App.serializers.telescope_serializers import *

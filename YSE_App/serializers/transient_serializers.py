@@ -20,13 +20,7 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = Transient
-		fields = ('url', 'id', 'status', 'obs_group', 'non_detect_band',
-			'best_spec_class', 'photo_class', 'best_spectrum', 'host',
-			'abs_mag_peak_band', 'name', 'ra', 'dec', 'disc_date',
-			'candidate_hosts', 'redshift', 'redshift_err', 'redshift_source',
-			'non_detect_date', 'non_detect_limit', 'mw_ebv', 'abs_mag_peak',
-			'abs_mag_peak_date', 'antares_classification', 'internal_survey', 'postage_stamp_file', 
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return Transient.objects.create(**validated_data)
@@ -75,8 +69,7 @@ class AlternateTransientNamesSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = AlternateTransientNames
-		fields = ('url', 'id', 'transient', 'obs_group', 'name', 'description', 
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return AlternateTransientNames.objects.create(**validated_data)

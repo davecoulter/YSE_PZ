@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from rest_framework.reverse import reverse
 from YSE_App.models import *
 from django.contrib.auth.models import User
 
@@ -11,8 +10,7 @@ class InstrumentSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = Instrument
-		fields = ('url', 'id', 'telescope', 'name', 'description',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return Instrument.objects.create(**validated_data)
@@ -37,8 +35,7 @@ class InstrumentConfigSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = InstrumentConfig
-		fields = ('url', 'id', 'instrument', 'name',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return InstrumentConfig.objects.create(**validated_data)
@@ -63,8 +60,7 @@ class ConfigElementSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = ConfigElement
-		fields = ('url', 'id', 'instrument', 'instrument_config', 'name',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		configs = validated_data.pop('instrument_config')

@@ -12,10 +12,7 @@ class TransientObservationTaskSerializer(serializers.HyperlinkedModelSerializer)
 
 	class Meta:
 		model = TransientObservationTask
-		fields = ('url', 'id', 'followup', 'instrument_config', 'status',
-			'exposure_time', 'number_of_exposures', 'desired_obs_date', 'actual_obs_date',
-			'description',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return TransientObservationTask.objects.create(**validated_data)
@@ -47,10 +44,7 @@ class HostObservationTaskSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = HostObservationTask
-		fields = ('url', 'id', 'followup', 'instrument_config', 'status',
-			'exposure_time', 'number_of_exposures', 'desired_obs_date', 'actual_obs_date',
-			'description',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return HostObservationTask.objects.create(**validated_data)

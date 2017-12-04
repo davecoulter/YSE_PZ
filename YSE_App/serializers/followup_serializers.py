@@ -15,10 +15,7 @@ class TransientFollowupSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = TransientFollowup
-		fields = ('url', 'id', 'transient', 'status', 'too_resource', 'classical_resource', 
-			'queued_resource', 'valid_start', 'valid_stop', 'spec_priority', 'phot_priority',
-			'offset_star_ra', 'offset_star_dec', 'offset_north', 'offset_east',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return TransientFollowup.objects.create(**validated_data)
@@ -58,10 +55,7 @@ class HostFollowupSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = HostFollowup
-		fields = ('url', 'id', 'host', 'status', 'too_resource', 'classical_resource', 
-			'queued_resource', 'valid_start', 'valid_stop', 'spec_priority', 'phot_priority',
-			'offset_star_ra', 'offset_star_dec', 'offset_north', 'offset_east',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return HostFollowup.objects.create(**validated_data)

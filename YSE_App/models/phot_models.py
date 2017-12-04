@@ -37,7 +37,7 @@ class HostPhotometry(Photometry):
 	followup = models.ForeignKey(HostFollowup, null=True, blank=True, on_delete=models.SET_NULL) # Can by null if data is from external source
 
 	def __str__(self):
-		return 'Host Phot: %s - %s' % (self.host.HostString(), self.followup.valid_start.strftime('%m/%d/%Y'))
+		return 'Host Phot: %s ' % (self.host.HostString())
 
 class PhotData(BaseModel):
 

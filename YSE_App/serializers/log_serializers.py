@@ -34,12 +34,7 @@ class LogSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = Log
-		fields = ('url', 'id', 'transient', 'host', 'host_sed', 'transient_image',
-			'host_image', 'transient_spectrum', 'host_spectrum', 'transient_photometry',
-			'host_photometry', 'transient_web_resource', 'host_web_resource', 'transient_observation_task',
-			'host_observation_task', 'transient_followup', 'host_followup', 'instrument',
-			'instrument_config', 'config_element', 'comment',
-			'created_by', 'created_date', 'modified_by', 'modified_date')
+		fields = "__all__"
 
 	def create(self, validated_data):
 		return Log.objects.create(**validated_data)
