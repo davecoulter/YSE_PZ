@@ -708,7 +708,7 @@ class processTNS():
                                         'photometry':phottableid}
                         photdataid = db.post_object_to_DB('photdata',photdatadict)
 
-                        
+
         except ValueError as err:
             print("%s. Exiting..." % err.args)
             mail.close()
@@ -734,10 +734,12 @@ class processTNS():
         return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
         
 def runDBcommand(cmd):
-    tstart = time.time()
-    while time.time() - tstart < 20:
-        return(json.loads(os.popen(cmd).read()))
-        
+    try:
+        tstart = time.time()
+        while time.time() - tstart < 20:
+            return(json.loads(os.popen(cmd).read()))
+    except:
+        raise RuntimeError('Error : cmd %s failed!!'%cmd)
 if __name__ == "__main__":
     # execute only if run as a script
 
