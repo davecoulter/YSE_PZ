@@ -8,6 +8,7 @@ import requests
 
 from .models import *
 from .forms import *
+from .common import utilities
 
 # Create your views here.
 
@@ -76,7 +77,8 @@ def transient_detail(request, transient_id):
 
 		context = {
 			'transient':transient[0],
-			'followups':followups
+			'followups':followups,
+                        'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient)
 		}
 
 		return render(request,

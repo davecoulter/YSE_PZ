@@ -3,6 +3,7 @@ import astropy.units as u
 import numpy as np
 from astroplan import Observer
 from astropy.time import Time
+import requests
 
 def GetSexigesimalString(ra_decimal, dec_decimal):
 	c = SkyCoord(ra_decimal,dec_decimal,unit=(u.deg, u.deg))
@@ -18,7 +19,7 @@ def GetSexigesimalString(ra_decimal, dec_decimal):
 
 	return (ra_string, dec_string)
 
-def get_psstamp_url(request, transient_id):
+def get_psstamp_url(request, transient_id, Transient):
 
 	ps1url = "http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f%%2B%.7f&filter=color"%(
 		Transient.objects.get(pk=transient_id).ra,Transient.objects.get(pk=transient_id).dec)
@@ -96,6 +97,32 @@ def airmassplot(request, transient_id, obs, observatory):
 	plot_airmass(target, tel, observe_time, ax=ax)    
 	#ax.axvline(night_start)
 	#ax.axvline(night_end)
+	
+	response=django.http.HttpResponse(content_type='image/png')
+	canvas.print_png(response)
+	return response
+
+def lightcurveplot(request, transient_id, obs, observatory):
+	import random
+	import django
+	import datetime
+	
+	from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+	from matplotlib.figure import Figure
+	from matplotlib.dates import DateFormatter
+	#from matplotlib import rcParams
+	#rcParams['figure.figsize'] = (7,5)
+	
+	transient = Transient.objects.get(pk=transient_id)
+		
+	fig=Figure()
+	ax=fig.add_subplot(111)
+	canvas=FigureCanvas(fig)
+
+	ax.set_title("%s, %s, %s"%(observatory,transient.name, obs))
+
+	for f in filt:
+		ax.errorbar(mjd,flux,yerr=fluxerr,fmt='o')
 	
 	response=django.http.HttpResponse(content_type='image/png')
 	canvas.print_png(response)
