@@ -344,13 +344,13 @@ class DBOps():
                 cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
         objectdata = runDBcommand(cmd)
 
-        if type(objectdata) != list and 'id' not in objectdata:
+        if type(objectdata) != list and 'url' not in objectdata:
             import pdb; pdb.set_trace()
             raise RuntimeError('Error : failure adding object')
         if return_full:
             return(objectdata)
         else:
-            return(objectdata['id'])
+            return(objectdata['url'])
 
     def put_object_to_DB(self,table,objectdict,objectid,return_full=False):
         cmd = '%s%s%s/ '%(self.baseputurl,self.options.__dict__['%sapi'%table],objectid)
@@ -361,13 +361,13 @@ class DBOps():
                 cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
         objectdata = runDBcommand(cmd)
 
-        if type(objectdata) != list and 'id' not in objectdata:
+        if type(objectdata) != list and 'url' not in objectdata:
             import pdb; pdb.set_trace()
             raise RuntimeError('Error : failure adding object')
         if return_full:
             return(objectdata)
         else:
-            return(objectdata['id'])
+            return(objectdata['url'])
     
     def get_ID_from_DB(self,tablename,fieldname):
         cmd = '%s%s/'%(self.basegeturl,tablename)
@@ -377,7 +377,7 @@ class DBOps():
         idlist,namelist = [],[]
         for i in range(len(data)):
             namelist += [data[i]['name']]
-            idlist += [data[i]['id']]
+            idlist += [data[i]['url']]
 
         if fieldname not in namelist: return(None)
 
@@ -653,10 +653,10 @@ class processTNS():
                         newobjdict = {'name':objs[j].decode("utf-8"),
                                       'ra':sc.ra.deg,
                                       'dec':sc.dec.deg,
-                                      'status':'<url>/%s/'%statusid,
-                                      'obs_group':'<url>/%s/'%groupid,
+                                      'status':statusid,
+                                      'obs_group':groupid,
                                       'candidate_hosts':hosturls,
-                                      'best_spec_class':'<url>/%s/'%eventid,
+                                      'best_spec_class':eventid,
                                       'disc_date':disc_date.replace(' ','T')}
 
                         if dbid:
@@ -672,22 +672,22 @@ class processTNS():
                             instrumentid = db.get_ID_from_DB('instruments','Unknown')
                             if not instrumentid:
                                 observatoryid = db.post_object_to_DB('observatory',{'name':'Unknown','tz_name':0,'utc_offset':0})
-                                teldict= {'name':'Unknown','observatory':'<url>/%s/'%observatoryid,'longitude':0,'latitude':0,'elevation':0}
+                                teldict= {'name':'Unknown','observatory':observatoryid,'longitude':0,'latitude':0,'elevation':0}
                                 telid = db.post_object_to_DB('telescope',teldict)
-                                instrumentid = db.post_object_to_DB('instrument',{'name':'Unknown','telescope':'<url>/%i/'%telid})
+                                instrumentid = db.post_object_to_DB('instrument',{'name':'Unknown','telescope':telid})
                         if not bandid:
-                            bandid = db.post_object_to_DB('band',{'name':disc_filter,'instrument':'<url>/%s/'%instrumentid,'lambda_eff':0})
+                            bandid = db.post_object_to_DB('band',{'name':disc_filter,'instrument':instrumentid,'lambda_eff':0})
                         
-                        phottabledict = {'transient':'<url>/%s/'%transientid,
-                                         'obs_group':'<url>/%s/'%groupid,
-                                         'instrument':'<url>/%s/'%instrumentid}
+                        phottabledict = {'transient':transientid,
+                                         'obs_group':groupid,
+                                         'instrument':instrumentid}
                         phottableid = db.post_object_to_DB('photometry',phottabledict)
                         
                         # put in the photometry
                         photdatadict = {'obs_date':disc_date.replace(' ','T'),
                                         'mag':disc_mag,
-                                        'band':'<url>/%s/'%bandid,
-                                        'photometry':'<url>/%s/'%phottableid}
+                                        'band':bandid,
+                                        'photometry':phottableid}
                         photdataid = db.post_object_to_DB('photdata',photdatadict)
 
                         
@@ -709,7 +709,7 @@ class processTNS():
         idlist,namelist = [],[]
         for i in range(len(data)):
             namelist += [data[i]['name']]
-            idlist += [data[i]['id']]
+            idlist += [data[i]['url']]
 
         if fieldname not in namelist: return(None)
 
