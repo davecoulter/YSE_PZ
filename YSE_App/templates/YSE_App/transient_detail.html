@@ -30,9 +30,10 @@
 					<br>
 					<b>Best Spec. Class</b><br>
 					{{transient.best_spec_class}}<br>
+					<b><a href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing">Follow-up Resources</a></b><br>
 					<b>External Resources</b><br>
-					<a target="_blank" href="http://nedwww.ipac.caltech.edu/cgi-bin/nph-objsearch?lon={{ transient.ra }}000d&lat=24.14d&radius=10.0&search_type=Near+Position+Search">NED</a>
-					<a href="http://simbad.u-strasbg.fr/simbad/sim-coo?protocol=html&amp;NbIdent=1&amp;Radius=1&amp;Radius.unit=arcmin&amp;CooFrame=FK5&amp;CooEpoch=2000&amp;CooEqui=2000&amp;Coord={{ transient.ra }}%2B{{ transient.dec }}" target="_blank">SIMBAD</a>
+					<a target="_blank" href="http://nedwww.ipac.caltech.edu/cgi-bin/nph-objsearch?lon={{ transient.ra }}000d&lat={{ transient.dec }}d&radius=10.0&search_type=Near+Position+Search">NED</a>
+					<a href="http://simbad.u-strasbg.fr/simbad/sim-coo?protocol=html&amp;NbIdent=1&amp;Radius=1&amp;Radius.unit=arcmin&amp;CooFrame=FK5&amp;CooEpoch=2000&amp;CooEqui=2000&amp;Coord={{ transient.ra }}+{{ transient.dec }}" target="_blank">SIMBAD</a>
 					<a target="_blank" href="http://vizier.u-strasbg.fr/viz-bin/VizieR?-source=&-out.add=_r&-out.add=_RAJ%2C_DEJ&-sort=_r&-to=&-out.max=20&-meta.ucd=2&-meta.foot=1&-c={{ transient.ra }}+{{ transient.dec }}&-c.rs=10">VizieR</a>
 					<a target="_blank" href="http://irsa.ipac.caltech.edu/applications/wise/#id=Hydra_wise_wise_1&RequestClass=ServerRequest&DoSearch=true&intersect=CENTER&subsize=0.16666666800000002&mcenter=all&schema=allsky-4band&dpLevel=3a&band=1,2,3,4&UserTargetWorldPt={{ transient.ra }};{{ transient.dec }};EQ_J2000&SimpleTargetPanel.field.resolvedBy=nedthensimbad&preliminary_data=no&coaddId=&projectId=wise&searchName=wise_1&shortDesc=Position&isBookmarkAble=true&isDrillDownRoot=true&isSearchResult=true">WISE</a>
 					<a target="_blank" title="Download DSS image" href="http://archive.stsci.edu/cgi-bin/dss_search?h=5.0&w=5.0&f=fits&v=poss2ukstu_red&r={{ transient.ra }}d&d=+{{ transient.dec }}2d&e=J2000&c=none">DSS</a>
@@ -65,7 +66,8 @@
 
 								<div class="tab-content">
 									<div class="active tab-pane" id="followup">
-										<div class="box">
+									  <div class="box">
+
 											{% for f in followups %}
 											<div class="box-header">
 												<h3 class="box-title">{{ f.name }} Tasks</h3>
