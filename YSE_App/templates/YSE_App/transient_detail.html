@@ -38,7 +38,9 @@
 					{{ first_mag }}<br>
 					{{ first_magdate }}<br>
 					{{ first_filter }}<br>
-
+					<b>Status</b><br>
+					{{ transient.status }}<br>
+					
 					<b>External Resources</b><br>
 					<a target="_blank" href="http://nedwww.ipac.caltech.edu/cgi-bin/nph-objsearch?lon={{ transient.ra }}000d&lat={{ transient.dec }}d&radius=10.0&search_type=Near+Position+Search">NED</a>
 					<a href="http://simbad.u-strasbg.fr/simbad/sim-coo?protocol=html&amp;NbIdent=1&amp;Radius=1&amp;Radius.unit=arcmin&amp;CooFrame=FK5&amp;CooEpoch=2000&amp;CooEqui=2000&amp;Coord={{ transient.ra }}+{{ transient.dec }}" target="_blank">SIMBAD</a>
@@ -76,6 +78,7 @@
 									<div class="active tab-pane" id="followup">
 									  <div class="box">
 									    <p><a href="{% url 'admin:YSE_App_transientfollowup_add'  %}">Add Followup</a></p>
+									    <p><a href="{% url 'admin:YSE_App_transient_change' transient.id %}">Change Transient Status</a></p>
 									    <b><a href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing" target="_blank">Follow-up Guidelines</a></b><br>
 
 									    {% if observatory_list %}
