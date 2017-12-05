@@ -234,6 +234,7 @@ class QueuedResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 class ClassicalResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = ClassicalResource.objects.all()
 	serializer_class = ClassicalResourceSerializer
+	lookup_field = "id"
 	permission_classes = (permissions.IsAuthenticated,)
 
 class ClassicalObservingDateViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
