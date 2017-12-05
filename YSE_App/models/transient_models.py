@@ -4,6 +4,8 @@ from YSE_App.models.enum_models import *
 from YSE_App.models.photometric_band_models import *
 from YSE_App.models.host_models import *
 from YSE_App.common.utilities import GetSexigesimalString
+from YSE_App.common.alert import IsK2Pixel, SendTransientAlert
+from django.dispatch import receiver
 
 class Transient(BaseModel):
 	### Entity relationships ###
@@ -45,6 +47,14 @@ class Transient(BaseModel):
 
 	def __str__(self):
 		return self.name
+
+@receiver(models.signals.post_save, sender=Transient)
+def execute_after_save(sender, instance, created, *args, **kwargs):
+	if created:
+		print("Transient Created: %s" % instance.name)
+		if IsK2Pixel(instance.ra, instance.dec):
+			SendTransientAlert()
+
 
 # Alternate Host names?
 class AlternateTransientNames(BaseModel):

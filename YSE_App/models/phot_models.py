@@ -68,7 +68,7 @@ class TransientPhotData(PhotData):
 	photometry = models.ForeignKey(TransientPhotometry, on_delete=models.CASCADE)
 
 	def __str__(self):
-		return '%s - %s - %s' % (self.photometry.transient.name, self.band.name, self.obs_date)
+		return '%s - %s - %s' % (self.photometry.transient.name, self.band.name, self.obs_date.strftime('%m/%d/%Y'))
 
 class HostPhotData(PhotData):
 	# Entity relationships ###

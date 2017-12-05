@@ -44,7 +44,7 @@ class QueuedResource(TelescopeResource):
 		return "Queued Resource: %s; Valid: %s to %s" % (self.telescope.name, self.begin_date_valid.strftime('%m/%d/%Y'), self.end_date_valid.strftime('%m/%d/%Y'))
 
 class ClassicalResource(TelescopeResource):
-
+	
 	def __str__(self):
 		return "Classical Resource: %s; Valid: %s to %s" % (self.telescope.name, self.begin_date_valid.strftime('%m/%d/%Y'), self.end_date_valid.strftime('%m/%d/%Y'))
 
