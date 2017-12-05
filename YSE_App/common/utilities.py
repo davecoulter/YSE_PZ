@@ -1,4 +1,5 @@
 from astropy.coordinates import SkyCoord
+from astropy.coordinates import EarthLocation
 import astropy.units as u
 import numpy as np
 from astroplan import Observer
@@ -37,7 +38,7 @@ def get_psstamp_url(request, transient_id, Transient):
 		jpegurl = "http:%s"%jpegurl
 	else:
 		jpegurl=""
-	print(jpegurl)
+
 	return(jpegurl)
 
 def telescope_can_observe(ra,dec,date,tel):
@@ -56,50 +57,6 @@ def telescope_can_observe(ra,dec,date,tel):
 					break
 
 	return(can_obs)
-
-
-## We should refactor this so that it takes:
-# - transient
-# - observatory (or maybe array of observatory)
-# - 
-# And it can returns the data which can be plotted on the front end
-# i.e. a tuple of (datetime, airmass) that ChartJS can plot on the 
-# client 
-def airmassplot(request, transient_id, obs, observatory):
-	import random
-	import django
-	import datetime
-	from astroplan.plots import plot_airmass
-	
-	from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-	from matplotlib.figure import Figure
-	from matplotlib.dates import DateFormatter
-	#from matplotlib import rcParams
-	#rcParams['figure.figsize'] = (7,5)
-	
-	transient = Transient.objects.get(pk=transient_id)
-	
-	target = SkyCoord(transient.ra,transient.dec,unit=u.deg)
-	time = Time(obs, format='iso')
-	tel = Observer.at_site(observatory)
-	
-	fig=Figure()
-	ax=fig.add_subplot(111)
-	canvas=FigureCanvas(fig)
-
-	ax.set_title("%s, %s, %s"%(observatory,transient.name, obs))
-
-	night_start = tel.twilight_evening_astronomical(time,which="previous")
-	night_end = tel.twilight_morning_astronomical(time,which="previous")
-	delta_t = night_end - night_start
-	observe_time = night_start + delta_t*np.linspace(0, 1, 75)
-	plot_airmass(target, tel, observe_time, ax=ax)    
-	#ax.axvline(night_start)
-	#ax.axvline(night_end)
-	
-	response=django.http.HttpResponse(content_type='image/png')
-	canvas.print_png(response)
-	return response
 
 def lightcurveplot(request, transient_id, obs, observatory):
 	import random

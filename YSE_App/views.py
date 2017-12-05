@@ -80,7 +80,14 @@ def transient_detail(request, transient_id):
                 followups = TransientFollowup.objects.filter(transient__pk=transient_id)
                 lastphotdata = view_utils.get_recent_phot_for_transient(transient_id=transient_id)
                 firstphotdata = view_utils.get_first_phot_for_transient(transient_id=transient_id)
-                
+
+                obsnights,tellist = view_utils.getObsNights(transient[0])
+                too_resources = ToOResource.objects.all()
+                for i in range(len(too_resources)):
+                        telescope = too_resources[i].telescope
+                        too_resources[i].telescope_id = Telescope.objects.filter(name=telescope)[0].id
+                        too_resources[i].deltahours = too_resources[i].awarded_too_hours - too_resources[i].used_too_hours
+                        
                 context = {
 			'transient':transient[0],
 			'followups':followups,
@@ -91,7 +98,9 @@ def transient_detail(request, transient_id):
                         'first_mag':firstphotdata.mag,
                         'first_filter':firstphotdata.band,
                         'first_magdate':firstphotdata.obs_date,
-                        
+                        'telescope_list': tellist,
+	 	        'observing_nights': obsnights,
+                        'too_resource_list': too_resources
 		}
 
                 return render(request,
@@ -100,13 +109,6 @@ def transient_detail(request, transient_id):
 	else:
 		return Http404('Transient not found')
 
-	# ra,dec = get_coords_sexagesimal(transient.ra,transient.dec)
-	# obsnights,obslist = (),()
-	# for o in ObservingNightDates.objects.order_by('-observing_night')[::-1]:
-	# 	can_obs = telescope_can_observe(transient.ra,transient.dec, 
-	# 		str(o.observing_night).split()[0],str(o.observatory))
-	# 	obsnights += ([o,can_obs],)
-	# 	if can_obs and o.happening_soon() and o.observatory not in obslist: obslist += (o.observatory,)
 
 	# return render(request, 'YSE_App/transient_detail.html', 
 	# 	{'transient': transient,

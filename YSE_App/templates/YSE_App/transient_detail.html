@@ -81,19 +81,17 @@
 									    <p><a href="{% url 'admin:YSE_App_transient_change' transient.id %}">Change Transient Status</a></p>
 									    <b><a href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing" target="_blank">Follow-up Guidelines</a></b><br>
 
-									    {% if observatory_list %}
+									    {% if telescope_list %}
 									    <ul>
 									      <b>In the next two weeks, {{ transient }} can be observed with:</b><br>
 									      <ul>
-										{% for observatory in observatory_list %}
-										<b>{{ observatory }}</b><br>
+										{% for telescope in telescope_list %}
+										<b>{{ telescope }}</b><br>
 										<ul>
 										  {% for obsnight in observing_nights %}
-										  {% if obsnight.0.happening_soon and obsnight.0.observatory == observatory and obsnight.1 %}
-										  <b>{{obsnight.0.telescope}} {{ obsnight.0 }}</b><br>
-										  {% with obsnight.0 as obs %}
-										  <img src="{% url 'airmassplot' transient.id obs observatory %}" style='width:240px' alt="" /><br>
-										  {% endwith %}
+										  {% if obsnight.0.happening_soon and obsnight.0.telescope == telescope.tostring and obsnight.1 %}
+										  <b>{{ obsnight.0.obs_date }}</b><br>
+										  <img src="{% url 'airmassplot' transient.id obsnight.0.id telescope.id %}" style='width:240px' alt="" /><br>
 										  {% endif %}
 										  {% endfor %}
 										</ul>
@@ -102,6 +100,24 @@
 									    </ul>
 									    {% else %}
 									    <p>No upcoming observing nights for this target.</p>
+									    {% endif %}
+									    {% if too_resource_list %}
+									    <ul>
+									      <b>These ToO resources can observe {{ transient }}:</b><br>
+									      <ul>
+										{% for too_resource in too_resource_list %}
+										<b>{{ too_resource.telescope }}</b><br>
+										<ul>
+										  {% if too_resource.deltahours > 0 %}
+										<b>{{ too_resource.deltahours }} ToO hours remaining</b><br>
+										  <img src="{% url 'airmassplot' transient.id 0 too_resource.telescope_id %}" style='width:240px' alt="" /><br>
+										  {% endif %}
+										</ul>
+										{% endfor %}
+									      </ul>
+									    </ul>
+									    {% else %}
+									    <p>No ToO time for this target.</p>
 									    {% endif %}
 									    {% for f in followups %}
 									    <div class="box-header">

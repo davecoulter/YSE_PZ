@@ -6,7 +6,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import DefaultRouter
 from rest_framework.schemas import get_schema_view
 
-from . import views
+from . import views, view_utils
 from . import api_views
 
 schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
@@ -24,8 +24,8 @@ urlpatterns = [
     url(r'^transient_detail/(?P<transient_id>[0-9]+)/$', views.transient_detail, name='transient_detail'),
     url(r'^login/$', views.auth_login, name='auth_login'),
     url(r'^logout/$', views.auth_logout, name='auth_logout'),
-    url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs>[a-zA-Z0-9_-]+)/(?P<observatory>[a-zA-Z0-9]+)", 
-	views.airmassplot, name='airmassplot')
+    url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)/(?P<telescope_id>[a-zA-Z0-9]+)", 
+	view_utils.airmassplot, name='airmassplot')
 ]
 
 router = DefaultRouter()

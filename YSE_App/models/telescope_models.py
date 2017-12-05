@@ -16,3 +16,6 @@ class Telescope(BaseModel):
 
 	def __str__(self):
 		return self.name
+
+	def tostring(self):
+		return self.name

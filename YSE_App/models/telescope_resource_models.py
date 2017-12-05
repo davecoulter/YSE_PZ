@@ -3,6 +3,8 @@ from YSE_App.models.base import *
 from YSE_App.models.enum_models import *
 from YSE_App.models.telescope_models import *
 from YSE_App.models.principal_investigator_models import *
+import datetime
+from django.utils import timezone
 
 class TelescopeResource(BaseModel):
 	class Meta:
