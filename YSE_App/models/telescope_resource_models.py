@@ -58,7 +58,7 @@ class ClassicalObservingDate(BaseModel):
 
 	def happening_soon(self):
 		now = timezone.now()
-		return (now + datetime.timedelta(days=14) >= self.observing_night >= now)
+		return (now + datetime.timedelta(days=14) >= self.obs_date >= now)
 
 	def __str__(self):
-		return "%s - %s" % (self.resource.telescope.name, self.observing_night.strftime('%m/%d/%Y'))
+		return "%s - %s" % (self.resource.telescope.name, self.obs_date.strftime('%m/%d/%Y'))
