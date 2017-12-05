@@ -8,9 +8,13 @@ def get_recent_phot_for_transient(transient_id=None):
     photometry = TransientPhotometry.objects.filter(transient=transient_id)
 
     for p in photometry:
-            photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')
-            
-    return(photdata[0])
+        photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')
+
+    
+    if photometry:    
+        return(photdata[0])
+    else:
+        return(None)
 
 def get_first_phot_for_transient(transient_id=None):
 
@@ -20,7 +24,10 @@ def get_first_phot_for_transient(transient_id=None):
     for p in photometry:
             photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')[::-1]
             
-    return(photdata[0])
+    if photometry:    
+        return(photdata[0])
+    else:
+        return(None)
 
 
 def getObsNights(transient):

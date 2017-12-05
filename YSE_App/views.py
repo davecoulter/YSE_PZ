@@ -87,22 +87,32 @@ def transient_detail(request, transient_id):
                         telescope = too_resources[i].telescope
                         too_resources[i].telescope_id = Telescope.objects.filter(name=telescope)[0].id
                         too_resources[i].deltahours = too_resources[i].awarded_too_hours - too_resources[i].used_too_hours
-                        
-                context = {
-			'transient':transient[0],
-			'followups':followups,
-                        'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
-                        'recent_mag':lastphotdata.mag,
-                        'recent_filter':lastphotdata.band,
-                        'recent_magdate':lastphotdata.obs_date,
-                        'first_mag':firstphotdata.mag,
-                        'first_filter':firstphotdata.band,
-                        'first_magdate':firstphotdata.obs_date,
-                        'telescope_list': tellist,
-	 	        'observing_nights': obsnights,
-                        'too_resource_list': too_resources
-		}
 
+                if lastphotdata and firstphotdata:
+                        context = {
+			        'transient':transient[0],
+			        'followups':followups,
+                                'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
+                                'recent_mag':lastphotdata.mag,
+                                'recent_filter':lastphotdata.band,
+                                'recent_magdate':lastphotdata.obs_date,
+                                'first_mag':firstphotdata.mag,
+                                'first_filter':firstphotdata.band,
+                                'first_magdate':firstphotdata.obs_date,
+                                'telescope_list': tellist,
+	 	                'observing_nights': obsnights,
+                                'too_resource_list': too_resources
+		        }
+                else:
+                        context = {
+			        'transient':transient[0],
+			        'followups':followups,
+                                'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
+                                'telescope_list': tellist,
+	 	                'observing_nights': obsnights,
+                                'too_resource_list': too_resources
+		        }
+                        
                 return render(request,
 			'YSE_App/transient_detail.html',
 			context)
