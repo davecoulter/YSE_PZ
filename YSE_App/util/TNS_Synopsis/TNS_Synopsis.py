@@ -313,6 +313,8 @@ class DBOps():
                               help='base URL to POST/GET,PUT to/from a database (default=%default)')
             parser.add_option('--transientapi', default=config.get('main','transientapi'), type="string",
                               help='URL to POST transients to a database (default=%default)')
+            parser.add_option('--internalsurveyapi', default=config.get('main','internalsurveyapi'), type="string",
+                              help='URL to POST transients to a database (default=%default)')
             parser.add_option('--transientclassesapi', default=config.get('main','transientclassesapi'), type="string",
                               help='URL to POST transients classes to a database (default=%default)')
             parser.add_option('--hostapi', default=config.get('main','hostapi'), type="string",
@@ -644,7 +646,7 @@ class processTNS():
                             groupid = db.get_ID_from_DB('observationgroups','Unknown')#db.post_object_to_DB('observationgroup',{'name':source_group})
 
                         # get the status
-                        statusid = db.get_ID_from_DB('transientstatuses','new')
+                        statusid = db.get_ID_from_DB('transientstatuses','New')
                         if not statusid: raise RuntimeError('Error : not all statuses are defined')
                         
                         # put in the hosts
@@ -663,6 +665,7 @@ class processTNS():
                             
                         # first check if already exists
                         dbid = db.get_ID_from_DB('transients',snid)
+                        k2id = db.get_ID_from_DB('internalsurveys','K2')
                         # then POST or PUT, depending
                         # put in main transient
                         sc = SkyCoord(ras[j].decode("utf-8"),decs[j].decode("utf-8"),FK5,unit=(u.hourangle,u.deg))
@@ -675,7 +678,8 @@ class processTNS():
                                       'host':hosturl,
                                       'candidate_hosts':hostcoords,
                                       'best_spec_class':eventid,
-                                      'disc_date':disc_date.replace(' ','T')}
+                                      'disc_date':disc_date.replace(' ','T'),
+                                      'internal_survey':k2id}
 
                         if dbid:
                             transientid = db.put_object_to_DB('transient',newobjdict,dbid)
