@@ -19,28 +19,32 @@
       <!-- Default box -->
       <div class="box">
         <div class="box-header with-border">
-          <h3 class="box-title">New Transients</h3>
+          <h3 class="box-title">New K2 Transients</h3>
         </div>
         <div class="box-body">
 
-          <table id="new_transient_tbl" class="table table-bordered table-hover">
+          <table id="k2_transient_tbl" class="table table-bordered table-hover">
             <thead>
             <tr>
               <th>Name</th>
               <th>RA</th>
               <th>DEC</th>
               <th>Disc. Date</th>
+              <th>Disc. Mag</th>
               <th>Discovery Source</th>
+	      <th>Internal Survey</th>
             </tr>
             </thead>
             <tbody>
-            {% for t in new_transients %}
+            {% for t in new_k2_transients %}
               <tr>
                 <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
                 <td>{{ t.CoordString.0 }}</td>
                 <td>{{ t.CoordString.1 }}</td>
                 <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+                <td>{{ t.disc_mag }}</td>
                 <td>{{ t.obs_group.name }}</td>
+                <td>{{ t.internal_survey }}</td>
               </tr>
             {% endfor %}
             </tbody>
@@ -57,28 +61,32 @@
       <!-- Default box -->
       <div class="box">
         <div class="box-header with-border">
-          <h3 class="box-title">In-Process Transients</h3>
+          <h3 class="box-title">New Transients</h3>
         </div>
         <div class="box-body">
 
-          <table id="inprocess_transient_tbl" class="table table-bordered table-hover">
+          <table id="new_transient_tbl" class="table table-bordered table-hover">
             <thead>
             <tr>
               <th>Name</th>
               <th>RA</th>
               <th>DEC</th>
               <th>Disc. Date</th>
+	      <th>Disc. Mag</th>
               <th>Discovery Source</th>
+              <th>Internal Survey</th>
             </tr>
             </thead>
             <tbody>
-            {% for t in inprocess_transients %}
+            {% for t in new_transients %}
               <tr>
                 <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
-                <td>{{ t.ra }}</td>
-                <td>{{ t.dec }}</td>
+                <td>{{ t.CoordString.0 }}</td>
+                <td>{{ t.CoordString.1 }}</td>
                 <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+		<td>{{ t.disc_mag }}</td>
                 <td>{{ t.obs_group.name }}</td>
+		<td>{{ t.internal_survey }}</td>
               </tr>
             {% endfor %}
             </tbody>
@@ -92,6 +100,136 @@
       </div>
       <!-- /.box -->
 
+      <!-- Default box -->
+      <div class="box">
+        <div class="box-header with-border">
+          <h3 class="box-title">Watch</h3>
+        </div>
+        <div class="box-body">
+
+          <table id="watch_transient_tbl" class="table table-bordered table-hover">
+            <thead>
+            <tr>
+              <th>Name</th>
+              <th>RA</th>
+              <th>DEC</th>
+              <th>Disc. Date</th>
+	      <th>Disc. Mag</th>
+              <th>Discovery Source</th>
+              <th>Internal Survey</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for t in watch_transients %}
+              <tr>
+                <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
+                <td>{{ t.CoordString.0 }}</td>
+                <td>{{ t.CoordString.1 }}</td>
+                <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+		<td>{{ t.disc_mag }}</td>
+                <td>{{ t.obs_group.name }}</td>
+		<td>{{ t.internal_survey }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer">
+        </div>
+        <!-- /.box-footer-->
+      </div>
+      <!-- /.box -->
+
+      
+      
+      <!-- Default box -->
+      <div class="box">
+        <div class="box-header with-border">
+          <h3 class="box-title">Followup Requested</h3>
+        </div>
+        <div class="box-body">
+
+          <table id="followup_requested_transient_tbl" class="table table-bordered table-hover">
+            <thead>
+            <tr>
+              <th>Name</th>
+              <th>RA</th>
+              <th>DEC</th>
+              <th>Disc. Date</th>
+	      <th>Disc. Mag</th>
+              <th>Discovery Source</th>
+	      <th>Internal Survey</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for t in followup_requested_transients %}
+              <tr>
+                <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
+                <td>{{ t.ra }}</td>
+                <td>{{ t.dec }}</td>
+                <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+		<td>{{ t.disc_mag }}</td>
+                <td>{{ t.obs_group.name }}</td>
+		<td>{{ t.internal_survey }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer">
+        </div>
+        <!-- /.box-footer-->
+      </div>
+      <!-- /.box -->
+
+      <!-- Default box -->
+      <div class="box">
+        <div class="box-header with-border">
+          <h3 class="box-title">Following</h3>
+        </div>
+        <div class="box-body">
+
+          <table id="following_transient_tbl" class="table table-bordered table-hover">
+            <thead>
+            <tr>
+              <th>Name</th>
+              <th>RA</th>
+              <th>DEC</th>
+              <th>Disc. Date</th>
+              <th>Disc. Mag</th>
+              <th>Discovery Source</th>
+	      <th>Internal Survey</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for t in following_transients %}
+              <tr>
+                <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
+                <td>{{ t.ra }}</td>
+                <td>{{ t.dec }}</td>
+                <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+		<td>{{ t.disc_mag }}</td>
+                <td>{{ t.obs_group.name }}</td>
+		<td>{{ t.internal_survey }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer">
+        </div>
+        <!-- /.box-footer-->
+      </div>
+      <!-- /.box -->
+      
     </section>
 
+
+    
 {% endblock %}
