@@ -9,11 +9,15 @@ import requests
 from .models import *
 from .forms import *
 from .common import utilities
+from . import view_utils
 
 # Create your views here.
 
 def index(request):
 	return render(request, 'YSE_App/index.html')
+
+#def add_followup(request,obj):
+#        return '<a href="%s">Add followup for %s</a>' % (obj.firm_url,obj.firm_url)
 
 # Create your views here.
 def auth_login(request):
@@ -73,15 +77,24 @@ def transient_detail(request, transient_id):
 	obs = None
 	if len(transient) == 1:
 		# Get associated Observations
-		followups = TransientFollowup.objects.filter(transient__pk=transient_id)
-
-		context = {
+                followups = TransientFollowup.objects.filter(transient__pk=transient_id)
+                lastphotdata = view_utils.get_recent_phot_for_transient(transient_id=transient_id)
+                firstphotdata = view_utils.get_first_phot_for_transient(transient_id=transient_id)
+                
+                context = {
 			'transient':transient[0],
 			'followups':followups,
-                        'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient)
+                        'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
+                        'recent_mag':lastphotdata.mag,
+                        'recent_filter':lastphotdata.band,
+                        'recent_magdate':lastphotdata.obs_date,
+                        'first_mag':firstphotdata.mag,
+                        'first_filter':firstphotdata.band,
+                        'first_magdate':firstphotdata.obs_date,
+                        
 		}
 
-		return render(request,
+                return render(request,
 			'YSE_App/transient_detail.html',
 			context)
 	else:
