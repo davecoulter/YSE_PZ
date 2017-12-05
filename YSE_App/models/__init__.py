@@ -11,6 +11,7 @@ from YSE_App.models.on_call_date_models import *
 from YSE_App.models.phot_models import *
 from YSE_App.models.photometric_band_models import *
 from YSE_App.models.principal_investigator_models import *
+from YSE_App.models.profile_models import *
 from YSE_App.models.spectra_models import *
 from YSE_App.models.telescope_models import *
 from YSE_App.models.telescope_resource_models import *

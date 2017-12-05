@@ -193,6 +193,12 @@ class PrincipalInvestigatorViewSet(custom_viewsets.ListCreateRetrieveUpdateViewS
 	serializer_class = PrincipalInvestigatorSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+### `Profile` ViewSets ###
+class ProfileViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = Profile.objects.all()
+	serializer_class = ProfileSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
 ### `Spectra` ViewSets ###
 class TransientSpectrumViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = TransientSpectrum.objects.all()

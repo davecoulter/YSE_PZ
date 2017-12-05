@@ -10,6 +10,7 @@ from YSE_App.serializers.on_call_date_serializers import *
 from YSE_App.serializers.phot_serializers import *
 from YSE_App.serializers.photometric_band_serializers import *
 from YSE_App.serializers.principal_investigator_serializers import *
+from YSE_App.serializers.profile_serializers import *
 from YSE_App.serializers.spectra_serializers import *
 from YSE_App.serializers.telescope_resource_serializers import *
 from YSE_App.serializers.telescope_serializers import *
