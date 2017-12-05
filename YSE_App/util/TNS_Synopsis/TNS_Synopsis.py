@@ -1,3 +1,4 @@
+import requests
 import time
 import imaplib
 import socket
@@ -344,16 +345,16 @@ class DBOps():
                 cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
         objectdata = runDBcommand(cmd)
 
-        if type(objectdata) != list and 'id' not in objectdata:
-            import pdb; pdb.set_trace()
+        if type(objectdata) != list and 'url' not in objectdata:
+            #import pdb; pdb.set_trace()
             raise RuntimeError('Error : failure adding object')
         if return_full:
             return(objectdata)
         else:
-            return(objectdata['id'])
+            return(objectdata['url'])
 
     def put_object_to_DB(self,table,objectdict,objectid,return_full=False):
-        cmd = '%s%s%s/ '%(self.baseputurl,self.options.__dict__['%sapi'%table],objectid)
+        cmd = '%s PUT %s '%(self.baseputurl.split('PUT')[0],objectid)
         for k,v in zip(objectdict.keys(),objectdict.values()):
             if '<url>' not in str(v):
                 cmd += '%s="%s" '%(k,v)
@@ -361,13 +362,13 @@ class DBOps():
                 cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
         objectdata = runDBcommand(cmd)
 
-        if type(objectdata) != list and 'id' not in objectdata:
-            import pdb; pdb.set_trace()
+        if type(objectdata) != list and 'url' not in objectdata:
+            #import pdb; pdb.set_trace()
             raise RuntimeError('Error : failure adding object')
         if return_full:
             return(objectdata)
         else:
-            return(objectdata['id'])
+            return(objectdata['url'])
     
     def get_ID_from_DB(self,tablename,fieldname):
         cmd = '%s%s/'%(self.basegeturl,tablename)
@@ -377,7 +378,7 @@ class DBOps():
         idlist,namelist = [],[]
         for i in range(len(data)):
             namelist += [data[i]['name']]
-            idlist += [data[i]['id']]
+            idlist += [data[i]['url']]
 
         if fieldname not in namelist: return(None)
 
@@ -499,47 +500,61 @@ class processTNS():
             
                     tns_url = "https://wis-tns.weizmann.ac.il/object/" + objs[j].decode("utf-8")
                     print(tns_url)
-                    with urllib.request.urlopen(tns_url) as tns:
-                        html = tns.read()
-                        soup = BeautifulSoup(html, "lxml")
                     
-                        # Get Internal Name, Type, Disc. Date, Disc. Mag, Redshift, Host Name, Host Redshift, NED URL
-                        int_name = soup.find('td', attrs={'class':'cell-internal_name'}).text
-                        evt_type = soup.find('div', attrs={'class':'field-type'}).find('div').find('b').text
-                        evt_type = evt_type.replace(' ','')
-                        disc_date = soup.find('div', attrs={'class':'field field-discoverydate'}).find('div').find('b').text
-                        disc_mag = soup.find('div', attrs={'class':'field field-discoverymag'}).find('div').find('b').text
-                        try: source_group = soup.find('div', attrs={'class':'field field-source_group_name'}).find('div').find('b').text
-                        except AttributeError: source_group = "Unknown"
-                        try: disc_filter = soup.find('td', attrs={'cell':'cell-filter_name'}).text
-                        except AttributeError: disc_filter = "Unknown"
-                        if '-' in disc_filter:
-                            disc_instrument = disc_filter.split('-')[1]
-                        else: disc_instrument = 'Unknown'
+                    tstart = time.time()
+                    try:
+                        while time.time() - tstart < 20:
+                            response = requests.get(tns_url)
+                        html = response.content
+                    except:
+                        print('trying again')
+                        response = requests.get(tns_url,timeout=20)
+                        html = response.content
 
-                        z = soup.find('div', attrs={'class':'field-redshift'}).find('div').find('b').text
-
-                        hn_div = soup.find('div', attrs={'class':'field-hostname'})
-                        if hn_div is not None:
-                            host_name = hn_div.find('div').find('b').text
-
-                        z_div = soup.find('div', attrs={'class':'field-host_redshift'})
-                        if z_div is not None:
-                            host_redshift = z_div.find('div').find('b').text
-
-                        ned_url = soup.find('div', attrs={'class':'additional-links clearfix'}).find('a')['href']
+                    #with urllib.request.urlopen(tns_url) as tns:
+                    #    import pdb; pdb.set_trace()
+                    #    tstart = time.time()
+                    #    while time.time() - tstart < 20:
+                    #        html = tns.read()
+                    soup = BeautifulSoup(html, "lxml")
                     
-                        # Get photometry records
-                        table = soup.findAll('table', attrs={'class':'photometry-results-table'})
-                        prs = []
-                        for k in range(len(table)):
+                    # Get Internal Name, Type, Disc. Date, Disc. Mag, Redshift, Host Name, Host Redshift, NED URL
+                    int_name = soup.find('td', attrs={'class':'cell-internal_name'}).text
+                    evt_type = soup.find('div', attrs={'class':'field-type'}).find('div').find('b').text
+                    evt_type = evt_type.replace(' ','')
+                    disc_date = soup.find('div', attrs={'class':'field field-discoverydate'}).find('div').find('b').text
+                    disc_mag = soup.find('div', attrs={'class':'field field-discoverymag'}).find('div').find('b').text
+                    try: source_group = soup.find('div', attrs={'class':'field field-source_group_name'}).find('div').find('b').text
+                    except AttributeError: source_group = "Unknown"
+                    try: disc_filter = soup.find('td', attrs={'cell':'cell-filter_name'}).text
+                    except AttributeError: disc_filter = "Unknown"
+                    if '-' in disc_filter:
+                        disc_instrument = disc_filter.split('-')[1]
+                    else: disc_instrument = 'Unknown'
 
-                            table_body = table[k].find('tbody')
-                            rows = table_body.find_all('tr')
-                            print(type(rows))
+                    z = soup.find('div', attrs={'class':'field-redshift'}).find('div').find('b').text
 
-                            for l in range(len(rows)):
-                                prs.append(phot_row(rows[l]))
+                    hn_div = soup.find('div', attrs={'class':'field-hostname'})
+                    if hn_div is not None:
+                        host_name = hn_div.find('div').find('b').text
+
+                    z_div = soup.find('div', attrs={'class':'field-host_redshift'})
+                    if z_div is not None:
+                        host_redshift = z_div.find('div').find('b').text
+
+                    ned_url = soup.find('div', attrs={'class':'additional-links clearfix'}).find('a')['href']
+                    
+                    # Get photometry records
+                    table = soup.findAll('table', attrs={'class':'photometry-results-table'})
+                    prs = []
+                    for k in range(len(table)):
+
+                        table_body = table[k].find('tbody')
+                        rows = table_body.find_all('tr')
+                        print(type(rows))
+                        
+                        for l in range(len(rows)):
+                            prs.append(phot_row(rows[l]))
                     
                     ########################################################
                     # For Item in Email, Get NED
@@ -633,11 +648,13 @@ class processTNS():
                         if not statusid: raise RuntimeError('Error : not all statuses are defined')
                         
                         # put in the hosts
-                        hosturls = ''
+                        hostcoords = ''; hosturl = ''
                         for z,name,ra,dec,sep in zip(galaxy_zs,galaxy_names,galaxy_ras,galaxy_decs,galaxy_seps):
-                            hostdict = {'name':name,'ra':ra,'dec':dec,'redshift':z}
-                            hostoutput = db.post_object_to_DB('host',hostdict,return_full=True)
-                            hosturls += '%s\n'%hostoutput['url']
+                            if sep == np.min(galaxy_seps):
+                                hostdict = {'name':name,'ra':ra,'dec':dec,'redshift':z}
+                                hostoutput = db.post_object_to_DB('host',hostdict,return_full=True)
+                                hosturl = hostoutput['url']
+                            hostcoords += 'ra=%.7f, dec=%.7f\n'%(ra,dec)
 
                         # put in the spec type
                         eventid = db.get_ID_from_DB('transientclasses',evt_type)
@@ -653,10 +670,11 @@ class processTNS():
                         newobjdict = {'name':objs[j].decode("utf-8"),
                                       'ra':sc.ra.deg,
                                       'dec':sc.dec.deg,
-                                      'status':'<url>/%s/'%statusid,
-                                      'obs_group':'<url>/%s/'%groupid,
-                                      'candidate_hosts':hosturls,
-                                      'best_spec_class':'<url>/%s/'%eventid,
+                                      'status':statusid,
+                                      'obs_group':groupid,
+                                      'host':hosturl,
+                                      'candidate_hosts':hostcoords,
+                                      'best_spec_class':eventid,
                                       'disc_date':disc_date.replace(' ','T')}
 
                         if dbid:
@@ -672,25 +690,25 @@ class processTNS():
                             instrumentid = db.get_ID_from_DB('instruments','Unknown')
                             if not instrumentid:
                                 observatoryid = db.post_object_to_DB('observatory',{'name':'Unknown','tz_name':0,'utc_offset':0})
-                                teldict= {'name':'Unknown','observatory':'<url>/%s/'%observatoryid,'longitude':0,'latitude':0,'elevation':0}
+                                teldict= {'name':'Unknown','observatory':observatoryid,'longitude':0,'latitude':0,'elevation':0}
                                 telid = db.post_object_to_DB('telescope',teldict)
-                                instrumentid = db.post_object_to_DB('instrument',{'name':'Unknown','telescope':'<url>/%i/'%telid})
+                                instrumentid = db.post_object_to_DB('instrument',{'name':'Unknown','telescope':telid})
                         if not bandid:
-                            bandid = db.post_object_to_DB('band',{'name':disc_filter,'instrument':'<url>/%s/'%instrumentid,'lambda_eff':0})
+                            bandid = db.post_object_to_DB('band',{'name':disc_filter,'instrument':instrumentid,'lambda_eff':0})
                         
-                        phottabledict = {'transient':'<url>/%s/'%transientid,
-                                         'obs_group':'<url>/%s/'%groupid,
-                                         'instrument':'<url>/%s/'%instrumentid}
+                        phottabledict = {'transient':transientid,
+                                         'obs_group':groupid,
+                                         'instrument':instrumentid}
                         phottableid = db.post_object_to_DB('photometry',phottabledict)
                         
                         # put in the photometry
                         photdatadict = {'obs_date':disc_date.replace(' ','T'),
                                         'mag':disc_mag,
-                                        'band':'<url>/%s/'%bandid,
-                                        'photometry':'<url>/%s/'%phottableid}
+                                        'band':bandid,
+                                        'photometry':phottableid}
                         photdataid = db.post_object_to_DB('photdata',photdatadict)
 
-                        
+
         except ValueError as err:
             print("%s. Exiting..." % err.args)
             mail.close()
@@ -709,16 +727,19 @@ class processTNS():
         idlist,namelist = [],[]
         for i in range(len(data)):
             namelist += [data[i]['name']]
-            idlist += [data[i]['id']]
+            idlist += [data[i]['url']]
 
         if fieldname not in namelist: return(None)
 
         return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
         
 def runDBcommand(cmd):
-    tstart = time.time()
-    while time.time() - tstart < 20:
-        return(json.loads(os.popen(cmd).read()))
+    try:
+        tstart = time.time()
+        while time.time() - tstart < 20:
+            return(json.loads(os.popen(cmd).read()))
+    except:
+        raise RuntimeError('Error : cmd %s failed!!'%cmd)
 if __name__ == "__main__":
     # execute only if run as a script
 

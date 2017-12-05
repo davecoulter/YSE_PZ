@@ -30,7 +30,17 @@
 					<br>
 					<b>Best Spec. Class</b><br>
 					{{transient.best_spec_class}}<br>
-					<b><a href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing">Follow-up Resources</a></b><br>
+					<b>Most Recent Mag/Date/Filter</b><br>
+					{{ recent_mag }}<br>
+					{{recent_magdate}}<br>
+					{{ recent_filter }}<br>
+					<b>Disc Mag/Date/Filter</b><br>
+					{{ first_mag }}<br>
+					{{ first_magdate }}<br>
+					{{ first_filter }}<br>
+					<b>Status</b><br>
+					{{ transient.status }}<br>
+					
 					<b>External Resources</b><br>
 					<a target="_blank" href="http://nedwww.ipac.caltech.edu/cgi-bin/nph-objsearch?lon={{ transient.ra }}000d&lat={{ transient.dec }}d&radius=10.0&search_type=Near+Position+Search">NED</a>
 					<a href="http://simbad.u-strasbg.fr/simbad/sim-coo?protocol=html&amp;NbIdent=1&amp;Radius=1&amp;Radius.unit=arcmin&amp;CooFrame=FK5&amp;CooEpoch=2000&amp;CooEqui=2000&amp;Coord={{ transient.ra }}+{{ transient.dec }}" target="_blank">SIMBAD</a>
@@ -67,56 +77,80 @@
 								<div class="tab-content">
 									<div class="active tab-pane" id="followup">
 									  <div class="box">
+									    <p><a href="{% url 'admin:YSE_App_transientfollowup_add'  %}">Add Followup</a></p>
+									    <p><a href="{% url 'admin:YSE_App_transient_change' transient.id %}">Change Transient Status</a></p>
+									    <b><a href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing" target="_blank">Follow-up Guidelines</a></b><br>
 
-											{% for f in followups %}
-											<div class="box-header">
-												<h3 class="box-title">{{ f.name }} Tasks</h3>
-											</div>
-											<!-- /.box-header -->
-											<div class="box-body">
-													<table id="transient_tbl" class="table table-bordered table-hover">
-												<thead>
-													<tr>
-														<th>Observation<br>Window</th>
-														<th>Observatory</th>
-														<th>Telescope</th>
-														<th>Instrument</th>
-														<th>Exposure<br>Time</th>
-														<th>Number of<br>Exposures</th>
-														<th>Configuration</th>
-														<th>Configuration<br>Detail</th>
-														<th>Status</th>
-														<th>Action</th>
-													</tr>
-												</thead>
-												<tbody>
-													{% for o in f.observationtask_set.all %}
-													<tr>
-														<td>{{ o.obs_window_start|date:"SHORT_DATE_FORMAT" }} &mdash;<br>{{ o.obs_window_stop|date:"SHORT_DATE_FORMAT" }}</td>
-														<td>{{ o.instrument_config.instrument.telescope.observatory.name }}</td>
-														<td>{{ o.instrument_config.instrument.telescope.name }}</td>
-														<td>{{ o.instrument_config.instrument.name }}</td>
-														<td>{{ o.exposure_time }}</td>
-														<td>{{ o.number_of_exposures }}</td>
-														<td>{{ o.instrument_config.name }}</td>
-														<td>
-															<ul>
-																{% for c in o.instrument_config.configelement_set.all %}
-																<li>{{ c.name }}</li>
-																{% endfor %}
-															</ul>
-														</td>
-														<td>{{ o.status }}</td>
-														<td><a href="#">Edit</a></td>
-													</tr>
-													{% endfor %}
-													{% endfor %}
-												</tbody>
-											</table>
-											<p><a href="#">Add</a></p>
-										</div>
-										<!-- /.box-body -->
-									</div>
+									    {% if observatory_list %}
+									    <ul>
+									      <b>In the next two weeks, {{ transient }} can be observed with:</b><br>
+									      <ul>
+										{% for observatory in observatory_list %}
+										<b>{{ observatory }}</b><br>
+										<ul>
+										  {% for obsnight in observing_nights %}
+										  {% if obsnight.0.happening_soon and obsnight.0.observatory == observatory and obsnight.1 %}
+										  <b>{{obsnight.0.telescope}} {{ obsnight.0 }}</b><br>
+										  {% with obsnight.0 as obs %}
+										  <img src="{% url 'airmassplot' transient.id obs observatory %}" style='width:240px' alt="" /><br>
+										  {% endwith %}
+										  {% endif %}
+										  {% endfor %}
+										</ul>
+										{% endfor %}
+									      </ul>
+									    </ul>
+									    {% else %}
+									    <p>No upcoming observing nights for this target.</p>
+									    {% endif %}
+									    {% for f in followups %}
+									    <div class="box-header">
+									      <h3 class="box-title">{{ f.name }} Tasks</h3>
+									    </div>
+									    <!-- /.box-header -->
+									    <div class="box-body">
+									      <table id="transient_tbl" class="table table-bordered table-hover">
+										<thead>
+										  <tr>
+										    <th>Observation<br>Window</th>
+										    <th>Observatory</th>
+										    <th>Telescope</th>
+										    <th>Instrument</th>
+										    <th>Exposure<br>Time</th>
+										    <th>Number of<br>Exposures</th>
+										    <th>Configuration</th>
+										    <th>Configuration<br>Detail</th>
+										    <th>Status</th>
+										    <th>Action</th>
+										  </tr>
+										</thead>
+										<tbody>
+										  {% for o in f.observationtask_set.all %}
+										  <tr>
+										    <td>{{ o.obs_window_start|date:"SHORT_DATE_FORMAT" }} &mdash;<br>{{ o.obs_window_stop|date:"SHORT_DATE_FORMAT" }}</td>
+										    <td>{{ o.instrument_config.instrument.telescope.observatory.name }}</td>
+										    <td>{{ o.instrument_config.instrument.telescope.name }}</td>
+										    <td>{{ o.instrument_config.instrument.name }}</td>
+										    <td>{{ o.exposure_time }}</td>
+										    <td>{{ o.number_of_exposures }}</td>
+										    <td>{{ o.instrument_config.name }}</td>
+										    <td>
+										      <ul>
+											{% for c in o.instrument_config.configelement_set.all %}
+											<li>{{ c.name }}</li>
+											{% endfor %}
+										      </ul>
+										    </td>
+										    <td>{{ o.status }}</td>
+										    <td><a href="#">Edit</a></td>
+										  </tr>
+										  {% endfor %}
+										  {% endfor %}
+										</tbody>
+									      </table>
+									    </div>
+									    <!-- /.box-body -->
+									  </div>
 						<!-- <table id="transient_tbl" class="table table-bordered table-hover">
 						<thead>
 						<tr>
@@ -161,28 +195,7 @@
 					</table> -->
 
 
-				<!-- {% if observatory_list %}
-				<ul>
-					<b>In the next two weeks, {{ transient }} can be observed with:</b><br>
-					<ul>
-					{% for observatory in observatory_list %}
-					<b>{{ observatory }}</b><br>
-					<ul>
-						{% for obsnight in observing_nights %}
-					{% if obsnight.0.happening_soon and obsnight.0.observatory == observatory and obsnight.1 %}
-						<b>{{obsnight.0.telescope}} {{ obsnight.0 }}</b><br>
-						{% with obsnight.0 as obs %}
-						<img src="{% url 'airmassplot' transient.id obs observatory %}" style='width:240px' alt="" /><br>
-						{% endwith %}
-						{% endif %}
-						{% endfor %}
-					</ul>
-					{% endfor %}
-					</ul>
-				</ul>
-				{% else %}
-				<p>No upcoming observing nights for this target.</p>
-				{% endif %}
+				<!-- 
 			      </div>
 			      <!-- /.tab-pane -->
 			      <div class="tab-pane" id="photometry">
