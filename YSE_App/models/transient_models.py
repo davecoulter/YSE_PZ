@@ -41,6 +41,7 @@ class Transient(BaseModel):
 	abs_mag_peak = models.FloatField(null=True, blank=True)
 	abs_mag_peak_date = models.DateTimeField(null=True, blank=True)
 	postage_stamp_file = models.CharField(max_length=512, null=True, blank=True)
+	k2_validated = models.NullBooleanField(null=True, blank=True)
 
 	def CoordString(self):
 		return GetSexigesimalString(self.ra, self.dec)
@@ -52,7 +53,12 @@ class Transient(BaseModel):
 def execute_after_save(sender, instance, created, *args, **kwargs):
 	if created:
 		print("Transient Created: %s" % instance.name)
-		if IsK2Pixel(instance.ra, instance.dec):
+		
+		is_k2 = IsK2Pixel(instance.ra, instance.dec)
+		instance.k2_validated = is_k2
+		instance.save()
+
+		if is_k2:
 			SendTransientAlert()
 
 
