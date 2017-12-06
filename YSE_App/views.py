@@ -146,7 +146,7 @@ def transient_detail(request, transient_id):
                         context = {
                                 'transient':transient[0],
                                 'followups':followups,
-#                                'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
+                                'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
                                 'recent_mag':lastphotdata.mag,
                                 'recent_filter':lastphotdata.band,
                                 'recent_magdate':lastphotdata.obs_date,

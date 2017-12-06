@@ -61,15 +61,17 @@ def getObsNights(transient):
 
     obsnights,tellist = (),()
     for o in ClassicalObservingDate.objects.order_by('-obs_date')[::-1]:
+        if not o.happening_soon(): continue
         telescope = get_telescope_from_obsnight(o.id)
         observatory = get_observatory_from_telescope(telescope.id)
-        can_obs = telescope_can_observe(transient.ra,
-                                        transient.dec, 
-                                        str(o.obs_date).split()[0],
-                                        telescope.latitude,
-                                        telescope.longitude,
-                                        telescope.elevation,
-                                        observatory.utc_offset)
+        #can_obs = telescope_can_observe(transient.ra,
+        #                                transient.dec, 
+        #                                str(o.obs_date).split()[0],
+        #                                telescope.latitude,
+        #                                telescope.longitude,
+        #                                telescope.elevation,
+        #                                observatory.utc_offset)
+        can_obs = 1
         o.telescope = telescope.name
         o.rise_time,o.set_time = getTimeUntilRiseSet(transient.ra,
                                                      transient.dec, 
@@ -80,7 +82,7 @@ def getObsNights(transient):
                                                      observatory.utc_offset)
         o.moon_angle = getMoonAngle(str(o.obs_date).split()[0],telescope,transient.ra,transient.dec)
         obsnights += ([o,can_obs],)
-        if can_obs and o.happening_soon() and telescope not in tellist: tellist += (telescope,)
+        if can_obs and telescope not in tellist: tellist += (telescope,)
     return obsnights,tellist
 
 def getTimeUntilRiseSet(ra,dec,date,lat,lon,elev,utc_off):
@@ -96,25 +98,27 @@ def getTimeUntilRiseSet(ra,dec,date,lat,lon,elev,utc_off):
     tel = Observer(location=location, timezone="UTC")
     night_start = tel.twilight_evening_civil(time,which="previous")
     night_end = tel.twilight_morning_civil(time,which="previous")
+    target_rise_time = tel.target_rise_time(time,sc,horizon=18*u.deg,which="previous")
+    target_set_time = tel.target_set_time(time,sc,horizon=18*u.deg,which="previous")
+    
+#    start_obs = False
+#    starttime,endtime = None,None
+#    for jd in np.arange(night_start.mjd,night_end.mjd,0.05):
+#        time = Time(jd,format="mjd")
+#        target_up = tel.target_is_up(time,sc,horizon=18*u.deg)
+#        if target_up and not start_obs:
+#            start_obs = True
+#            starttime = copy.copy(time)
+#        if not target_up and start_obs:
+#            can_obs = False
+#            endtime = copy.copy(time)
+#            break
 
-    start_obs = False
-    starttime,endtime = None,None
-    for jd in np.arange(night_start.mjd,night_end.mjd,0.02):
-        time = Time(jd,format="mjd")
-        target_up = tel.target_is_up(time,sc,horizon=18*u.deg)
-        if target_up and not start_obs:
-            start_obs = True
-            starttime = copy.copy(time)
-        if not target_up and start_obs:
-            can_obs = False
-            endtime = copy.copy(time)
-            break
-
-    if starttime:
-        returnstarttime = starttime.isot.split('T')[-1]
+    if target_rise_time:
+        returnstarttime = target_rise_time.isot.split('T')[-1]
     else: returnstarttime = None
-    if endtime:
-        returnendtime = endtime.isot.split('T')[-1]
+    if target_set_time:
+        returnendtime = target_set_time.isot.split('T')[-1]
     else: returnendtime = None
 
     
