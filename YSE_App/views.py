@@ -51,8 +51,12 @@ def auth_logout(request):
 def dashboard(request):
         new_transients = None
         inprocess_transients = None
-
-        k2_survey = InternalSurvey.objects.filter(name='K2')[0]
+        new_k2_transients = None
+        new_notk2_transients = None
+        watch_transients = None
+        following_transients = None
+        followup_requested_transients = None
+        
         status_new = TransientStatus.objects.filter(name='New')
         if len(status_new) == 1:
                 new_transients = Transient.objects.filter(status=status_new[0])
@@ -60,8 +64,8 @@ def dashboard(request):
                 for i in range(len(new_notk2_transients)):
                         disc = view_utils.get_first_phot_for_transient(transient_id=new_notk2_transients[i].id)
                         if disc: new_notk2_transients[i].disc_mag = disc.mag
-                        
-                new_k2_transients = new_transients.filter(k2_validated=1)#internal_survey=k2_survey.id)
+
+                new_k2_transients = new_transients.filter(k2_validated=1)                        
                 for i in range(len(new_k2_transients)):
                         disc = view_utils.get_first_phot_for_transient(transient_id=new_k2_transients[i].id)
                         if disc: new_k2_transients[i].disc_mag = disc.mag
@@ -114,7 +118,8 @@ def transient_detail(request, transient_id):
         if len(transient) == 1:
                 # Get associated Observations
                 followups = TransientFollowup.objects.filter(transient__pk=transient_id)
-                transient[0].hostdata = Host.objects.get(pk=transient[0].host_id)
+                hostdata = Host.objects.filter(pk=transient[0].host_id)
+                if hostdata: transient[0].hostdata = hostdata[0]
                 lastphotdata = view_utils.get_recent_phot_for_transient(transient_id=transient_id)
                 firstphotdata = view_utils.get_first_phot_for_transient(transient_id=transient_id)
                 
@@ -134,12 +139,12 @@ def transient_detail(request, transient_id):
                                                                                                               telescope.elevation,
                                                                                                               observatory.utc_offset)
                         too_resources[i].moon_angle = view_utils.getMoonAngle(0,telescope,transient[0].ra,transient[0].dec)
-                        
+
                 if lastphotdata and firstphotdata:
                         context = {
                                 'transient':transient[0],
                                 'followups':followups,
-                                'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
+#                                'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
                                 'recent_mag':lastphotdata.mag,
                                 'recent_filter':lastphotdata.band,
                                 'recent_magdate':lastphotdata.obs_date,
@@ -159,10 +164,12 @@ def transient_detail(request, transient_id):
                                 'observing_nights': obsnights,
                                 'too_resource_list': too_resources
                         }
-                        
+
+
                 return render(request,
                         'YSE_App/transient_detail.html',
                         context)
+                #return render(request, 'YSE_App/dashboard_example.html')
         else:
                 return Http404('Transient not found')
 
