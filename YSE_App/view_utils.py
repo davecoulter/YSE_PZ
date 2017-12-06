@@ -96,8 +96,8 @@ def getTimeUntilRiseSet(ra,dec,date,lat,lon,elev,utc_off):
         lon*u.deg,lat*u.deg,
         elev*u.m)
     tel = Observer(location=location, timezone="UTC")
-    night_start = tel.twilight_evening_civil(time,which="previous")
-    night_end = tel.twilight_morning_civil(time,which="previous")
+    #night_start = tel.twilight_evening_civil(time,which="previous")
+    #night_end = tel.twilight_morning_civil(time,which="previous")
     target_rise_time = tel.target_rise_time(time,sc,horizon=18*u.deg,which="previous")
     target_set_time = tel.target_set_time(time,sc,horizon=18*u.deg,which="previous")
     
