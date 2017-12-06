@@ -12,4 +12,8 @@ class OnCallDate(BaseModel):
 	on_call_date = models.DateTimeField()
 
 	def __str__(self):
-		return "On call date: %s" % self.on_call_date.strftime('%m/%d/%Y')
+		user_str = ""
+		users = self.user.all()
+		for user in users:
+			user_str += (user.username + ", ")
+		return "Date: %s - On Call: %s" % (self.on_call_date.strftime('%m/%d/%Y'), user_str)
