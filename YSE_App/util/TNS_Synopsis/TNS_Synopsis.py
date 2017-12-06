@@ -380,8 +380,11 @@ class DBOps():
     def get_ID_from_DB(self,tablename,fieldname):
         cmd = '%s%s/'%(self.basegeturl,tablename)
         output = os.popen(cmd).read()
-        data = json.loads(output)
-
+        try:
+            data = json.loads(output)
+        except:
+            raise RuntimeError('Error : cmd output not in JSON format')
+            
         idlist,namelist = [],[]
         for i in range(len(data)):
             namelist += [data[i]['name']]
@@ -750,7 +753,7 @@ class processTNS():
             mail.logout()
             del mail
 
-        WriteOutput(tns_objs)
+        #WriteOutput(tns_objs)
         print("Process done.")
 
     def getIDfromName(self,tablename,fieldname):

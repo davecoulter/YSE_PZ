@@ -37,7 +37,9 @@ def get_psstamp_url(request, transient_id, Transient):
 		raise Http404("Transient id does not exist")
 	
 	ps1url = ("http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f+%.7f&filter=color" % (t.ra,t.dec))
-	response = requests.get(url=ps1url,timeout=5)
+	try:
+		response = requests.get(url=ps1url,timeout=5)
+	except: return("")
 	response_text = response.content.decode('utf-8')
 	if "<td><img src=" in response.content.decode('utf-8'):
 		jpegurl = response.content.decode('utf-8').split('<td><img src="')[1].split('" width="240" height="240" /></td>')[0]
