@@ -30,7 +30,7 @@ class TransientWebResourceSerializer(serializers.HyperlinkedModelSerializer):
 		return instance
 
 class HostWebResourceSerializer(serializers.HyperlinkedModelSerializer):
-	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), view_name='host-detail')
+	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), lookup_field="id", view_name='host-detail')
 	information_source = serializers.HyperlinkedRelatedField(queryset=InformationSource.objects.all(), view_name='informationsource-detail')
 	
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')

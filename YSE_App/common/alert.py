@@ -3,6 +3,8 @@ import requests
 from YSE_App.models.on_call_date_models import OnCallDate
 from datetime import datetime
 import smtplib
+from django.contrib.auth.models import User
+from YSE_App.models.profile_models import Profile
 
 def IsK2Pixel(ra, dec):
 
@@ -47,30 +49,49 @@ def SendTransientAlert():
 	today_month = datetime.today().date().month
 	today_day = datetime.today().date().day
 
-
-
-	# ocd_result = OnCallDate.objects.filter(on_call_date__year == today_year,
-	# 	on_call_date__month == today_month,
-	# 	on_call_date__day == today_day
-	# 	)
 	print(OnCallDate.objects.all())
 	print("Today: %s" % datetime.today().date())
-	ocd_result = OnCallDate.objects.filter(on_call_date = datetime.today().date())
 
-	if ocd_result.exists():
-		ocd = ocd_result.first()
+	# ocd_result = OnCallDate.objects.filter(on_call_date = datetime.today().date())
 
-		print("On Call Date: %s" % ocd.on_call_date.strftime('%m/%d/%Y'))
+	# if ocd_result.exists():
+	# 	ocd = ocd_result.first()
 
-		# Get users, iterate & send email
-		on_call_users = ocd.user.all()
-		for user in on_call_users:
-			print("Alerting user: %s" % user.username)
+	# 	print("On Call Date: %s" % ocd.on_call_date.strftime('%m/%d/%Y'))
 
-			sendemail(from_addr, user.email, subject, message, 
-				settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
-	else:
-		print("On Call Date does not exist")
+	# 	# Get users, iterate & send email
+	# 	on_call_users = ocd.user.all()
+	# 	for user in on_call_users:
+	# 		print("Alerting user: %s" % user.username)
+	# 		profile = Profile.objects.get(user__id =user.id)
+
+	# 		sendemail(from_addr, user.email, subject, message, 
+	# 			settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
+
+	# 		phone_email = "%s%s%s@%s" % (profile.phone_area, 
+	# 								profile.phone_first_three, 
+	# 								profile.phone_last_four,
+	# 								profile.phone_provider_str)
+
+	# 		sendtext(from_addr, phone_email, subject, message, 
+	# 			settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
+
+	test_user = User.objects.get(username='dcoulter')
+	print("Alerting user: %s" % test_user.username)
+	profile = Profile.objects.get(user__id=test_user.id)
+
+	sendemail(from_addr, test_user.email, subject, message, 
+		settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
+
+	phone_email = "%s%s%s@%s" % (profile.phone_area, 
+							profile.phone_first_three, 
+							profile.phone_last_four,
+							profile.phone_provider_str)
+
+	print("Target SMS: %s" % phone_email)
+
+	sendemail(from_addr, phone_email, subject, message, 
+		settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
 
 def sendemail(from_addr, to_addr,
 			subject, message,
@@ -99,8 +120,7 @@ def sendemail(from_addr, to_addr,
 
 
 # def sendtext(from_addr, to_phone_number, carrier, cc_addr_list, subject, message, login, password, smtpserver='smtp.gmail.com:587'):
-   
-#    # should add their carrier     
+# 	# should add their carrier     
 # 	sendemail(from_addr, to_phone_number + "@" + carrier, cc_addr_list, subject, message, login, password, smtpserver='smtp.gmail.com:587')
 
 

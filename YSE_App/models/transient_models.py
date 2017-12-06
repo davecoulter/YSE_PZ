@@ -21,7 +21,7 @@ class Transient(BaseModel):
 	host = models.ForeignKey(Host, null=True, blank=True, on_delete=models.SET_NULL)
 	abs_mag_peak_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 	antares_classification = models.ForeignKey(AntaresClassification, null=True, blank=True, on_delete=models.SET_NULL)
-	internal_survey = models.ForeignKey(InternalSurvey, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
+	internal_survey = models.ForeignKey(InternalSurvey, null=True, blank=True, on_delete=models.SET_NULL)
 
 	### Properties ###
 	# Required
@@ -57,12 +57,19 @@ class Transient(BaseModel):
 def execute_after_save(sender, instance, created, *args, **kwargs):
 	if created:
 		print("Transient Created: %s" % instance.name)
-		
-		is_k2 = IsK2Pixel(instance.ra, instance.dec)
-		instance.k2_validated = is_k2
-		instance.save()
+		print("Internal Survey: %s" % instance.internal_survey)
 
-		if is_k2:
+		sent_from_K2_TNS = True #(instance.internal_survey == 'K2')
+		if sent_from_K2_TNS:
+
+			print("Is sent from K2")
+
+			is_k2_validated = IsK2Pixel(instance.ra, instance.dec)
+			instance.k2_validated = is_k2_validated
+			instance.save()
+
+		if sent_from_K2_TNS:
+			print('goodbye')
 			SendTransientAlert()
 
 
