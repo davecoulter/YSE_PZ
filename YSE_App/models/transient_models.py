@@ -6,6 +6,7 @@ from YSE_App.models.host_models import *
 from YSE_App.common.utilities import GetSexigesimalString
 from YSE_App.common.alert import IsK2Pixel, SendTransientAlert
 from django.dispatch import receiver
+from pytz import timezone
 
 class Transient(BaseModel):
 	### Entity relationships ###
@@ -50,6 +51,11 @@ class Transient(BaseModel):
 	def Separation(self):
 		host = Host.objects.get(pk=self.host_id)
 		return '%.2f'%getSeparation(self.ra,self.dec,host.ra,host.dec)
+
+	def modified_date_pacific(self):
+		date_format = '%m/%d/%Y %H:%M:%S %Z'
+		mod_date = self.modified_date.astimezone(timezone('US/Pacific'))
+		return mod_date.strftime(date_format)
 
 	def __str__(self):
 		return self.name
