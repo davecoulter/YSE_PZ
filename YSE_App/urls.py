@@ -16,8 +16,8 @@ schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
 urlpatterns = [
 	# ex: /yse/
     url(r'^$', views.index, name='index'),
-    url(r'^dashboard$', views.dashboard, name='dashboard'),
-    url(r'^dashboard_example$', views.dashboard_example, name='dashboard_example'),
+    url(r'^dashboard/$', views.dashboard, name='dashboard'),
+    url(r'^dashboard_example/$', views.dashboard_example, name='dashboard_example'),
     url(r'^transient_edit/$', views.transient_edit, name='transient_edit'),
     url(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
     # ex: /yse/transient_detail/5/

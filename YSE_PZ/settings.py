@@ -140,6 +140,7 @@ KEPLER_API_ENDPOINT = "http://api.keplerscience.org/is-k2-observing"
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
+LOCAL_UTC_OFFSET = -8
 
 USE_I18N = True
 

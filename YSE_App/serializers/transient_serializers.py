@@ -55,6 +55,7 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 		instance.abs_mag_peak_date = validated_data.get('abs_mag_peak_date', instance.abs_mag_peak_date)
 		instance.postage_stamp_file = validated_data.get('postage_stamp_file', instance.postage_stamp_file)
 		instance.k2_validated = validated_data.get('k2_validated', instance.k2_validated)
+		instance.k2_msg = validated_data.get('k2_msg', instance.k2_msg)
 
 		instance.save()
 

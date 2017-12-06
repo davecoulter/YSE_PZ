@@ -42,6 +42,7 @@ class Transient(BaseModel):
 	abs_mag_peak_date = models.DateTimeField(null=True, blank=True)
 	postage_stamp_file = models.CharField(max_length=512, null=True, blank=True)
 	k2_validated = models.NullBooleanField(null=True, blank=True)
+	k2_msg = models.TextField(null=True, blank=True)
 
 	def CoordString(self):
 		return GetSexigesimalString(self.ra, self.dec)
@@ -59,19 +60,15 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 		print("Transient Created: %s" % instance.name)
 		print("Internal Survey: %s" % instance.internal_survey)
 
-		sent_from_K2_TNS = True #(instance.internal_survey == 'K2')
-		if sent_from_K2_TNS:
+		is_k2_validated, msg = IsK2Pixel(instance.ra, instance.dec)
 
-			print("Is sent from K2")
+		print("K2 Val: %s; K2 Val Msg: %s" % (is_k2_validated, msg))
+		instance.k2_validated = is_k2_validated
+		instance.k2_msg = msg
+		instance.save()
 
-			is_k2_validated = IsK2Pixel(instance.ra, instance.dec)
-			instance.k2_validated = is_k2_validated
-			instance.save()
-
-		if sent_from_K2_TNS:
-			print('goodbye')
+		if is_k2_validated:
 			SendTransientAlert()
-
 
 # Alternate Host names?
 class AlternateTransientNames(BaseModel):
