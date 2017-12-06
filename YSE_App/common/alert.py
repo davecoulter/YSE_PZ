@@ -51,7 +51,9 @@ def SendTransientAlert():
 
 	# today() is UTC, so convert it to Pacific Standard Time
 	print("UTC time: %s" % datetime.today())
+	
 	PST_date = datetime.today() + timedelta(hours=settings.LOCAL_UTC_OFFSET)
+
 	print(OnCallDate.objects.all())
 	print("Today: %s" % PST_date)
 	
@@ -101,4 +103,3 @@ def sendemail(from_addr, to_addr,
 			print("Send success")
 		except e:
 			print("Send fail")
-			

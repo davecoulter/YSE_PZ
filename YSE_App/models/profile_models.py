@@ -10,10 +10,10 @@ class Profile(BaseModel):
 	### Properties ###
 	# Required
 	phone_country_code = models.CharField(max_length=16)
-	phone_area = models.IntegerField()
-	phone_first_three = models.IntegerField()
-	phone_last_four = models.IntegerField()
-	phone_provider_str = models.CharField(max_length=64)
+	phone_area = models.CharField(max_length=3)
+	phone_first_three = models.CharField(max_length=3)
+	phone_last_four = models.CharField(max_length=4)
+	phone_provider_str = models.CharField(max_length=16)
 
 	def __str__(self):
 		return "User: %s; Phone: +%s %s-%s-%s; Provider: %s" % (self.user.username, 
