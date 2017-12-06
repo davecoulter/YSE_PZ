@@ -130,7 +130,7 @@
 										  </tr>
 										</thead>
 										<tbody>
-										  {% for o in f.observationtask_set.all %}
+										  {% for o in f.observation_set %}
 										  <tr>
 										    <td>{{ o.obs_window_start|date:"SHORT_DATE_FORMAT" }} &mdash;<br>{{ o.obs_window_stop|date:"SHORT_DATE_FORMAT" }}</td>
 										    <td>{{ o.instrument_config.instrument.telescope.observatory.name }}</td>
