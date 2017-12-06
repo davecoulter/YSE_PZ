@@ -149,8 +149,7 @@ def transient_detail(request, transient_id):
 
 
                 date = datetime.datetime.now(tz=pytz.utc)
-                nowdate = date.astimezone(timezone('US/Pacific'))
-                date_format='%m/%d/%Y %H:%M:%S %Z'
+                date_format='%m/%d/%Y %H:%M:%S'
                 if lastphotdata and firstphotdata:
                         context = {
                                 'transient':transient[0],
@@ -165,7 +164,7 @@ def transient_detail(request, transient_id):
                                 'telescope_list': tellist,
                                 'observing_nights': obsnights,
                                 'too_resource_list': too_resources,
-                                'nowtime':nowdate.strftime(date_format)
+                                'nowtime':date.strftime(date_format)
                         }
                 else:
                         context = {
@@ -175,7 +174,7 @@ def transient_detail(request, transient_id):
                                 'telescope_list': tellist,
                                 'observing_nights': obsnights,
                                 'too_resource_list': too_resources,
-                                'nowtime':nowdate.strftime(date_format)
+                                'nowtime':date.strftime(date_format)
                         }
 
 
