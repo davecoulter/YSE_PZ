@@ -11,6 +11,8 @@ from .forms import *
 from .common import utilities
 from . import view_utils
 import datetime
+import pytz
+from pytz import timezone
 
 # Create your views here.
 
@@ -145,6 +147,10 @@ def transient_detail(request, transient_id):
                                                                                                               observatory.utc_offset)
                         too_resources[i].moon_angle = view_utils.getMoonAngle(0,telescope,transient[0].ra,transient[0].dec)
 
+
+                date = datetime.datetime.now(tz=pytz.utc)
+                nowdate = date.astimezone(timezone('US/Pacific'))
+                date_format='%m/%d/%Y %H:%M:%S %Z'
                 if lastphotdata and firstphotdata:
                         context = {
                                 'transient':transient[0],
@@ -159,7 +165,7 @@ def transient_detail(request, transient_id):
                                 'telescope_list': tellist,
                                 'observing_nights': obsnights,
                                 'too_resource_list': too_resources,
-                                'nowtime':datetime.datetime.now()
+                                'nowtime':nowdate.strftime(date_format)
                         }
                 else:
                         context = {
@@ -169,7 +175,7 @@ def transient_detail(request, transient_id):
                                 'telescope_list': tellist,
                                 'observing_nights': obsnights,
                                 'too_resource_list': too_resources,
-                                'nowtime':datetime.datetime.now()
+                                'nowtime':nowdate.strftime(date_format)
                         }
 
 
