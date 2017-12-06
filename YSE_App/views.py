@@ -10,6 +10,7 @@ from .models import *
 from .forms import *
 from .common import utilities
 from . import view_utils
+import datetime
 
 # Create your views here.
 
@@ -157,7 +158,8 @@ def transient_detail(request, transient_id):
                                 'first_magdate':firstphotdata.obs_date,
                                 'telescope_list': tellist,
                                 'observing_nights': obsnights,
-                                'too_resource_list': too_resources
+                                'too_resource_list': too_resources,
+                                'nowtime':datetime.datetime.now()
                         }
                 else:
                         context = {
@@ -166,7 +168,8 @@ def transient_detail(request, transient_id):
                                 'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
                                 'telescope_list': tellist,
                                 'observing_nights': obsnights,
-                                'too_resource_list': too_resources
+                                'too_resource_list': too_resources,
+                                'nowtime':datetime.datetime.now()
                         }
 
 
