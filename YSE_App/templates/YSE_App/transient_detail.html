@@ -101,7 +101,7 @@
 								<div class="tab-content">
 									<div class="active tab-pane" id="followup">
 									  <div class="box">
-									    <p><a href="{% url 'admin:YSE_App_transientfollowup_add'  %}">Add Followup</a></p>
+									    <p><a href="{% url 'admin:YSE_App_transientobservationtask_add'  %}">Add Followup</a></p>
 									    <p><a href="{% url 'admin:YSE_App_transient_change' transient.id %}">Change Transient Status</a></p>
 									    <b><a href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing" target="_blank">Follow-up Guidelines</a></b><br>
 									    <b>Current time UT {{ nowtime }}</a></b><br>
@@ -147,7 +147,7 @@
 										      </ul>
 										    </td>
 										    <td>{{ o.status }}</td>
-										    <td><a href="#">Edit</a></td>
+										    <td><a href="{% url 'admin:YSE_App_transientobservationtask_change' transientobservationtask.id %}">Edit</a></td>
 										  </tr>
 										  {% endfor %}
 										  {% endfor %}
