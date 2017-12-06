@@ -40,9 +40,32 @@
 					{{ first_filter }}<br>
 					<b>Status</b><br>
 					{{ transient.status }}<br>
+					<br>
+					<b>Most Likely Host Galaxy</b><br>
+					<table id="host_galaxy_tbl" class="table table-bordered table-hover">
+					  <thead>
+					    <tr>
+					      <th>Name</th>
+					      <th>RA</th>
+					      <th>DEC</th>
+					      <th>Redshift</th>
+					      <th>Separation (arcsec)</th>
+					    </tr>
+					  </thead>
+					  <tbody>
+					    <tr>
+					      <td>{{ transient.hostdata.name }}</a></td>
+					      <td>{{ transient.hostdata.CoordString.0 }}</td>
+					      <td>{{ transient.hostdata.CoordString.1 }}</td>
+					      <td>{{ transient.hostdata.redshift }}</td>
+					      <td>{{ transient.Separation }}</td>
+                                            </tr>
+					  </tbody>
+					</table>
 					
 					<b>External Resources</b><br>
-					<a target="_blank" href="http://nedwww.ipac.caltech.edu/cgi-bin/nph-objsearch?lon={{ transient.ra }}000d&lat={{ transient.dec }}d&radius=10.0&search_type=Near+Position+Search">NED</a>
+					<b><a href="https://wis-tns.weizmann.ac.il/object/{{ transient.name }}">TNS</a></b>
+					<a target="_blank" href="http://nedwww.ipac.caltech.edu/cgi-bin/nph-objsearch?ra={{ transient.ra }}&dec={{ transient.dec }}d&radius=10.0&search_type=Near+Position+Search">NED</a>
 					<a href="http://simbad.u-strasbg.fr/simbad/sim-coo?protocol=html&amp;NbIdent=1&amp;Radius=1&amp;Radius.unit=arcmin&amp;CooFrame=FK5&amp;CooEpoch=2000&amp;CooEqui=2000&amp;Coord={{ transient.ra }}+{{ transient.dec }}" target="_blank">SIMBAD</a>
 					<a target="_blank" href="http://vizier.u-strasbg.fr/viz-bin/VizieR?-source=&-out.add=_r&-out.add=_RAJ%2C_DEJ&-sort=_r&-to=&-out.max=20&-meta.ucd=2&-meta.foot=1&-c={{ transient.ra }}+{{ transient.dec }}&-c.rs=10">VizieR</a>
 					<a target="_blank" href="http://irsa.ipac.caltech.edu/applications/wise/#id=Hydra_wise_wise_1&RequestClass=ServerRequest&DoSearch=true&intersect=CENTER&subsize=0.16666666800000002&mcenter=all&schema=allsky-4band&dpLevel=3a&band=1,2,3,4&UserTargetWorldPt={{ transient.ra }};{{ transient.dec }};EQ_J2000&SimpleTargetPanel.field.resolvedBy=nedthensimbad&preliminary_data=no&coaddId=&projectId=wise&searchName=wise_1&shortDesc=Position&isBookmarkAble=true&isDrillDownRoot=true&isSearchResult=true">WISE</a>
@@ -81,44 +104,6 @@
 									    <p><a href="{% url 'admin:YSE_App_transient_change' transient.id %}">Change Transient Status</a></p>
 									    <b><a href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing" target="_blank">Follow-up Guidelines</a></b><br>
 
-									    {% if telescope_list %}
-									    <ul>
-									      <b>In the next two weeks, {{ transient }} can be observed with:</b><br>
-									      <ul>
-										{% for telescope in telescope_list %}
-										<b>{{ telescope }}</b><br>
-										<ul>
-										  {% for obsnight in observing_nights %}
-										  {% if obsnight.0.happening_soon and obsnight.0.telescope == telescope.tostring and obsnight.1 %}
-										  <b>{{ obsnight.0.obs_date }}</b><br>
-										  <img src="{% url 'airmassplot' transient.id obsnight.0.id telescope.id %}" style='width:240px' alt="" /><br>
-										  {% endif %}
-										  {% endfor %}
-										</ul>
-										{% endfor %}
-									      </ul>
-									    </ul>
-									    {% else %}
-									    <p>No upcoming observing nights for this target.</p>
-									    {% endif %}
-									    {% if too_resource_list %}
-									    <ul>
-									      <b>These ToO resources can observe {{ transient }}:</b><br>
-									      <ul>
-										{% for too_resource in too_resource_list %}
-										<b>{{ too_resource.telescope }}</b><br>
-										<ul>
-										  {% if too_resource.deltahours > 0 %}
-										<b>{{ too_resource.deltahours }} ToO hours remaining</b><br>
-										  <img src="{% url 'airmassplot' transient.id 0 too_resource.telescope_id %}" style='width:240px' alt="" /><br>
-										  {% endif %}
-										</ul>
-										{% endfor %}
-									      </ul>
-									    </ul>
-									    {% else %}
-									    <p>No ToO time for this target.</p>
-									    {% endif %}
 									    {% for f in followups %}
 									    <div class="box-header">
 									      <h3 class="box-title">{{ f.name }} Tasks</h3>
@@ -165,8 +150,71 @@
 										</tbody>
 									      </table>
 									    </div>
+
+									    <b>Classical Resources</b><br>
+									    <table id="telescope_tbl" class="table table-bordered table-hover">
+									      <thead>
+										<tr>
+										  <th>Telescope (Classical)</th>
+										  <th>Next Obs. Night</th>
+										  <th>Rise Time (UT)</th>
+										  <th>Set Time (UT)</th>
+										  <th>Moon Angle</th>
+										  <th>Airmass Plot</th>
+										</tr>
+									      </thead>
+									      <tbody>
+										{% for telescope in telescope_list %}
+										{% for obsnight in observing_nights %}
+										{% if obsnight.0.happening_soon and obsnight.0.telescope == telescope.tostring and obsnight.1 %}
+
+										<tr>
+										  <td>{{ telescope }}</td>
+                                                                                  <td>{{ obsnight.0.obs_date }}</td>
+										  <td>{{ obsnight.0.rise_time }}</td>
+                                                                                  <td>{{ obsnight.0.set_time }}</td>
+                                                                                  <td>{{ obsnight.0.moon_angle }} deg</td>
+                                         	        			  <td><img src="{% url 'airmassplot' transient.id obsnight.0.id telescope.id %}" style='width:240px' alt="" /><br></td>
+										</tr>
+										{% endif %}
+										{% endfor %}
+										{% endfor %}
+
+                                     					  </tbody>
+				                                	</table>
+									    <b>ToO Resources</b><br>
+									    <table id="telescope_tbl" class="table table-bordered table-hover">
+									      <thead>
+										<tr>
+										  <th>Telescope (ToO)</th>
+										  <th>ToO Hours Remaining</th>
+										  <th>Rise Time (UT)</th>
+										  <th>Set Time (UT)</th>
+										  <th>Moon Angle</th>
+										  <th>Airmass Plot</th>
+										</tr>
+									      </thead>
+									      <tbody>
+										{% for too_resource in too_resource_list %}
+										{% if too_resource.deltahours > 0 %}
+										<tr>
+										  <td>{{ too_resource.telescope }}</td>
+										  <td>{{ too_resource.deltahours }}</td>
+                                                                                  <td>{{ too_resource.rise_time }}</td>
+                                                                                  <td>{{ too_resource.set_time }}</td>
+                                                                                  <td>{{ too_resource.moon_angle }} deg</td>
+                                         	        			  <td><img src="{% url 'airmassplot' transient.id 0 too_resource.telescope_id %}" style='width:240px' alt="" /><br></td>
+										</tr>
+										{% endif %}
+										{% endfor %}
+
+                                     					  </tbody>
+				                                	</table>
+
+									    
 									    <!-- /.box-body -->
 									  </div>
+									  
 						<!-- <table id="transient_tbl" class="table table-bordered table-hover">
 						<thead>
 						<tr>

@@ -6,6 +6,12 @@ from astroplan import Observer
 from astropy.time import Time
 import requests
 
+def getSeparation(ra1_decimal,dec1_decimal,
+                  ra2_decimal,dec2_decimal):
+        c1 = SkyCoord(ra1_decimal,dec1_decimal,unit=(u.deg, u.deg))
+        c2 = SkyCoord(ra2_decimal,dec2_decimal,unit=(u.deg, u.deg))
+        return(c1.separation(c2).arcsec)
+        
 def GetSexigesimalString(ra_decimal, dec_decimal):
 	c = SkyCoord(ra_decimal,dec_decimal,unit=(u.deg, u.deg))
 	ra = c.ra.hms
@@ -31,7 +37,7 @@ def get_psstamp_url(request, transient_id, Transient):
 		raise Http404("Transient id does not exist")
 	
 	ps1url = ("http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f+%.7f&filter=color" % (t.ra,t.dec))
-	response = requests.get(url=ps1url)
+	response = requests.get(url=ps1url,timeout=5)
 	response_text = response.content.decode('utf-8')
 	if "<td><img src=" in response.content.decode('utf-8'):
 		jpegurl = response.content.decode('utf-8').split('<td><img src="')[1].split('" width="240" height="240" /></td>')[0]

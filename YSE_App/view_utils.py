@@ -1,5 +1,9 @@
+import copy
 from .models import *
 from astropy.coordinates import EarthLocation
+from astropy.coordinates import get_moon, SkyCoord
+from astropy.time import Time
+import astropy.units as u
 import datetime
 
 def get_recent_phot_for_transient(transient_id=None):
@@ -29,27 +33,84 @@ def get_first_phot_for_transient(transient_id=None):
     else:
         return(None)
 
-
+def getMoonAngle(observingdate,telescope,ra,dec):
+    if observingdate:
+        obstime = Time(observingdate,scale='utc')
+    else:
+        obstime = Time(datetime.datetime.now())
+    mooncoord = get_moon(obstime)
+    cs = SkyCoord(ra,dec,unit=u.deg)
+    return('%.1f'%cs.separation(mooncoord).deg)
+    
 def getObsNights(transient):
 
     obsnights,tellist = (),()
     for o in ClassicalObservingDate.objects.order_by('-obs_date')[::-1]:
         telescope = get_telescope_from_obsnight(o.id)
         observatory = get_observatory_from_telescope(telescope.id)
-        can_obs = telescope_can_observe(transient.CoordString()[0],
-                                        transient.CoordString()[1], 
+        can_obs = telescope_can_observe(transient.ra,
+                                        transient.dec, 
                                         str(o.obs_date).split()[0],
                                         telescope.latitude,
                                         telescope.longitude,
                                         telescope.elevation,
                                         observatory.utc_offset)
         o.telescope = telescope.name
+        o.rise_time,o.set_time = getTimeUntilRiseSet(transient.ra,
+                                                     transient.dec, 
+                                                     str(o.obs_date).split()[0],
+                                                     telescope.latitude,
+                                                     telescope.longitude,
+                                                     telescope.elevation,
+                                                     observatory.utc_offset)
+        o.moon_angle = getMoonAngle(str(o.obs_date).split()[0],telescope,transient.ra,transient.dec)
         obsnights += ([o,can_obs],)
         if can_obs and o.happening_soon() and telescope not in tellist: tellist += (telescope,)
     return obsnights,tellist
 
+def getTimeUntilRiseSet(ra,dec,date,lat,lon,elev,utc_off):
+    if date:
+        time = Time(date)
+    else:
+        time = Time(datetime.datetime.now())
+    sc = SkyCoord(ra,dec,unit=u.deg)
+
+    location = EarthLocation.from_geodetic(
+        lon*u.deg,lat*u.deg,
+        elev*u.m)
+    tel = Observer(location=location, timezone="UTC")
+    night_start = tel.twilight_evening_civil(time,which="previous")
+    night_end = tel.twilight_morning_civil(time,which="previous")
+
+    start_obs = False
+    starttime,endtime = None,None
+    for jd in np.arange(night_start.mjd,night_end.mjd,0.02):
+        time = Time(jd,format="mjd")
+        target_up = tel.target_is_up(time,sc,horizon=18*u.deg)
+        if target_up and not start_obs:
+            start_obs = True
+            starttime = copy.copy(time)
+        if not target_up and start_obs:
+            can_obs = False
+            endtime = copy.copy(time)
+            break
+
+    if starttime:
+        returnstarttime = starttime.isot.split('T')[-1]
+    else: returnstarttime = None
+    if endtime:
+        returnendtime = endtime.isot.split('T')[-1]
+    else: returnendtime = None
+
+    
+    return(returnstarttime,returnendtime)
+
+    
 def telescope_can_observe(ra,dec,date,lat,lon,elev,utc_off):
-    time = Time(date)
+    if date:
+        time = Time(date)
+    else:
+        time = Time(datetime.datetime.now())
     sc = SkyCoord(ra,dec,unit=u.deg)
 
     location = EarthLocation.from_geodetic(
@@ -62,7 +123,7 @@ def telescope_can_observe(ra,dec,date,lat,lon,elev,utc_off):
     can_obs = False
     for jd in np.arange(night_start.mjd,night_end.mjd,0.02):
         time = Time(jd,format="mjd")
-        target_up = tel.target_is_up(time,sc)
+        target_up = tel.target_is_up(time,sc,horizon=18*u.deg)
         if target_up:
             can_obs = True
             break
