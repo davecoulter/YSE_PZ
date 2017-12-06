@@ -60,27 +60,27 @@ def dashboard(request):
         following_transients = None
         followup_requested_transients = None
         
-        status_new = TransientStatus.objects.filter(name='New')
+        status_new = TransientStatus.objects.filter(name='New').order_by('-modified_date')
         if len(status_new) == 1:
-                new_transients = Transient.objects.filter(status=status_new[0])
-                new_notk2_transients = new_transients.exclude(k2_validated=1)
+                new_transients = Transient.objects.filter(status=status_new[0]).order_by('-modified_date')
+                new_notk2_transients = new_transients.exclude(k2_validated=1).order_by('-modified_date')
                 for i in range(len(new_notk2_transients)):
                         disc = view_utils.get_first_phot_for_transient(transient_id=new_notk2_transients[i].id)
                         if disc: new_notk2_transients[i].disc_mag = disc.mag
 
-                new_k2_transients = new_transients.filter(k2_validated=1)                        
+                new_k2_transients = new_transients.filter(k2_validated=1).order_by('-modified_date')
                 for i in range(len(new_k2_transients)):
                         disc = view_utils.get_first_phot_for_transient(transient_id=new_k2_transients[i].id)
                         if disc: new_k2_transients[i].disc_mag = disc.mag
                 
-        status_watch = TransientStatus.objects.filter(name='Watch')
+        status_watch = TransientStatus.objects.filter(name='Watch').order_by('-modified_date')
         if len(status_watch) == 1:
                 watch_transients = Transient.objects.filter(status=status_watch[0])
                 for i in range(len(watch_transients)):
                         disc = view_utils.get_first_phot_for_transient(transient_id=watch_transients[i].id)
                         if disc: watch_transients[i].disc_mag = disc.mag
 
-        status_followrequest = TransientStatus.objects.filter(name='FollowupRequested')
+        status_followrequest = TransientStatus.objects.filter(name='FollowupRequested').order_by('-modified_date')
         if len(status_followrequest) == 1:
                 followup_requested_transients = Transient.objects.filter(status=status_followrequest[0])
                 for i in range(len(followup_requested_transients)):
@@ -88,7 +88,7 @@ def dashboard(request):
                         if disc: followup_requested_transients[i].disc_mag = disc.mag
 
                 
-        status_following = TransientStatus.objects.filter(name='Following')
+        status_following = TransientStatus.objects.filter(name='Following').order_by('-modified_date')
         if len(status_following) == 1:
                 following_transients = Transient.objects.filter(status=status_following[0])
                 for i in range(len(following_transients)):
@@ -121,6 +121,9 @@ def transient_detail(request, transient_id):
         if len(transient) == 1:
                 # Get associated Observations
                 followups = TransientFollowup.objects.filter(transient__pk=transient_id)
+                if followups:
+                        followups.observation_set = TransientObservationTask.objects.filter(followup=followups[0].followup_id)
+                else: followups = None
                 hostdata = Host.objects.filter(pk=transient[0].host_id)
                 if hostdata:
                         hostphotdata = view_utils.get_recent_phot_for_host(host_id=hostdata[0].id)
