@@ -685,8 +685,8 @@ class processTNS():
                                       'host':hosturl,
                                       'candidate_hosts':hostcoords,
                                       'best_spec_class':eventid,
-                                      'disc_date':disc_date.replace(' ','T'),
-                                      'internal_survey':k2id}
+                                      'disc_date':disc_date.replace(' ','T')}#,
+#                                      'internal_survey':k2id}
 
                         if dbid:
                             transientid = db.put_object_to_DB('transient',newobjdict,dbid)
