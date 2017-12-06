@@ -46,6 +46,10 @@ class Transient(BaseModel):
 	def CoordString(self):
 		return GetSexigesimalString(self.ra, self.dec)
 
+	def Separation(self):
+		host = Host.objects.get(pk=self.host_id)
+		return '%.2f'%getSeparation(self.ra,self.dec,host.ra,host.dec)
+
 	def __str__(self):
 		return self.name
 

@@ -71,5 +71,8 @@ class Host(BaseModel):
 		else:
 			return "Host: (%s, %s)" % (ra_str, dec_str)
 
+	def CoordString(self):
+                return GetSexigesimalString(self.ra, self.dec)
+
 	def __str__(self):
 		return self.HostString()

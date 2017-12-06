@@ -56,12 +56,12 @@ def dashboard(request):
         status_new = TransientStatus.objects.filter(name='New')
         if len(status_new) == 1:
                 new_transients = Transient.objects.filter(status=status_new[0])
-                new_notk2_transients = new_transients.exclude(internal_survey=k2_survey.id)
+                new_notk2_transients = new_transients.exclude(k2_validated=1)
                 for i in range(len(new_notk2_transients)):
                         disc = view_utils.get_first_phot_for_transient(transient_id=new_notk2_transients[i].id)
                         if disc: new_notk2_transients[i].disc_mag = disc.mag
                         
-                new_k2_transients = new_transients.filter(internal_survey=k2_survey.id)
+                new_k2_transients = new_transients.filter(k2_validated=1)#internal_survey=k2_survey.id)
                 for i in range(len(new_k2_transients)):
                         disc = view_utils.get_first_phot_for_transient(transient_id=new_k2_transients[i].id)
                         if disc: new_k2_transients[i].disc_mag = disc.mag
@@ -114,16 +114,27 @@ def transient_detail(request, transient_id):
         if len(transient) == 1:
                 # Get associated Observations
                 followups = TransientFollowup.objects.filter(transient__pk=transient_id)
+                transient[0].hostdata = Host.objects.get(pk=transient[0].host_id)
                 lastphotdata = view_utils.get_recent_phot_for_transient(transient_id=transient_id)
                 firstphotdata = view_utils.get_first_phot_for_transient(transient_id=transient_id)
-
+                
                 obsnights,tellist = view_utils.getObsNights(transient[0])
                 too_resources = ToOResource.objects.all()
                 for i in range(len(too_resources)):
                         telescope = too_resources[i].telescope
-                        too_resources[i].telescope_id = Telescope.objects.filter(name=telescope)[0].id
+                        telescope = Telescope.objects.filter(name=telescope)[0]
+                        too_resources[i].telescope_id = telescope.id
+                        observatory = Observatory.objects.get(pk=telescope.observatory_id)
                         too_resources[i].deltahours = too_resources[i].awarded_too_hours - too_resources[i].used_too_hours
-
+                        too_resources[i].rise_time,too_resources[i].set_time = view_utils.getTimeUntilRiseSet(transient[0].ra,
+                                                                                                              transient[0].dec, 
+                                                                                                              0,
+                                                                                                              telescope.latitude,
+                                                                                                              telescope.longitude,
+                                                                                                              telescope.elevation,
+                                                                                                              observatory.utc_offset)
+                        too_resources[i].moon_angle = view_utils.getMoonAngle(0,telescope,transient[0].ra,transient[0].dec)
+                        
                 if lastphotdata and firstphotdata:
                         context = {
                                 'transient':transient[0],

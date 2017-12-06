@@ -6,6 +6,12 @@ from astroplan import Observer
 from astropy.time import Time
 import requests
 
+def getSeparation(ra1_decimal,dec1_decimal,
+                  ra2_decimal,dec2_decimal):
+        c1 = SkyCoord(ra1_decimal,dec1_decimal,unit=(u.deg, u.deg))
+        c2 = SkyCoord(ra2_decimal,dec2_decimal,unit=(u.deg, u.deg))
+        return(c1.separation(c2).arcsec)
+        
 def GetSexigesimalString(ra_decimal, dec_decimal):
 	c = SkyCoord(ra_decimal,dec_decimal,unit=(u.deg, u.deg))
 	ra = c.ra.hms

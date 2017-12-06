@@ -19,7 +19,7 @@
       <!-- Default box -->
       <div class="box">
         <div class="box-header with-border">
-          <h3 class="box-title">New K2 Transients</h3>
+          <h3 class="box-title">Validated K2 Transients</h3>
         </div>
         <div class="box-body">
 
@@ -37,15 +37,15 @@
             </thead>
             <tbody>
             {% for t in new_k2_transients %}
-              <tr>
-                <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
-                <td>{{ t.CoordString.0 }}</td>
-                <td>{{ t.CoordString.1 }}</td>
-                <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
-                <td>{{ t.disc_mag }}</td>
-                <td>{{ t.obs_group.name }}</td>
-                <td>{{ t.internal_survey }}</td>
-              </tr>
+            <tr>
+              <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
+              <td>{{ t.CoordString.0 }}</td>
+              <td>{{ t.CoordString.1 }}</td>
+              <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+              <td>{{ t.disc_mag }}</td>
+              <td>{{ t.obs_group.name }}</td>
+              <td>{{ t.internal_survey }}</td>
+            </tr>
             {% endfor %}
             </tbody>
           </table>

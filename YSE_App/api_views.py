@@ -99,6 +99,7 @@ class HostViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = Host.objects.all()
 	serializer_class = HostSerializer
 	permission_classes = (permissions.IsAuthenticated,)
+	#lookup_field = "id"
 
 class HostSEDViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = HostSED.objects.all()

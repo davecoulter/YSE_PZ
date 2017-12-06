@@ -505,8 +505,7 @@ class processTNS():
                     
                     tstart = time.time()
                     try:
-                        while time.time() - tstart < 20:
-                            response = requests.get(tns_url)
+                        response = requests.get(tns_url,timeout=20)
                         html = response.content
                     except:
                         print('trying again')
@@ -587,6 +586,7 @@ class processTNS():
                     a_vs = []
                     galaxy_ras = []
                     galaxy_decs = []
+                    galaxy_mags = []
                     if ned_region_table is not None:
                         print("NED Matches: %s" % len(ned_region_table))
 
@@ -605,7 +605,8 @@ class processTNS():
                                 galaxy_seps.append(galaxies[l]["Distance (arcmin)"])
                                 galaxy_ras.append(galaxies[l]["RA(deg)"])
                                 galaxy_decs.append(galaxies[l]["DEC(deg)"])
-
+                                galaxy_mags.append(galaxies[l]["Magnitude and Filter"])
+                                
                         print("Galaxies with z: %s" % len(galaxies_with_z))
                         # Get Dust in LoS for each galaxy with z
                         if len(galaxies_with_z) > 0:
@@ -650,12 +651,14 @@ class processTNS():
                         if not statusid: raise RuntimeError('Error : not all statuses are defined')
                         
                         # put in the hosts
-                        hostcoords = ''; hosturl = ''
-                        for z,name,ra,dec,sep in zip(galaxy_zs,galaxy_names,galaxy_ras,galaxy_decs,galaxy_seps):
+                        hostcoords = ''; hosturl = ''; ned_mag = ''
+                        for z,name,ra,dec,sep,mag in zip(galaxy_zs,galaxy_names,galaxy_ras,galaxy_decs,galaxy_seps,galaxy_mags):
                             if sep == np.min(galaxy_seps):
                                 hostdict = {'name':name,'ra':ra,'dec':dec,'redshift':z}
                                 hostoutput = db.post_object_to_DB('host',hostdict,return_full=True)
                                 hosturl = hostoutput['url']
+                                ned_mag = mag
+                                
                             hostcoords += 'ra=%.7f, dec=%.7f\n'%(ra,dec)
 
                         # put in the spec type
@@ -712,6 +715,27 @@ class processTNS():
                                         'photometry':phottableid}
                         photdataid = db.post_object_to_DB('photdata',photdatadict)
 
+                        # put in the galaxy photometry
+                        if ned_mag:
+                            instrumentid = db.get_ID_from_DB('instruments','Unknown')
+                            unknowngroupid = db.get_ID_from_DB('observationgroups','NED')
+                            if not groupid:
+                                groupid = db.get_ID_from_DB('observationgroups','Unknown')
+                            unknownbandid = db.get_ID_from_DB('photometricbands','Unknown')
+                                
+                            hostphottabledict = {'host':hosturl,
+                                                 'obs_group':unknowngroupid,
+                                                 'instrument':unknowninstid}
+                            hostphottableid = db.post_object_to_DB('hostphotometry',phottabledict)
+                        
+                            # put in the photometry
+                            photdatadict = {'obs_date':'2000-01-01 00:00:00',
+                                            'mag':ned_mag,
+                                            'band':unknownbandid,
+                                            'photometry':hostphottableid}
+                            hostphotdataid = db.post_object_to_DB('hostphotdata',photdatadict)
+
+                        
 
         except ValueError as err:
             print("%s. Exiting..." % err.args)
@@ -743,6 +767,7 @@ def runDBcommand(cmd):
         while time.time() - tstart < 20:
             return(json.loads(os.popen(cmd).read()))
     except:
+        import pdb; pdb.set_trace()
         raise RuntimeError('Error : cmd %s failed!!'%cmd)
 if __name__ == "__main__":
     # execute only if run as a script
