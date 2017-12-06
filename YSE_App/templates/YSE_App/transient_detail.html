@@ -89,6 +89,7 @@
 				</div>
 				<!-- /.col -->
 			</div>
+			<br>
 						<div class="col-xs-12"> <!-- col-md-9 -->
 							<div class="nav-tabs-custom">
 								<ul class="nav nav-tabs">
@@ -103,6 +104,8 @@
 									    <p><a href="{% url 'admin:YSE_App_transientfollowup_add'  %}">Add Followup</a></p>
 									    <p><a href="{% url 'admin:YSE_App_transient_change' transient.id %}">Change Transient Status</a></p>
 									    <b><a href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing" target="_blank">Follow-up Guidelines</a></b><br>
+									    <b>Current time UT {{ nowtime }}</a></b><br>
+
 
 									    {% for f in followups %}
 									    <div class="box-header">
