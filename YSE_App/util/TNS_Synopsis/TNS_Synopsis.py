@@ -323,6 +323,10 @@ class DBOps():
                               help='URL to POST transients to a database (default=%default)')
             parser.add_option('--photdataapi', default=config.get('main','photdataapi'), type="string",
                               help='URL to POST transients to a database (default=%default)')
+            parser.add_option('--hostphotometryapi', default=config.get('main','hostphotometryapi'), type="string",
+                              help='URL to POST transients to a database (default=%default)')
+            parser.add_option('--hostphotdataapi', default=config.get('main','hostphotdataapi'), type="string",
+                              help='URL to POST transients to a database (default=%default)')
             parser.add_option('--obs_groupapi', default=config.get('main','obs_groupapi'), type="string",
                               help='URL to POST group to a database (default=%default)')
             parser.add_option('--statusapi', default=config.get('main','statusapi'), type="string",
@@ -348,7 +352,8 @@ class DBOps():
         objectdata = runDBcommand(cmd)
 
         if type(objectdata) != list and 'url' not in objectdata:
-            #import pdb; pdb.set_trace()
+            print(cmd)
+            print(objectdata)
             raise RuntimeError('Error : failure adding object')
         if return_full:
             return(objectdata)
@@ -717,24 +722,26 @@ class processTNS():
 
                         # put in the galaxy photometry
                         if ned_mag:
-                            instrumentid = db.get_ID_from_DB('instruments','Unknown')
-                            unknowngroupid = db.get_ID_from_DB('observationgroups','NED')
-                            if not groupid:
-                                groupid = db.get_ID_from_DB('observationgroups','Unknown')
-                            unknownbandid = db.get_ID_from_DB('photometricbands','Unknown')
+                            try:
+                                unknowninstid = db.get_ID_from_DB('instruments','Unknown')
+                                unknowngroupid = db.get_ID_from_DB('observationgroups','NED')
+                                if not unknowngroupid:
+                                    unknowngroupid = db.get_ID_from_DB('observationgroups','Unknown')
+                                unknownbandid = db.get_ID_from_DB('photometricbands','Unknown')
                                 
-                            hostphottabledict = {'host':hosturl,
-                                                 'obs_group':unknowngroupid,
-                                                 'instrument':unknowninstid}
-                            hostphottableid = db.post_object_to_DB('hostphotometry',phottabledict)
+                                hostphottabledict = {'host':hosturl,
+                                                     'obs_group':unknowngroupid,
+                                                     'instrument':unknowninstid}
+                                hostphottableid = db.post_object_to_DB('hostphotometry',hostphottabledict)
                         
-                            # put in the photometry
-                            photdatadict = {'obs_date':'2000-01-01 00:00:00',
-                                            'mag':ned_mag,
-                                            'band':unknownbandid,
-                                            'photometry':hostphottableid}
-                            hostphotdataid = db.post_object_to_DB('hostphotdata',photdatadict)
-
+                                # put in the photometry
+                                hostphotdatadict = {'obs_date':disc_date.replace(' ','T'),#'2000-01-01 00:00:00',
+                                                    'mag':ned_mag.decode('utf-8')[:-1],
+                                                    'band':unknownbandid,
+                                                    'photometry':hostphottableid}
+                                hostphotdataid = db.post_object_to_DB('hostphotdata',hostphotdatadict)
+                            except:
+                                print('getting host mag failed')
                         
 
         except ValueError as err:
@@ -767,7 +774,6 @@ def runDBcommand(cmd):
         while time.time() - tstart < 20:
             return(json.loads(os.popen(cmd).read()))
     except:
-        import pdb; pdb.set_trace()
         raise RuntimeError('Error : cmd %s failed!!'%cmd)
 if __name__ == "__main__":
     # execute only if run as a script

@@ -6,6 +6,21 @@ from astropy.time import Time
 import astropy.units as u
 import datetime
 
+def get_recent_phot_for_host(host_id=None):
+
+    host = Host.objects.filter(id=host_id)
+    photometry = HostPhotometry.objects.filter(host=host_id)
+
+    for p in photometry:
+        photdata = HostPhotData.objects.filter(photometry=p.id).order_by('-obs_date')
+
+    
+    if photometry:    
+        return(photdata[0])
+    else:
+        return(None)
+
+
 def get_recent_phot_for_transient(transient_id=None):
 
     transient = Transient.objects.filter(id=transient_id)

@@ -119,7 +119,9 @@ def transient_detail(request, transient_id):
                 # Get associated Observations
                 followups = TransientFollowup.objects.filter(transient__pk=transient_id)
                 hostdata = Host.objects.filter(pk=transient[0].host_id)
+                hostphotdata = view_utils.get_recent_phot_for_host(host_id=hostdata[0].id)
                 if hostdata: transient[0].hostdata = hostdata[0]
+                if hostphotdata: transient[0].hostphotdata = hostphotdata
                 lastphotdata = view_utils.get_recent_phot_for_transient(transient_id=transient_id)
                 firstphotdata = view_utils.get_first_phot_for_transient(transient_id=transient_id)
                 

@@ -46,18 +46,18 @@
 					  <thead>
 					    <tr>
 					      <th>Name</th>
-					      <th>RA</th>
-					      <th>DEC</th>
+					      <th>Coords</th>
 					      <th>Redshift</th>
+					      <th>Mag</th>
 					      <th>Separation (arcsec)</th>
 					    </tr>
 					  </thead>
 					  <tbody>
 					    <tr>
-					      <td>{{ transient.hostdata.name }}</a></td>
-					      <td>{{ transient.hostdata.CoordString.0 }}</td>
-					      <td>{{ transient.hostdata.CoordString.1 }}</td>
+					      <td>{{ transient.hostdata.name }}</td>
+					      <td>{{ transient.hostdata.CoordString.0 }} {{ transient.hostdata.CoordString.1 }}</td>
 					      <td>{{ transient.hostdata.redshift }}</td>
+					      <td>{{ transient.hostphotdata.mag }}</td>
 					      <td>{{ transient.Separation }}</td>
                                             </tr>
 					  </tbody>
