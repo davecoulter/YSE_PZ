@@ -122,7 +122,7 @@ def transient_detail(request, transient_id):
                 # Get associated Observations
                 followups = TransientFollowup.objects.filter(transient__pk=transient_id)
                 if followups:
-                        followups.observation_set = TransientObservationTask.objects.filter(followup=followups[0].followup_id)
+                        followups.observation_set = TransientObservationTask.objects.filter(followup=followups[0].id)
                 else: followups = None
                 hostdata = Host.objects.filter(pk=transient[0].host_id)
                 if hostdata:
