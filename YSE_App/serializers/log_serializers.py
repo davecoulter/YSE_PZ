@@ -27,7 +27,7 @@ class LogSerializer(serializers.HyperlinkedModelSerializer):
 	
 	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), allow_null=True, required=False, view_name='instrument-detail')
 	instrument_config = serializers.HyperlinkedRelatedField(queryset=InstrumentConfig.objects.all(), allow_null=True, required=False, view_name='instrumentconfig-detail')
-	config_element = serializers.HyperlinkedRelatedField(queryset=ConfigElement.objects.all(), allow_null=True, required=False, view_name='configelelement-detail')
+	config_element = serializers.HyperlinkedRelatedField(queryset=ConfigElement.objects.all(), allow_null=True, required=False, lookup_field="id", view_name='configelelement-detail')
 	
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')

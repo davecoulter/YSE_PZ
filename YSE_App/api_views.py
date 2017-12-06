@@ -120,6 +120,7 @@ class InstrumentConfigViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 class ConfigElementViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = ConfigElement.objects.all()
 	serializer_class = ConfigElementSerializer
+	lookup_field="id"
 	permission_classes = (permissions.IsAuthenticated,)
 
 ### `Log` ViewSets ###
