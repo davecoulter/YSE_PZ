@@ -104,7 +104,7 @@ class HostPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 		fields = "__all__"
 
 	def create(self, validated_data):
-		return HostPhotometry.objects.create(**validated_data)
+		return HostPhotData.objects.create(**validated_data)
 
 	def update(self, instance, validated_data):
 		instance.photometry_id = validated_data.get('host', instance.photometry)
