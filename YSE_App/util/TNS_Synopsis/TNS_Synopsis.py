@@ -294,10 +294,8 @@ class DBOps():
         parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
         parser.add_option('--clobber', default=False, action="store_true",
                           help='clobber output file')            
-        parser.add_option('-s','--settingsfile', default=None, type="string",
+        parser.add_option('-s','--settingsfile', default='/data/yse_pz/YSE_PZ/YSE_PZ/settings.ini', type="string",
                           help='settings file (login/password info)')
-        parser.add_option('-p','--post', default=False, action="store_true",
-                          help='post to database')
             
         if config:
             parser.add_option('--login', default=config.get('main','login'), type="string",
@@ -407,10 +405,8 @@ class processTNS():
         parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
         parser.add_option('--clobber', default=False, action="store_true",
                           help='clobber output file')
-        parser.add_option('-s','--settingsfile', default=None, type="string",
+        parser.add_option('-s','--settingsfile', default='/data/yse_pz/YSE_PZ/YSE_PZ/settings.ini', type="string",
                           help='settings file (login/password info)')
-        parser.add_option('-p','--post', default=False, action="store_true",
-                          help='post to database')
         
         if config:
             parser.add_option('--login', default=config.get('main','login'), type="string",
@@ -438,7 +434,7 @@ class processTNS():
             
         return(parser)
 
-    def ProcessTNSEmails(self,post=False,posturl=None,db=None):
+    def ProcessTNSEmails(self,post=True,posturl=None,db=None):
         body = ""
         html = ""
         tns_objs = []
@@ -467,9 +463,9 @@ class processTNS():
                 # Iterate Over Email
                 ########################################################
                 typ, data = mail.fetch(msg_ids[i],'(RFC822)')
-                # Mark messages as "Seen"
-                result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')
                 msg = email.message_from_bytes(data[0][1])
+                # Mark messages as "Unseen"
+                result, wdata = mail.store(msg_ids[i], '-FLAGS', '\Seen')
 
                 if msg.is_multipart():
                     for part in msg.walk():
@@ -745,7 +741,8 @@ class processTNS():
                                 hostphotdataid = db.post_object_to_DB('hostphotdata',hostphotdatadict)
                             except:
                                 print('getting host mag failed')
-                        
+                # Mark messages as "Seen"
+                result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')                        
 
         except ValueError as err:
             print("%s. Exiting..." % err.args)
@@ -799,16 +796,15 @@ if __name__ == "__main__":
     parser = tnsproc.add_options(usage=usagestring,config=config)
     options,  args = parser.parse_args()
 
-    if options.post:
-        db = DBOps()
-        parser = db.add_options(usage=usagestring,config=config)
-        options,  args = parser.parse_args()
-        db.options = options
-        db.init_params()
+    db = DBOps()
+    parser = db.add_options(usage=usagestring,config=config)
+    options,  args = parser.parse_args()
+    db.options = options
+    db.init_params()
         
     tnsproc.login = options.login
     tnsproc.password = options.password
     tnsproc.dblogin = options.dblogin
     tnsproc.dbpassword = options.dbpassword
     tnsproc.dburl = options.dburl
-    tnsproc.ProcessTNSEmails(post=options.post,db=db)
+    tnsproc.ProcessTNSEmails(post=True,db=db)
