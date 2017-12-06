@@ -10,6 +10,9 @@ from .models import *
 from .forms import *
 from .common import utilities
 from . import view_utils
+import datetime
+import pytz
+from pytz import timezone
 
 # Create your views here.
 
@@ -119,8 +122,10 @@ def transient_detail(request, transient_id):
                 # Get associated Observations
                 followups = TransientFollowup.objects.filter(transient__pk=transient_id)
                 hostdata = Host.objects.filter(pk=transient[0].host_id)
-                hostphotdata = view_utils.get_recent_phot_for_host(host_id=hostdata[0].id)
-                if hostdata: transient[0].hostdata = hostdata[0]
+                if hostdata:
+                        hostphotdata = view_utils.get_recent_phot_for_host(host_id=hostdata[0].id)
+                        transient[0].hostdata = hostdata[0]
+                else: hostphotdata = None
                 if hostphotdata: transient[0].hostphotdata = hostphotdata
                 lastphotdata = view_utils.get_recent_phot_for_transient(transient_id=transient_id)
                 firstphotdata = view_utils.get_first_phot_for_transient(transient_id=transient_id)
@@ -142,6 +147,10 @@ def transient_detail(request, transient_id):
                                                                                                               observatory.utc_offset)
                         too_resources[i].moon_angle = view_utils.getMoonAngle(0,telescope,transient[0].ra,transient[0].dec)
 
+
+                date = datetime.datetime.now(tz=pytz.utc)
+                nowdate = date.astimezone(timezone('US/Pacific'))
+                date_format='%m/%d/%Y %H:%M:%S %Z'
                 if lastphotdata and firstphotdata:
                         context = {
                                 'transient':transient[0],
@@ -155,7 +164,8 @@ def transient_detail(request, transient_id):
                                 'first_magdate':firstphotdata.obs_date,
                                 'telescope_list': tellist,
                                 'observing_nights': obsnights,
-                                'too_resource_list': too_resources
+                                'too_resource_list': too_resources,
+                                'nowtime':nowdate.strftime(date_format)
                         }
                 else:
                         context = {
@@ -164,7 +174,8 @@ def transient_detail(request, transient_id):
                                 'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
                                 'telescope_list': tellist,
                                 'observing_nights': obsnights,
-                                'too_resource_list': too_resources
+                                'too_resource_list': too_resources,
+                                'nowtime':nowdate.strftime(date_format)
                         }
 
 
