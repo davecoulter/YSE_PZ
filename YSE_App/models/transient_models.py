@@ -68,7 +68,9 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 		instance.save()
 
 		if is_k2_validated:
-			SendTransientAlert()
+			# coord_string = GetSexigesimalString(instance.ra, instance.dec)
+			coord_string = instance.CoordString()
+			SendTransientAlert(instance.id, instance.name, coord_string[0], coord_string[1])
 
 # Alternate Host names?
 class AlternateTransientNames(BaseModel):
