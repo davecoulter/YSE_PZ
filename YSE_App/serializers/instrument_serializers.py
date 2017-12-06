@@ -61,6 +61,9 @@ class ConfigElementSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta:
 		model = ConfigElement
 		fields = "__all__"
+		extra_kwargs = {
+			'url': {'view_name': 'configelement-detail', 'lookup_field': 'id'}
+		}
 
 	def create(self, validated_data):
 		configs = validated_data.pop('instrument_config')
