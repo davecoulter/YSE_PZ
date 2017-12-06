@@ -71,8 +71,10 @@ class ClassicalResourceSerializer(serializers.HyperlinkedModelSerializer):
 
 	class Meta:
 		model = ClassicalResource
-		lookup_field = "id"
 		fields = "__all__"
+		extra_kwargs = {
+			'url': {'view_name': 'classicalresource-detail', 'lookup_field': 'id'}
+		}
 
 	def create(self, validated_data):
 		return ClassicalResource.objects.create(**validated_data)

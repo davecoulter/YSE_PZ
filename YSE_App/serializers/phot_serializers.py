@@ -7,7 +7,7 @@ class TransientPhotometrySerializer(serializers.HyperlinkedModelSerializer):
 	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail')
 	obs_group = serializers.HyperlinkedRelatedField(queryset=ObservationGroup.objects.all(), view_name='observationgroup-detail')
 
-	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), allow_null=True, required=False, view_name='host-detail')
+	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), allow_null=True, required=False, view_name='host-detail', lookup_field="id")
 	followup = serializers.HyperlinkedRelatedField(queryset=TransientFollowup.objects.all(), allow_null=True, required=False, view_name='transientfollowup-detail')
 
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
@@ -33,7 +33,7 @@ class TransientPhotometrySerializer(serializers.HyperlinkedModelSerializer):
 		return instance
 
 class HostPhotometrySerializer(serializers.HyperlinkedModelSerializer):
-	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), view_name='host-detail')
+	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), view_name='host-detail', lookup_field="id")
 	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail')
 	obs_group = serializers.HyperlinkedRelatedField(queryset=ObservationGroup.objects.all(), view_name='observationgroup-detail')
 
@@ -100,7 +100,7 @@ class HostPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
 	class Meta:
-		model = HostPhotometry
+		model = HostPhotData
 		fields = "__all__"
 
 	def create(self, validated_data):

@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 class LogSerializer(serializers.HyperlinkedModelSerializer):
 	transient = serializers.HyperlinkedRelatedField(queryset=Transient.objects.all(), allow_null=True, required=False, view_name='transient-detail')
-	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), allow_null=True, required=False, view_name='host-detail')
+	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), allow_null=True, required=False, view_name='host-detail', lookup_field = "id")
 	host_sed = serializers.HyperlinkedRelatedField(queryset=HostSED.objects.all(), allow_null=True, required=False, view_name='hostsed-detail')
 	
 	transient_image = serializers.HyperlinkedRelatedField(queryset=TransientImage.objects.all(), allow_null=True, required=False, view_name='transientimage-detail')

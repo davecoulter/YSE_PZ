@@ -46,7 +46,7 @@ class TransientSpectrumSerializer(serializers.HyperlinkedModelSerializer):
 		return instance
 
 class HostSpectrumSerializer(serializers.HyperlinkedModelSerializer):
-	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), view_name='host-detail')
+	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), view_name='host-detail', lookup_field='id')
 	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail')
 	obs_group = serializers.HyperlinkedRelatedField(queryset=ObservationGroup.objects.all(), view_name='observationgroup-detail')
 	followup = serializers.HyperlinkedRelatedField(queryset=HostFollowup.objects.all(), allow_null=True, required=False, view_name='hostfollowup-detail')
