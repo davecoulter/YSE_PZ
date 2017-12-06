@@ -14,6 +14,9 @@ class HostSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta:
 		model = Host
 		fields = "__all__"
+		extra_kwargs = {
+			'url': {'view_name': 'host-detail', 'lookup_field': 'id'}
+		}
 
 	def create(self, validated_data):
 		return Host.objects.create(**validated_data)

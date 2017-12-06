@@ -10,7 +10,7 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 	best_spec_class = serializers.HyperlinkedRelatedField(queryset=TransientClass.objects.all(), allow_null=True, required=False, view_name='transientclass-detail')
 	photo_class = serializers.HyperlinkedRelatedField(queryset=TransientClass.objects.all(), allow_null=True, required=False, view_name='transientclass-detail')
 	best_spectrum = serializers.HyperlinkedRelatedField(queryset=TransientSpectrum.objects.all(), allow_null=True, required=False, view_name='transientspectrum-detail')
-	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), allow_null=True, required=False, view_name='host-detail')#,lookup_field='id')
+	host = serializers.HyperlinkedRelatedField(queryset=Host.objects.all(), allow_null=True, required=False, view_name='host-detail', lookup_field="id")
 	abs_mag_peak_band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True, required=False, view_name='photometricband-detail')
 	antares_classification = serializers.HyperlinkedRelatedField(queryset=AntaresClassification.objects.all(), allow_null=True, required=False, view_name='antaresclassification-detail')
 	internal_survey = serializers.HyperlinkedRelatedField(queryset=InternalSurvey.objects.all(), allow_null=True, required=False, view_name='internalsurvey-detail')

@@ -98,8 +98,8 @@ class HostFollowupViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 class HostViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = Host.objects.all()
 	serializer_class = HostSerializer
+	lookup_field = "id"
 	permission_classes = (permissions.IsAuthenticated,)
-	#lookup_field = "id"
 
 class HostSEDViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = HostSED.objects.all()
