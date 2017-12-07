@@ -281,9 +281,9 @@ class DBOps():
         self.dblogin = self.options.dblogin
         self.dbpassword = self.options.dbpassword
         self.dburl = self.options.dburl
-        self.baseposturl = "http -a %s:%s POST %s"%(self.dblogin,self.dbpassword,self.dburl)
-        self.basegeturl = "http -a %s:%s GET %s"%(self.dblogin,self.dbpassword,self.dburl)
-        self.baseputurl = "http -a %s:%s PUT %s"%(self.dblogin,self.dbpassword,self.dburl)
+        self.baseposturl = "http --ignore-stdin -a %s:%s POST %s"%(self.dblogin,self.dbpassword,self.dburl)
+        self.basegeturl = "http --ignore-stdin -a %s:%s GET %s"%(self.dblogin,self.dbpassword,self.dburl)
+        self.baseputurl = "http --ignore-stdin -a %s:%s PUT %s"%(self.dblogin,self.dbpassword,self.dburl)
 
     
     def add_options(self, parser=None, usage=None, config=None):
@@ -440,53 +440,61 @@ class processTNS():
         tns_objs = []
         radius = 5 # arcminutes
 
+
+        
+        ########################################################
+        # Get All Email
+        ########################################################
+        mail =  imaplib.IMAP4_SSL('imap.gmail.com', 993) #, ssl_context=ctx
+        
+        ## NOTE: This is not the way to do this. You will want to implement an industry-standard login step ##
+        mail.login(self.login, self.password)
+        mail.select('TNS', readonly=False)
+        retcode, msg_ids_bytes = mail.search(None, '(UNSEEN)')
+        msg_ids = msg_ids_bytes[0].decode("utf-8").split(" ")
+
         try:
-        
-            ########################################################
-            # Get All Email
-            ########################################################
-        
-            mail =  imaplib.IMAP4_SSL('imap.gmail.com', 993) #, ssl_context=ctx
-        
-            ## NOTE: This is not the way to do this. You will want to implement an industry-standard login step ##
-            mail.login(self.login, self.password)
-
-            mail.select('TNS', readonly=False)
-            retcode, msg_ids_bytes = mail.search(None, '(UNSEEN)')
-            msg_ids = msg_ids_bytes[0].decode("utf-8").split(" ")
-
             if retcode != "OK" or msg_ids[0] == "":
                 raise ValueError("No messages")
 
-            for i in range(len(msg_ids)):
-                ########################################################
-                # Iterate Over Email
-                ########################################################
-                typ, data = mail.fetch(msg_ids[i],'(RFC822)')
-                msg = email.message_from_bytes(data[0][1])
-                # Mark messages as "Unseen"
-                result, wdata = mail.store(msg_ids[i], '-FLAGS', '\Seen')
-
-                if msg.is_multipart():
-                    for part in msg.walk():
-                        ctype = part.get_content_type()
-                        cdispo = str(part.get('Content-Disposition'))
-
-                        # skip any text/plain (txt) attachments
-                        if ctype == 'text/plain' and 'attachment' not in cdispo:
-                            body = part.get_payload(decode=True)  # decode
-                            break
-                # not multipart - i.e. plain text, no attachments, keeping fingers crossed
-                else:
-                    body = msg.get_payload(decode=True)
-
-                objs = re.findall(reg_obj,body)
-                print(objs)
-                ras = re.findall(reg_ra,body)
-                print(ras)
-                decs = re.findall(reg_dec,body)
-                print(decs)
+        except ValueError as err:
+            print("%s. Exiting..." % err.args)
+            mail.close()
+            mail.logout()
+            del mail
+            print("Process done.")
+            return
             
+        for i in range(len(msg_ids)):
+            ########################################################
+            # Iterate Over Email
+            ########################################################
+            typ, data = mail.fetch(msg_ids[i],'(RFC822)')
+            msg = email.message_from_bytes(data[0][1])
+            # Mark messages as "Unseen"
+            # result, wdata = mail.store(msg_ids[i], '-FLAGS', '\Seen')
+                
+            if msg.is_multipart():
+                for part in msg.walk():
+                    ctype = part.get_content_type()
+                    cdispo = str(part.get('Content-Disposition'))
+                    
+                    # skip any text/plain (txt) attachments
+                    if ctype == 'text/plain' and 'attachment' not in cdispo:
+                        body = part.get_payload(decode=True)  # decode
+                        break
+            # not multipart - i.e. plain text, no attachments, keeping fingers crossed
+            else:
+                body = msg.get_payload(decode=True)
+
+            objs = re.findall(reg_obj,body)
+            print(objs)
+            ras = re.findall(reg_ra,body)
+            print(ras)
+            decs = re.findall(reg_dec,body)
+            print(decs)
+            
+            try:
                 ########################################################
                 # For Item in Email, Get TNS
                 ########################################################
@@ -744,17 +752,46 @@ class processTNS():
                 # Mark messages as "Seen"
                 result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')                        
 
-        except ValueError as err:
-            print("%s. Exiting..." % err.args)
-            mail.close()
-            mail.logout()
-            del mail
+            except: # ValueError as err:
+                for j in range(len(objs)):
+                    print('Something went wrong!!!  Sticking to basic info only')
+                    print("Object: %s\nRA: %s\nDEC: %s" % (objs[j].decode('utf-8'),
+                                                           ras[j].decode('utf-8'),
+                                                           decs[j].decode('utf-8')))
+                    
+                    snid = objs[j].decode("utf-8")
+                    # if source_group doesn't exist, we need to add it
+                    source_group = "Unknown"
+                    groupid = db.get_ID_from_DB('observationgroups',source_group)
+                    if not groupid:
+                        groupid = db.get_ID_from_DB('observationgroups','Unknown')#db.post_object_to_DB('observationgroup',{'name':source_group})
+
+                    # get the status
+                    statusid = db.get_ID_from_DB('transientstatuses','New')
+                    if not statusid: raise RuntimeError('Error : not all statuses are defined')
+                    
+                    dbid = db.get_ID_from_DB('transients',snid)
+                    k2id = db.get_ID_from_DB('internalsurveys','K2')
+                    # then POST or PUT, depending
+                    # put in main transient
+                    sc = SkyCoord(ras[j].decode("utf-8"),decs[j].decode("utf-8"),FK5,unit=(u.hourangle,u.deg))
+                    db.options.best_spec_classapi = db.options.transientclassesapi
+                    newobjdict = {'name':objs[j].decode("utf-8"),
+                                  'ra':sc.ra.deg,
+                                  'dec':sc.dec.deg,
+                                  'status':statusid,
+                                  'obs_group':groupid}
+
+                    if dbid:
+                        transientid = db.put_object_to_DB('transient',newobjdict,dbid)
+                    else:
+                        transientid = db.post_object_to_DB('transient',newobjdict)
 
         #WriteOutput(tns_objs)
         print("Process done.")
 
     def getIDfromName(self,tablename,fieldname):
-        cmd = 'http -a %s:%s GET %s%s'%(
+        cmd = 'http --ignore-stdin -a %s:%s GET %s%s'%(
             self.dblogin,self.dbpassword,self.dburl,tablename)
         output = os.popen(cmd).read()
         data = json.loads(output)
@@ -774,6 +811,7 @@ def runDBcommand(cmd):
         while time.time() - tstart < 20:
             return(json.loads(os.popen(cmd).read()))
     except:
+        print(os.popen(cmd).read())
         raise RuntimeError('Error : cmd %s failed!!'%cmd)
 if __name__ == "__main__":
     # execute only if run as a script

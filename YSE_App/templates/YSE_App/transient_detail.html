@@ -101,14 +101,15 @@
 								<div class="tab-content">
 									<div class="active tab-pane" id="followup">
 									  <div class="box">
-									    <p><a href="{% url 'admin:YSE_App_transientfollowup_add'  %}">Add Followup</a></p>
-									    <p><a href="{% url 'admin:YSE_App_transient_change' transient.id %}">Change Transient Status</a></p>
-									    <b><a href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing" target="_blank">Follow-up Guidelines</a></b><br>
+									    <p><a target="_blank" href="{% url 'admin:YSE_App_transientobservationtask_add'  %}">Add Followup</a></p>
+									    <p><a target="_blank" href="{% url 'admin:YSE_App_transient_change' transient.id %}">Change Transient Status</a></p>
+									    <b><a target="_blank" href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing" target="_blank">Follow-up Guidelines</a></b><br>
 									    <b>Current time UT {{ nowtime }}</a></b><br>
 
 
+                                                                            <b>Followup Tasks</b><br>
 									    {% for f in followups %}
-									    <div class="box-header">
+									    <!--<div class="box-header">
 									      <h3 class="box-title">{{ f.name }} Tasks</h3>
 									    </div>
 									    <!-- /.box-header -->
@@ -129,7 +130,7 @@
 										  </tr>
 										</thead>
 										<tbody>
-										  {% for o in f.observationtask_set.all %}
+										  {% for o in f.observation_set %}
 										  <tr>
 										    <td>{{ o.obs_window_start|date:"SHORT_DATE_FORMAT" }} &mdash;<br>{{ o.obs_window_stop|date:"SHORT_DATE_FORMAT" }}</td>
 										    <td>{{ o.instrument_config.instrument.telescope.observatory.name }}</td>
@@ -146,7 +147,7 @@
 										      </ul>
 										    </td>
 										    <td>{{ o.status }}</td>
-										    <td><a href="#">Edit</a></td>
+										    <td><a target="_blank" href="{% url 'admin:YSE_App_transientobservationtask_change' o.id %}">Edit</a></td>
 										  </tr>
 										  {% endfor %}
 										  {% endfor %}
