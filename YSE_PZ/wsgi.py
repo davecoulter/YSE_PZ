@@ -19,7 +19,6 @@ configFile = os.path.join(__location__, 'settings.ini')
 config = RawConfigParser()
 config.read(configFile)
 
-# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "YSE_PZ.settings")
-os.environ["DJANGO_SETTINGS_MODULE"] = config.get('site_settings', 'LOCAL_APP_SETTINGS')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "YSE_PZ.settings")
 
 application = get_wsgi_application()
