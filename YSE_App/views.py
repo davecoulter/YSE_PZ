@@ -125,7 +125,7 @@ def calendar(request):
                     '#f39c12', 
                     '#00c0ef', 
                     '#0073b7', 
-                    '#111111', 
+                    '#f012be', 
                     '#3c8dbc',
                     '#00a65a',
                     '#d2d6de',
