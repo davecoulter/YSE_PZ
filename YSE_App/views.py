@@ -114,6 +114,16 @@ def dashboard_example(request):
         return render(request, 'YSE_App/dashboard_example.html')
 
 @login_required
+def calendar(request):
+        print("\n\nHELLO\n\n")
+        all_dates = OnCallDate.objects.all()
+        print(all_dates)
+        context = {
+                'all_dates': all_dates
+        }
+        return render(request, 'YSE_App/calendar.html', context)
+
+@login_required
 def transient_detail(request, transient_id):
         # transient = get_object_or_404(Transient, pk=transient_id)
         transient = Transient.objects.filter(id=transient_id)
