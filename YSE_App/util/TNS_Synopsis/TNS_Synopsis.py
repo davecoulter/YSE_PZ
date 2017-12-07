@@ -293,8 +293,9 @@ class DBOps():
 
         parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
         parser.add_option('--clobber', default=False, action="store_true",
-                          help='clobber output file')            
-        parser.add_option('-s','--settingsfile', default='/data/yse_pz/YSE_PZ_test/YSE_PZ/settings.ini', type="string",
+                          help='clobber output file')
+
+        parser.add_option('-s','--settingsfile', default=None, type="string",
                           help='settings file (login/password info)')
             
         if config:
@@ -405,7 +406,7 @@ class processTNS():
         parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
         parser.add_option('--clobber', default=False, action="store_true",
                           help='clobber output file')
-        parser.add_option('-s','--settingsfile', default='/data/yse_pz/YSE_PZ_test/YSE_PZ/settings.ini', type="string",
+        parser.add_option('-s','--settingsfile', default=None, type="string",
                           help='settings file (login/password info)')
         
         if config:
