@@ -73,6 +73,8 @@ def getObsNights(transient):
         #                                observatory.utc_offset)
         can_obs = 1
         o.telescope = telescope.name
+        import time
+        tstart = time.time()
         o.rise_time,o.set_time = getTimeUntilRiseSet(transient.ra,
                                                      transient.dec, 
                                                      str(o.obs_date).split()[0],
@@ -81,6 +83,7 @@ def getObsNights(transient):
                                                      telescope.elevation,
                                                      observatory.utc_offset)
         o.moon_angle = getMoonAngle(str(o.obs_date).split()[0],telescope,transient.ra,transient.dec)
+        print(time.time()-tstart)
         obsnights += ([o,can_obs],)
         if can_obs and telescope not in tellist: tellist += (telescope,)
     return obsnights,tellist
@@ -185,7 +188,7 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
             obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
             obs_date = obsnight.obs_date
         else:
-            obs_date = datetime.datetime.now()
+            obs_date = datetime.date.today() #time.now()
             
         telescope = Telescope.objects.get(pk=telescope_id)
         
