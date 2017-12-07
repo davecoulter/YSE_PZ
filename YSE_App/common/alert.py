@@ -46,8 +46,6 @@ def SendTransientAlert(transient_id, transient_name, ra, dec):
 
 	smtpserver = "%s:%s" % (settings.SMTP_HOST, settings.SMTP_PORT)
 	from_addr = "%s@gmail.com" % settings.SMTP_LOGIN
-	
-	# 2017itz RA=10:18:00.38, DEC=-28:07:50.05, Discovery date=2017-12-04 22:04:48, Discovery mag=18.94 ABMag, Filter: G - Gaia, Reporter: A. Delgado, D. Harrison, S. Hodgkin, M. van Leeuwen, G. Rixon, A. Yoldas (University of Cambridge),..., Source group: GaiaAlerts
 
 	subject = "TNS K2 Transient - Action Required" 
 	if settings.DEBUG:
