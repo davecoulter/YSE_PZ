@@ -66,7 +66,7 @@
 					</table>
 					
 					<b>External Resources</b><br>
-					<b><a href="https://wis-tns.weizmann.ac.il/object/{{ transient.name }}">TNS</a></b>
+					<b><a target="_blank" href="https://wis-tns.weizmann.ac.il/object/{{ transient.name }}">TNS</a></b>
 					<a target="_blank" href="http://nedwww.ipac.caltech.edu/cgi-bin/nph-objsearch?ra={{ transient.ra }}&dec={{ transient.dec }}d&radius=10.0&search_type=Near+Position+Search">NED</a>
 					<a href="http://simbad.u-strasbg.fr/simbad/sim-coo?protocol=html&amp;NbIdent=1&amp;Radius=1&amp;Radius.unit=arcmin&amp;CooFrame=FK5&amp;CooEpoch=2000&amp;CooEqui=2000&amp;Coord={{ transient.ra }}+{{ transient.dec }}" target="_blank">SIMBAD</a>
 					<a target="_blank" href="http://vizier.u-strasbg.fr/viz-bin/VizieR?-source=&-out.add=_r&-out.add=_RAJ%2C_DEJ&-sort=_r&-to=&-out.max=20&-meta.ucd=2&-meta.foot=1&-c={{ transient.ra }}+{{ transient.dec }}&-c.rs=10">VizieR</a>
@@ -105,7 +105,9 @@
 									  <div class="box">
 									    <p><a target="_blank" href="{% url 'admin:YSE_App_transientobservationtask_add'  %}">Add Followup</a></p>
 									    <p><a target="_blank" href="{% url 'admin:YSE_App_transient_change' transient.id %}">Change Transient Status</a></p>
-									    <b><a target="_blank" href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing" target="_blank">Follow-up Guidelines</a></b><br>
+									    <b><a target="_blank" href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing" target="_blank">Follow-up Guidelines</a></b><br></p>
+									    <b><a target="_blank" href="http://api.keplerscience.org/is-k2-observing?ra={{ transient.ra }}&dec={{ transient.dec }}">Check if event is in K2 field</a></b><br></p>
+
 									    <b>Current time UT {{ nowtime }}</a></b><br>
 
 
