@@ -113,13 +113,31 @@ def dashboard(request):
 def dashboard_example(request):
         return render(request, 'YSE_App/dashboard_example.html')
 
+from django.template.defaulttags import register
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
+
 @login_required
 def calendar(request):
-        print("\n\nHELLO\n\n")
         all_dates = OnCallDate.objects.all()
-        print(all_dates)
+        colors = ['#dd4b39', 
+                    '#f39c12', 
+                    '#00c0ef', 
+                    '#0073b7', 
+                    '#111111', 
+                    '#3c8dbc',
+                    '#00a65a',
+                    '#d2d6de',
+                    '#001f3f']
+
+        user_colors = {}
+        for i, u in enumerate(User.objects.all().exclude(username='admin')):
+            user_colors[u.username] = colors[i]
+
         context = {
-                'all_dates': all_dates
+                'all_dates': all_dates,
+                'user_colors': user_colors
         }
         return render(request, 'YSE_App/calendar.html', context)
 

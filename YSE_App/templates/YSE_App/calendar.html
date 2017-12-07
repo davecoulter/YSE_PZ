@@ -108,8 +108,9 @@
 		      	{
 		          title          : '{{ u.username }}',
 		          start          : new Date({{ onc.on_call_date.date.year }}, {{ onc.on_call_date.date.month|add:"-1" }}, {{ onc.on_call_date.date.day }}),
-		          backgroundColor: '#f56954', //red
-		          borderColor    : '#f56954' //red
+		          allDay         : true,
+		          backgroundColor: '{{ user_colors|get_item:u.username }}',
+		          borderColor    : '{{ user_colors|get_item:u.username }}',
 		        },
 	        {% endfor %}
       	{% endfor %}
