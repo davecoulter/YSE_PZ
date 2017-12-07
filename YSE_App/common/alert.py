@@ -70,7 +70,7 @@ def SendTransientAlert(transient_id, transient_name, ra, dec):
 	""" % (base_url, transient_id, transient_name, ra, dec, base_url)
 
 	txt_msg = "New K2 Transient: %s (%s, %s)\n\nDetail: %s/transient_detail/%s/\n\nDashboard: %s/dashboard/" % \
-			(base_url, transient_name, ra, dec, transient_id, base_url)
+			(transient_name, ra, dec, base_url, transient_id, base_url)
 
 	# today() is UTC, so convert it to Pacific Standard Time
 	print("UTC Now: %s" % datetime.today())
