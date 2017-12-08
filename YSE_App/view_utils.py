@@ -66,6 +66,21 @@ def get_first_phot_for_transient(transient_id=None):
     else:
         return(None)
 
+def get_first_mag_for_transient(transient_id=None):
+
+    transient = Transient.objects.filter(id=transient_id)
+    photometry = TransientPhotometry.objects.filter(transient=transient_id)
+
+    photdata = False
+    for p in photometry:
+            photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')[::-1]
+            for ph in photdata:
+                if photdata.mag:
+                    return(photdata[0])
+
+    return(None)
+
+    
 def getMoonAngle(observingdate,telescope,ra,dec):
     if observingdate:
         obstime = Time(observingdate,scale='utc')
@@ -268,16 +283,18 @@ def lightcurveplot(request, transient_id):
             np.array([]),np.array([]),np.array([]),np.array([])
         for p in photdata:
             if np.abs(p.flux) > 1e10: continue
+            if not p.mag: continue
             mjd = np.append(mjd,[p.date_to_mjd()])
-            flux = np.append(flux,[p.flux])
-            fluxerr = np.append(fluxerr,p.flux_err)
+            mag = np.append(mag,[p.mag])
+            magerr = np.append(magerr,p.mag_err)
             band = np.append(band,str(p.band))
         
         ax.set_title("%s"%transient.name)
         for b in np.unique(band):
             ax.errorbar(mjd[band == b],flux[band == b],yerr=fluxerr[band == b],fmt='o',label=b)
         ax.set_xlabel('MJD',fontsize=15)
-        ax.set_ylabel('Flux',fontsize=15)
+        ax.set_ylabel('Mag',fontsize=15)
+        ax.invert_yaxis()
         ax.legend()
         
         response=django.http.HttpResponse(content_type='image/png')
