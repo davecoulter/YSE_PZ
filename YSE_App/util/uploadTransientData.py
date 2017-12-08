@@ -77,15 +77,18 @@ class upload():
     def uploadSNANAPhotometry(self):
         import snana
         sn = snana.SuperNova(self.options.inputfile)
-        
+
         if self.options.useheader:
             transdata = self.uploadHeader(sn)
 
+        import time
+        tstart = time.time()
         # create photometry object, if it doesn't exist
         getphotcmd = "http -a %s:%s GET %s/transientphotometry/"%(
             self.options.user,self.options.password,self.options.postURL)
         photheaderdata = json.loads(os.popen(getphotcmd).read())
         self.parsePhotHeaderData(photheaderdata,sn.SNID)
+        print(time.time() - tstart)
         
         # get the filter IDs
         
@@ -96,7 +99,7 @@ class upload():
             PhotUploadFmt.append('photometry=%s ')
 
             obsdate = Time(mjd,format='mjd').isot
-            bandid = self.getIDfromName('photometricbands',flt)
+            bandid = self.getBandfromDB('photometricbands',flt,'GPC1')
             if flux > 0:
                 PhotUploadFmt.append('mag=%.4f mag_err=%.4f forced=1 dq=1 band=%s flux_zero_point=27.5 ')
                 PhotUploadFmt = "".join(PhotUploadFmt)
@@ -110,7 +113,45 @@ class upload():
                                           self.options.postURL,obsdate,flux,fluxerr,
                                           self.photdataid,bandid))
 
-            photdata = runDBcommand(photcmd)
+                photdata = runDBcommand(photcmd)
+
+    def getPhotObjfromDB(self,tablename,transient,instrument,obsgroup):
+        cmd = 'http -a %s:%s GET %s/%s/'%(
+            self.options.user,self.options.password,self.options.postURL,tablename)
+        output = os.popen(cmd).read()
+        data = json.loads(output)
+
+        translist,instlist,obsgrouplist,idlist = [],[],[],[]
+        for i in range(len(data)):
+            obsgrouplist += [data[i]['obs_group']]
+            instlist += [data[i]['instrument']]
+            translist += [data[i]['transient']]
+            idlist += [data[i]['url']]
+
+        if obsgroup not in obsgrouplist or instrument not in instlist or transient not in translist:
+            return(None)
+
+        return(np.array(idlist)[np.where((np.array(translist) == transient) &
+                                         (np.array(instlist) == instrument) &
+                                         (np.array(obsgrouplist) == obsgroup))][0])
+
+                
+    def getBandfromDB(self,tablename,fieldname,instrument):
+        cmd = 'http -a %s:%s GET %s/%s/'%(
+            self.options.user,self.options.password,self.options.postURL,tablename)
+        output = os.popen(cmd).read()
+        data = json.loads(output)
+
+        idlist,namelist,instlist = [],[],[]
+        for i in range(len(data)):
+            namelist += [data[i]['name']]
+            idlist += [data[i]['url']]
+            instlist += [data[i]['instrument']]
+
+        if fieldname not in namelist or instrument not in instlist: return(None)
+
+        return(np.array(idlist)[np.where((np.array(namelist) == fieldname) &
+                                         (np.array(instlist) == instrument))][0])
             
     def getIDfromName(self,tablename,fieldname):
         cmd = 'http -a %s:%s GET %s/%s/'%(
@@ -139,19 +180,11 @@ class upload():
 
         inDB = False
         if type(photheaderdata) == list:
-            for i in range(len(photheaderdata)):
-                instdbid = runDBcommand('http -a %s:%s GET %s'%(
-                    self.options.user,self.options.password,photheaderdata[i]['instrument']))['url']
-                obsgroupdbid = runDBcommand('http -a %s:%s GET %s'%(
-                    self.options.user,self.options.password,photheaderdata[i]['obs_group']))['url']
-                sniddbid = runDBcommand('http -a %s:%s GET %s'%(
-                    self.options.user,self.options.password,photheaderdata[i]['transient']))['url']
-                if instid == instdbid and obsgroupid == obsgroupdbid and snidid == sniddbid:
-                    inDB = True; self.photdataid = photheaderdata[i]['url']
-                    break
-                
-        if not inDB:
+            self.photdataid = self.getPhotObjfromDB('transientphotometry',snidid,instid,obsgroupid)
+            if self.photdataid: inDB = True
             
+        if not inDB:
+
             postphotcmd = ["http "]
             postphotcmd.append("-a %s:%s POST %s/transientphotometry/ "%(self.options.user,self.options.password,self.options.postURL))
             postphotcmd.append("instrument=%s "%(instid))

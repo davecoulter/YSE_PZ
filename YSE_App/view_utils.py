@@ -15,7 +15,7 @@ def get_recent_phot_for_host(host_id=None):
         photdata = HostPhotData.objects.filter(photometry=p.id).order_by('-obs_date')
 
     
-    if photometry:    
+    if photdata:    
         return(photdata[0])
     else:
         return(None)
@@ -30,7 +30,7 @@ def get_recent_phot_for_transient(transient_id=None):
         photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')
 
     
-    if photometry:    
+    if photdata:    
         return(photdata[0])
     else:
         return(None)
@@ -43,7 +43,7 @@ def get_first_phot_for_transient(transient_id=None):
     for p in photometry:
             photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')[::-1]
             
-    if photometry:    
+    if photdata:    
         return(photdata[0])
     else:
         return(None)
