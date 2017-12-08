@@ -95,6 +95,13 @@ def dashboard(request):
                         disc = view_utils.get_first_phot_for_transient(transient_id=following_transients[i].id)
                         if disc: following_transients[i].disc_mag = disc.mag
 
+        status_finishedfollowing = TransientStatus.objects.filter(name='FollowupFinished').order_by('-modified_date')
+        if len(status_following) == 1:
+                finishedfollowing_transients = Transient.objects.filter(status=status_finishedfollowing[0])
+                for i in range(len(finishedfollowing_transients)):
+                        disc = view_utils.get_first_phot_for_transient(transient_id=finishedfollowing_transients[i].id)
+                        if disc: finishedfollowing_transients[i].disc_mag = disc.mag
+                        
                 
         #status_inprocess = TransientStatus.objects.filter(name='Watch')
         #if len(status_inprocess) == 1:
@@ -106,6 +113,7 @@ def dashboard(request):
                 'watch_transients': watch_transients,
                 'followup_requested_transients': followup_requested_transients,
                 'following_transients': following_transients,
+                'finishedfollowing_transients': finishedfollowing_transients,
         }
         return render(request, 'YSE_App/dashboard.html', context)
 
