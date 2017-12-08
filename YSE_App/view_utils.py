@@ -11,6 +11,7 @@ def get_recent_phot_for_host(host_id=None):
     host = Host.objects.filter(id=host_id)
     photometry = HostPhotometry.objects.filter(host=host_id)
 
+    photdata = False
     for p in photometry:
         photdata = HostPhotData.objects.filter(photometry=p.id).order_by('-obs_date')
 
@@ -26,6 +27,7 @@ def get_recent_phot_for_transient(transient_id=None):
     transient = Transient.objects.filter(id=transient_id)
     photometry = TransientPhotometry.objects.filter(transient=transient_id)
 
+    photdata = False
     for p in photometry:
         photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')
 
@@ -40,6 +42,7 @@ def get_first_phot_for_transient(transient_id=None):
     transient = Transient.objects.filter(id=transient_id)
     photometry = TransientPhotometry.objects.filter(transient=transient_id)
 
+    photdata = False
     for p in photometry:
             photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')[::-1]
             
