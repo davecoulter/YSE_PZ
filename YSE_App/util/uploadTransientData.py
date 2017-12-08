@@ -81,14 +81,11 @@ class upload():
         if self.options.useheader:
             transdata = self.uploadHeader(sn)
 
-        import time
-        tstart = time.time()
         # create photometry object, if it doesn't exist
         getphotcmd = "http -a %s:%s GET %s/transientphotometry/"%(
             self.options.user,self.options.password,self.options.postURL)
         photheaderdata = json.loads(os.popen(getphotcmd).read())
         self.parsePhotHeaderData(photheaderdata,sn.SNID)
-        print(time.time() - tstart)
         
         # get the filter IDs
         
@@ -99,7 +96,7 @@ class upload():
             PhotUploadFmt.append('photometry=%s ')
 
             obsdate = Time(mjd,format='mjd').isot
-            bandid = self.getBandfromDB('photometricbands',flt,'GPC1')
+            bandid = self.getBandfromDB('photometricbands',flt,self.instid)
             if flux > 0:
                 PhotUploadFmt.append('mag=%.4f mag_err=%.4f forced=1 dq=1 band=%s flux_zero_point=27.5 ')
                 PhotUploadFmt = "".join(PhotUploadFmt)
@@ -113,7 +110,7 @@ class upload():
                                           self.options.postURL,obsdate,flux,fluxerr,
                                           self.photdataid,bandid))
 
-                photdata = runDBcommand(photcmd)
+            photdata = runDBcommand(photcmd)
 
     def getPhotObjfromDB(self,tablename,transient,instrument,obsgroup):
         cmd = 'http -a %s:%s GET %s/%s/'%(
@@ -171,16 +168,17 @@ class upload():
     def parsePhotHeaderData(self,photheaderdata,snid):
 
         # if no photometry header, then create one
-        instid = getIDfromName('http -a %s:%s GET %s/instruments/'%(
+        self.instid = getIDfromName('http -a %s:%s GET %s/instruments/'%(
             self.options.user,self.options.password,self.options.postURL),self.options.instrument)
-        obsgroupid = getIDfromName('http -a %s:%s GET %s/observationgroups/'%(
+        self.obsgroupid = getIDfromName('http -a %s:%s GET %s/observationgroups/'%(
             self.options.user,self.options.password,self.options.postURL),self.options.obsgroup)
-        snidid = getIDfromName('http -a %s:%s GET %s/transients/'%(
+        self.snidid = getIDfromName('http -a %s:%s GET %s/transients/'%(
             self.options.user,self.options.password,self.options.postURL),snid)
 
         inDB = False
         if type(photheaderdata) == list:
-            self.photdataid = self.getPhotObjfromDB('transientphotometry',snidid,instid,obsgroupid)
+            self.photdataid = self.getPhotObjfromDB(
+                'transientphotometry',self.snidid,self.instid,self.obsgroupid)
             if self.photdataid: inDB = True
             
         if not inDB:
