@@ -5,6 +5,7 @@ from YSE_App.models.instrument_models import *
 from YSE_App.models.followup_models import *
 from YSE_App.models.transient_models import *
 from YSE_App.models.host_models import *
+from astropy.time import Time
 
 class Photometry(BaseModel):
 
@@ -69,6 +70,10 @@ class TransientPhotData(PhotData):
 
 	def __str__(self):
 		return '%s - %s - %s' % (self.photometry.transient.name, self.band.name, self.obs_date.strftime('%m/%d/%Y'))
+
+	def date_to_mjd(self):
+		time = Time(self.obs_date,scale='utc')
+		return time.mjd
 
 class HostPhotData(PhotData):
 	# Entity relationships ###

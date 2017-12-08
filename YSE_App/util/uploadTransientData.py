@@ -111,7 +111,7 @@ class upload():
                                           self.photdataid,bandid))
 
             photdata = runDBcommand(photcmd)
-
+            
     def getPhotObjfromDB(self,tablename,transient,instrument,obsgroup):
         cmd = 'http -a %s:%s GET %s/%s/'%(
             self.options.user,self.options.password,self.options.postURL,tablename)
@@ -185,9 +185,9 @@ class upload():
 
             postphotcmd = ["http "]
             postphotcmd.append("-a %s:%s POST %s/transientphotometry/ "%(self.options.user,self.options.password,self.options.postURL))
-            postphotcmd.append("instrument=%s "%(instid))
-            postphotcmd.append("obs_group='%s' "%(obsgroupid))
-            postphotcmd.append("transient='%s' "%(snidid))
+            postphotcmd.append("instrument=%s "%(self.instid))
+            postphotcmd.append("obs_group='%s' "%(self.obsgroupid))
+            postphotcmd.append("transient='%s' "%(self.snidid))
             postphotcmd = ''.join(postphotcmd)
             postphotdata = runDBcommand(postphotcmd)
 

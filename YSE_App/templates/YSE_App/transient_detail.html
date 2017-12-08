@@ -272,6 +272,7 @@
 			      <!-- /.tab-pane -->
 			      <div class="tab-pane" id="photometry">
 			        <h4>Photometry for {{transient.name}}</h4>
+				<td><img src="{% url 'lightcurveplot' transient.id %}" style='width:240px' alt="" /><br></td>
 			      </div>
 			      <!-- /.tab-pane -->
 

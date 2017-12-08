@@ -26,7 +26,8 @@ urlpatterns = [
     url(r'^login/$', views.auth_login, name='auth_login'),
     url(r'^logout/$', views.auth_logout, name='auth_logout'),
     url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)/(?P<telescope_id>[a-zA-Z0-9]+)", 
-	view_utils.airmassplot, name='airmassplot')
+	view_utils.airmassplot, name='airmassplot'),
+    url(r'^lightcurveplot/(?P<transient_id>[0-9]+)/$', view_utils.lightcurveplot, name='lightcurveplot'),
 ]
 
 router = DefaultRouter()

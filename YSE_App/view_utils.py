@@ -5,6 +5,7 @@ from astropy.coordinates import get_moon, SkyCoord
 from astropy.time import Time
 import astropy.units as u
 import datetime
+import numpy as np
 
 def get_recent_phot_for_host(host_id=None):
 
@@ -21,7 +22,21 @@ def get_recent_phot_for_host(host_id=None):
     else:
         return(None)
 
+def get_all_phot_for_transient(transient_id=None):
 
+    transient = Transient.objects.filter(id=transient_id)
+    photometry = TransientPhotometry.objects.filter(transient=transient_id)
+
+    photdata = False
+    for p in photometry:
+        photdata = TransientPhotData.objects.filter(photometry=p.id)
+    
+    if photdata:    
+        return(photdata)
+    else:
+        return(None)
+
+    
 def get_recent_phot_for_transient(transient_id=None):
 
     transient = Transient.objects.filter(id=transient_id)
@@ -224,6 +239,46 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
         ax.legend(loc='lower right')
         
         ax.set_xlim([xlow,xhi])
+        
+        response=django.http.HttpResponse(content_type='image/png')
+        canvas.print_png(response)
+        return response
+
+def lightcurveplot(request, transient_id):
+
+        import random
+        import django
+        import datetime
+
+        from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+        from matplotlib.figure import Figure
+        from matplotlib.dates import DateFormatter
+        #from matplotlib import rcParams
+        #rcParams['figure.figsize'] = (7,5)
+        
+        transient = Transient.objects.get(pk=transient_id)
+        photdata = get_all_phot_for_transient(transient_id)
+        if not photdata: return
+        
+        fig=Figure()
+        ax=fig.add_subplot(111)
+        canvas=FigureCanvas(fig)
+
+        mjd,flux,fluxerr,band = \
+            np.array([]),np.array([]),np.array([]),np.array([])
+        for p in photdata:
+            if np.abs(p.flux) > 1e10: continue
+            mjd = np.append(mjd,[p.date_to_mjd()])
+            flux = np.append(flux,[p.flux])
+            fluxerr = np.append(fluxerr,p.flux_err)
+            band = np.append(band,str(p.band))
+        
+        ax.set_title("%s"%transient.name)
+        for b in np.unique(band):
+            ax.errorbar(mjd[band == b],flux[band == b],yerr=fluxerr[band == b],fmt='o',label=b)
+        ax.set_xlabel('MJD',fontsize=15)
+        ax.set_ylabel('Flux',fontsize=15)
+        ax.legend()
         
         response=django.http.HttpResponse(content_type='image/png')
         canvas.print_png(response)
