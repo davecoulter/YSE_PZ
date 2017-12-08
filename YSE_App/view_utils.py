@@ -75,7 +75,7 @@ def get_first_mag_for_transient(transient_id=None):
     for p in photometry:
             photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')[::-1]
             for ph in photdata:
-                if photdata.mag:
+                if ph.mag:
                     return(photdata[0])
 
     return(None)
