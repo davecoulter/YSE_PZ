@@ -74,7 +74,7 @@ class ned_row:
         self.separation = separation
 
 class tns_obj:
-    def __init__(self, name, tns_url, internal_name, event_type, ra, dec, a_v, z, tns_host, tns_host_z, \
+    def __init__(self, name, tns_url, internal_name, event_type, ra, dec, ebv, z, tns_host, tns_host_z, \
                  ned_nearest_host, ned_nearest_z, ned_nearest_sep, discovery_date, phot_rows, disc_mag):
 
         self.Name = name
@@ -83,7 +83,7 @@ class tns_obj:
         self.Event_Type = event_type if (event_type != '---' and event_type != '') else "Untyped"
         self.Ra = ra
         self.Dec = dec
-        self.A_v = np.asarray([float(a) for a in a_v])
+        self.EBV = np.asarray([float(e) for e in ebv])
         self.Z = float(z) if (z != '---' and z != '') else -1
         self.TNS_Host = tns_host
         self.TNS_Host_Z = float(tns_host_z) if (tns_host_z != '---' and tns_host_z != '') else -1
@@ -369,7 +369,8 @@ class DBOps():
         objectdata = runDBcommand(cmd)
 
         if type(objectdata) != list and 'url' not in objectdata:
-            #import pdb; pdb.set_trace()
+            print('cmd %s failed')
+            print(objectdata)
             raise RuntimeError('Error : failure adding object')
         if return_full:
             return(objectdata)
@@ -495,7 +496,7 @@ class processTNS():
             decs = re.findall(reg_dec,body)
             print(decs)
             
-            try:
+            if 'hi':
                 ########################################################
                 # For Item in Email, Get TNS
                 ########################################################
@@ -596,7 +597,7 @@ class processTNS():
                     galaxy_zs = []
                     galaxy_seps = []
                     galaxies_with_z = []
-                    a_vs = []
+                    ebv = []
                     galaxy_ras = []
                     galaxy_decs = []
                     galaxy_mags = []
@@ -628,9 +629,8 @@ class processTNS():
                                                             dec=galaxies_with_z[l]["DEC(deg)"], 
                                                             unit=(u.deg, u.deg), frame='fk4', equinox='J2000.0')
 
-                                dust_table_l = IrsaDust.get_extinction_table(co_l)
-
-                                a_vs.append(dust_table_l["A_SandF"][np.where(dust_table_l["Filter_name"] == "CTIO V")][0])
+                                dust_table_l = IrsaDust.get_query_table(co_l)
+                                ebv.append(dust_table_l['ext SandF mean'][0])
                         else:
                             print("No NED Galaxy hosts with z")
 
@@ -640,7 +640,7 @@ class processTNS():
                                             event_type = evt_type,
                                             ra = ras[j].decode("utf-8"),
                                             dec = decs[j].decode("utf-8"),
-                                            a_v = a_vs,
+                                            ebv = ebv,
                                             z = z,
                                             tns_host = host_name, 
                                             tns_host_z = host_redshift,
@@ -686,6 +686,7 @@ class processTNS():
                         # put in main transient
                         sc = SkyCoord(ras[j].decode("utf-8"),decs[j].decode("utf-8"),FK5,unit=(u.hourangle,u.deg))
                         db.options.best_spec_classapi = db.options.transientclassesapi
+
                         newobjdict = {'name':objs[j].decode("utf-8"),
                                       'ra':sc.ra.deg,
                                       'dec':sc.dec.deg,
@@ -694,6 +695,7 @@ class processTNS():
                                       'host':hosturl,
                                       'candidate_hosts':hostcoords,
                                       'best_spec_class':eventid,
+                                      'mw_ebv':ebv[j],
                                       'disc_date':disc_date.replace(' ','T')}#,
 #                                      'internal_survey':k2id}
 
@@ -753,7 +755,7 @@ class processTNS():
                 # Mark messages as "Seen"
                 result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')                        
 
-            except: # ValueError as err:
+            if 0: # ValueError as err:
                 for j in range(len(objs)):
                     print('Something went wrong!!!  Sticking to basic info only')
                     print("Object: %s\nRA: %s\nDEC: %s" % (objs[j].decode('utf-8'),
