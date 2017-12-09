@@ -32,6 +32,14 @@
 					<br>
 					<b>Best Spec. Class</b><br>
 					{{transient.best_spec_class}}<br>
+					{% if transient.mw_ebv %}
+					<b>MW E(B-V)</b><br>
+					{% if transient.mw_ebv < 0.2 %}
+					{{transient.mw_ebv}}<br>
+					{% else %}
+					{{transient.mw_ebv}} <b>(warning!)</b><br>
+					{% endif %}
+					{% endif %}
 					<b>Most Recent Mag/Date/Filter</b><br>
 					{{ recent_mag }}<br>
 					{{recent_magdate}}<br>
