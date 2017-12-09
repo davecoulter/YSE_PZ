@@ -140,9 +140,6 @@
 									  <div class="box">
 									    <p><a target="_blank" href="{% url 'admin:YSE_App_transientfollowup_add'  %}">Add Followup Request</a></p>
 									    <p><a target="_blank" href="{% url 'admin:YSE_App_transientobservationtask_add'  %}">Add Observation Task</a></p>
-
-									    <p><a target="_blank" href="{% url 'admin:YSE_App_transient_change' transient.id %}">Change Transient Status</a></p>
-									    <b><a target="_blank" href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing" target="_blank">Follow-up Guidelines</a></b><br></p>
 									    <b><a target="_blank" href="http://api.keplerscience.org/is-k2-observing?ra={{ transient.ra }}&dec={{ transient.dec }}">Check if event is in K2 field</a></b><br></p>
 
 									    <b>Current time UT {{ nowtime }}</a></b><br>
