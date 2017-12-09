@@ -33,6 +33,8 @@
 					<b>Best Spec. Class</b><br>
 					{{transient.best_spec_class}}<br>
 					{% if transient.mw_ebv %}
+					<b>Status (<a target="_blank" href="{% url 'admin:YSE_App_transient_change' transient.id %}">Change Transient Status</a>)</b><br>
+					{{ transient.status }}<br>
 					<b>MW E(B-V)</b><br>
 					{% if transient.mw_ebv < 0.2 %}
 					{{transient.mw_ebv}}<br>
@@ -40,17 +42,42 @@
 					{{transient.mw_ebv}} <b>(warning!)</b><br>
 					{% endif %}
 					{% endif %}
-					<b>Most Recent Mag/Date/Filter</b><br>
-					{{ recent_mag }}<br>
-					{{recent_magdate}}<br>
-					{{ recent_filter }}<br>
-					<b>Disc Mag/Date/Filter</b><br>
-					{{ first_mag }}<br>
-					{{ first_magdate }}<br>
-					{{ first_filter }}<br>
-					<b>Status</b><br>
-					{{ transient.status }}<br>
-					<br>
+					<b>Photometric Summary</b>
+					<table id="phot_summary_tbl" class="table table-bordered table-hover">
+					  <thead>
+					    <tr>
+					      <th></th>
+					      <th>Date</th>
+					      <th>Mag</th>
+					      <th>Mag Lim</th>
+					      <th>Filter</th>
+					    </tr>
+					  </thead>
+					  <tbody>
+					    <tr>
+					      <td>Disc Mag</td>
+					      <td>{{ first_magdate }}</td>
+					      <td>{{ first_mag }}</td>
+					      <td></td>
+					      <td>{{ first_filter }}</td>
+                                            </tr>
+					    <tr>
+					      <td>Last Non-detection</td>
+					      <td>{{ transient.non_detect_date }}</td>
+					      <td></td>
+					      <td>{{ transient.non_detect_limit }}</td>
+					      <td>{{ transient.non_detect_band }}</td>
+					    </tr>
+					    <tr>
+					      <td>Recent Mag</td>
+					      <td>{{ recent_magdate }}</td>
+					      <td>{{ recent_mag }}</td>
+					      <td></td>
+					      <td>{{ recent_filter }}</td>
+                                            </tr>
+
+					  </tbody>
+					</table>
 					<b>Most Likely Host Galaxy</b><br>
 					<table id="host_galaxy_tbl" class="table table-bordered table-hover">
 					  <thead>
@@ -111,7 +138,9 @@
 								<div class="tab-content">
 									<div class="active tab-pane" id="followup">
 									  <div class="box">
-									    <p><a target="_blank" href="{% url 'admin:YSE_App_transientobservationtask_add'  %}">Add Followup</a></p>
+									    <p><a target="_blank" href="{% url 'admin:YSE_App_transientfollowup_add'  %}">Add Followup Request</a></p>
+									    <p><a target="_blank" href="{% url 'admin:YSE_App_transientobservationtask_add'  %}">Add Observation Task</a></p>
+
 									    <p><a target="_blank" href="{% url 'admin:YSE_App_transient_change' transient.id %}">Change Transient Status</a></p>
 									    <b><a target="_blank" href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing" target="_blank">Follow-up Guidelines</a></b><br></p>
 									    <b><a target="_blank" href="http://api.keplerscience.org/is-k2-observing?ra={{ transient.ra }}&dec={{ transient.dec }}">Check if event is in K2 field</a></b><br></p>

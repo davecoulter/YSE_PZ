@@ -66,28 +66,3 @@ def telescope_can_observe(ra,dec,date,tel):
 
 	return(can_obs)
 
-def lightcurveplot(request, transient_id, obs, observatory):
-	import random
-	import django
-	import datetime
-	
-	from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-	from matplotlib.figure import Figure
-	from matplotlib.dates import DateFormatter
-	#from matplotlib import rcParams
-	#rcParams['figure.figsize'] = (7,5)
-	
-	transient = Transient.objects.get(pk=transient_id)
-		
-	fig=Figure()
-	ax=fig.add_subplot(111)
-	canvas=FigureCanvas(fig)
-
-	ax.set_title("%s, %s, %s"%(observatory,transient.name, obs))
-
-	for f in filt:
-		ax.errorbar(mjd,flux,yerr=fluxerr,fmt='o')
-	
-	response=django.http.HttpResponse(content_type='image/png')
-	canvas.print_png(response)
-	return response

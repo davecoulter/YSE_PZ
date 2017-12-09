@@ -26,6 +26,15 @@ reg_obj = b"https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = b"RA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
 reg_dec = b"DEC[\=\*a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)"
 
+photkeydict = {'magflux':'Mag. / Flux',
+               'magfluxerr':'Err',
+               'obsdate':'Obs-date',
+               'maglim':'Lim. Mag./Flux',
+               'unit':'Units',
+               'filter':'Filter',
+               'inst':'Tel / Inst',
+               'remarks':'Remarks'}
+
 def try_parse_float(s):
     try:
         test = float(s)
@@ -83,7 +92,7 @@ class tns_obj:
         self.Event_Type = event_type if (event_type != '---' and event_type != '') else "Untyped"
         self.Ra = ra
         self.Dec = dec
-        self.EBV = np.asarray([float(e) for e in ebv])
+        self.EBV = ebv #np.asarray([float(e) for e in ebv])
         self.Z = float(z) if (z != '---' and z != '') else -1
         self.TNS_Host = tns_host
         self.TNS_Host_Z = float(tns_host_z) if (tns_host_z != '---' and tns_host_z != '') else -1
@@ -383,6 +392,8 @@ class DBOps():
         try:
             data = json.loads(output)
         except:
+            print(cmd)
+            print(os.popen(cmd).read())
             raise RuntimeError('Error : cmd output not in JSON format')
             
         idlist,namelist = [],[]
@@ -526,17 +537,12 @@ class processTNS():
                         response = requests.get(tns_url,timeout=20)
                         html = response.content
 
-                    #with urllib.request.urlopen(tns_url) as tns:
-                    #    import pdb; pdb.set_trace()
-                    #    tstart = time.time()
-                    #    while time.time() - tstart < 20:
-                    #        html = tns.read()
                     soup = BeautifulSoup(html, "lxml")
                     
                     # Get Internal Name, Type, Disc. Date, Disc. Mag, Redshift, Host Name, Host Redshift, NED URL
                     int_name = soup.find('td', attrs={'class':'cell-internal_name'}).text
                     evt_type = soup.find('div', attrs={'class':'field-type'}).find('div').find('b').text
-                    evt_type = evt_type.replace(' ','')
+                    evt_type = evt_type #.replace(' ','')
                     disc_date = soup.find('div', attrs={'class':'field field-discoverydate'}).find('div').find('b').text
                     disc_mag = soup.find('div', attrs={'class':'field field-discoverymag'}).find('div').find('b').text
                     try: source_group = soup.find('div', attrs={'class':'field field-source_group_name'}).find('div').find('b').text
@@ -547,6 +553,71 @@ class processTNS():
                         disc_instrument = disc_filter.split('-')[1]
                     else: disc_instrument = 'Unknown'
 
+                    # lets pull the photometry
+                    nondetectmaglim = None
+                    nondetectdate = None
+                    nondetectfilt = None
+                    tmag,tmagerr,tflux,tfluxerr,tfilt,tinst,tobsdate = \
+                        np.array([]),np.array([]),np.array([]),np.array([]),\
+                        np.array([]),np.array([]),np.array([])
+                    try:
+                        data = []
+                        table = soup.find('table',attrs={'class':'photometry-results-table'})                        
+                        table_body = table.find('tbody')
+                        header = table.find('thead')
+                        headcols = header.find_all('th')
+                        header = np.array([ele.text.strip() for ele in headcols])
+                        #header.append([ele for ele in headcols if ele])
+                        rows = table_body.find_all('tr')
+                        for row in rows:
+                            cols = row.find_all('td')
+                            data.append([ele.text.strip() for ele in cols])
+
+                        for datarow in data:
+                            datarow = np.array(datarow)
+                            if photkeydict['unit'] in header:
+                                if 'mag' in datarow[header == photkeydict['unit']][0].lower():
+                                    if photkeydict['magflux'] in header:
+                                        tmag = np.append(tmag,datarow[header == photkeydict['magflux']])
+                                        tflux = np.append(tflux,'')
+                                    else:
+                                        tmag = np.append(tmag,'')
+                                        tflux = np.append(tflux,'')
+                                    if photkeydict['magfluxerr'] in header:
+                                        tmagerr = np.append(tmagerr,datarow[header == photkeydict['magfluxerr']])
+                                        tfluxerr = np.append(tfluxerr,'')
+                                    else:
+                                        tmagerr = np.append(tmagerr,None)
+                                        tfluxerr= np.append(tfluxerr,'')
+                                elif 'flux' in datarow[header == photkeydict['unit']][0].lower():
+                                    if photkeydict['magflux'] in header:
+                                        tflux = np.append(tflux,datarow[header == photkeydict['magflux']])
+                                        tmag = np.append(tmag,'')
+                                    else:
+                                        tflux = np.append(tflux,'')
+                                        tmag = np.append(tmag,'')
+                                    if photkeydict['magfluxerr'] in header:
+                                        tfluxerr = np.append(tfluxerr,datarow[header == photkeydict['magfluxerr']])
+                                        tmagerr = np.append(tmagerr,'')
+                                    else:
+                                        tfluxerr = np.append(tfluxerr,None)
+                                        tmagerr = np.append(tmagerr,'')
+                            if photkeydict['filter'] in header:
+                                tfilt = np.append(tfilt,datarow[header == photkeydict['filter']])
+                            if photkeydict['inst'] in header:
+                                tinst = np.append(tinst,datarow[header == photkeydict['inst']])
+                            if photkeydict['obsdate'] in header:
+                                tobsdate = np.append(tobsdate,datarow[header == photkeydict['obsdate']])
+                            if photkeydict['remarks'] in header and photkeydict['maglim'] in header:
+                                if 'last' in datarow[header == photkeydict['remarks']][0].lower() and \
+                                   'non' in datarow[header == photkeydict['remarks']][0].lower() and \
+                                   'detection' in datarow[header == photkeydict['remarks']][0].lower():
+                                    nondetectmaglim = datarow[header == photkeydict['maglim']][0]
+                                    nondetectdate = datarow[header == photkeydict['obsdate']][0]
+                                    nondetectfilt = datarow[header == photkeydict['filter']][0]
+                    except:
+                        print('Error : couldn\'t get photometry!!!')
+                                    
                     z = soup.find('div', attrs={'class':'field-redshift'}).find('div').find('b').text
 
                     hn_div = soup.find('div', attrs={'class':'field-hostname'})
@@ -578,6 +649,8 @@ class processTNS():
                     dec_j = decs[j].decode("utf-8")
             
                     co = coordinates.SkyCoord(ra=ra_j, dec=dec_j, unit=(u.hour, u.deg), frame='fk4', equinox='J2000.0')
+                    dust_table_l = IrsaDust.get_query_table(co)
+                    ebv = dust_table_l['ext SandF mean'][0]
                     ned_region_table = None
                 
                     gal_candidates = 0
@@ -597,7 +670,6 @@ class processTNS():
                     galaxy_zs = []
                     galaxy_seps = []
                     galaxies_with_z = []
-                    ebv = []
                     galaxy_ras = []
                     galaxy_decs = []
                     galaxy_mags = []
@@ -629,8 +701,6 @@ class processTNS():
                                                             dec=galaxies_with_z[l]["DEC(deg)"], 
                                                             unit=(u.deg, u.deg), frame='fk4', equinox='J2000.0')
 
-                                dust_table_l = IrsaDust.get_query_table(co_l)
-                                ebv.append(dust_table_l['ext SandF mean'][0])
                         else:
                             print("No NED Galaxy hosts with z")
 
@@ -695,63 +765,87 @@ class processTNS():
                                       'host':hosturl,
                                       'candidate_hosts':hostcoords,
                                       'best_spec_class':eventid,
-                                      'mw_ebv':ebv[j],
-                                      'disc_date':disc_date.replace(' ','T')}#,
-#                                      'internal_survey':k2id}
+                                      'mw_ebv':ebv,
+                                      'disc_date':disc_date.replace(' ','T')}
+                        if nondetectdate: newobjdict['non_detect_date'] = nondetectdate.replace(' ','T')
+                        if nondetectmaglim: newobjdict['non_detect_limit'] = nondetectmaglim
+                        if nondetectfilt: newobjdict['non_detect_filter'] = nondetectfilt
 
                         if dbid:
                             transientid = db.put_object_to_DB('transient',newobjdict,dbid)
                         else:
                             transientid = db.post_object_to_DB('transient',newobjdict)
 
-                        # the photometry table probably won't exist, so add this in
-                           # phot table needs an instrument, which needs a telescope, which needs an observatory
-                        bandid = db.get_ID_from_DB('photometricbands',disc_filter)
-                        instrumentid = db.get_ID_from_DB('instruments',disc_instrument)
-                        if not instrumentid:
-                            instrumentid = db.get_ID_from_DB('instruments','Unknown')
-                            if not instrumentid:
-                                observatoryid = db.post_object_to_DB('observatory',{'name':'Unknown','tz_name':0,'utc_offset':0})
-                                teldict= {'name':'Unknown','observatory':observatoryid,'longitude':0,'latitude':0,'elevation':0}
-                                telid = db.post_object_to_DB('telescope',teldict)
-                                instrumentid = db.post_object_to_DB('instrument',{'name':'Unknown','telescope':telid})
-                        if not bandid:
-                            bandid = db.post_object_to_DB('band',{'name':disc_filter,'instrument':instrumentid,'lambda_eff':0})
-                        
-                        phottabledict = {'transient':transientid,
-                                         'obs_group':groupid,
-                                         'instrument':instrumentid}
-                        phottableid = db.post_object_to_DB('photometry',phottabledict)
-                        
-                        # put in the photometry
-                        photdatadict = {'obs_date':disc_date.replace(' ','T'),
-                                        'mag':disc_mag,
-                                        'band':bandid,
-                                        'photometry':phottableid}
-                        photdataid = db.post_object_to_DB('photdata',photdatadict)
+                        # only add in host info and photometry if galaxy wasn't already in the database
+                        # (avoids duplicates)
+                        if not dbid:
+                            # the photometry table probably won't exist, so add this in
+                            # phot table needs an instrument, which needs a telescope, which needs an observatory
+                            for ins in np.unique(tinst):
+                                instrumentid = db.get_ID_from_DB('instruments',ins)
+                                if not instrumentid:
+                                    instrumentid = db.get_ID_from_DB('instruments','Unknown')
+                                if not instrumentid:
+                                    observatoryid = db.post_object_to_DB(
+                                        'observatory',{'name':'Unknown','tz_name':0,'utc_offset':0})
+                                    teldict= {'name':'Unknown',
+                                              'observatory':observatoryid,
+                                              'longitude':0,
+                                              'latitude':0,
+                                              'elevation':0}
+                                    telid = db.post_object_to_DB('telescope',teldict)
+                                    instrumentid = db.post_object_to_DB(
+                                        'instrument',{'name':'Unknown','telescope':telid})
 
-                        # put in the galaxy photometry
-                        if ned_mag:
-                            try:
-                                unknowninstid = db.get_ID_from_DB('instruments','Unknown')
-                                unknowngroupid = db.get_ID_from_DB('observationgroups','NED')
-                                if not unknowngroupid:
-                                    unknowngroupid = db.get_ID_from_DB('observationgroups','Unknown')
-                                unknownbandid = db.get_ID_from_DB('photometricbands','Unknown')
-                                
-                                hostphottabledict = {'host':hosturl,
-                                                     'obs_group':unknowngroupid,
-                                                     'instrument':unknowninstid}
-                                hostphottableid = db.post_object_to_DB('hostphotometry',hostphottabledict)
+                                phottabledict = {'transient':transientid,
+                                                 'obs_group':groupid,
+                                                 'instrument':instrumentid}
+                                phottableid = db.post_object_to_DB('photometry',phottabledict)
+
+                                for f in np.unique(tfilt):
+                                    bandid = db.get_ID_from_DB('photometricbands',f)
+                                    if not bandid:
+                                        bandid = db.post_object_to_DB('band',{'name':f,'instrument':instrumentid})
                         
-                                # put in the photometry
-                                hostphotdatadict = {'obs_date':disc_date.replace(' ','T'),#'2000-01-01 00:00:00',
-                                                    'mag':ned_mag.decode('utf-8')[:-1],
-                                                    'band':unknownbandid,
-                                                    'photometry':hostphottableid}
-                                hostphotdataid = db.post_object_to_DB('hostphotdata',hostphotdatadict)
-                            except:
-                                print('getting host mag failed')
+                                    # put in the photometry
+                                    for m,me,f,fe,od in zip(tmag[(f == tfilt) & (ins == tinst)],
+                                                            tmagerr[(f == tfilt) & (ins == tinst)],
+                                                            tflux[(f == tfilt) & (ins == tinst)],
+                                                            tfluxerr[(f == tfilt) & (ins == tinst)],
+                                                            tobsdate[(f == tfilt) & (ins == tinst)]):
+                                        # TODO: compare od to disc_date.replace(' ','T')
+                                        # if they're close or equal?  Set discovery flag
+                                        photdatadict = {'obs_date':od.replace(' ','T'),
+                                                        'band':bandid,
+                                                        'photometry':phottableid}
+                                        if m: photdatadict['mag'] = m
+                                        if me: photdatadict['mag_err'] = me
+                                        if f: photdatadict['flux'] = f
+                                        if fe: photdatadict['flux_err'] = fe
+                                        photdataid = db.post_object_to_DB('photdata',photdatadict)
+
+                            # put in the galaxy photometry
+                            if ned_mag:
+                                try:
+                                    unknowninstid = db.get_ID_from_DB('instruments','Unknown')
+                                    unknowngroupid = db.get_ID_from_DB('observationgroups','NED')
+                                    if not unknowngroupid:
+                                        unknowngroupid = db.get_ID_from_DB('observationgroups','Unknown')
+                                    unknownbandid = db.get_ID_from_DB('photometricbands','Unknown')
+                                
+                                    hostphottabledict = {'host':hosturl,
+                                                         'obs_group':unknowngroupid,
+                                                         'instrument':unknowninstid}
+                                    hostphottableid = db.post_object_to_DB('hostphotometry',hostphottabledict)
+                        
+                                    # put in the photometry
+                                    hostphotdatadict = {'obs_date':disc_date.replace(' ','T'),#'2000-01-01 00:00:00',
+                                                        'mag':ned_mag.decode('utf-8')[:-1],
+                                                        'band':unknownbandid,
+                                                        'photometry':hostphottableid}
+                                    hostphotdataid = db.post_object_to_DB('hostphotdata',hostphotdatadict)
+                                except:
+                                    print('getting host mag failed')
                 # Mark messages as "Seen"
                 result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')                        
 

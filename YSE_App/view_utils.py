@@ -279,19 +279,21 @@ def lightcurveplot(request, transient_id):
         ax=fig.add_subplot(111)
         canvas=FigureCanvas(fig)
 
-        mjd,flux,fluxerr,band = \
+        mjd,mag,magerr,band = \
             np.array([]),np.array([]),np.array([]),np.array([])
         for p in photdata:
-            if np.abs(p.flux) > 1e10: continue
+            if p.flux and np.abs(p.flux) > 1e10: continue
             if not p.mag: continue
             mjd = np.append(mjd,[p.date_to_mjd()])
             mag = np.append(mag,[p.mag])
-            magerr = np.append(magerr,p.mag_err)
+            if p.mag_err: magerr = np.append(magerr,p.mag_err)
+            else: magerr = np.append(magerr,0)
             band = np.append(band,str(p.band))
         
         ax.set_title("%s"%transient.name)
         for b in np.unique(band):
-            ax.errorbar(mjd[band == b],flux[band == b],yerr=fluxerr[band == b],fmt='o',label=b)
+            ax.errorbar(mjd[band == b],mag[band == b],
+                        yerr=magerr[band == b],fmt='o',label=b)
         ax.set_xlabel('MJD',fontsize=15)
         ax.set_ylabel('Mag',fontsize=15)
         ax.invert_yaxis()
