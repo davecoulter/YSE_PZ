@@ -496,7 +496,7 @@ class processTNS():
             decs = re.findall(reg_dec,body)
             print(decs)
             
-            if 'hi':
+            try:
                 ########################################################
                 # For Item in Email, Get TNS
                 ########################################################
@@ -755,7 +755,7 @@ class processTNS():
                 # Mark messages as "Seen"
                 result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')                        
 
-            if 0: # ValueError as err:
+            except: # ValueError as err:
                 for j in range(len(objs)):
                     print('Something went wrong!!!  Sticking to basic info only')
                     print("Object: %s\nRA: %s\nDEC: %s" % (objs[j].decode('utf-8'),
