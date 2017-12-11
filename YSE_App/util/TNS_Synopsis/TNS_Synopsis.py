@@ -386,7 +386,25 @@ class DBOps():
             return(objectdata)
         else:
             return(objectdata['url'])
-    
+
+    def patch_object_to_DB(self,table,objectdict,objectid,return_full=False):
+        cmd = '%s PATCH %s '%(self.baseputurl.split('PUT')[0],objectid)
+        for k,v in zip(objectdict.keys(),objectdict.values()):
+            if '<url>' not in str(v):
+                cmd += '%s="%s" '%(k,v)
+            else:
+                cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
+        objectdata = runDBcommand(cmd)
+
+        if type(objectdata) != list and 'url' not in objectdata:
+            print('cmd %s failed')
+            print(objectdata)
+            raise RuntimeError('Error : failure adding object')
+        if return_full:
+            return(objectdata)
+        else:
+            return(objectdata['url'])
+		
     def get_ID_from_DB(self,tablename,fieldname):
         cmd = '%s%s/'%(self.basegeturl,tablename)
         output = os.popen(cmd).read()
@@ -794,8 +812,9 @@ class processTNS():
                                 newobjdict['non_detect_filter'] =  nondetectid
 
                         if dbid:
-                            transientid = db.put_object_to_DB('transient',newobjdict,dbid)
+                            transientid = db.patch_object_to_DB('transient',newobjdict,dbid)
                         else:
+							newobjdict['status'] = statusid
                             transientid = db.post_object_to_DB('transient',newobjdict)
 
                         # only add in host info and photometry if galaxy wasn't already in the database
