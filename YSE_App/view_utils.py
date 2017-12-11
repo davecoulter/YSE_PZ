@@ -1,3 +1,4 @@
+# utils for generating webpage views
 import copy
 from .models import *
 from astropy.coordinates import EarthLocation
