@@ -18,7 +18,7 @@ from pytz import timezone
 
 def index(request):
 	if request.user.is_authenticated():
-		return render_to_response('dashboard')
+		return render(request, 'YSE_App/dashboard.html')
 	return render(request, 'YSE_App/index.html')
 
 #def add_followup(request,obj):
