@@ -44,6 +44,7 @@ class Transient(BaseModel):
 	postage_stamp_file = models.CharField(max_length=512, null=True, blank=True)
 	k2_validated = models.NullBooleanField(null=True, blank=True)
 	k2_msg = models.TextField(null=True, blank=True)
+	TNS_spec_class = models.CharField(max_length=64, null=True, blank=True) # To hold the TNS classiciation in case we don't have a matching enum
 
 	def CoordString(self):
 		return GetSexigesimalString(self.ra, self.dec)

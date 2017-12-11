@@ -87,6 +87,7 @@ class TransientPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 		instance.mag_err = validated_data.get('mag_err', instance.mag_err)
 		instance.forced = validated_data.get('forced', instance.forced)
 		instance.dq = validated_data.get('dq', instance.dq)
+		instance.discovery_point = validated_data.get('discovery_point', instance.discovery_point)
 
 		instance.save()
 

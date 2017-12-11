@@ -56,6 +56,7 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 		instance.postage_stamp_file = validated_data.get('postage_stamp_file', instance.postage_stamp_file)
 		instance.k2_validated = validated_data.get('k2_validated', instance.k2_validated)
 		instance.k2_msg = validated_data.get('k2_msg', instance.k2_msg)
+		instance.TNS_spec_class = validated_data.get('TNS_spec_class', instance.TNS_spec_class)
 
 		instance.save()
 

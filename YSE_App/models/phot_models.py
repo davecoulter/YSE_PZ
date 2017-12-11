@@ -68,6 +68,10 @@ class TransientPhotData(PhotData):
 	# Required
 	photometry = models.ForeignKey(TransientPhotometry, on_delete=models.CASCADE)
 
+	### Properties ###
+	# Optional
+	discovery_point = models.NullBooleanField(null=True, blank=True)
+
 	def __str__(self):
 		return '%s - %s - %s' % (self.photometry.transient.name, self.band.name, self.obs_date.strftime('%m/%d/%Y'))
 
