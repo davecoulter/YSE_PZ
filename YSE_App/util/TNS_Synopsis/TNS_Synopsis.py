@@ -512,7 +512,7 @@ class processTNS():
                 ########################################################
                 # For Item in Email, Get TNS
                 ########################################################
-            
+
                 for j in range(len(objs)):
                     print("Object: %s\nRA: %s\nDEC: %s" % (objs[j].decode('utf-8'),
                                                            ras[j].decode('utf-8'),
@@ -788,7 +788,10 @@ class processTNS():
                                       'disc_date':disc_date.replace(' ','T')}
                         if nondetectdate: newobjdict['non_detect_date'] = nondetectdate.replace(' ','T')
                         if nondetectmaglim: newobjdict['non_detect_limit'] = nondetectmaglim
-                        if nondetectfilt: newobjdict['non_detect_filter'] = nondetectfilt
+                        if nondetectfilt:
+                            nondetectid = db.get_ID_from_DB('photometricbands',nondetectfilt)
+                            if nondetectid:
+                                newobjdict['non_detect_filter'] =  nondetectid
 
                         if dbid:
                             transientid = db.put_object_to_DB('transient',newobjdict,dbid)
@@ -869,7 +872,7 @@ class processTNS():
                                 except:
                                     print('getting host mag failed')
                 # Mark messages as "Seen"
-                result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')                        
+                result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')
 
             except: # ValueError as err:
                 for j in range(len(objs)):
