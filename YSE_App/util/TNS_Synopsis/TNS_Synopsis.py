@@ -21,6 +21,7 @@ import json
 import os
 from astropy.coordinates import SkyCoord
 from astropy.coordinates import ICRS, Galactic, FK4, FK5
+from astropy.time import Time
 
 reg_obj = b"https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = b"RA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -506,7 +507,7 @@ class processTNS():
             print(ras)
             decs = re.findall(reg_dec,body)
             print(decs)
-            
+
             try:
                 ########################################################
                 # For Item in Email, Get TNS
@@ -561,60 +562,77 @@ class processTNS():
                         np.array([]),np.array([]),np.array([]),np.array([]),\
                         np.array([]),np.array([]),np.array([])
                     try:
-                        data = []
-                        table = soup.find('table',attrs={'class':'photometry-results-table'})                        
-                        table_body = table.find('tbody')
-                        header = table.find('thead')
-                        headcols = header.find_all('th')
-                        header = np.array([ele.text.strip() for ele in headcols])
-                        #header.append([ele for ele in headcols if ele])
-                        rows = table_body.find_all('tr')
-                        for row in rows:
-                            cols = row.find_all('td')
-                            data.append([ele.text.strip() for ele in cols])
+                        tables = soup.find_all('table',attrs={'class':'photometry-results-table'})
+                        for table in tables:
+                            data = []
+                            table_body = table.find('tbody')
+                            header = table.find('thead')
+                            headcols = header.find_all('th')
+                            header = np.array([ele.text.strip() for ele in headcols])
+                            #header.append([ele for ele in headcols if ele])
+                            rows = table_body.find_all('tr')
 
-                        for datarow in data:
-                            datarow = np.array(datarow)
-                            if photkeydict['unit'] in header:
-                                if 'mag' in datarow[header == photkeydict['unit']][0].lower():
-                                    if photkeydict['magflux'] in header:
-                                        tmag = np.append(tmag,datarow[header == photkeydict['magflux']])
-                                        tflux = np.append(tflux,'')
-                                    else:
-                                        tmag = np.append(tmag,'')
-                                        tflux = np.append(tflux,'')
-                                    if photkeydict['magfluxerr'] in header:
-                                        tmagerr = np.append(tmagerr,datarow[header == photkeydict['magfluxerr']])
-                                        tfluxerr = np.append(tfluxerr,'')
-                                    else:
-                                        tmagerr = np.append(tmagerr,None)
-                                        tfluxerr= np.append(tfluxerr,'')
-                                elif 'flux' in datarow[header == photkeydict['unit']][0].lower():
-                                    if photkeydict['magflux'] in header:
-                                        tflux = np.append(tflux,datarow[header == photkeydict['magflux']])
-                                        tmag = np.append(tmag,'')
-                                    else:
-                                        tflux = np.append(tflux,'')
-                                        tmag = np.append(tmag,'')
-                                    if photkeydict['magfluxerr'] in header:
-                                        tfluxerr = np.append(tfluxerr,datarow[header == photkeydict['magfluxerr']])
-                                        tmagerr = np.append(tmagerr,'')
-                                    else:
-                                        tfluxerr = np.append(tfluxerr,None)
-                                        tmagerr = np.append(tmagerr,'')
-                            if photkeydict['filter'] in header:
-                                tfilt = np.append(tfilt,datarow[header == photkeydict['filter']])
-                            if photkeydict['inst'] in header:
-                                tinst = np.append(tinst,datarow[header == photkeydict['inst']])
-                            if photkeydict['obsdate'] in header:
-                                tobsdate = np.append(tobsdate,datarow[header == photkeydict['obsdate']])
-                            if photkeydict['remarks'] in header and photkeydict['maglim'] in header:
-                                if 'last' in datarow[header == photkeydict['remarks']][0].lower() and \
-                                   'non' in datarow[header == photkeydict['remarks']][0].lower() and \
-                                   'detection' in datarow[header == photkeydict['remarks']][0].lower():
-                                    nondetectmaglim = datarow[header == photkeydict['maglim']][0]
-                                    nondetectdate = datarow[header == photkeydict['obsdate']][0]
-                                    nondetectfilt = datarow[header == photkeydict['filter']][0]
+                            for row in rows:
+                                cols = row.find_all('td')
+                                data.append([ele.text.strip() for ele in cols])
+
+                            for datarow in data:
+                                datarow = np.array(datarow)
+                                if photkeydict['unit'] in header:
+                                    if 'mag' in datarow[header == photkeydict['unit']][0].lower():
+                                        if photkeydict['magflux'] in header:
+                                            tmag = np.append(tmag,datarow[header == photkeydict['magflux']])
+                                            tflux = np.append(tflux,'')
+                                        else:
+                                            tmag = np.append(tmag,'')
+                                            tflux = np.append(tflux,'')
+                                        if photkeydict['magfluxerr'] in header:
+                                            tmagerr = np.append(tmagerr,datarow[header == photkeydict['magfluxerr']])
+                                            tfluxerr = np.append(tfluxerr,'')
+                                        else:
+                                            tmagerr = np.append(tmagerr,None)
+                                            tfluxerr= np.append(tfluxerr,'')
+                                    elif 'flux' in datarow[header == photkeydict['unit']][0].lower():
+                                        if photkeydict['magflux'] in header:
+                                            tflux = np.append(tflux,datarow[header == photkeydict['magflux']])
+                                            tmag = np.append(tmag,'')
+                                        else:
+                                            tflux = np.append(tflux,'')
+                                            tmag = np.append(tmag,'')
+                                        if photkeydict['magfluxerr'] in header:
+                                            tfluxerr = np.append(tfluxerr,datarow[header == photkeydict['magfluxerr']])
+                                            tmagerr = np.append(tmagerr,'')
+                                        else:
+                                            tfluxerr = np.append(tfluxerr,None)
+                                            tmagerr = np.append(tmagerr,'')
+                                if photkeydict['filter'] in header:
+                                    tfilt = np.append(tfilt,datarow[header == photkeydict['filter']])
+                                if photkeydict['inst'] in header:
+                                    tinst = np.append(tinst,datarow[header == photkeydict['inst']])
+                                if photkeydict['obsdate'] in header:
+                                    tobsdate = np.append(tobsdate,datarow[header == photkeydict['obsdate']])
+                                if photkeydict['remarks'] in header and photkeydict['maglim'] in header:
+                                    if 'last' in datarow[header == photkeydict['remarks']][0].lower() and \
+                                       'non' in datarow[header == photkeydict['remarks']][0].lower() and \
+                                       'detection' in datarow[header == photkeydict['remarks']][0].lower():
+                                        nondetectmaglim = datarow[header == photkeydict['maglim']][0]
+                                        nondetectdate = datarow[header == photkeydict['obsdate']][0]
+                                        nondetectfilt = datarow[header == photkeydict['filter']][0]
+
+                        # set the discovery flag
+                        disc_flag = np.zeros(len(tmag))
+                        iMagsExist = np.where(tmag != '')[0]
+                        if len(iMagsExist) == 1: disc_flag[np.where(tmag != '')] = 1
+                        elif len(iMagsExist) > 1:
+                            mjd = np.zeros(len(iMagsExist))
+                            for d in range(len(mjd)):
+                                mjd[d] = date_to_mjd(tobsdate[d])
+                            iMinMJD = np.where(mjd == np.min(mjd))[0]
+                            if len(iMinMJD) > 1: iMinMJD = [iMinMJD[0]]
+                            for im,iim in zip(iMagsExist,range(len(iMagsExist))):
+                                if len(iMinMJD) and iim == iMinMJD[0]:
+                                    disc_flag[im] = 1
+
                     except:
                         print('Error : couldn\'t get photometry!!!')
                                     
@@ -765,6 +783,7 @@ class processTNS():
                                       'host':hosturl,
                                       'candidate_hosts':hostcoords,
                                       'best_spec_class':eventid,
+                                      'TNS_spec_class':evt_type,
                                       'mw_ebv':ebv,
                                       'disc_date':disc_date.replace(' ','T')}
                         if nondetectdate: newobjdict['non_detect_date'] = nondetectdate.replace(' ','T')
@@ -808,11 +827,13 @@ class processTNS():
                                         bandid = db.post_object_to_DB('band',{'name':f,'instrument':instrumentid})
                         
                                     # put in the photometry
-                                    for m,me,f,fe,od in zip(tmag[(f == tfilt) & (ins == tinst)],
-                                                            tmagerr[(f == tfilt) & (ins == tinst)],
-                                                            tflux[(f == tfilt) & (ins == tinst)],
-                                                            tfluxerr[(f == tfilt) & (ins == tinst)],
-                                                            tobsdate[(f == tfilt) & (ins == tinst)]):
+                                    for m,me,f,fe,od,df in zip(tmag[(f == tfilt) & (ins == tinst)],
+                                                               tmagerr[(f == tfilt) & (ins == tinst)],
+                                                               tflux[(f == tfilt) & (ins == tinst)],
+                                                               tfluxerr[(f == tfilt) & (ins == tinst)],
+                                                               tobsdate[(f == tfilt) & (ins == tinst)],
+                                                               disc_flag[(f == tfilt) & (ins == tinst)]):
+                                        if not m and not me and not f and not fe: continue
                                         # TODO: compare od to disc_date.replace(' ','T')
                                         # if they're close or equal?  Set discovery flag
                                         photdatadict = {'obs_date':od.replace(' ','T'),
@@ -822,6 +843,7 @@ class processTNS():
                                         if me: photdatadict['mag_err'] = me
                                         if f: photdatadict['flux'] = f
                                         if fe: photdatadict['flux_err'] = fe
+                                        if df: photdatadict['discovery_point'] = 1
                                         photdataid = db.post_object_to_DB('photdata',photdatadict)
 
                             # put in the galaxy photometry
@@ -901,7 +923,11 @@ class processTNS():
         if fieldname not in namelist: return(None)
 
         return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
-        
+
+def date_to_mjd(obs_date):
+                time = Time(obs_date,scale='utc')
+                return time.mjd
+    
 def runDBcommand(cmd):
     try:
         tstart = time.time()

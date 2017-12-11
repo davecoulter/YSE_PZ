@@ -52,33 +52,39 @@ def get_recent_phot_for_transient(transient_id=None):
     else:
         return(None)
 
-def get_first_phot_for_transient(transient_id=None):
+def get_disc_phot_for_transient(transient_id=None):
 
     transient = Transient.objects.filter(id=transient_id)
     photometry = TransientPhotometry.objects.filter(transient=transient_id)
 
     photdata = False
+    firstphot = None
     for p in photometry:
-            photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')[::-1]
+        photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')[::-1]
+        for ph in photdata:
+            if ph.discovery_point:
+                return(ph)
+            elif ph.mag:
+                firstphot = ph
             
-    if photdata:    
-        return(photdata[0])
-    else:
-        return(None)
+    return(firstphot)
 
-def get_first_mag_for_transient(transient_id=None):
+def get_disc_mag_for_transient(transient_id=None):
 
     transient = Transient.objects.filter(id=transient_id)
     photometry = TransientPhotometry.objects.filter(transient=transient_id)
 
     photdata = False
+    firstphot = None
     for p in photometry:
             photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')[::-1]
             for ph in photdata:
-                if ph.mag:
-                    return(photdata[0])
+                if ph.discovery_point:
+                    return(ph)
+                elif ph.mag:
+                    firstphot = ph
 
-    return(None)
+    return(firstphot)
 
     
 def getMoonAngle(observingdate,telescope,ra,dec):
