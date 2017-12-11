@@ -18,7 +18,7 @@ from pytz import timezone
 
 def index(request):
 	if request.user.is_authenticated():
-		return render(request, 'YSE_App/dashboard.html')
+		return HttpResponseRedirect('dashboard')
 	return render(request, 'YSE_App/index.html')
 
 #def add_followup(request,obj):
@@ -31,20 +31,20 @@ def auth_login(request):
 
 	user = None
 	if request.POST:
-			username = request.POST['username']
-			password = request.POST['password']
-			user = authenticate(request, username=username, password=password)
+		username = request.POST['username']
+		password = request.POST['password']
+		user = authenticate(request, username=username, password=password)
 
 	if user is not None:
-			login(request, user)
-			
-			# Redirect to requested page
-			if next_page:
-				return HttpResponseRedirect(next_page)
-			else:
-				return render_to_response('dashboard')
+		login(request, user)
+		
+		# Redirect to requested page
+		if next_page:
+			return HttpResponseRedirect(next_page)
+		else:
+			return render_to_response('dashboard')
 	else:
-			return render(request, 'YSE_App/login.html')
+		return render(request, 'YSE_App/login.html')
 
 def auth_logout(request):
 	logout(request)
@@ -88,7 +88,6 @@ def dashboard(request):
 			disc = view_utils.get_disc_mag_for_transient(transient_id=followup_requested_transients[i].id)
 			if disc: followup_requested_transients[i].disc_mag = disc.mag
 
-			
 	status_following = TransientStatus.objects.filter(name='Following').order_by('-modified_date')
 	if len(status_following) == 1:
 		following_transients = Transient.objects.filter(status=status_following[0])
@@ -102,7 +101,7 @@ def dashboard(request):
 		for i in range(len(finishedfollowing_transients)):
 			disc = view_utils.get_disc_mag_for_transient(transient_id=finishedfollowing_transients[i].id)
 			if disc: finishedfollowing_transients[i].disc_mag = disc.mag
-	
+
 	context = {
 			'new_k2_transients': new_k2_transients,
 			'new_transients': new_notk2_transients,
@@ -115,7 +114,7 @@ def dashboard(request):
 
 @login_required
 def dashboard_example(request):
-		return render(request, 'YSE_App/dashboard_example.html')
+	return render(request, 'YSE_App/dashboard_example.html')
 
 from django.template.defaulttags import register
 @register.filter
@@ -224,8 +223,8 @@ def transient_detail(request, transient_id):
 			}
 
 		return render(request,
-				'YSE_App/transient_detail.html',
-				context)
+			'YSE_App/transient_detail.html',
+			context)
 
 	else:
 		return Http404('Transient not found')
