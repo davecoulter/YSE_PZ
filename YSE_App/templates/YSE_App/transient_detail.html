@@ -170,6 +170,7 @@
 										  </tr>
 										</thead>
 										<tbody>
+										  {% if f.observation_set %}
 										  {% for o in f.observation_set %}
 										  <tr>
 										    <td>{{ o.obs_window_start|date:"SHORT_DATE_FORMAT" }} &mdash;<br>{{ o.obs_window_stop|date:"SHORT_DATE_FORMAT" }}</td>
@@ -190,6 +191,20 @@
 										    <td><a target="_blank" href="{% url 'admin:YSE_App_transientobservationtask_change' o.id %}">Edit</a></td>
 										  </tr>
 										  {% endfor %}
+										  {% else %}
+										  <tr>
+										    <td>{{ f.valid_start|date:"SHORT_DATE_FORMAT" }} &mdash;<br>{{ f.valid_stop|date:"SHORT_DATE_FORMAT" }}</td>
+										    <td>{{ f.resource.telescope.observatory.name }}</td>
+										    <td>{{ f.resource.telescope.name }}</td>
+										    <td></td>
+										    <td></td>
+										    <td></td>
+										    <td></td>
+										    <td></td>
+										    <td>{{ f.status }}</td>
+										    <td><a target="_blank" href="{% url 'admin:YSE_App_transientfollowup_change' f.id %}">Edit</a></td>
+										  </tr>
+										  {% endif %}
 										  {% endfor %}
 										</tbody>
 									      </table>
@@ -258,7 +273,8 @@
 									    
 									    <!-- /.box-body -->
 									  </div>
-									  
+                                                                        </div>
+
 						<!-- <table id="transient_tbl" class="table table-bordered table-hover">
 						<thead>
 						<tr>

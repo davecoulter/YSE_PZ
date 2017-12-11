@@ -161,7 +161,14 @@ def transient_detail(request, transient_id):
                 if followups:
                         for i in range(len(followups)):
                                 followups[i].observation_set = TransientObservationTask.objects.filter(followup=followups[i].id)
+                                if followups[i].classical_resource:
+                                        followups[i].resource = followups[i].classical_resource
+                                elif followups[i].too_resource:
+                                        followups[i].resource = followups[i].too_resource
+                                elif followups[i].queued_resource:
+                                        followups[i].resource = followups[i].queued_resource
                 else: followups = None
+                
                 hostdata = Host.objects.filter(pk=transient[0].host_id)
                 if hostdata:
                         hostphotdata = view_utils.get_recent_phot_for_host(host_id=hostdata[0].id)

@@ -279,7 +279,8 @@ def lightcurveplot(request, transient_id):
         
         transient = Transient.objects.get(pk=transient_id)
         photdata = get_all_phot_for_transient(transient_id)
-        if not photdata: return
+        if not photdata:
+            return django.http.HttpResponse('')
         
         fig=Figure()
         ax=fig.add_subplot(111)
