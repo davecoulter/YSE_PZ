@@ -1,4 +1,5 @@
 # utils for generating webpage views
+import django
 import copy
 from .models import *
 from astropy.coordinates import EarthLocation
@@ -7,6 +8,9 @@ from astropy.time import Time
 import astropy.units as u
 import datetime
 import numpy as np
+from django.conf import settings as djangoSettings
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 
 def get_recent_phot_for_host(host_id=None):
 
@@ -211,6 +215,40 @@ def get_telescope_from_obsnight(obsnight_id):
 # i.e. a tuple of (datetime, airmass) that ChartJS can plot on the 
 # client 
 
+def finderchart(request, transient_id):
+	import os
+	from .util import mkFinderChart
+	from django.contrib.staticfiles.templatetags.staticfiles import static
+	
+	transient = Transient.objects.get(pk=transient_id)
+	basedir = "%sYSE_App/images/findercharts/%s"%(djangoSettings.STATIC_ROOT,transient.name)
+	if not os.path.exists(basedir):
+		os.makedirs(basedir)
+		
+	outputOffsetFileName = '%s/%s.offsetstars.txt'%(
+		basedir,transient.name)
+	outputFinderFileName = '%s/%s.finder.png'%(
+		basedir,transient.name)
+	if os.path.exists(outputOffsetFileName) and\
+	   os.path.exists(outputFinderFileName):
+		return HttpResponseRedirect(reverse('transient_detail',
+											args=(transient.id,)))
+	
+	find = mkFinderChart.finder()
+	parser = find.add_options(usage='')
+	options,  args = parser.parse_args()
+	options.ra = str(transient.ra)
+	options.dec = str(transient.dec)
+	options.snid = transient.name
+	options.outputOffsetFileName = outputOffsetFileName
+	options.outputFinderFileName = outputFinderFileName
+	find.options = options
+	find.mkChart(options.ra,options.dec,options.outputFinderFileName)
+
+	return HttpResponseRedirect(reverse('transient_detail',
+                                        args=(transient.id,)))
+
+    
 def airmassplot(request, transient_id, obs_id, telescope_id):
 		import random
 		import django

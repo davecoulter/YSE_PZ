@@ -62,10 +62,10 @@ class finder():
             ra,dec = float(ra),float(dec)
             self.options.ra = float(ra); self.options.dec = float(dec)
             
-        finderim = panstamps_lite(ra,dec,options.finderFilt,options.finderSizeArcmin,outfile)
+        finderim = panstamps_lite(ra,dec,self.options.finderFilt,self.options.finderSizeArcmin,outfile)
         PS1 = True
         if not finderim:
-            finderim = getDSSImage(ra,dec,options.finderFilt,options.finderSizeArcmin,outfile)
+            finderim = getDSSImage(ra,dec,self.options.finderFilt,self.options.finderSizeArcmin,outfile)
             PS1 = False
             if not finderim: raise RuntimeError('Error : problem retrieving FITS image of field!')
             
