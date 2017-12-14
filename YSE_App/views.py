@@ -4,6 +4,7 @@ from django.template import loader
 from django.views import generic
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.core.urlresolvers import reverse_lazy
 import requests
 
 from .models import *
@@ -18,7 +19,7 @@ from pytz import timezone
 
 def index(request):
 	if request.user.is_authenticated():
-		return HttpResponseRedirect('dashboard')
+		return HttpResponseRedirect(reverse_lazy('dashboard'))
 	return render(request, 'YSE_App/index.html')
 
 #def add_followup(request,obj):
