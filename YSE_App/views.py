@@ -5,6 +5,7 @@ from django.views import generic
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse_lazy
+from django.db.models import Q
 import requests
 
 from .models import *
@@ -112,6 +113,38 @@ def dashboard(request):
 			'finishedfollowing_transients': finishedfollowing_transients,
 	}
 	return render(request, 'YSE_App/dashboard.html', context)
+
+@login_required
+def followup(request):
+
+	followup_transients = None
+	
+	status_followrequest = TransientStatus.objects.filter(
+		Q(name='FollowupRequested') | Q(name='Following')).order_by('-modified_date')
+	followup_transients = Transient.objects.filter(Q(status=status_followrequest[0]) |
+												   Q(status=status_followrequest[1]))
+	for i in range(len(followup_transients)):
+		disc = view_utils.get_disc_mag_for_transient(transient_id=followup_transients[i].id)
+		if disc: followup_transients[i].disc_mag = disc.mag
+		followup_transients[i].followups = \
+			TransientFollowup.objects.filter(transient=followup_transients[i].id)
+		for j in range(len(followup_transients[i].followups)):
+			if followup_transients[i].followups[j].classical_resource:
+				followup_transients[i].followups[j].resource = \
+					followup_transients[i].followups[j].classical_resource
+			elif followup_transients[i].followups[j].too_resource:
+				followup_transients[i].followups[j].resource = \
+					followup_transients[i].followups[j].too_resource
+			elif followup_transients[i].followups[j].queued_resource:
+				followup_transients[i].followups[j].resource = \
+					followup_transients[i].followups[j].queued_resource
+
+	context = {
+		'transients': followup_transients,
+		'telescopes':Telescope.objects.all()
+	}
+	return render(request, 'YSE_App/transient_followup.html', context)
+
 
 @login_required
 def dashboard_example(request):
