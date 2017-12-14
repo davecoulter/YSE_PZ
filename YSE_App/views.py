@@ -120,7 +120,7 @@ def followup(request):
 	followup_transients = None
 	
 	status_followrequest = TransientStatus.objects.filter(
-		Q(name='FollowupRequested') | Q(name='Following')).order_by('-modified_date')
+		Q(name='FollowupRequested') | Q(name='Following') | Q(name='New')).order_by('-modified_date')
 	followup_transients = Transient.objects.filter(Q(status=status_followrequest[0]) |
 												   Q(status=status_followrequest[1]))
 	for i in range(len(followup_transients)):
