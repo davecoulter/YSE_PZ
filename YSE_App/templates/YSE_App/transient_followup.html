@@ -41,7 +41,7 @@
             {% for f in tr.followups %}
 	    {% if f.resource.telescope == t %}
 	    <tr>
-        <td><a href=“{% url 'transient_detail' tr.id %}“>{{ tr.name }}</a></td>
+        <td><a href="{% url 'transient_detail' tr.id %}">{{ tr.name }}</a></td>
 	      <td>{{ tr.status }}</td>
 	      <td>{{ f.valid_start|date:"SHORT_DATE_FORMAT" }} &mdash;<br>{{ f.valid_stop|date:"SHORT_DATE_FORMAT" }}</td>
 	      <td>{{ f.resource.telescope.observatory.name }}</td>
