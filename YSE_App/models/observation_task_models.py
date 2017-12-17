@@ -7,7 +7,10 @@ from YSE_App.models.followup_models import *
 class ObservationalTask(BaseModel):
 	class Meta:
 		abstract = True
+		ordering = ["-id"]
 
+	### Entity relationships ###
+	# Required
 	instrument_config = models.ForeignKey(InstrumentConfig, on_delete=models.CASCADE)
 	status = models.ForeignKey(TaskStatus, models.SET(get_sentinel_taskstatus))
 

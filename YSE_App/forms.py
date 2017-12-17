@@ -28,3 +28,34 @@ class TransientForm(ModelForm):
 			'abs_mag_peak',
 			'abs_mag_peak_date',
 			'postage_stamp_file']
+
+class TransientFollowupForm(ModelForm):
+	class Meta:
+		model = TransientFollowup
+		fields = [
+			'status', 
+			'too_resource',
+			'classical_resource',
+			'queued_resource',
+			'valid_start',
+			'valid_stop',
+			'spec_priority',
+			'phot_priority',
+			'offset_star_ra',
+			'offset_star_dec',
+			'offset_north',
+			'offset_east',
+			'transient']
+
+class TransientObservationTaskForm(ModelForm):
+	class Meta:
+		model = TransientObservationTask
+		fields = [
+			'status',
+			'instrument_config',
+			'exposure_time',
+			'number_of_exposures',
+			'desired_obs_date',
+			'actual_obs_date',
+			'description',
+			'followup']

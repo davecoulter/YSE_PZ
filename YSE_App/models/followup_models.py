@@ -9,6 +9,7 @@ class Followup(BaseModel):
 
 	class Meta:
 		abstract = True
+		ordering = ['-id']
 
 	### Entity relationships ###
 	# Required

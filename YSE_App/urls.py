@@ -8,6 +8,7 @@ from rest_framework.schemas import get_schema_view
 
 from . import views, view_utils
 from . import api_views
+from .form_views import *
 
 schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
 
@@ -29,6 +30,10 @@ urlpatterns = [
 	view_utils.airmassplot, name='airmassplot'),
     url(r'^lightcurveplot/(?P<transient_id>[0-9]+)/$', view_utils.lightcurveplot, name='lightcurveplot'),
 	url(r'^finderchart/(?P<transient_id>[0-9]+)/$', view_utils.finderchart, name='finderchart'),
+
+    # url(r'^add_transient_followup/$', form_views.add_transient_followup, name='add_transient_followup'),
+    url(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
+    url(r'^add_transient_observation_task/', AddTransientObservationTaskFormView.as_view(), name='add_transient_observation_task'),
 ]
 
 router = DefaultRouter()
@@ -81,7 +86,7 @@ router.register(r'alternatetransientnames', api_views.AlternateTransientNamesVie
 router.register(r'users', api_views.UserViewSet)
 
 # Login/Logout
-api_url_patterns = [url(r'^api/', include(router.urls)), 
+api_url_patterns = [url(r'^api/', include(router.urls)),
 					url(r'^api/schema/$', schema_view),
 					url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),]
 

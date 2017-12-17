@@ -17,7 +17,6 @@ def IsK2Pixel(ra, dec):
 	HTTP_SUCCESS = 200
 
 	url_formatter = "%s?ra=%0.5f&dec=%0.5f"
-	endpoint_uri = settings.KEPLER_API_ENDPOINT
 	formatted_url = url_formatter % (settings.KEPLER_API_ENDPOINT, ra, dec)
 
 	try:

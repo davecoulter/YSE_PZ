@@ -1,0 +1,91 @@
+{% load widget_tweaks %}
+
+{% block content %}
+	<div class="box box-warning box-solid collapsed-box">
+		<div class="box-header with-border">
+			<h3 class="box-title">Add/Edit Observation Task</h3>
+			<div class="box-tools pull-right">
+				<button id="add_transient_observation_task_btn" type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i></button>
+			</div>
+		</div>
+		<div class="box-body">
+			<form id="add_transient_observation_task" action="{% url 'add_transient_observation_task' %}" method="post">
+				<fieldset id="add_transient_observation_task_fieldset" disabled>
+					<div class="col-xs-12" id="add_transient_observation_task_warning">
+						<ul>
+							<li><em>To <b>ADD</b> a task, click "Add Task" on a Follow-up item below.</em></li>
+						</ul>
+					</div>
+					<div class="col-xs-12" id="add_transient_observation_task_info">
+						<ul></ul>
+					</div>
+					{% csrf_token %}
+					{% for hidden_field in form.hidden_fields %}
+						{{ hidden_field }}
+					{% endfor %}
+					<input type="hidden" id="observation_task_followup_pk"/>
+					<div class="col-xs-6">
+						<div class="form-group">
+							<label>Task Status</label>
+							{% render_field form.status class+="form-control select2" style+="width: 100%;"%}
+						</div>
+					</div>
+					<div class="col-xs-6">
+						<div class="form-group">
+							<label>Instrument Config</label>
+							{% render_field form.instrument_config class+="form-control select2" style+="width: 100%;"%}
+						</div>
+					</div>
+					<div class="col-xs-6">
+						<div class="form-group">
+							<label>Exposure Time</label>
+							{% render_field form.exposure_time class+="form-control" %}
+						</div>
+					</div>
+					<div class="col-xs-6">
+						<div class="form-group">
+							<label>Number of Exposures</label>
+							{% render_field form.number_of_exposures class+="form-control" %}
+						</div>
+					</div>
+					<div class="col-xs-6">
+						<div class="form-group">
+							<label>Desired Obs Date</label>
+							<div class="input-group">
+								<div class="input-group-addon">
+									<i class="fa fa-clock-o"></i>
+								</div>
+								<input type="text" class="form-control pull-right" id="obs_task_desired_picker">
+							</div>
+							<input type="hidden" id="{{form.desired_obs_date.name}}" name="{{form.desired_obs_date.name}}">
+						</div>
+					</div>
+					<div class="col-xs-6">
+						<div class="form-group">
+							<label>Actual Obs Date</label>
+							<div class="input-group">
+								<div class="input-group-addon">
+									<i class="fa fa-clock-o"></i>
+								</div>
+								<input type="text" class="form-control pull-right" id="obs_task_actual_picker">
+							</div>
+							<input type="hidden" id="{{form.actual_obs_date.name}}" name="{{form.actual_obs_date.name}}">
+						</div>
+					</div>
+					<div class="col-xs-12">
+						<div class="form-group">
+							<label>Description</label>
+							{% render_field form.description class+="form-control" %}
+						</div>
+					</div>
+					<div class="col-xs-12">
+						<div class="form-group">
+							<br>
+							<button type="submit" class="btn btn-block btn-warning btn-lg">Submit</button>
+						</div>
+					</div>
+				</fieldset>
+			</form>
+		</div>
+	</div>
+{% endblock %}

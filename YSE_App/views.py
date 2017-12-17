@@ -150,11 +150,17 @@ def transient_detail(request, transient_id):
 	transient = Transient.objects.filter(id=transient_id)
 	obs = None
 	if len(transient) == 1:
+
+		alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
+		transient_followup_form = TransientFollowupForm()
+		transient_observation_task_form = TransientObservationTaskForm()
+
 		# Get associated Observations
 		followups = TransientFollowup.objects.filter(transient__pk=transient_id)
 		if followups:
 			for i in range(len(followups)):
 				followups[i].observation_set = TransientObservationTask.objects.filter(followup=followups[i].id)
+				
 				if followups[i].classical_resource:
 					followups[i].resource = followups[i].classical_resource
 				elif followups[i].too_resource:
@@ -195,32 +201,27 @@ def transient_detail(request, transient_id):
 
 		date = datetime.datetime.now(tz=pytz.utc)
 		date_format='%m/%d/%Y %H:%M:%S'
+
+		context = {
+			'transient':transient[0],
+			'followups':followups,
+			'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
+			'telescope_list': tellist,
+			'observing_nights': obsnights,
+			'too_resource_list': too_resources,
+			'nowtime':date.strftime(date_format),
+			'transient_followup_form': transient_followup_form,
+			'transient_observation_task_form': transient_observation_task_form,
+			'alt_names': alt_names,
+		}
+
 		if lastphotdata and firstphotdata:
-			context = {
-					'transient':transient[0],
-					'followups':followups,
-					'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
-					'recent_mag':lastphotdata.mag,
-					'recent_filter':lastphotdata.band,
-					'recent_magdate':lastphotdata.obs_date,
-					'first_mag':firstphotdata.mag,
-					'first_filter':firstphotdata.band,
-					'first_magdate':firstphotdata.obs_date,
-					'telescope_list': tellist,
-					'observing_nights': obsnights,
-					'too_resource_list': too_resources,
-					'nowtime':date.strftime(date_format)
-				}
-		else:
-			context = {
-					'transient':transient[0],
-					'followups':followups,
-					'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
-					'telescope_list': tellist,
-					'observing_nights': obsnights,
-					'too_resource_list': too_resources,
-					'nowtime':date.strftime(date_format)
-			}
+			context['recent_mag'] = lastphotdata.mag
+			context['recent_filter'] = lastphotdata.band
+			context['recent_magdate'] = lastphotdata.obs_date
+			context['first_mag'] = firstphotdata.mag
+			context['first_filter'] = firstphotdata.band
+			context['first_magdate'] = firstphotdata.obs_date
 
 		return render(request,
 			'YSE_App/transient_detail.html',
