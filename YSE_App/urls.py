@@ -19,6 +19,7 @@ urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^dashboard/$', views.dashboard, name='dashboard'),
     url(r'^calendar/$', views.calendar, name='calendar'),
+    url(r'^followup/$', views.followup, name='followup'),
     url(r'^dashboard_example/$', views.dashboard_example, name='dashboard_example'),
     url(r'^transient_edit/$', views.transient_edit, name='transient_edit'),
     url(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
