@@ -511,13 +511,14 @@
 					<div class="tab-pane" id="resources_tab">
 						<div class="row">
 							<div class="col-xs-12">
-								<ul>
-									<li><a target="_blank" href="{% url 'finderchart' transient.id %}">Generate Finder Chart</a></li>
-									<li>Current UTC Time: <strong>{{ nowtime }}</strong></li>
-								</ul>
+								<h4>Current UTC Time: <strong>{{ nowtime }}</strong></h4>
+								<!-- <ul> -->
+									<!-- <li><a target="_blank" href="{% url 'finderchart' transient.id %}">Generate Finder Chart</a></li> -->
+								<!-- </ul> -->
 								
-								{% static "" as baseUrl %}
-								<img src="{{baseUrl}}/YSE_App/images/findercharts/{{transient.name}}/{{transient.name}}.finder.png" style='width:240px' alt="" />
+								<!-- {% static "" as baseUrl %}
+								<img src="{{baseUrl}}/YSE_App/images/findercharts/{{transient.name}}/{{transient.name}}.finder.png" style='width:240px' alt="" /> -->
+								<br><br>
 							</div>
 							<div class="col-xs-12">
 								<b>Classical Resources</b><br>
