@@ -145,6 +145,49 @@
   </div>
   <!-- /.box -->
 
+  <!-- Default box -->
+  <div class="box">
+    <div class="box-header with-border">
+      <h3 class="box-title">Following</h3>
+    </div>
+    <div class="box-body">
+
+      <table id="following_transient_tbl" class="table table-bordered table-hover">
+        <thead>
+        <tr>
+          <th>Name</th>
+          <th>RA</th>
+          <th>DEC</th>
+          <th>Disc. Date</th>
+          <th>Disc. Mag</th>
+          <th>Discovery Source</th>
+      <th>Internal Survey</th>
+      <th>Post Time (Pacific)</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for t in following_transients %}
+          <tr>
+            <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
+            <td>{{ t.ra }}</td>
+            <td>{{ t.dec }}</td>
+            <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+    <td>{{ t.disc_mag }}</td>
+            <td>{{ t.obs_group.name }}</td>
+    <td>{{ t.internal_survey }}</td>
+    <td>{{ t.modified_date_pacific }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer">
+    </div>
+    <!-- /.box-footer-->
+  </div>
+  <!-- /.box -->
 
   <!-- Default box -->
   <div class="box">
@@ -172,51 +215,6 @@
             <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
             <td>{{ t.CoordString.0 }}</td>
             <td>{{ t.CoordString.1 }}</td>
-            <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
-    <td>{{ t.disc_mag }}</td>
-            <td>{{ t.obs_group.name }}</td>
-    <td>{{ t.internal_survey }}</td>
-    <td>{{ t.modified_date_pacific }}</td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-
-    </div>
-    <!-- /.box-body -->
-    <div class="box-footer">
-    </div>
-    <!-- /.box-footer-->
-  </div>
-  <!-- /.box -->
-
-
-  <!-- Default box -->
-  <div class="box">
-    <div class="box-header with-border">
-      <h3 class="box-title">Following</h3>
-    </div>
-    <div class="box-body">
-
-      <table id="following_transient_tbl" class="table table-bordered table-hover">
-        <thead>
-        <tr>
-          <th>Name</th>
-          <th>RA</th>
-          <th>DEC</th>
-          <th>Disc. Date</th>
-          <th>Disc. Mag</th>
-          <th>Discovery Source</th>
-      <th>Internal Survey</th>
-      <th>Post Time (Pacific)</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for t in following_transients %}
-          <tr>
-            <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
-            <td>{{ t.ra }}</td>
-            <td>{{ t.dec }}</td>
             <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
     <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>

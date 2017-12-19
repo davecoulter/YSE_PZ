@@ -69,40 +69,52 @@ def dashboard(request):
 		new_notk2_transients = new_transients.exclude(k2_validated=1).order_by('-modified_date')
 		for i in range(len(new_notk2_transients)):
 			disc = view_utils.get_disc_mag_for_transient(transient_id=new_notk2_transients[i].id)
-			if disc: new_notk2_transients[i].disc_mag = disc.mag
+			if disc:
+				new_notk2_transients[i].disc_mag = disc.mag
+				new_notk2_transients[i].disc_date = disc.obs_date
 
 		new_k2_transients = new_transients.filter(k2_validated=1).order_by('-modified_date')
 		for i in range(len(new_k2_transients)):
 			disc = view_utils.get_disc_mag_for_transient(transient_id=new_k2_transients[i].id)
-			if disc: new_k2_transients[i].disc_mag = disc.mag
+			if disc:
+				new_k2_transients[i].disc_mag = disc.mag
+				new_k2_transients[i].disc_date = disc.obs_date
 
 	status_watch = TransientStatus.objects.filter(name='Watch').order_by('-modified_date')
 	if len(status_watch) == 1:
 		watch_transients = Transient.objects.filter(status=status_watch[0])
 		for i in range(len(watch_transients)):
 			disc = view_utils.get_disc_mag_for_transient(transient_id=watch_transients[i].id)
-			if disc: watch_transients[i].disc_mag = disc.mag
+			if disc:
+				watch_transients[i].disc_mag = disc.mag
+				watch_transients[i].disc_date = disc.obs_date
 
 	status_followrequest = TransientStatus.objects.filter(name='FollowupRequested').order_by('-modified_date')
 	if len(status_followrequest) == 1:
 		followup_requested_transients = Transient.objects.filter(status=status_followrequest[0])
 		for i in range(len(followup_requested_transients)):
 			disc = view_utils.get_disc_mag_for_transient(transient_id=followup_requested_transients[i].id)
-			if disc: followup_requested_transients[i].disc_mag = disc.mag
+			if disc:
+				followup_requested_transients[i].disc_mag = disc.mag
+				followup_requested_transients[i].disc_date = disc.obs_date
 
 	status_following = TransientStatus.objects.filter(name='Following').order_by('-modified_date')
 	if len(status_following) == 1:
 		following_transients = Transient.objects.filter(status=status_following[0])
 		for i in range(len(following_transients)):
 			disc = view_utils.get_disc_mag_for_transient(transient_id=following_transients[i].id)
-			if disc: following_transients[i].disc_mag = disc.mag
+			if disc:
+				following_transients[i].disc_mag = disc.mag
+				following_transients[i].disc_date = disc.obs_date
 
 	status_finishedfollowing = TransientStatus.objects.filter(name='FollowupFinished').order_by('-modified_date')
 	if len(status_following) == 1:
 		finishedfollowing_transients = Transient.objects.filter(status=status_finishedfollowing[0])
 		for i in range(len(finishedfollowing_transients)):
 			disc = view_utils.get_disc_mag_for_transient(transient_id=finishedfollowing_transients[i].id)
-			if disc: finishedfollowing_transients[i].disc_mag = disc.mag
+			if disc:
+				finishedfollowing_transients[i].disc_mag = disc.mag
+				finishedfollowing_transients[i].disc_date = disc.obs_date
 
 	context = {
 			'new_k2_transients': new_k2_transients,
