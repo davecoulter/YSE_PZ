@@ -45,8 +45,8 @@
 						<div class="form-group">
 							<strong>Disc. Date (UTC)</strong>
 							<p class="text-muted">
-								{% if transient.disc_date %}
-									{{transient.disc_date }}
+								{% if first_magdate %}
+									{{ first_magdate }}
 								{% else %}
 									Unknown
 								{% endif %}
