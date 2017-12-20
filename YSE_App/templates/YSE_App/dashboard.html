@@ -36,7 +36,7 @@
         </tr>
         </thead>
         <tbody>
-        {% for t in new_k2_transients %}
+        {% for t in k2_transients %}
         <tr>
           <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
           <td>{{ t.CoordString.0 }}</td>
@@ -136,8 +136,8 @@
         {% for t in followup_requested_transients %}
           <tr>
             <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
-            <td>{{ t.ra }}</td>
-            <td>{{ t.dec }}</td>
+            <td>{{ t.CoordString.0 }}</td>
+            <td>{{ t.CoordString.1 }}</td>
             <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
 	    <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
@@ -184,8 +184,8 @@
         {% for t in following_transients %}
           <tr>
             <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
-            <td>{{ t.ra }}</td>
-            <td>{{ t.dec }}</td>
+            <td>{{ t.CoordString.0 }}</td>
+            <td>{{ t.CoordString.1 }}</td>
             <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
 	    <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
@@ -280,8 +280,8 @@
         {% for t in finishedfollowing_transients %}
           <tr>
             <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
-            <td>{{ t.ra }}</td>
-            <td>{{ t.dec }}</td>
+            <td>{{ t.CoordString.0 }}</td>
+            <td>{{ t.CoordString.1 }}</td>
             <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
 	    <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
