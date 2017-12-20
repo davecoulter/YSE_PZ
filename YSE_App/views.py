@@ -184,7 +184,7 @@ def calendar(request):
 
 	user_colors = {}
 	for i, u in enumerate(User.objects.all().exclude(username='admin')):
-		user_colors[u.username] = colors[i]
+		user_colors[u.username] = colors[i % len(colors)]
 
 	context = {
 		'all_dates': all_dates,
