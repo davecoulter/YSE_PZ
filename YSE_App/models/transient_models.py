@@ -49,6 +49,12 @@ class Transient(BaseModel):
 	def CoordString(self):
 		return GetSexigesimalString(self.ra, self.dec)
 
+	def RADecimalString(self):
+		return '%.7f'%(self.ra)
+
+	def DecDecimalString(self):
+		return '%.7f'%(self.dec)
+
 	def Separation(self):
 		host = Host.objects.get(pk=self.host_id)
 		return '%.2f'%getSeparation(self.ra,self.dec,host.ra,host.dec)

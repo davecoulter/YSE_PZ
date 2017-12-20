@@ -74,5 +74,11 @@ class Host(BaseModel):
 	def CoordString(self):
 		return GetSexigesimalString(self.ra, self.dec)
 
+	def RADecimalString(self):
+		return '%.7f'%(self.ra)
+
+	def DecDecimalString(self):
+		return '%.7f'%(self.dec)
+
 	def __str__(self):
 		return self.HostString()

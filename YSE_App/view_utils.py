@@ -206,15 +206,7 @@ def get_telescope_from_obsnight(obsnight_id):
 	classresource = ClassicalResource.objects.filter(id=classobsdate.resource_id)[0]
 	telescope = Telescope.objects.filter(id=classresource.telescope_id)[0]
 	return(telescope)
-
-## We should refactor this so that it takes:
-# - transient
-# - observatory (or maybe array of observatory)
-# - 
-# And it can returns the data which can be plotted on the front end
-# i.e. a tuple of (datetime, airmass) that ChartJS can plot on the 
-# client 
-
+	
 def finderchart(request, transient_id):
 	import os
 	from .util import mkFinderChart
@@ -248,6 +240,13 @@ def finderchart(request, transient_id):
 	return HttpResponseRedirect(reverse('transient_detail',
                                         args=(transient.id,)))
 
+## We should refactor this so that it takes:
+# - transient
+# - observatory (or maybe array of observatory)
+# - 
+# And it can returns the data which can be plotted on the front end
+# i.e. a tuple of (datetime, airmass) that ChartJS can plot on the 
+# client 
     
 def airmassplot(request, transient_id, obs_id, telescope_id):
 		import random

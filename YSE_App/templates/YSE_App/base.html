@@ -7,6 +7,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<title>YSE | PZ</title>
 	<!-- Tell the browser to be responsive to screen width -->
+
 	<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
 	<link rel="shortcut icon" type="image/png" href="{%  static 'YSE_App/favicon.ico' %}"/>
 	<!-- Bootstrap 3.3.7 -->
@@ -15,6 +16,8 @@
 	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/font-awesome/css/font-awesome.min.css' %}">
 	<!-- Ionicons -->
 	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/Ionicons/css/ionicons.min.css' %}">
+	<!-- DataTables -->
+	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
 	<!-- Theme style -->
 	<link rel="stylesheet" href="{% static 'YSE_App/dist/css/AdminLTE.min.css' %}">
 	<!-- AdminLTE Skins. Choose a skin from the css/skins
@@ -138,6 +141,9 @@
 <!-- daterangepicker -->
 <script src="{% static 'YSE_App/bower_components/moment/min/moment.min.js' %}"></script>
 <script src="{% static 'YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.js' %}"></script>
+<!-- DataTables -->
+<script src="{% static 'YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
 <!-- datepicker -->
 <script src="{% static 'YSE_App/bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js' %}"></script>
 <!-- Bootstrap WYSIHTML5 -->
@@ -152,9 +158,21 @@
 {#<script src="{% static 'YSE_App/dist/js/pages/dashboard.js' %}"></script>#}
 <!-- AdminLTE for demo purposes -->
 <script src="{% static 'YSE_App/dist/js/demo.js' %}"></script>
+<script>
+  $(function () {
+    $(".sorttable").DataTable({
+      'paging'      : true,
+      'lengthChange': false,
+      'searching'   : false,
+      'ordering'    : true,
+      'info'        : true,
+      'autoWidth'   : false
+    })
+  })
+</script>
 
 <!-- Custom Scripts -->
-	{% block scripts %}
-	{% endblock %}
+{% block scripts %}
+{% endblock %}
 </body>
 </html>

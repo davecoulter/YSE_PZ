@@ -7,7 +7,7 @@
 	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/select2/dist/css/select2.min.css' %}">
 	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
 {% endblock %}
-
+	
 <!-- Content Header (Page header) -->
 {% block content_header %}
 	<h1>
@@ -37,7 +37,7 @@
 							<strong>R.A./Dec (2000)</strong>
 							<p class="text-muted">
 								{{ transient.CoordString.0 }}&nbsp;&nbsp;&nbsp;{{ transient.CoordString.1 }}<br>
-								<small>{{ transient.ra }}&nbsp;&nbsp;&nbsp;{{ transient.dec }}</small>
+								<small>{{ transient.RADecimalString }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ transient.DecDecimalString }}</small>
 							</p>
 						</div>
 					</div>
@@ -237,7 +237,7 @@
 							<p class="text-muted">
 								{% if transient.host %}
 									{{ transient.host.CoordString.0 }}&nbsp;&nbsp;&nbsp;{{ transient.host.CoordString.1 }}<br>
-								<small>{{ transient.host.ra }}&nbsp;&nbsp;&nbsp;{{ transient.host.dec }}</small>
+								<small>{{ transient.host.RADecimalString }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ transient.host.DecDecimalString }}</small>
 								{% else %}
 									Unknown
 								{% endif %}
