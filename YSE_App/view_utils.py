@@ -223,7 +223,7 @@ class finder(TemplateView):
 		from matplotlib.figure import Figure
 	
 		transient = Transient.objects.get(pk=transient_id)
-		basedir = "%sYSE_App/images/findercharts/%s"%(djangoSettings.STATIC_ROOT,transient.name)
+		basedir = "%sYSE_App/images/findercharts"%(djangoSettings.STATIC_ROOT)
 		if not os.path.exists(basedir):
 			os.makedirs(basedir)
 		
@@ -242,7 +242,7 @@ class finder(TemplateView):
 		options.ra = str(transient.ra)
 		options.dec = str(transient.dec)
 		options.snid = transient.name
-		options.outputOffsetFileName = outputOffsetFileName
+		#options.outputOffsetFileName = outputOffsetFileName
 		options.outputFinderFileName = outputFinderFileName
 		find.options = options
 		import pylab as plt
@@ -268,7 +268,7 @@ class finder(TemplateView):
 		from matplotlib.figure import Figure
 		import pylab as plt
 		transient = Transient.objects.get(pk=transient_id)
-		basedir = "%sYSE_App/images/findercharts/%s"%(djangoSettings.STATIC_ROOT,transient.name)
+		basedir = "%sYSE_App/images/findercharts"%(djangoSettings.STATIC_ROOT)
 		if not os.path.exists(basedir):
 			os.makedirs(basedir)
 		
@@ -292,7 +292,7 @@ class finder(TemplateView):
 		options.ra = str(transient.ra)
 		options.dec = str(transient.dec)
 		options.snid = transient.name
-		options.outputOffsetFileName = outputOffsetFileName
+		#options.outputOffsetFileName = outputOffsetFileName
 		options.outputFinderFileName = outputFinderFileName
 		find.options = options
 		ax,offdictlist = find.mkChart(options.ra,options.dec,
