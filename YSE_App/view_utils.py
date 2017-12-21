@@ -13,8 +13,6 @@ from django.conf import settings as djangoSettings
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import TemplateView
-import os
-from .util import mkFinderChart
 
 def get_recent_phot_for_host(host_id=None):
 
@@ -217,6 +215,9 @@ class finder(TemplateView):
 	def __init__(self):
 		pass
 	def finderchart(self, request, transient_id):
+		import os
+		from .util import mkFinderChart
+
 		from django.contrib.staticfiles.templatetags.staticfiles import static
 		from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 		from matplotlib.figure import Figure
@@ -261,6 +262,8 @@ class finder(TemplateView):
 					  context)
 
 	def finderim(self, request, transient_id):
+		import os
+		from .util import mkFinderChart
 		from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 		from matplotlib.figure import Figure
 		import pylab as plt
