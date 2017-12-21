@@ -1,0 +1,74 @@
+{% extends 'YSE_App/base.html' %}
+
+{% block content %}
+
+<!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>
+	Finder Chart for {{t}}
+      </h1>
+      <ol class="breadcrumb">
+        <li><i class="fa fa-dashboard"></i> Home</li>
+      </ol>
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+
+      <img src="{% url 'finderim' t.id %}" style='width:480px' alt="" /><br>
+      
+      <!-- Default box -->
+      <div class="box">
+        <div class="box-header with-border">
+          <h3 class="box-title">Offset Stars for {{t}}</h3>
+        </div>
+        <div class="box-body">
+
+          <table id="followup_tbl" class="table table-bordered table-hover">
+	    <thead>
+	      <tr>
+		<th>ID</th>
+		<th>RA</th>
+		<th>Dec</th>
+		<th>RA offset (E)</th>
+		<th>Dec offset (N)</th>
+		<th>Mag</th>
+	      </tr>
+	    </thead>
+            <tbody>
+	      <tr>
+		<td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
+		<td>{{ t.CoordString.0 }}</td>
+		<td>{{ t.CoordString.1 }}</td>
+		<td></td>
+		<td></td>
+		<td></td>
+	      </tr>
+	      {% if offsets %}
+	      {% for o in offsets %}
+	      <tr>
+		<td>{{ o.id }}</td>
+		<td>{{ o.ra }} </td>
+		<td>{{ o.dec }} </td>
+		<td>{{ o.ra_off }}</td>
+		<td>{{ o.dec_off }}</td>
+		<td>{{ o.mag }}</td>
+	      </tr>
+              {% endfor %}
+	      {% endif %}
+            </tbody>
+          </table>
+
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer">
+        </div>
+        <!-- /.box-footer-->
+      </div>
+      <!-- /.box -->
+      
+    </section>
+
+
+    
+{% endblock %}

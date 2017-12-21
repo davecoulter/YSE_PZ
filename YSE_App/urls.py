@@ -30,8 +30,9 @@ urlpatterns = [
     url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)/(?P<telescope_id>[a-zA-Z0-9]+)", 
 	view_utils.airmassplot, name='airmassplot'),
     url(r'^lightcurveplot/(?P<transient_id>[0-9]+)/$', view_utils.lightcurveplot, name='lightcurveplot'),
-	url(r'^finderchart/(?P<transient_id>[0-9]+)/$', view_utils.finderchart, name='finderchart'),
-
+	url(r'^finderchart/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderchart, name='finderchart'),
+	url(r'^finderim/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderim, name='finderim'),
+	
     # url(r'^add_transient_followup/$', form_views.add_transient_followup, name='add_transient_followup'),
     url(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
     url(r'^add_transient_observation_task/', AddTransientObservationTaskFormView.as_view(), name='add_transient_observation_task'),

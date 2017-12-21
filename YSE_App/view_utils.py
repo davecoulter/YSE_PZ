@@ -1,5 +1,6 @@
 # utils for generating webpage views
 import django
+from django.shortcuts import render, get_object_or_404, render_to_response
 import copy
 from .models import *
 from astropy.coordinates import EarthLocation
@@ -11,6 +12,9 @@ import numpy as np
 from django.conf import settings as djangoSettings
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.views.generic import TemplateView
+import os
+from .util import mkFinderChart
 
 def get_recent_phot_for_host(host_id=None):
 
@@ -206,40 +210,97 @@ def get_telescope_from_obsnight(obsnight_id):
 	classresource = ClassicalResource.objects.filter(id=classobsdate.resource_id)[0]
 	telescope = Telescope.objects.filter(id=classresource.telescope_id)[0]
 	return(telescope)
+
+class finder(TemplateView):
+	template_name = 'YSE_App/finder.html'
 	
-def finderchart(request, transient_id):
-	import os
-	from .util import mkFinderChart
-	from django.contrib.staticfiles.templatetags.staticfiles import static
+	def __init__(self):
+		pass
+	def finderchart(self, request, transient_id):
+		from django.contrib.staticfiles.templatetags.staticfiles import static
+		from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+		from matplotlib.figure import Figure
 	
-	transient = Transient.objects.get(pk=transient_id)
-	basedir = "%sYSE_App/images/findercharts/%s"%(djangoSettings.STATIC_ROOT,transient.name)
-	if not os.path.exists(basedir):
-		os.makedirs(basedir)
+		transient = Transient.objects.get(pk=transient_id)
+		basedir = "%sYSE_App/images/findercharts/%s"%(djangoSettings.STATIC_ROOT,transient.name)
+		if not os.path.exists(basedir):
+			os.makedirs(basedir)
 		
-	outputOffsetFileName = '%s/%s.offsetstars.txt'%(
-		basedir,transient.name)
-	outputFinderFileName = '%s/%s.finder.png'%(
-		basedir,transient.name)
-	if os.path.exists(outputOffsetFileName) and\
-	   os.path.exists(outputFinderFileName):
-		return HttpResponseRedirect(reverse('transient_detail',
-											args=(transient.id,)))
+		outputOffsetFileName = '%s/%s.offsetstars.txt'%(
+			basedir,transient.name)
+		outputFinderFileName = '%s/%s.finder.png'%(
+			basedir,transient.name)
+		if os.path.exists(outputOffsetFileName) and\
+		   os.path.exists(outputFinderFileName):
+			return HttpResponseRedirect(reverse('transient_detail',
+												args=(transient.id,)))
+
+		find = mkFinderChart.finder()
+		parser = find.add_options(usage='')
+		options,  args = parser.parse_args()
+		options.ra = str(transient.ra)
+		options.dec = str(transient.dec)
+		options.snid = transient.name
+		options.outputOffsetFileName = outputOffsetFileName
+		options.outputFinderFileName = outputFinderFileName
+		find.options = options
+		import pylab as plt
 	
-	find = mkFinderChart.finder()
-	parser = find.add_options(usage='')
-	options,  args = parser.parse_args()
-	options.ra = str(transient.ra)
-	options.dec = str(transient.dec)
-	options.snid = transient.name
-	options.outputOffsetFileName = outputOffsetFileName
-	options.outputFinderFileName = outputFinderFileName
-	find.options = options
-	find.mkChart(options.ra,options.dec,options.outputFinderFileName)
+		fig=Figure()
+		ax = fig.add_axes([0.2,0.3,0.6,0.6])
+		canvas=FigureCanvas(fig)
+		ax,offdictlist = find.mkChart(options.ra,options.dec,
+									  options.outputFinderFileName,
+									  ax=ax,saveImg=False)
+		
+		context = {'t':transient,
+				   'offsets':offdictlist}
+		
+		#return response
+		return render(request,'YSE_App/finder.html',
+					  context)
 
-	return HttpResponseRedirect(reverse('transient_detail',
-                                        args=(transient.id,)))
+	def finderim(self, request, transient_id):
+		from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+		from matplotlib.figure import Figure
+		import pylab as plt
+		transient = Transient.objects.get(pk=transient_id)
+		basedir = "%sYSE_App/images/findercharts/%s"%(djangoSettings.STATIC_ROOT,transient.name)
+		if not os.path.exists(basedir):
+			os.makedirs(basedir)
+		
+		outputOffsetFileName = '%s/%s.offsetstars.txt'%(
+			basedir,transient.name)
+		outputFinderFileName = '%s/%s.finder.png'%(
+			basedir,transient.name)
+		if os.path.exists(outputOffsetFileName) and\
+		   os.path.exists(outputFinderFileName):
+			return HttpResponseRedirect(reverse('transient_detail',
+												args=(transient.id,)))
 
+		
+		fig=Figure()
+		ax = fig.add_axes([0.2,0.3,0.6,0.6])
+		canvas=FigureCanvas(fig)
+
+		find = mkFinderChart.finder()
+		parser = find.add_options(usage='')
+		options,  args = parser.parse_args()
+		options.ra = str(transient.ra)
+		options.dec = str(transient.dec)
+		options.snid = transient.name
+		options.outputOffsetFileName = outputOffsetFileName
+		options.outputFinderFileName = outputFinderFileName
+		find.options = options
+		ax,offdictlist = find.mkChart(options.ra,options.dec,
+									  options.outputFinderFileName,
+									  ax=ax,saveImg=False)
+		
+		response=django.http.HttpResponse(content_type='image/png')
+		canvas.print_png(response)
+
+		return response
+	
 ## We should refactor this so that it takes:
 # - transient
 # - observatory (or maybe array of observatory)
