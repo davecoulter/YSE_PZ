@@ -167,6 +167,19 @@
 							<p><a target="_blank" href="http://api.keplerscience.org/is-k2-observing?ra={{ transient.ra }}&dec={{ transient.dec }}">Go to K2 API</a></p>
 						</div>
 					</div>
+					<div class="col-xs-4">
+						<div class="form-group">
+							<strong>Sep from likely host (arcsec)</strong>
+							<p class="text-muted">
+								{% if transient.host %}
+									{{ transient.Separation }}<br>
+								{% else %}
+									Unknown
+								{% endif %}
+							</p>
+						</div>
+					</div>
+
 					<div class="col-xs-12">
 						<hr>
 						<h4>Photometric Summary</h4>
