@@ -24,8 +24,11 @@ from astropy.coordinates import ICRS, Galactic, FK4, FK5
 from astropy.time import Time
 
 reg_obj = b"https://wis-tns.weizmann.ac.il/object/(\w+)"
-reg_ra = b"\d{4}\w+\sRA[\=a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
-reg_dec = b"DEC[\=a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)\,\s\w+"
+#reg_ra = b"\d{4}\w+\sRA[\=a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
+#reg_dec = b"DEC[\=a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)\,\s\w+"
+
+reg_ra = b"\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
+reg_dec = b"\*\,\\r\\nDEC[\=\*a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)"
 
 photkeydict = {'magflux':'Mag. / Flux',
 			   'magfluxerr':'Err',
@@ -540,7 +543,7 @@ class processTNS():
 			print(ras)
 			decs = re.findall(reg_dec,body)
 			print(decs)
-
+			
 			try:
 				########################################################
 				# For Item in Email, Get TNS
