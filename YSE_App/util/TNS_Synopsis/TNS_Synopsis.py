@@ -361,6 +361,7 @@ class DBOps():
 				cmd += '%s="%s" '%(k,v)
 			else:
 				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
+
 		objectdata = runDBcommand(cmd)
 
 		if type(objectdata) != list and 'url' not in objectdata:

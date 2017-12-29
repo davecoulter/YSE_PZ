@@ -162,7 +162,7 @@ def sendemail(from_addr, to_addr,
 			server.login(login, password)
 			resp = server.sendmail(from_addr, [to_addr], msg.as_string())
 			print("Send success")
-		except e:
+		except:
 			print("Send fail")
 
 def sendsms(from_addr, to_addr,
