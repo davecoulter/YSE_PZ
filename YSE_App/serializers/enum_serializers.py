@@ -162,6 +162,9 @@ class TransientClassSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta:
 		model = TransientClass
 		fields = "__all__"
+		extra_kwargs = {
+			'url': {'view_name': 'transientclass-detail', 'lookup_field': 'id'}
+		}
 
 	def create(self, validated_data):
 		return TransientClass.objects.create(**validated_data)
