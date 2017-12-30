@@ -71,6 +71,7 @@ class PhaseViewSet(viewsets.ReadOnlyModelViewSet):
 class TransientClassViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = TransientClass.objects.all()
 	serializer_class = TransientClassSerializer
+	lookup_field = "id"
 	permission_classes = (permissions.IsAuthenticated,)
 
 class ClassicalNightTypeViewSet(viewsets.ReadOnlyModelViewSet):
