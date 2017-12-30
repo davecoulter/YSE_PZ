@@ -28,7 +28,7 @@ reg_obj = b"https://wis-tns.weizmann.ac.il/object/(\w+)"
 #reg_dec = b"DEC[\=a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)\,\s\w+"
 
 reg_ra = b"\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
-reg_dec = b"\*\,\\r\\nDEC[\=\*a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)"
+reg_dec = b"DEC[\=\*a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)\<\/em\>\,"
 
 photkeydict = {'magflux':'Mag. / Flux',
 			   'magfluxerr':'Err',
