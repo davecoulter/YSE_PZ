@@ -1,5 +1,6 @@
 {% extends 'YSE_App/base.html' %}
 {% load static from staticfiles %}
+{% load transient_detail_extras %}
 
 {% block styles %}
 	<!-- include Aladin Lite CSS file in the head section of your page -->
@@ -303,9 +304,9 @@
 									<div class="item">
 										<strong>Pan-STARRS Footprint</strong>
 										<div>
-											{% if jpegurl %}
+											{% if transient|get_ps1_image %}
 												<a href="http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color" class="ps1-thumb" title="Link to PanSTARRS-1" target="_blank">
-													<img src="{{ jpegurl }}" style='width:240px' alt="" />
+													<img src="{{ transient|get_ps1_image }}" style='width:240px' alt="" />
 												</a>
 											{% else %}
 												<p class="text-muted">Coordinates are outside the PS1 footprint</p>
@@ -553,9 +554,9 @@
 													<tr>
 														<td>{{ telescope }}</td>
 														<td>{{ obsnight.0.obs_date }}</td>
-														<td>{{ obsnight.0.rise_time }}</td>
-														<td>{{ obsnight.0.set_time }}</td>
-														<td>{{ obsnight.0.moon_angle }} deg</td>
+														<td>{{ obsnight.0|rise_time:transient.CoordString }}</td>
+														<td>{{ obsnight.0|set_time:transient.CoordString }}</td>
+														<td>{{ obsnight.0|moon_angle:transient.CoordString }} deg</td>
 														<td><img src="{% url 'airmassplot' transient.id obsnight.0.id telescope.id %}" style='width:240px' alt="" /><br></td>
 													</tr>
 												{% endif %}
@@ -583,9 +584,9 @@
 												<tr>
 													<td>{{ too_resource.telescope }}</td>
 													<td>{{ too_resource.deltahours }}</td>
-													<td>{{ too_resource.rise_time }}</td>
-													<td>{{ too_resource.set_time }}</td>
-													<td>{{ too_resource.moon_angle }} deg</td>
+													<td>{{ too_resource|tonight_rise_time:transient.CoordString }}</td>
+													<td>{{ too_resource|tonight_set_time:transient.CoordString }}</td>
+													<td>{{ too_resource|too_moon_angle:transient.CoordString }} deg</td>
 													<td><img src="{% url 'airmassplot' transient.id 0 too_resource.telescope_id %}" style='width:240px' alt="" /><br></td>
 												</tr>
 											{% endif %}
