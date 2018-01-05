@@ -110,26 +110,8 @@ def getObsNights(transient):
 		if not o.happening_soon(): continue
 		telescope = get_telescope_from_obsnight(o.id)
 		observatory = get_observatory_from_telescope(telescope.id)
-		#can_obs = telescope_can_observe(transient.ra,
-		#								 transient.dec, 
-		#								 str(o.obs_date).split()[0],
-		#								 telescope.latitude,
-		#								 telescope.longitude,
-		#								 telescope.elevation,
-		#								 observatory.utc_offset)
 		can_obs = 1
 		o.telescope = telescope.name
-		import time
-		tstart = time.time()
-		o.rise_time,o.set_time = getTimeUntilRiseSet(transient.ra,
-													 transient.dec, 
-													 str(o.obs_date).split()[0],
-													 telescope.latitude,
-													 telescope.longitude,
-													 telescope.elevation,
-													 observatory.utc_offset)
-		o.moon_angle = getMoonAngle(str(o.obs_date).split()[0],telescope,transient.ra,transient.dec)
-		print(time.time()-tstart)
 		obsnights += ([o,can_obs],)
 		if can_obs and telescope not in tellist: tellist += (telescope,)
 	return obsnights,tellist

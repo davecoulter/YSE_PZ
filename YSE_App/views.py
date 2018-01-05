@@ -232,20 +232,12 @@ def transient_detail(request, transient_id):
 		
 		obsnights,tellist = view_utils.getObsNights(transient[0])
 		too_resources = ToOResource.objects.all()
+		
 		for i in range(len(too_resources)):
 			telescope = too_resources[i].telescope
-			telescope = Telescope.objects.filter(name=telescope)[0]
 			too_resources[i].telescope_id = telescope.id
 			observatory = Observatory.objects.get(pk=telescope.observatory_id)
 			too_resources[i].deltahours = too_resources[i].awarded_too_hours - too_resources[i].used_too_hours
-			too_resources[i].rise_time,too_resources[i].set_time = view_utils.getTimeUntilRiseSet(transient[0].ra,
-																								  transient[0].dec, 
-																								  0,
-																								  telescope.latitude,
-																								  telescope.longitude,
-																								  telescope.elevation,
-																								  observatory.utc_offset)
-			too_resources[i].moon_angle = view_utils.getMoonAngle(0,telescope,transient[0].ra,transient[0].dec)
 
 		date = datetime.datetime.now(tz=pytz.utc)
 		date_format='%m/%d/%Y %H:%M:%S'
@@ -253,7 +245,6 @@ def transient_detail(request, transient_id):
 		context = {
 			'transient':transient[0],
 			'followups':followups,
-			'jpegurl':utilities.get_psstamp_url(request,transient_id,Transient),
 			'telescope_list': tellist,
 			'observing_nights': obsnights,
 			'too_resource_list': too_resources,
