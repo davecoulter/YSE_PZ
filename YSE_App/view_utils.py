@@ -106,32 +106,32 @@ def getMoonAngle(observingdate,telescope,ra,dec):
 def getObsNights(transient):
 
 	obsnights,tellist = (),()
-
-	obsdates = ()
 	for o in ClassicalObservingDate.objects.order_by('-obs_date')[::-1]:
 		if not o.happening_soon(): continue
-		obsdates += (str(o.obs_date).split()[0],)
-
-	import time
-	tstart = time.time()
-	rise_times,set_times = getTimeUntilRiseSetList(
-		transient.ra,transient.dec,
-		obsdates,o.resource.telescope.latitude,
-		o.resource.telescope.longitude,o.resource.telescope.elevation,
-		o.resource.telescope.observatory.utc_offset)
-	print(time.time()-tstart)
-	
-	count = 0
-	for o in ClassicalObservingDate.objects.order_by('-obs_date')[::-1]:
-		if not o.happening_soon(): continue
-		o.rise_time,o.set_time = rise_times[count],set_times[count]
-		o.moon_angle = getMoonAngle(str(o.obs_date).split()[0],o.resource.telescope,
-									transient.ra,transient.dec)
-
-		obsnights += ([o,1],)
-		if o.resource.telescope not in tellist: tellist += (o.resource.telescope,)
-		count += 1
-	
+		telescope = get_telescope_from_obsnight(o.id)
+		observatory = get_observatory_from_telescope(telescope.id)
+		#can_obs = telescope_can_observe(transient.ra,
+		#								 transient.dec, 
+		#								 str(o.obs_date).split()[0],
+		#								 telescope.latitude,
+		#								 telescope.longitude,
+		#								 telescope.elevation,
+		#								 observatory.utc_offset)
+		can_obs = 1
+		o.telescope = telescope.name
+		import time
+		tstart = time.time()
+		o.rise_time,o.set_time = getTimeUntilRiseSet(transient.ra,
+													 transient.dec, 
+													 str(o.obs_date).split()[0],
+													 telescope.latitude,
+													 telescope.longitude,
+													 telescope.elevation,
+													 observatory.utc_offset)
+		o.moon_angle = getMoonAngle(str(o.obs_date).split()[0],telescope,transient.ra,transient.dec)
+		print(time.time()-tstart)
+		obsnights += ([o,can_obs],)
+		if can_obs and telescope not in tellist: tellist += (telescope,)
 	return obsnights,tellist
 
 def getTimeUntilRiseSet(ra,dec,date,lat,lon,elev,utc_off):
@@ -145,9 +145,24 @@ def getTimeUntilRiseSet(ra,dec,date,lat,lon,elev,utc_off):
 		lon*u.deg,lat*u.deg,
 		elev*u.m)
 	tel = Observer(location=location, timezone="UTC")
+	#night_start = tel.twilight_evening_civil(time,which="previous")
+	#night_end = tel.twilight_morning_civil(time,which="previous")
 	target_rise_time = tel.target_rise_time(time,sc,horizon=18*u.deg,which="previous")
 	target_set_time = tel.target_set_time(time,sc,horizon=18*u.deg,which="previous")
 	
+#	 start_obs = False
+#	 starttime,endtime = None,None
+#	 for jd in np.arange(night_start.mjd,night_end.mjd,0.05):
+#		 time = Time(jd,format="mjd")
+#		 target_up = tel.target_is_up(time,sc,horizon=18*u.deg)
+#		 if target_up and not start_obs:
+#			 start_obs = True
+#			 starttime = copy.copy(time)
+#		 if not target_up and start_obs:
+#			 can_obs = False
+#			 endtime = copy.copy(time)
+#			 break
+
 	if target_rise_time:
 		returnstarttime = target_rise_time.isot.split('T')[-1]
 	else: returnstarttime = None
@@ -158,37 +173,6 @@ def getTimeUntilRiseSet(ra,dec,date,lat,lon,elev,utc_off):
 	
 	return(returnstarttime,returnendtime)
 
-def getTimeUntilRiseSetList(ra,dec,datelist,lat,lon,elev,utc_off):
-
-	returnstarttimelist = []
-	returnendtimelist = []
-	location = EarthLocation.from_geodetic(
-		lon*u.deg,lat*u.deg,
-		elev*u.m)
-	tel = Observer(location=location, timezone="UTC")
-	
-	for date in datelist:
-
-		if date:
-			time = Time(date)
-		else:
-			time = Time(datetime.datetime.now())
-		sc = SkyCoord(ra,dec,unit=u.deg)
-
-		target_rise_time = tel.target_rise_time(time,sc,horizon=18*u.deg,which="previous")
-		target_set_time = tel.target_set_time(time,sc,horizon=18*u.deg,which="previous")
-	
-		if target_rise_time:
-			returnstarttime = target_rise_time.isot.split('T')[-1]
-		else: returnstarttime = None
-		if target_set_time:
-			returnendtime = target_set_time.isot.split('T')[-1]
-		else: returnendtime = None
-
-		returnstarttimelist += [returnstarttime]
-		returnendtimelist += [returnendtime]
-	
-	return(returnstarttimelist,returnendtimelist)
 	
 def telescope_can_observe(ra,dec,date,lat,lon,elev,utc_off):
 	if date:
