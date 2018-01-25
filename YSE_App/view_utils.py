@@ -372,9 +372,14 @@ def lightcurveplot(request, transient_id):
 
 		mjd,mag,magerr,band = \
 			np.array([]),np.array([]),np.array([]),np.array([])
+		limmjd = None
 		for p in photdata:
 			if p.flux and np.abs(p.flux) > 1e10: continue
 			if not p.mag: continue
+			
+			if p.discovery_point:
+				limmjd = p.date_to_mjd()-10
+
 			mjd = np.append(mjd,[p.date_to_mjd()])
 			mag = np.append(mag,[p.mag])
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
@@ -387,9 +392,14 @@ def lightcurveplot(request, transient_id):
 						yerr=magerr[band == b],fmt='o',label=b)
 		ax.set_xlabel('MJD',fontsize=15)
 		ax.set_ylabel('Mag',fontsize=15)
-		ax.invert_yaxis()
+		#ax.invert_yaxis()
 		ax.legend()
-		
+		if limmjd:
+			ax.set_xlim([limmjd,np.max(mjd)+10])
+		else:
+			ax.set_xlim([np.min(mjd)-10,np.max(mjd)+10])
+		ax.set_ylim([np.max(mag)+0.25,np.min(mag)-0.25])
+
 		response=django.http.HttpResponse(content_type='image/png')
 		canvas.print_png(response)
 		return response
