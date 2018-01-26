@@ -136,7 +136,8 @@ def followup(request):
 		Q(name='FollowupRequested') | Q(name='Following') | Q(name='New') | Q(name='Watch')).order_by('-modified_date')
 	followup_transients = Transient.objects.filter(Q(status=status_followrequest[0]) |
 												   Q(status=status_followrequest[1]) |
-												   Q(status=status_followrequest[2]))
+												   Q(status=status_followrequest[2]) |
+												   Q(status=status_followrequest[3]))
 	for i in range(len(followup_transients)):
 		disc = view_utils.get_disc_mag_for_transient(transient_id=followup_transients[i].id)
 		if disc: followup_transients[i].disc_mag = disc.mag
