@@ -24,7 +24,7 @@ urlpatterns = [
     url(r'^transient_edit/$', views.transient_edit, name='transient_edit'),
     url(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
     # ex: /yse/transient_detail/5/
-    url(r'^transient_detail/(?P<transient_id>[0-9]+)/$', views.transient_detail, name='transient_detail'),
+    url(r'^transient_detail/(?P<slug>[a-zA-Z0-9_-]+)/$', views.transient_detail, name='transient_detail'),
     url(r'^login/$', views.auth_login, name='auth_login'),
     url(r'^logout/$', views.auth_logout, name='auth_logout'),
     url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)/(?P<telescope_id>[a-zA-Z0-9]+)", 

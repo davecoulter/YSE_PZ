@@ -38,7 +38,7 @@
         <tbody>
         {% for t in k2_transients %}
         <tr>
-          <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
+          <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
           <td>{{ t.CoordString.0 }}</td>
           <td>{{ t.CoordString.1 }}</td>
           <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
@@ -87,7 +87,7 @@
         <tbody>
         {% for t in new_transients %}
           <tr>
-            <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
+            <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
             <td>{{ t.CoordString.0 }}</td>
             <td>{{ t.CoordString.1 }}</td>
             <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
@@ -136,7 +136,7 @@
         <tbody>
         {% for t in followup_requested_transients %}
           <tr>
-            <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
+            <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
             <td>{{ t.CoordString.0 }}</td>
             <td>{{ t.CoordString.1 }}</td>
             <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
@@ -184,7 +184,7 @@
         <tbody>
         {% for t in following_transients %}
           <tr>
-            <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
+            <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
             <td>{{ t.CoordString.0 }}</td>
             <td>{{ t.CoordString.1 }}</td>
             <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
@@ -232,7 +232,7 @@
         <tbody>
         {% for t in watch_transients %}
           <tr>
-            <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
+            <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
             <td>{{ t.CoordString.0 }}</td>
             <td>{{ t.CoordString.1 }}</td>
             <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
@@ -280,7 +280,7 @@
         <tbody>
         {% for t in finishedfollowing_transients %}
           <tr>
-            <td><a href="{% url 'transient_detail' t.id %}">{{ t.name }}</a></td>
+            <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
             <td>{{ t.CoordString.0 }}</td>
             <td>{{ t.CoordString.1 }}</td>
             <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>

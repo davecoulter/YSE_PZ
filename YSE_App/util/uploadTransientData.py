@@ -9,233 +9,435 @@ from astropy.time import Time
 import numpy as np
 
 class upload():
-    def __init__(self):
-        pass
-    def add_options(self, parser=None, usage=None, config=None):
-        import optparse
-        if parser == None:
-            parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
+	def __init__(self):
+		pass
+	def add_options(self, parser=None, usage=None, config=None):
+		import optparse
+		if parser == None:
+			parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
 
-        # The basics
-        parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
-        parser.add_option('--clobber', default=False, action="store_true",
-                          help='clobber output file')
-        parser.add_option('-p','--photometry', default=False, action="store_true",
-                          help='input file is photometry')
-        parser.add_option('-s','--spectrum', default=False, action="store_true",
-                          help='input file is a spectrum')
-        parser.add_option('-i','--inputfile', default=None, type="string",
-                          help='input file ')
-        parser.add_option('--trid', default=None, type="string",
-                          help='transient ID')
-        parser.add_option('--status', default='FollowupFinished', type="string",
-                          help='transient status (new, follow, etc')
-        parser.add_option('--obsgroup', default='Foundation', type="string",
-                          help='group who observed this transient')
-        parser.add_option('--inputformat', default='snana', type="string",
-                          help="input file format, can be 'basic' or 'snana' (photometry only) ")
-        parser.add_option('--instrument', default='GPC1', type="string",
-                          help="instrument name")
-        parser.add_option('-u','--useheader', default=False, action="store_true",
-                          help="if set, grab keys from the file header and try to POST to db")
-        parser.add_option('--postURL',default="https://ziggy.ucolick.org/yse_test/api", type="string",
-                          help="POST URL root (default=%default)")
-        parser.add_option('--user',default="djones", type="string",
-                          help="db username (default=%default)")
-        parser.add_option('--password',default="BossTent1", type="string",
-                          help="db password (default=%default)")
-        
-        return(parser)
+		parser.add_option('-s','--settingsfile', default=None, type="string",
+						  help='settings file (login/password info)')
+			
+		# The basics
+		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
+		parser.add_option('--clobber', default=False, action="store_true",
+						  help='clobber output file')
 
-    def uploadHeader(self,sn):
-        # first figure out the status and obs_group foreign keys
-        statusgetcmd = "http -a %s:%s GET %s/transientstatuses/"%(
-            self.options.user,self.options.password,self.options.postURL)
-        statusid = getIDfromName(statusgetcmd,self.options.status)
-        obsgetcmd = "http -a %s:%s GET %s/observationgroups/"%(
-            self.options.user,self.options.password,self.options.postURL)
-        obsid = getIDfromName(obsgetcmd,self.options.obsgroup)
-        if not obsid or not statusid: raise RuntimeError('Error : obsgroup or status not found in DB!')
+		parser.add_option('-p','--photometry', default=False, action="store_true",
+						  help='input file is photometry')
+		parser.add_option('--spectrum', default=False, action="store_true",
+						  help='input file is a spectrum')
+		parser.add_option('-i','--inputfile', default=None, type="string",
+						  help='input file ')
+		parser.add_option('--trid', default=None, type="string",
+						  help='transient ID')
+		parser.add_option('--status', default='Following', type="string",
+						  help='transient status (new, follow, etc')
+		parser.add_option('--obsgroup', default='Foundation', type="string",
+						  help='group who observed this transient')
+		parser.add_option('--inputformat', default='snana', type="string",
+						  help="input file format, can be 'basic' or 'snana' (photometry only) ")
+		parser.add_option('--instrument', default='GPC1', type="string",
+						  help="instrument name")
+		parser.add_option('-u','--useheader', default=False, action="store_true",
+						  help="if set, grab keys from the file header and try to POST to db")
+			
+		return(parser)
 
-        transgetcmd = "http -a %s:%s GET %s/transients/"%(
-            self.options.user,self.options.password,self.options.postURL)
-        transid = getIDfromName(transgetcmd,sn.SNID)
+	def uploadHeader(self,sn,db=None):
+		# first figure out the status and obs_group foreign keys
+		statusid = db.get_ID_from_DB('transientstatuses',self.options.status)
+		obsid = db.get_ID_from_DB('observationgroups',self.options.obsgroup)
+		if not obsid or not statusid: raise RuntimeError('Error : obsgroup or status not found in DB!')
 
-        if not transid:
-            # upload the basic transient data
-            basicdatacmd = "http -a %s:%s POST %s/transients/ name='%s' ra='%s' dec='%s' status='%s' obs_group=%s"%(
-                self.options.user,self.options.password,self.options.postURL,sn.SNID,sn.RA.split()[0],sn.DECL.split()[0],
-                statusid,obsid)
-        else:
-            basicdatacmd = "http -a %s:%s PUT %s/transients/ name='%s' ra='%s' dec='%s' status=%s obs_group=%s"%(
-                self.options.user,self.options.password,self.options.postURL,sn.SNID,sn.RA.split()[0],sn.DECL.split()[0],
-                statusid,obsid)
+		transgetcmd = "http -a %s:%s GET %s/transients/"%(
+			self.options.login,self.options.password,self.options.postURL)
+		if 'OTHERID' in sn.__dict__.keys():
+			transid = getIDfromName(transgetcmd,sn.OTHERID)
+			transname = sn.OTHERID
+		else:
+			transid = getIDfromName(transgetcmd,sn.SNID)
+			transname = sn.SNID
+			
+		if not transid:
+			# upload the basic transient data
+			basicdatacmd = "http -a %s:%s POST %s/transients/ name='%s' ra='%s' dec='%s' status='%s' obs_group=%s"%(
+				self.options.login,self.options.password,self.options.postURL,transname,sn.RA.split()[0],sn.DECL.split()[0],
+				statusid,obsid)
+		import pdb; pdb.set_trace()
+		#else:
+		#	basicdatacmd = "http -a %s:%s PATCH %s/transients/%s/ name='%s' ra='%s' dec='%s' status=%s obs_group=%s"%(
+		#		self.options.login,self.options.password,self.options.postURL,transid,transname,sn.RA.split()[0],sn.DECL.split()[0],
+		#		statusid,obsid)
 
-        output = os.popen(basicdatacmd).read()
-        basictrans = json.loads(output)
-        
-    def uploadSNANAPhotometry(self):
-        import snana
-        sn = snana.SuperNova(self.options.inputfile)
+		output = os.popen(basicdatacmd).read()
+		basictrans = json.loads(output)
+		transid = basictrans['url']
+		
+		return(transid)
+		
+	def uploadSNANAPhotometry(self,db=None):
+		import snana
+		sn = snana.SuperNova(self.options.inputfile)
 
-        if self.options.useheader:
-            transdata = self.uploadHeader(sn)
+		if self.options.useheader:
+			transid = self.uploadHeader(sn)			
+			if 'OTHERID' in sn.__dict__.keys():
+				transname = sn.OTHERID
+			else:
+				transname = sn.SNID
+		else:
+			if 'OTHERID' in sn.__dict__.keys():
+				transid = db.get_ID_from_DB('transients',sn.OTHERID)
+				transname = sn.OTHERID
+			else:
+				transid = db.get_ID_from_DB('transients',sn.SNID)
+				transname = sn.SNID
+				
+		# create photometry object, if it doesn't exist
+		photheaderdata = db.get_objects_from_DB('photometry')
+		self.parsePhotHeaderData(photheaderdata,transname,sn.RA.split()[0],sn.DECL.split()[0],db=db)
 
-        # create photometry object, if it doesn't exist
-        getphotcmd = "http -a %s:%s GET %s/transientphotometry/"%(
-            self.options.user,self.options.password,self.options.postURL)
-        photheaderdata = json.loads(os.popen(getphotcmd).read())
-        self.parsePhotHeaderData(photheaderdata,sn.SNID)
-        
-        # get the filter IDs
-        
-        # upload the photometry
-        for mjd,flux,fluxerr,mag,magerr,flt in zip(sn.MJD,sn.FLUXCAL,sn.FLUXCALERR,sn.MAG,sn.MAGERR,sn.FLT):
-            PhotUploadFmt = ["http -a %s:%s %s %s/transientphotdata/ "]
-            PhotUploadFmt.append('obs_date="%s" flux=%.4f flux_err=%.4f ')
-            PhotUploadFmt.append('photometry=%s ')
+		# get the filter IDs
+		
+		# upload the photometry
+		for mjd,flux,fluxerr,mag,magerr,flt in zip(
+				sn.MJD,sn.FLUXCAL,sn.FLUXCALERR,sn.MAG,sn.MAGERR,sn.FLT):
 
-            obsdate = Time(mjd,format='mjd').isot
-            bandid = self.getBandfromDB('photometricbands',flt,self.instid)
-            if flux > 0:
-                PhotUploadFmt.append('mag=%.4f mag_err=%.4f forced=1 dq=1 band=%s flux_zero_point=27.5 ')
-                PhotUploadFmt = "".join(PhotUploadFmt)
-                photcmd = (PhotUploadFmt%(self.options.user,self.options.password,"POST",
-                                          self.options.postURL,obsdate,flux,fluxerr,
-                                          self.photdataid,mag+27.5,magerr,bandid)).replace('nan','-99')
-            else:
-                PhotUploadFmt.append('forced=1 dq=1 band=%s flux_zero_point=27.5 ')
-                PhotUploadFmt = "".join(PhotUploadFmt)
-                photcmd = (PhotUploadFmt%(self.options.user,self.options.password,"POST",
-                                          self.options.postURL,obsdate,flux,fluxerr,
-                                          self.photdataid,bandid))
+			obsdate = Time(mjd,format='mjd').isot
+			bandid = db.getBandfromDB('band',flt,self.instid)
+			if not bandid:
+				raise RuntimeError('Error : band %s is not defined in the DB!!'%flt)
+			
+			PhotUploadDict = {'obs_date':obsdate,
+							  'flux':flux,
+							  'flux_err':fluxerr,
+							  'photometry':self.photdataid,
+							  'forced':1,
+							  'dq':1,
+							  'band':bandid,
+							  'flux_zero_point':27.5}
+			
+			if flux > 0:
+				PhotUploadDict['mag'] = mag
+				PhotUploadDict['mag_err'] = magerr
+			if np.abs(mjd - sn.SEARCH_PEAKMJD) < 0.5:
+				PhotUploadDict['discovery_point'] = 1
+				
+			if not transid:
+				photdata = db.post_object_to_DB('photdata',PhotUploadDict)
+			else:
+				# if the transient is already in the DB, we need to check for photometry
+				# and avoid duplicate epochs
+				photepochs = db.get_objects_from_DB('photdata')
+				closeID = None
+				for p in photepochs:
+					pmjd = Time(p['obs_date'],format='isot').mjd
+					if p['photometry'] == self.photdataid and np.abs(pmjd - mjd) < 0.05 and p['band'] == bandid:
+						closeID = p['url']
+						break
+				if closeID:
+					photdata = db.patch_object_to_DB('photdata',PhotUploadDict,closeID)
+				else:
+					photdata = db.post_object_to_DB('photdata',PhotUploadDict)
+								
+	def parsePhotHeaderData(self,photheaderdata,snid,ra,dec,db=None):
 
-            photdata = runDBcommand(photcmd)
-            
-    def getPhotObjfromDB(self,tablename,transient,instrument,obsgroup):
-        cmd = 'http -a %s:%s GET %s/%s/'%(
-            self.options.user,self.options.password,self.options.postURL,tablename)
-        output = os.popen(cmd).read()
-        data = json.loads(output)
+		# if no photometry header, then create one
+		self.instid = db.get_ID_from_DB('instruments',self.options.instrument)
+		if not self.instid:
+			self.instid = db.get_ID_from_DB('instruments','Unknown')
+		self.obsgroupid = db.get_ID_from_DB('observationgroups',self.options.obsgroup)
+		if not self.obsgroupid:
+			self.obsgroupid = db.get_ID_from_DB('observationgroups','Unknown')
+		self.snidid = db.get_ID_from_DB('transients',snid)
 
-        translist,instlist,obsgrouplist,idlist = [],[],[],[]
-        for i in range(len(data)):
-            obsgrouplist += [data[i]['obs_group']]
-            instlist += [data[i]['instrument']]
-            translist += [data[i]['transient']]
-            idlist += [data[i]['url']]
+		inDB = False
+		if type(photheaderdata) == list or not self.snidid:
+			self.photdataid = db.getPhotObjfromDB(
+				'photometry',self.snidid,self.instid,self.obsgroupid)
+			if self.photdataid: inDB = True
+			
+		if not inDB:
 
-        if obsgroup not in obsgrouplist or instrument not in instlist or transient not in translist:
-            return(None)
+			if not self.snidid:
+				postdict = {'obs_group':self.obsgroupid,
+							'status':db.get_ID_from_DB('transientstatuses',self.options.status),
+							'name':snid,
+							'ra':ra,
+							'dec':dec}
+				self.snidid = db.post_object_to_DB('transient',postdict)
 
-        return(np.array(idlist)[np.where((np.array(translist) == transient) &
-                                         (np.array(instlist) == instrument) &
-                                         (np.array(obsgrouplist) == obsgroup))][0])
+			photpostdict = {'instrument':self.instid,
+							'obs_group':self.obsgroupid,
+							'transient':self.snidid}
+			self.photdataid = db.post_object_to_DB('photometry',photpostdict)
 
-                
-    def getBandfromDB(self,tablename,fieldname,instrument):
-        cmd = 'http -a %s:%s GET %s/%s/'%(
-            self.options.user,self.options.password,self.options.postURL,tablename)
-        output = os.popen(cmd).read()
-        data = json.loads(output)
+			
+	def uploadBasicPhotometry(self):
+		from txtobj import txtobj
 
-        idlist,namelist,instlist = [],[],[]
-        for i in range(len(data)):
-            namelist += [data[i]['name']]
-            idlist += [data[i]['url']]
-            instlist += [data[i]['instrument']]
-
-        if fieldname not in namelist or instrument not in instlist: return(None)
-
-        return(np.array(idlist)[np.where((np.array(namelist) == fieldname) &
-                                         (np.array(instlist) == instrument))][0])
-            
-    def getIDfromName(self,tablename,fieldname):
-        cmd = 'http -a %s:%s GET %s/%s/'%(
-            self.options.user,self.options.password,self.options.postURL,tablename)
-        output = os.popen(cmd).read()
-        data = json.loads(output)
-
-        idlist,namelist = [],[]
-        for i in range(len(data)):
-            namelist += [data[i]['name']]
-            idlist += [data[i]['url']]
-
-        if fieldname not in namelist: return(None)
-
-        return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
-        
-    def parsePhotHeaderData(self,photheaderdata,snid):
-
-        # if no photometry header, then create one
-        self.instid = getIDfromName('http -a %s:%s GET %s/instruments/'%(
-            self.options.user,self.options.password,self.options.postURL),self.options.instrument)
-        self.obsgroupid = getIDfromName('http -a %s:%s GET %s/observationgroups/'%(
-            self.options.user,self.options.password,self.options.postURL),self.options.obsgroup)
-        self.snidid = getIDfromName('http -a %s:%s GET %s/transients/'%(
-            self.options.user,self.options.password,self.options.postURL),snid)
-
-        inDB = False
-        if type(photheaderdata) == list:
-            self.photdataid = self.getPhotObjfromDB(
-                'transientphotometry',self.snidid,self.instid,self.obsgroupid)
-            if self.photdataid: inDB = True
-            
-        if not inDB:
-
-            postphotcmd = ["http "]
-            postphotcmd.append("-a %s:%s POST %s/transientphotometry/ "%(self.options.user,self.options.password,self.options.postURL))
-            postphotcmd.append("instrument=%s "%(self.instid))
-            postphotcmd.append("obs_group='%s' "%(self.obsgroupid))
-            postphotcmd.append("transient='%s' "%(self.snidid))
-            postphotcmd = ''.join(postphotcmd)
-            postphotdata = runDBcommand(postphotcmd)
-
-            self.photdataid = postphotdata['url']
-
-            
-    def uploadBasicPhotometry(self):
-        from txtobj import txtobj
-
-    def uploadBasicSpectrum(self):
-        from txtobj import txtobj
+	def uploadBasicSpectrum(self):
+		from txtobj import txtobj
 
 def runDBcommand(cmd):
-    try:
-        return(json.loads(os.popen(cmd).read()))
-    except:
-        import pdb; pdb.set_trace()
-        raise RuntimeError('Error : cmd %s failed!!')
-    
-def getIDfromName(cmd,name):
-    output = os.popen(cmd).read()
-    data = json.loads(output)
+	try:
+		return(json.loads(os.popen(cmd).read()))
+	except:
+		import pdb; pdb.set_trace()
+		raise RuntimeError('Error : cmd %s failed!!'%cmd)
+	
 
-    idlist,namelist = [],[]
-    for i in range(len(data)):
-        namelist += [data[i]['name']]
-        idlist += [data[i]['url']]
+class DBOps():
+	def __init__(self):
+		pass
 
-    if name not in namelist: return(None)
+	def init_params(self):
+		self.dblogin = self.options.dblogin
+		self.dbpassword = self.options.dbpassword
+		self.dburl = self.options.dburl
+		self.baseposturl = "http --ignore-stdin -a %s:%s POST %s"%(self.dblogin,self.dbpassword,self.dburl)
+		self.basegeturl = "http --ignore-stdin -a %s:%s GET %s"%(self.dblogin,self.dbpassword,self.dburl)
+		self.baseputurl = "http --ignore-stdin -a %s:%s PUT %s"%(self.dblogin,self.dbpassword,self.dburl)
+		self.basegetobjurl = "http --ignore-stdin -a %s:%s GET "%(self.dblogin,self.dbpassword)
+	
+	def add_options(self, parser=None, usage=None, config=None):
+		import optparse
+		if parser == None:
+			parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
 
-    return(np.array(idlist)[np.where(np.array(namelist) == name)][0])
-    
+		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
+		parser.add_option('--clobber', default=False, action="store_true",
+						  help='clobber output file')
+		parser.add_option('-i','--inputfile', default=None, type="string",
+						  help='input file ')
+		parser.add_option('-p','--photometry', default=False, action="store_true",
+						  help='input file is photometry')
+		parser.add_option('--spectrum', default=False, action="store_true",
+						  help='input file is a spectrum')
+		
+		parser.add_option('-s','--settingsfile', default=None, type="string",
+						  help='settings file (login/password info)')
+			
+		if config:
+			parser.add_option('--login', default=config.get('main','login'), type="string",
+							  help='gmail login (default=%default)')
+			parser.add_option('--password', default=config.get('main','password'), type="string",
+							  help='gmail password (default=%default)')
+
+			parser.add_option('--dblogin', default=config.get('main','dblogin'), type="string",
+							  help='gmail login (default=%default)')
+			parser.add_option('--dbpassword', default=config.get('main','dbpassword'), type="string",
+							  help='gmail password (default=%default)')
+			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
+							  help='base URL to POST/GET,PUT to/from a database (default=%default)')
+			parser.add_option('--transientapi', default=config.get('main','transientapi'), type="string",
+							  help='URL to POST transients to a database (default=%default)')
+			parser.add_option('--internalsurveyapi', default=config.get('main','internalsurveyapi'), type="string",
+							  help='URL to POST transients to a database (default=%default)')
+			parser.add_option('--transientclassesapi', default=config.get('main','transientclassesapi'), type="string",
+							  help='URL to POST transients classes to a database (default=%default)')
+			parser.add_option('--hostapi', default=config.get('main','hostapi'), type="string",
+							  help='URL to POST transients to a database (default=%default)')
+			parser.add_option('--photometryapi', default=config.get('main','photometryapi'), type="string",
+							  help='URL to POST transients to a database (default=%default)')
+			parser.add_option('--photdataapi', default=config.get('main','photdataapi'), type="string",
+							  help='URL to POST transients to a database (default=%default)')
+			parser.add_option('--hostphotometryapi', default=config.get('main','hostphotometryapi'), type="string",
+							  help='URL to POST transients to a database (default=%default)')
+			parser.add_option('--hostphotdataapi', default=config.get('main','hostphotdataapi'), type="string",
+							  help='URL to POST transients to a database (default=%default)')
+			parser.add_option('--obs_groupapi', default=config.get('main','obs_groupapi'), type="string",
+							  help='URL to POST group to a database (default=%default)')
+			parser.add_option('--statusapi', default=config.get('main','statusapi'), type="string",
+							  help='URL to POST status to a database (default=%default)')
+			parser.add_option('--instrumentapi', default=config.get('main','instrumentapi'), type="string",
+							  help='URL to POST instrument to a database (default=%default)')
+			parser.add_option('--bandapi', default=config.get('main','bandapi'), type="string",
+							  help='URL to POST band to a database (default=%default)')
+			parser.add_option('--observatoryapi', default=config.get('main','observatoryapi'), type="string",
+							  help='URL to POST observatory to a database (default=%default)')
+			parser.add_option('--telescopeapi', default=config.get('main','telescopeapi'), type="string",
+							  help='URL to POST telescope to a database (default=%default)')
+
+			return(parser)
+			
+	def post_object_to_DB(self,table,objectdict,return_full=False):
+		cmd = '%s%s '%(self.baseposturl,self.options.__dict__['%sapi'%table])
+		for k,v in zip(objectdict.keys(),objectdict.values()):
+			if '<url>' not in str(v):
+				cmd += '%s="%s" '%(k,v)
+			else:
+				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
+
+		objectdata = runDBcommand(cmd)
+
+		if type(objectdata) != list and 'url' not in objectdata:
+			print(cmd)
+			print(objectdata)
+			raise RuntimeError('Error : failure adding object')
+		if return_full:
+			return(objectdata)
+		else:
+			return(objectdata['url'])
+
+	def put_object_to_DB(self,table,objectdict,objectid,return_full=False):
+		cmd = '%s PUT %s '%(self.baseputurl.split('PUT')[0],objectid)
+		for k,v in zip(objectdict.keys(),objectdict.values()):
+			if '<url>' not in str(v):
+				cmd += '%s="%s" '%(k,v)
+			else:
+				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
+		objectdata = runDBcommand(cmd)
+
+		if type(objectdata) != list and 'url' not in objectdata:
+			print('cmd %s failed'%cmd)
+			print(objectdata)
+			raise RuntimeError('Error : failure adding object')
+		if return_full:
+			return(objectdata)
+		else:
+			return(objectdata['url'])
+
+	def patch_object_to_DB(self,table,objectdict,objectid,return_full=False):
+		cmd = '%s PATCH %s '%(self.baseputurl.split('PUT')[0],objectid)
+		for k,v in zip(objectdict.keys(),objectdict.values()):
+			if '<url>' not in str(v):
+				cmd += '%s="%s" '%(k,v)
+			else:
+				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
+		objectdata = runDBcommand(cmd)
+
+		if type(objectdata) != list and 'url' not in objectdata:
+			print('cmd %s failed'%cmd)
+			print(objectdata)
+			raise RuntimeError('Error : failure adding object')
+		if return_full:
+			return(objectdata)
+		else:
+			return(objectdata['url'])
+
+	def get_objects_from_DB(self,table):
+		cmd = '%s%s '%(self.basegeturl,self.options.__dict__['%sapi'%table])
+		objectdata = runDBcommand(cmd)
+
+		if type(objectdata) != list and 'url' not in objectdata:
+			print(cmd)
+			print(objectdata)
+			raise RuntimeError('Error : failure adding object')
+		else:
+			return(objectdata)
+		
+	def get_ID_from_DB(self,tablename,fieldname):
+		cmd = '%s%s/'%(self.basegeturl,tablename)
+		output = os.popen(cmd).read()
+		try:
+			data = json.loads(output)
+		except:
+			print(cmd)
+			print(os.popen(cmd).read())
+			raise RuntimeError('Error : cmd output not in JSON format')
+			
+		idlist,namelist = [],[]
+		for i in range(len(data)):
+			namelist += [data[i]['name']]
+			idlist += [data[i]['url']]
+
+		if fieldname not in namelist: return(None)
+
+		return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
+
+	def get_key_from_object(self,objid,fieldname):
+		cmd = '%s%s'%(self.basegetobjurl,objid)
+		output = os.popen(cmd).read()
+		try:
+			data = json.loads(output)
+		except:
+			print(cmd)
+			print(os.popen(cmd).read())
+			raise RuntimeError('Error : cmd output not in JSON format')
+
+		if fieldname in data:
+			val = data[fieldname]
+			return(val)
+		else: return(None)
+
+	def getPhotObjfromDB(self,table,transient,instrument,obsgroup):
+		cmd = '%s%s '%(self.basegeturl,self.options.__dict__['%sapi'%table])
+		output = os.popen(cmd).read()
+		data = json.loads(output)
+
+		translist,instlist,obsgrouplist,idlist = [],[],[],[]
+		for i in range(len(data)):
+			obsgrouplist += [data[i]['obs_group']]
+			instlist += [data[i]['instrument']]
+			translist += [data[i]['transient']]
+			idlist += [data[i]['url']]
+
+		if obsgroup not in obsgrouplist or instrument not in instlist or transient not in translist:
+			return(None)
+		iObs = np.where((np.array(translist) == transient) &
+						(np.array(instlist) == instrument) &
+						(np.array(obsgrouplist) == obsgroup))[0]
+		if not len(iObs): return(None)
+
+		return(np.array(idlist)[iObs][0])
+
+				
+	def getBandfromDB(self,table,fieldname,instrument):
+		cmd = '%s%s '%(self.basegeturl,self.options.__dict__['%sapi'%table])
+		output = os.popen(cmd).read()
+		data = json.loads(output)
+
+		idlist,namelist,instlist = [],[],[]
+		for i in range(len(data)):
+			namelist += [data[i]['name']]
+			idlist += [data[i]['url']]
+			instlist += [data[i]['instrument']]
+
+		if fieldname not in namelist or instrument not in instlist: return(None)
+
+		return(np.array(idlist)[np.where((np.array(namelist) == fieldname) &
+										 (np.array(instlist) == instrument))][0])
+
+		
 if __name__ == "__main__":
 
-    import os
-    import optparse
+	# execute only if run as a script
 
-    useagestring='uploadData.py [options]'
-    upl = upload()
-    parser = upl.add_options(usage=useagestring)
-    options,  args = parser.parse_args()
-    upl.options = options
-    
-    if options.photometry and options.inputformat == 'basic':
-        upl.uploadBasicPhotometry()
-    elif options.photometry and options.inputformat == 'snana':
-        upl.uploadSNANAPhotometry()
-    elif options.spectrum:
-        upl.uploadBasicSpectrum()
-    else:
-        raise RuntimeError('Error : input option not found')
+	import optparse
+	import configparser
+
+	usagestring='uploadData.py [options]'
+	upl = upload()
+
+	# read in the options from the param file and the command line
+	# some convoluted syntax here, making it so param file is not required
+	parser = upl.add_options(usage=usagestring)
+	options,  args = parser.parse_args()
+	if options.settingsfile:
+		config = configparser.ConfigParser()
+		config.read(options.settingsfile)
+	else: config=None
+	parser = upl.add_options(usage=usagestring,config=config)
+	options,  args = parser.parse_args()
+
+	db = DBOps()
+	if config:
+		parser = db.add_options(usage=usagestring,config=config)
+		dboptions,  args = parser.parse_args()
+		db.options = dboptions
+	db.init_params()
+		
+
+	upl.options = options
+	
+	if options.photometry and options.inputformat == 'basic':
+		upl.uploadBasicPhotometry(db=db)
+	elif options.photometry and options.inputformat == 'snana':
+		upl.uploadSNANAPhotometry(db=db)
+	elif options.spectrum:
+		upl.uploadBasicSpectrum(db=db)
+	else:
+		raise RuntimeError('Error : input option not found')

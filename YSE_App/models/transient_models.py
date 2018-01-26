@@ -7,6 +7,8 @@ from YSE_App.common.utilities import GetSexigesimalString
 from YSE_App.common.alert import IsK2Pixel, SendTransientAlert
 from django.dispatch import receiver
 from pytz import timezone
+from django.utils.text import slugify
+from autoslug import AutoSlugField
 
 class Transient(BaseModel):
 	### Entity relationships ###
@@ -46,6 +48,8 @@ class Transient(BaseModel):
 	k2_msg = models.TextField(null=True, blank=True)
 	TNS_spec_class = models.CharField(max_length=64, null=True, blank=True) # To hold the TNS classiciation in case we don't have a matching enum
 
+	slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
+	
 	def CoordString(self):
 		return GetSexigesimalString(self.ra, self.dec)
 

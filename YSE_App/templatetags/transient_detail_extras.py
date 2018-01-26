@@ -12,8 +12,11 @@ register = template.Library()
 
 @register.filter(name='rise_time')
 def rise_time(obsnight,coords):
+
+	import time
+	tstart = time.time()
 	
-	time = Time(str(obsnight.obs_date).split()[0])
+	tme = Time(str(obsnight.obs_date).split()[0])
 	sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
 
 	location = EarthLocation.from_geodetic(
@@ -21,12 +24,14 @@ def rise_time(obsnight,coords):
 		obsnight.resource.telescope.elevation*u.m)
 	tel = Observer(location=location, timezone="UTC")
 
-	target_rise_time = tel.target_rise_time(time,sc,horizon=18*u.deg,which="previous")
+	target_rise_time = tel.target_rise_time(tme,sc,horizon=18*u.deg,which="previous")
 
 	if target_rise_time:
 		returnstarttime = target_rise_time.isot.split('T')[-1]
 	else: returnstarttime = None
 
+	print(time.time()-tstart)
+	
 	return(returnstarttime)
 
 @register.filter(name='set_time')

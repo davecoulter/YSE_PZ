@@ -193,12 +193,14 @@ def calendar(request):
 	return render(request, 'YSE_App/calendar.html', context)
 
 @login_required
-def transient_detail(request, transient_id):
-	# transient = get_object_or_404(Transient, pk=transient_id)
-	transient = Transient.objects.filter(id=transient_id)
+def transient_detail(request, slug):
+
+	transient = Transient.objects.filter(slug=slug)
+
 	obs = None
 	if len(transient) == 1:
-
+		transient_id = transient[0].id
+		
 		alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 		transient_followup_form = TransientFollowupForm()
 		transient_observation_task_form = TransientObservationTaskForm()

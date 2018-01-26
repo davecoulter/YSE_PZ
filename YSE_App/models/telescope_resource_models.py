@@ -5,6 +5,10 @@ from YSE_App.models.telescope_models import *
 from YSE_App.models.principal_investigator_models import *
 import datetime
 from django.utils import timezone
+from astropy.coordinates import EarthLocation
+from astropy.coordinates import get_moon, SkyCoord
+from astropy.time import Time
+import astropy.units as u
 
 class TelescopeResource(BaseModel):
 	class Meta:
