@@ -58,7 +58,7 @@ def SendTransientAlert(transient_id, transient_name, ra, dec):
 		<html>
 			<head></head>
 			<body>
-				<h1>New K2 Tranisent!</h1>
+				<h1>New K2 Transient!</h1>
 				<p>
 					<a href='%stransient_detail/%s/'>%s</a> (%s, %s)
 				</p>
@@ -66,10 +66,10 @@ def SendTransientAlert(transient_id, transient_name, ra, dec):
 				<p>Go to <a href='%s/dashboard/'>YSE Dashboard</a></p> 
 			</body>
 		</html>
-	""" % (base_url, transient_id, transient_name, ra, dec, base_url)
+	""" % (base_url, transient_name, transient_name, ra, dec, base_url)
 
 	txt_msg = "New K2 Transient: %s (%s, %s)\n\nDetail: %s/transient_detail/%s/\n\nDashboard: %s/dashboard/" % \
-			(transient_name, ra, dec, base_url, transient_id, base_url)
+			(transient_name, ra, dec, base_url, transient_name, base_url)
 
 	# today() is UTC, so convert it to Pacific Standard Time
 	print("UTC Now: %s" % datetime.today())
