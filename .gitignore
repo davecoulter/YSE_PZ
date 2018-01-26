@@ -3,3 +3,5 @@ settings.ini
 *.pyc
 YSE_PZ/static/
 .idea/
+__pycache__/
+
