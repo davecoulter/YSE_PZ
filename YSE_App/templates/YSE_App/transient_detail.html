@@ -613,57 +613,6 @@
 	<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-0.12.13.min.js"></script>
 	
 	<script>
-	  $( document ).ready(function(){
-	  $.get("{% url 'get_ps1_image' transient.id %}").done(function(json){
-	  var rows = $("#ps1_image")
-	  if (json["jpegurl"]) {
-	  htmltext = "<a href=\"http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color\" class=\"ps1-thumb\" title=\"Link to PanSTARRS-1\" target=\"_blank\"><img src=\"" + json["jpegurl"] + "\" style='width:240px' alt=\"\" /></a>"
-	  } else {
-	  var htmltext = "<p class=\"text-muted\">Coordinates are outside the PS1 footprint</p>"
-	  }
-	  
-	  $(rows).append(htmltext)
-	  });
-
-	  $.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
-	  var rows = $("#lcplot")
-	  $(rows).prepend(htmlresponse)
-	  });
-	  
-	  {% for obsnight in observing_nights %}
-	  $.get("{% url 'rise_time' transient.id obsnight.0.id %}").done(function(json){
-	  var rows = $("#rise_time_{{obsnight.0.id}}")
-	  $(rows).append(json["rise_time"])
-	  });
-	  $.get("{% url 'set_time' transient.id obsnight.0.id %}").done(function(json){
-	  var rows = $("#set_time_{{obsnight.0.id}}")
-	  $(rows).append(json["set_time"])
-	  });
-	  $.get("{% url 'moon_angle' transient.id obsnight.0.id %}").done(function(json){
-	  var rows = $("#moon_angle_{{obsnight.0.id}}")
-	  $(rows).append(json["moon_angle"])
-	  });
-	  {% endfor %}
-
-	  {% for too_resource in too_resource_list %}
-	  {% if too_resource.deltahours > 0 %}
-	  $.get("{% url 'tonight_rise_time' transient.id too_resource.id %}").done(function(json){
-	  var rows = $("#tonight_rise_time_{{too_resource.id}}")
-	  $(rows).append(json["rise_time"])
-	  });
-	  $.get("{% url 'tonight_set_time' transient.id too_resource.id %}").done(function(json){
-	  var rows = $("#tonight_set_time_{{too_resource.id}}")
-	  $(rows).append(json["set_time"])
-	  });
-	  $.get("{% url 'tonight_moon_angle' transient.id too_resource.id %}").done(function(json){
-	  var rows = $("#tonight_moon_angle_{{too_resource.id}}")
-	  $(rows).append(json["moon_angle"])
-	  });
-	  {% endif %}
-	  {% endfor %}
-
-	  
-	  });
 	  
 		$(function() {
 			$('#example1').DataTable({
@@ -1131,5 +1080,58 @@
 				}
 			});
 		});
+
+	  $( document ).ready(function(){
+	  $.get("{% url 'get_ps1_image' transient.id %}").done(function(json){
+	  var rows = $("#ps1_image")
+	  if (json["jpegurl"]) {
+	  htmltext = "<a href=\"http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color\" class=\"ps1-thumb\" title=\"Link to PanSTARRS-1\" target=\"_blank\"><img src=\"" + json["jpegurl"] + "\" style='width:240px' alt=\"\" /></a>"
+	  } else {
+	  var htmltext = "<p class=\"text-muted\">Coordinates are outside the PS1 footprint</p>"
+	  }
+	  
+	  $(rows).append(htmltext)
+	  });
+
+	  $.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
+	  var rows = $("#lcplot")
+	  $(rows).prepend(htmlresponse)
+	  });
+	  
+	  {% for obsnight in observing_nights %}
+	  $.get("{% url 'rise_time' transient.id obsnight.0.id %}").done(function(json){
+	  var rows = $("#rise_time_{{obsnight.0.id}}")
+	  $(rows).append(json["rise_time"])
+	  });
+	  $.get("{% url 'set_time' transient.id obsnight.0.id %}").done(function(json){
+	  var rows = $("#set_time_{{obsnight.0.id}}")
+	  $(rows).append(json["set_time"])
+	  });
+	  $.get("{% url 'moon_angle' transient.id obsnight.0.id %}").done(function(json){
+	  var rows = $("#moon_angle_{{obsnight.0.id}}")
+	  $(rows).append(json["moon_angle"])
+	  });
+	  {% endfor %}
+
+	  {% for too_resource in too_resource_list %}
+	  {% if too_resource.deltahours > 0 %}
+	  $.get("{% url 'tonight_rise_time' transient.id too_resource.id %}").done(function(json){
+	  var rows = $("#tonight_rise_time_{{too_resource.id}}")
+	  $(rows).append(json["rise_time"])
+	  });
+	  $.get("{% url 'tonight_set_time' transient.id too_resource.id %}").done(function(json){
+	  var rows = $("#tonight_set_time_{{too_resource.id}}")
+	  $(rows).append(json["set_time"])
+	  });
+	  $.get("{% url 'tonight_moon_angle' transient.id too_resource.id %}").done(function(json){
+	  var rows = $("#tonight_moon_angle_{{too_resource.id}}")
+	  $(rows).append(json["moon_angle"])
+	  });
+	  {% endif %}
+	  {% endfor %}
+
+	  
+	  });
+							    
 	</script>
 {% endblock %}
