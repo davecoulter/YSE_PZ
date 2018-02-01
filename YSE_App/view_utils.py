@@ -356,21 +356,19 @@ def lightcurveplot(request, transient_id):
 		import random
 		import django
 		import datetime
-		import mpld3
 		import time
+		from bokeh.plotting import figure
+		from bokeh.resources import CDN
+		from bokeh.embed import file_html
+		from bokeh.models import Range1d,Span
 		tstart = time.time()
-
-		from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-		from matplotlib.figure import Figure
 		
 		transient = Transient.objects.get(pk=transient_id)
 		photdata = get_all_phot_for_transient(transient_id)
 		if not photdata:
 			return django.http.HttpResponse('')
 
-		fig=Figure()
-		ax=fig.add_subplot(111)
-		canvas=FigureCanvas(fig)
+		ax=figure()
 
 		mjd,mag,magerr,band = \
 			np.array([]),np.array([]),np.array([]),np.array([])
@@ -380,7 +378,7 @@ def lightcurveplot(request, transient_id):
 			if not p.mag: continue
 			
 			if p.discovery_point:
-				limmjd = p.date_to_mjd()-10
+				limmjd = p.date_to_mjd()-30
 				
 			mjd = np.append(mjd,[p.date_to_mjd()])
 			mag = np.append(mag,[p.mag])
@@ -388,28 +386,51 @@ def lightcurveplot(request, transient_id):
 			else: magerr = np.append(magerr,0)
 			band = np.append(band,str(p.band))
 		
-		ax.set_title("%s"%transient.name)
+		ax.title.text = "%s"%transient.name
+		colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
+					 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
+		count = 0
 		for b in np.unique(band):
+			coloridx = count % len(np.unique(colorlist))
+			#ax.errorbar(mjd[band == b].tolist(),mag[band == b].tolist(),
+			#			yerr=magerr[band == b].tolist(),fmt='o',label=b,zorder=30)
+			ax.circle(mjd[band == b].tolist(),mag[band == b].tolist(),
+					  color=colorlist[coloridx],size=7,legend=b)
 
-			ax.errorbar(mjd[band == b].tolist(),mag[band == b].tolist(),
-						yerr=magerr[band == b].tolist(),fmt='o',label=b,zorder=30)
-		ax.vlines(Time(datetime.datetime.today()).mjd,ymin=-10,ymax=30,
-				  color='k',label='today',zorder=1)
+			err_xs,err_ys = [],[]
+			for x,y,yerr in zip(mjd[band == b].tolist(),mag[band == b].tolist(),magerr[band == b].tolist()):
+				err_xs.append((x, x))
+				err_ys.append((y - yerr, y + yerr))
+			ax.multi_line(err_xs, err_ys, color=colorlist[coloridx])
+			count += 1
+			
+		today = Time(datetime.datetime.today()).mjd
+		ax.line(today,20,line_width=3,line_color='black',legend='today (%i)'%today)
+		vline = Span(location=today, dimension='height', line_color='black',
+					 line_width=3)#, legend='today (%i)'%today)
+		ax.add_layout(vline)
+		#ax.renderers.extend([vline])
+		ax.legend.location = 'top_right'
 
-		ax.set_xlabel('MJD',fontsize=15)
-		ax.set_ylabel('Mag',fontsize=15)
-		ax.invert_yaxis()
+		#ax.vlines(today,ymin=-10,ymax=30,
+		#		  color='k',label='today (%i)'%today,zorder=1)
+
+		ax.xaxis.axis_label = 'MJD'
+		ax.yaxis.axis_label = 'Mag'
+
 		if limmjd:
-			ax.set_xlim([limmjd,np.max(mjd)+10])
-			ax.set_ylim([np.max(mag)+0.25,np.min(mag[mjd > limmjd])-0.5])
+			ax.x_range = Range1d(limmjd,np.max(mjd)+10)
+			ax.y_range = Range1d(np.max(mag[mjd > limmjd])+0.25,np.min(mag[mjd > limmjd])-0.5)
 		else:
-			ax.set_xlim([np.min(mjd)-10,np.max(mjd)+10])
-			ax.set_ylim([np.max(mag)+0.25,np.min(mag)-0.5])
-		ax.legend()
+			ax.x_range=Range1d(np.min(mjd)-10,np.max(mjd)+10)
+			ax.y_range=Range1d(np.max(mag)+0.25,np.min(mag)-0.5)
+		#ax.legend()
 
-		ax.grid(color='lightgray', alpha=0.7)
-		g = mpld3.fig_to_html(fig,template_type='simple')
+		#ax.grid(color='lightgray', alpha=0.7)
+		#g = mpld3.fig_to_html(fig,template_type='simple')
 
+		g = file_html(ax,CDN,"my plot")
+#		import pdb; pdb.set_trace()
 		return HttpResponse(g)
 
 def rise_time(request,transient_id,obs_id):
