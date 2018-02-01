@@ -1,5 +1,6 @@
 # utils for generating webpage views
 import django
+from django.http import HttpResponse,JsonResponse
 from django.shortcuts import render, get_object_or_404, render_to_response
 import copy
 from .models import *
@@ -8,6 +9,7 @@ from astropy.coordinates import get_moon, SkyCoord
 from astropy.time import Time
 import astropy.units as u
 import datetime
+import json
 import numpy as np
 from django.conf import settings as djangoSettings
 from django.http import HttpResponseRedirect
@@ -350,22 +352,22 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
 		return response
 
 def lightcurveplot(request, transient_id):
-
+	
 		import random
 		import django
 		import datetime
+		import mpld3
+		import time
+		tstart = time.time()
 
 		from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 		from matplotlib.figure import Figure
-		from matplotlib.dates import DateFormatter
-		#from matplotlib import rcParams
-		#rcParams['figure.figsize'] = (7,5)
 		
 		transient = Transient.objects.get(pk=transient_id)
 		photdata = get_all_phot_for_transient(transient_id)
 		if not photdata:
 			return django.http.HttpResponse('')
-		
+
 		fig=Figure()
 		ax=fig.add_subplot(111)
 		canvas=FigureCanvas(fig)
@@ -379,7 +381,7 @@ def lightcurveplot(request, transient_id):
 			
 			if p.discovery_point:
 				limmjd = p.date_to_mjd()-10
-
+				
 			mjd = np.append(mjd,[p.date_to_mjd()])
 			mag = np.append(mag,[p.mag])
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
@@ -388,18 +390,171 @@ def lightcurveplot(request, transient_id):
 		
 		ax.set_title("%s"%transient.name)
 		for b in np.unique(band):
-			ax.errorbar(mjd[band == b],mag[band == b],
-						yerr=magerr[band == b],fmt='o',label=b)
+
+			ax.errorbar(mjd[band == b].tolist(),mag[band == b].tolist(),
+						yerr=magerr[band == b].tolist(),fmt='o',label=b,zorder=30)
+		ax.vlines(Time(datetime.datetime.today()).mjd,ymin=-10,ymax=30,
+				  color='k',label='today',zorder=1)
+
 		ax.set_xlabel('MJD',fontsize=15)
 		ax.set_ylabel('Mag',fontsize=15)
-		#ax.invert_yaxis()
-		ax.legend()
+		ax.invert_yaxis()
 		if limmjd:
 			ax.set_xlim([limmjd,np.max(mjd)+10])
+			ax.set_ylim([np.max(mag)+0.25,np.min(mag[mjd > limmjd])-0.5])
 		else:
 			ax.set_xlim([np.min(mjd)-10,np.max(mjd)+10])
-		ax.set_ylim([np.max(mag)+0.25,np.min(mag)-0.25])
+			ax.set_ylim([np.max(mag)+0.25,np.min(mag)-0.5])
+		ax.legend()
 
-		response=django.http.HttpResponse(content_type='image/png')
-		canvas.print_png(response)
-		return response
+		ax.grid(color='lightgray', alpha=0.7)
+		g = mpld3.fig_to_html(fig,template_type='simple')
+
+		return HttpResponse(g)
+
+def rise_time(request,transient_id,obs_id):
+
+	import time
+	tstart = time.time()
+	transient = Transient.objects.filter(id=transient_id)[0]
+	coords = transient.CoordString()
+
+	obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
+	
+	tme = Time(str(obsnight.obs_date).split()[0])
+	sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
+
+	location = EarthLocation.from_geodetic(
+		obsnight.resource.telescope.longitude*u.deg,obsnight.resource.telescope.latitude*u.deg,
+		obsnight.resource.telescope.elevation*u.m)
+	tel = Observer(location=location, timezone="UTC")
+
+	target_rise_time = tel.target_rise_time(tme,sc,horizon=18*u.deg,which="previous")
+	
+	if target_rise_time:
+		risetime = target_rise_time.isot.split('T')[-1]
+	else: 
+		risetime = None
+			
+	print(time.time()-tstart)
+	risedict = {'rise_time':risetime}
+	return JsonResponse(risedict)
+
+def set_time(request,transient_id,obs_id):
+
+	import time
+	tstart = time.time()
+	transient = Transient.objects.filter(id=transient_id)[0]
+	coords = transient.CoordString()
+
+	obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
+	
+	tme = Time(str(obsnight.obs_date).split()[0])
+	sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
+
+	location = EarthLocation.from_geodetic(
+		obsnight.resource.telescope.longitude*u.deg,obsnight.resource.telescope.latitude*u.deg,
+		obsnight.resource.telescope.elevation*u.m)
+	tel = Observer(location=location, timezone="UTC")
+
+	target_set_time = tel.target_set_time(tme,sc,horizon=18*u.deg,which="previous")
+	
+	if target_set_time:
+		settime = target_set_time.isot.split('T')[-1]
+	else: 
+		settime = None
+			
+	print(time.time()-tstart)
+	setdict = {'set_time':settime}
+	return JsonResponse(setdict)
+
+def moon_angle(request,transient_id,obs_id):
+	transient = Transient.objects.filter(id=transient_id)[0]
+	coords = transient.CoordString()
+
+	obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
+	
+	obstime = Time(str(obsnight.obs_date).split()[0],scale='utc')
+
+	mooncoord = get_moon(obstime)
+	cs = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
+	moondict = {'moon_angle':'%.1f deg'%cs.separation(mooncoord).deg}
+	return JsonResponse(moondict)
+
+def tonight_rise_time(request,transient_id,too_id):
+	transient = Transient.objects.filter(id=transient_id)[0]
+	coords = transient.CoordString()
+
+	obsnight = ToOResource.objects.filter(id=too_id)[0]
+	
+	time = Time(datetime.datetime.now())
+	sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
+
+	location = EarthLocation.from_geodetic(
+		obsnight.telescope.longitude*u.deg,obsnight.telescope.latitude*u.deg,
+		obsnight.telescope.elevation*u.m)
+	tel = Observer(location=location, timezone="UTC")
+
+	target_rise_time = tel.target_rise_time(time,sc,horizon=18*u.deg,which="previous")
+
+	if target_rise_time:
+		returnstarttime = target_rise_time.isot.split('T')[-1]
+	else: returnstarttime = None
+
+	risedict = {'rise_time':returnstarttime}
+	return JsonResponse(risedict)
+	
+
+def tonight_set_time(request,transient_id,too_id):
+	transient = Transient.objects.filter(id=transient_id)[0]
+	coords = transient.CoordString()
+
+	obsnight = ToOResource.objects.filter(id=too_id)[0]
+	
+	time = Time(datetime.datetime.now())
+	sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
+
+	location = EarthLocation.from_geodetic(
+		obsnight.telescope.longitude*u.deg,obsnight.telescope.latitude*u.deg,
+		obsnight.telescope.elevation*u.m)
+	tel = Observer(location=location, timezone="UTC")
+
+	target_set_time = tel.target_set_time(time,sc,horizon=18*u.deg,which="previous")
+
+	if target_set_time:
+		returnstarttime = target_set_time.isot.split('T')[-1]
+	else: returnstarttime = None
+
+	setdict = {'set_time':returnstarttime}
+	return JsonResponse(setdict)
+	
+def tonight_moon_angle(request,transient_id,too_id):
+	transient = Transient.objects.filter(id=transient_id)[0]
+	coords = transient.CoordString()
+
+	obstime = Time(datetime.datetime.now())
+	mooncoord = get_moon(obstime)
+	cs = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
+	moondict = {'moon_angle':'%.1f deg'%cs.separation(mooncoord).deg}
+	return JsonResponse(moondict)
+
+def get_ps1_image(request,transient_id):
+	
+	try:
+		t = Transient.objects.get(pk=transient_id)
+	except t.DoesNotExist:
+		raise Http404("Transient id does not exist")
+
+	ps1url = ("http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f+%.7f&filter=color" % (t.ra,t.dec))
+	try:
+		response = requests.get(url=ps1url,timeout=5)
+	except: return("")
+	response_text = response.content.decode('utf-8')
+	if "<td><img src=" in response.content.decode('utf-8'):
+		jpegurl = response.content.decode('utf-8').split('<td><img src="')[1].split('" width="240" height="240" /></td>')[0]
+		jpegurl = "http:%s"%jpegurl
+	else:
+		jpegurl=""
+
+	jpegurldict = {"jpegurl":jpegurl}
+	return(JsonResponse(jpegurldict))

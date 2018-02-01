@@ -36,6 +36,21 @@ urlpatterns = [
     # url(r'^add_transient_followup/$', form_views.add_transient_followup, name='add_transient_followup'),
     url(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
     url(r'^add_transient_observation_task/', AddTransientObservationTaskFormView.as_view(), name='add_transient_observation_task'),
+	url(r'^rise_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',
+		view_utils.rise_time, name='rise_time'),
+	url(r'^set_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',
+		view_utils.set_time, name='set_time'),
+	url(r'^moon_angle/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',
+		view_utils.moon_angle, name='moon_angle'),
+	url(r'^tonight_rise_time/(?P<transient_id>[0-9]+)/(?P<too_id>[a-zA-Z0-9_-]+)',
+		view_utils.tonight_rise_time, name='tonight_rise_time'),
+	url(r'^tonight_set_time/(?P<transient_id>[0-9]+)/(?P<too_id>[a-zA-Z0-9_-]+)',
+		view_utils.tonight_set_time, name='tonight_set_time'),
+	url(r'^tonight_moon_angle/(?P<transient_id>[0-9]+)/(?P<too_id>[a-zA-Z0-9_-]+)',
+		view_utils.tonight_moon_angle, name='tonight_moon_angle'),
+	url(r'^get_ps1_image/(?P<transient_id>[0-9]+)',
+		view_utils.get_ps1_image, name='get_ps1_image'),
+
 ]
 
 router = DefaultRouter()

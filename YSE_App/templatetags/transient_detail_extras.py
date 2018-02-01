@@ -129,3 +129,89 @@ def get_ps1_image(transient):
 		jpegurl=""
 
 	return(jpegurl)
+
+@register.filter(name='lightcurveplt')
+def lightcurveplt(transient_id):
+
+		import random
+		import django
+		import datetime
+		import mpld3
+		import time
+		tstart = time.time()
+		
+		from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+		from matplotlib.figure import Figure
+		#import matplotlib.pyplot as plt
+		#fig, ax = plt.subplots()
+		#from matplotlib.dates import DateFormatter
+		#from matplotlib import rcParams
+		#rcParams['figure.figsize'] = (7,5)
+		
+		transient = Transient.objects.get(pk=transient_id)
+		photdata = get_all_phot_for_transient(transient_id)
+		if not photdata:
+			return django.http.HttpResponse('')
+
+		fig=Figure()
+		ax=fig.add_subplot(111)
+		canvas=FigureCanvas(fig)
+
+		mjd,mag,magerr,band = \
+			np.array([]),np.array([]),np.array([]),np.array([])
+		limmjd = None
+		for p in photdata:
+			if p.flux and np.abs(p.flux) > 1e10: continue
+			if not p.mag: continue
+			
+			if p.discovery_point:
+				limmjd = p.date_to_mjd()-10
+				
+			mjd = np.append(mjd,[p.date_to_mjd()])
+			mag = np.append(mag,[p.mag])
+			if p.mag_err: magerr = np.append(magerr,p.mag_err)
+			else: magerr = np.append(magerr,0)
+			band = np.append(band,str(p.band))
+		
+		ax.set_title("%s"%transient.name)
+		for b in np.unique(band):
+
+			ax.errorbar(mjd[band == b].tolist(),mag[band == b].tolist(),
+						yerr=magerr[band == b].tolist(),fmt='o',label=b,zorder=30)
+		ax.vlines(Time(datetime.datetime.today()).mjd,ymin=-10,ymax=30,
+				  color='k',label='today',zorder=1)
+
+		ax.set_xlabel('MJD',fontsize=15)
+		ax.set_ylabel('Mag',fontsize=15)
+		ax.invert_yaxis()
+		if limmjd:
+			ax.set_xlim([limmjd,np.max(mjd)+10])
+			ax.set_ylim([np.max(mag)+0.25,np.min(mag[mjd > limmjd])-0.5])
+		else:
+			ax.set_xlim([np.min(mjd)-10,np.max(mjd)+10])
+			ax.set_ylim([np.max(mag)+0.25,np.min(mag)-0.5])
+		ax.legend()
+
+		#ax.grid(color='lightgray', alpha=0.7)
+		#response=django.http.HttpResponse(content_type='image/png')
+		#canvas.print_png(response)
+		g = mpld3.fig_to_html(fig,template_type='simple')
+		#print(g)
+		#plt.close(fig)
+		print(time.time()-tstart)
+		return g #response
+
+def get_all_phot_for_transient(transient_id=None):
+
+	transient = Transient.objects.filter(id=transient_id)
+	photometry = TransientPhotometry.objects.filter(transient=transient_id)
+
+	photdata = False
+	for p in photometry:
+		photdata = TransientPhotData.objects.filter(photometry=p.id)
+	
+	if photdata:	
+		return(photdata)
+	else:
+		return(None)
+	
