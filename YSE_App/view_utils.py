@@ -430,8 +430,8 @@ def lightcurveplot(request, transient_id):
 		#g = mpld3.fig_to_html(fig,template_type='simple')
 
 		g = file_html(ax,CDN,"my plot")
-#		import pdb; pdb.set_trace()
-		return HttpResponse(g)
+		
+		return HttpResponse(g.replace('width: 90%','width: 100%'))
 
 def rise_time(request,transient_id,obs_id):
 

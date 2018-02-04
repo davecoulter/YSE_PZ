@@ -24,10 +24,6 @@ class upload():
 		parser.add_option('--clobber', default=False, action="store_true",
 						  help='clobber output file')
 
-		parser.add_option('-p','--photometry', default=False, action="store_true",
-						  help='input file is photometry')
-		parser.add_option('--spectrum', default=False, action="store_true",
-						  help='input file is a spectrum')
 		parser.add_option('-i','--inputfile', default=None, type="string",
 						  help='input file ')
 		parser.add_option('--trid', default=None, type="string",
@@ -42,7 +38,12 @@ class upload():
 						  help="instrument name")
 		parser.add_option('-u','--useheader', default=False, action="store_true",
 						  help="if set, grab keys from the file header and try to POST to db")
-			
+		parser.add_option('-f','--foundationdefaults', default=False, action="store_true",
+						  help="use default settings for foundation")
+		parser.add_option('-e','--onlyexisting', default=False, action="store_true",
+						  help="only add light curves for existing objects")
+
+		
 		return(parser)
 
 	def uploadHeader(self,sn,db=None):
@@ -80,21 +81,20 @@ class upload():
 	def uploadSNANAPhotometry(self,db=None):
 		import snana
 		sn = snana.SuperNova(self.options.inputfile)
-
+		if self.options.foundationdefaults:
+			sn.SNID = sn.otherID[2:]
+		transid = db.get_ID_from_DB('transients',sn.SNID)
+		if self.options.onlyexisting and not transid:
+			print('Object %s not found!  Returning')
+			return()
+		
 		if self.options.useheader:
 			transid = self.uploadHeader(sn)			
-			if 'OTHERID' in sn.__dict__.keys():
-				transname = sn.OTHERID
-			else:
-				transname = sn.SNID
+			transname = sn.SNID
 		else:
-			if 'OTHERID' in sn.__dict__.keys():
-				transid = db.get_ID_from_DB('transients',sn.OTHERID)
-				transname = sn.OTHERID
-			else:
-				transid = db.get_ID_from_DB('transients',sn.SNID)
-				transname = sn.SNID
-				
+			transid = db.get_ID_from_DB('transients',sn.SNID)
+			transname = sn.SNID
+			
 		# create photometry object, if it doesn't exist
 		photheaderdata = db.get_objects_from_DB('photometry')
 		self.parsePhotHeaderData(photheaderdata,transname,sn.RA.split()[0],sn.DECL.split()[0],db=db)
@@ -137,8 +137,10 @@ class upload():
 					if p['photometry'] == self.photdataid and np.abs(pmjd - mjd) < 0.05 and p['band'] == bandid:
 						closeID = p['url']
 						break
-				if closeID:
+				if closeID and self.options.clobber:
 					photdata = db.patch_object_to_DB('photdata',PhotUploadDict,closeID)
+				elif closeID and not self.options.clobber:
+					print('data point at MJD %i exists!  not clobbering'%pmjd)
 				else:
 					photdata = db.post_object_to_DB('photdata',PhotUploadDict)
 								
@@ -433,11 +435,9 @@ if __name__ == "__main__":
 
 	upl.options = options
 	
-	if options.photometry and options.inputformat == 'basic':
+	if options.inputformat == 'basic':
 		upl.uploadBasicPhotometry(db=db)
-	elif options.photometry and options.inputformat == 'snana':
+	elif options.inputformat == 'snana':
 		upl.uploadSNANAPhotometry(db=db)
-	elif options.spectrum:
-		upl.uploadBasicSpectrum(db=db)
 	else:
 		raise RuntimeError('Error : input option not found')
