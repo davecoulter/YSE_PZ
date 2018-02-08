@@ -1,6 +1,7 @@
 {% extends 'YSE_App/base.html' %}
 {% load static from staticfiles %}
 {% load transient_detail_extras %}
+{% load widget_tweaks %}
 
 {% block styles %}
 	<!-- include Aladin Lite CSS file in the head section of your page -->
@@ -378,6 +379,7 @@
 					<li><a href="#resources_tab" data-toggle="tab">Resources</a></li>
 					<li><a href="#photometry_tab" data-toggle="tab">Detailed Photometry</a></li>
 					<li><a href="#spectra_tab" data-toggle="tab">Spectra</a></li>
+					<li><a href="#comments_tab" data-toggle="tab">Comments</a></li>
 				</ul>
 				<div class="tab-content">
 					<div class="active tab-pane" id="followup_tab">
@@ -602,6 +604,34 @@
 					<div class="tab-pane" id="spectra_tab">
 						<h4>Spectra for {{transient.name}}</h4>
 					</div>
+					<div class="tab-pane" id="comments_tab">
+					  <h4>Comments for {{transient.name}}</h4>
+					  {% for l in logs %}
+					  <b>{{ l.created_by }}: </b>{{l.comment }} ({{l.modified_date}} UT)<br>
+					  {% endfor %}
+					  <p id="add_comment_container"></p>
+					  <form id="add_transient_comment" action="{% url 'add_transient_comment' %}" method="post">
+					    <input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
+					    {% csrf_token %}
+					    {% for hidden_field in form.hidden_fields %}
+					    {{ hidden_field }}
+					    {% endfor %}
+					    <br>
+					    <div class="form-group">
+					      <label>Add Comment:</label>
+					      {% render_field transient_comment_form.comment class+="form-control" %}
+					      <!--<input type="comment" class="form-control" id="comment">-->
+					    </div>
+					    <div class="form-group">
+					      <button type="submit" class="btn btn-block btn-primary btn-lg">Submit</button>
+					    </div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+					</div>
+
 				</div>
 			</div>
 		</div>
@@ -619,7 +649,7 @@
 	<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-0.12.13.min.js"></script>
 	
 	<script>
-	  
+
 		$(function() {
 			$('#example1').DataTable({
 				  'paging'      : false,
@@ -695,6 +725,42 @@
 				$('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
 			});
 
+			// Submit comment on submit
+          		$('#add_transient_comment').on('submit', function(event){
+		                event.preventDefault();
+                		add_transient_comment();
+			});
+
+		        function add_transient_comment(){
+		                var data = $('#add_transient_comment').serialize()
+				var transient_id = $('#transient_pk').val()
+				data = (data + "&transient=" + transient_id)
+				$.ajax({
+					url : "{% url 'add_transient_comment' %}", // the endpoint
+					type : "POST", // http method
+					data : data, // data sent with the post request
+
+					// handle a successful response
+					success : function(json) {
+		                                if (json.data['comment']){
+                                          		// Construct HTML to append container
+		                                        var commentHTML = "<b>"+json.data['created_by'] + ": </b>" + json.data['comment'] + " (" + json.data['modified_date'] + " UT)<br>"
+
+		                                        $("#add_comment_container").append(commentHTML)
+                                                }
+		                                // Close & reset form box
+						$('#add_transient_comment')[0].reset();
+
+					},
+
+					// handle a non-successful response
+					error : function(xhr,errmsg,err) {
+						alert(xhr.status + ": " + xhr.responseText);
+					}
+				});
+			};
+		
+		
 			// Submit post on submit
 			$('#add_transient_followup').on('submit', function(event){
 				event.preventDefault();
@@ -1009,7 +1075,7 @@
 								format: 'MM/DD/YYYY HH:mm', 
 								locale: {
 									format: 'MM/DD/YYYY HH:mm'
-								} 
+								}
 							});
 
 							// Re-Initialize daterange

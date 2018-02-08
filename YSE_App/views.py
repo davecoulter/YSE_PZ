@@ -197,6 +197,7 @@ def calendar(request):
 def transient_detail(request, slug):
 
 	transient = Transient.objects.filter(slug=slug)
+	logs = Log.objects.filter(transient=transient[0].id)
 
 	obs = None
 	if len(transient) == 1:
@@ -205,6 +206,7 @@ def transient_detail(request, slug):
 		alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 		transient_followup_form = TransientFollowupForm()
 		transient_observation_task_form = TransientObservationTaskForm()
+		transient_comment_form = TransientCommentForm()
 
 		# Get associated Observations
 		followups = TransientFollowup.objects.filter(transient__pk=transient_id)
@@ -254,7 +256,9 @@ def transient_detail(request, slug):
 			'nowtime':date.strftime(date_format),
 			'transient_followup_form': transient_followup_form,
 			'transient_observation_task_form': transient_observation_task_form,
+			'transient_comment_form': transient_comment_form,
 			'alt_names': alt_names,
+			'logs':logs,
 		}
 
 		if lastphotdata and firstphotdata:

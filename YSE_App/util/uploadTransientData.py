@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # D. Jones - 12/2/17
+# python uploadTransientData.py -i foundlc/GPC1v3_F15atz.snana.dat -f -e -s ../../YSE_PZ/settings.ini
 
 import os
 import json
@@ -85,8 +86,9 @@ class upload():
 			sn.SNID = sn.otherID[2:]
 		transid = db.get_ID_from_DB('transients',sn.SNID)
 		if self.options.onlyexisting and not transid:
-			print('Object %s not found!  Returning')
+			print('Object %s not found!  Returning'%sn.SNID)
 			return()
+		print('uploading object %s'%sn.SNID)
 		
 		if self.options.useheader:
 			transid = self.uploadHeader(sn)			
@@ -221,7 +223,11 @@ class DBOps():
 		
 		parser.add_option('-s','--settingsfile', default=None, type="string",
 						  help='settings file (login/password info)')
-			
+		parser.add_option('-f','--foundationdefaults', default=False, action="store_true",
+						  help="use default settings for foundation")
+		parser.add_option('-e','--onlyexisting', default=False, action="store_true",
+						  help="only add light curves for existing objects")
+		
 		if config:
 			parser.add_option('--login', default=config.get('main','login'), type="string",
 							  help='gmail login (default=%default)')

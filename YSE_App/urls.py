@@ -36,6 +36,7 @@ urlpatterns = [
     # url(r'^add_transient_followup/$', form_views.add_transient_followup, name='add_transient_followup'),
     url(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
     url(r'^add_transient_observation_task/', AddTransientObservationTaskFormView.as_view(), name='add_transient_observation_task'),
+    url(r'^add_transient_comment/', AddTransientCommentFormView.as_view(), name='add_transient_comment'),
 	url(r'^rise_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',
 		view_utils.rise_time, name='rise_time'),
 	url(r'^set_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',
