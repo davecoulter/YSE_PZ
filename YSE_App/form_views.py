@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 import requests
 import sys
+from datetime import datetime
 
 from .models import *
 # from .forms import *
@@ -123,6 +124,47 @@ class AddTransientObservationTaskFormView(FormView):
 			data_dict['instrument'] = instance.instrument_config.instrument.name
 			data_dict['modified_by'] = instance.modified_by.username
 
+			data = {
+				'message': "Successfully submitted form data.",
+				'data': data_dict
+			}
+			return JsonResponse(data)
+		else:
+			return response
+
+class AddTransientCommentFormView(FormView):
+	form_class = TransientCommentForm
+	template_name = 'simple.html'#YSE_App/form_snippets/transient_followup_form.html'
+	success_url = '/form-success/'
+
+	def form_invalid(self, form):
+		response = super(AddTransientCommentFormView, self).form_invalid(form)
+		if self.request.is_ajax():
+			return JsonResponse(form.errors, status=400)
+		else:
+			return response
+
+	def form_valid(self, form):
+		response = super(AddTransientCommentFormView, self).form_valid(form)
+		if self.request.is_ajax():
+
+			instance = form.save(commit=False)
+			instance.created_by = self.request.user
+			instance.modified_by = self.request.user
+			
+			instance.save() #update_fields=['created_by','modified_by']
+
+			print(form.cleaned_data)
+
+			# for key,value in form.cleaned_data.items():
+			data_dict = {}
+			data_dict['id'] = instance.id
+			data_dict['created_by'] = str(instance.created_by)
+			data_dict['modified_date'] = instance.modified_date.strftime('%b. %-d, %Y, %H:%M ') + \
+								   instance.modified_date.strftime('%p').lower()[0]+'.'+\
+								   instance.modified_date.strftime('%p').lower()[1]+'.'
+			data_dict['comment'] = instance.comment
+			
 			data = {
 				'message': "Successfully submitted form data.",
 				'data': data_dict
