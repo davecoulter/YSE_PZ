@@ -8,6 +8,7 @@ from django.conf import settings
 import requests
 import sys
 from datetime import datetime
+import re
 
 from .models import *
 # from .forms import *
@@ -161,9 +162,18 @@ class AddTransientCommentFormView(FormView):
 
 			# send emails to everyone else on the comments thread
 			logs = Log.objects.filter(transient=instance.transient.id)
+				
 			emaillist = []
-			for log in logs:
-				emaillist += [log.created_by.email]
+			if '@channel' in instance.comment:
+				for user in User.objects.all():
+					emaillist += [user.email]
+			else:
+				for log in logs:
+					emaillist += [log.created_by.email]
+				for user in re.compile(r"\@(\w+)").findall(instance.comment):
+					usermatch = User.objects.filter(username=user)
+					if len(usermatch):
+						emaillist += [usermatch[0].email]
 			emaillist = np.unique(emaillist)
 
 			transient_name = instance.transient.name
