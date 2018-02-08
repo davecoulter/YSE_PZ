@@ -177,13 +177,16 @@ class AddTransientCommentFormView(FormView):
 			<body>
 			<h1>Comment added!</h1>
 			<p>
-			<a href='%stransient_detail/%s/'>%s</a>
+			<a href='%stransient_detail/%s/'>%s</a><br>
+			%s says:<br>
+			%s <br>
 			</p>
 			<br />
 			<p>Go to <a href='%s/dashboard/'>YSE Dashboard</a></p> 
 			</body>
 			</html>
-			""" % (base_url, transient_name, transient_name, base_url)
+			""" % (base_url, transient_name, transient_name,
+				   str(instance.created_by),instance.comment, base_url)
 			for email in emaillist:
 				alert.send_email_simple(email, subject, body)
 
