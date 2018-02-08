@@ -4,6 +4,7 @@ from django.template import loader
 from django.views import generic
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 import requests
 import sys
 from datetime import datetime
@@ -17,6 +18,9 @@ from django.views.generic import FormView
 from .forms import *
 from django.http import JsonResponse
 from django.forms.models import model_to_dict
+from .common import alert
+import numpy as np
+
 
 class AddTransientFollowupFormView(FormView):
 	form_class = TransientFollowupForm
@@ -153,9 +157,37 @@ class AddTransientCommentFormView(FormView):
 			instance.modified_by = self.request.user
 			
 			instance.save() #update_fields=['created_by','modified_by']
-
 			print(form.cleaned_data)
 
+			# send emails to everyone else on the comments thread
+			logs = Log.objects.filter(transient=instance.transient.id)
+			emaillist = []
+			for log in logs:
+				emaillist += [log.created_by.email]
+			emaillist = np.unique(emaillist)
+
+			transient_name = instance.transient.name
+			base_url = "https://ziggy.ucolick.org/yse/" 
+			if settings.DEBUG:
+				base_url =  "https://ziggy.ucolick.org/yse_test/"
+			subject = "YSE_PZ: new comment added to event %s"%transient_name
+			body = """\
+			<html>
+			<head></head>
+			<body>
+			<h1>Comment added!</h1>
+			<p>
+			<a href='%stransient_detail/%s/'>%s</a>
+			</p>
+			<br />
+			<p>Go to <a href='%s/dashboard/'>YSE Dashboard</a></p> 
+			</body>
+			</html>
+			""" % (base_url, transient_name, transient_name, base_url)
+			for email in emaillist:
+				alert.send_email_simple(email, subject, body)
+
+				
 			# for key,value in form.cleaned_data.items():
 			data_dict = {}
 			data_dict['id'] = instance.id
