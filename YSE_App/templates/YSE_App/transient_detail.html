@@ -795,11 +795,9 @@
             }
 
 			$('.transientStatusChange').on('click', function(event){
-			    var transient_id = $('#transient_pk').val()
                 var status_id = $(this).attr('data-status_id')
-
-                var url = 'http://127.0.0.1:8000/api/transients/' + transient_id + '/'
-                var status_url = 'http://127.0.0.1:8000/api/transientstatuses/' + status_id + '/'
+                var url = "{% url 'transient-detail' transient.id %}"
+                var status_url = "{% url 'transientstatus-list' %}" + status_id + "/"
                 var putData = { "status": status_url }
 
                 $.ajax({
@@ -810,7 +808,6 @@
                   success: function(data, textStatus, jqXHR) {
                       if (jqXHR.status == 200 && textStatus == "success") {
 
-                          var t = 1
                           var tokens = data.status.split("/")
                           var status_name = tokens[tokens.length-2]
                           $('#transient_status_name').text(status_name)
