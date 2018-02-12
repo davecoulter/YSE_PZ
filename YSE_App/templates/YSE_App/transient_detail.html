@@ -32,9 +32,8 @@
 					<a target="_blank" href="{% url 'admin:YSE_App_transient_change' transient.id %}">(Edit)</a>
 				</div>
 				<div class="box-body">
-					<!-- 3 col -->
 					<div class="col-xs-4">
-						<div class="form-group">
+						<div style="margin-top:10px;" class="form-group">
 							<strong>R.A./Dec (2000)</strong>
 							<p class="text-muted">
 								{{ transient.CoordString.0 }}&nbsp;&nbsp;&nbsp;{{ transient.CoordString.1 }}<br>
@@ -42,8 +41,8 @@
 							</p>
 						</div>
 					</div>
-					<div class="col-xs-4">
-						<div class="form-group">
+					<div class="col-xs-3">
+						<div style="margin-top:10px;" class="form-group">
 							<strong>Disc. Date (UTC)</strong>
 							<p class="text-muted">
 								{% if first_magdate %}
@@ -55,12 +54,32 @@
 							<br>
 						</div>
 					</div>
-					<div class="col-xs-4">
-						<div class="form-group">
-							<strong>Status</strong>
-							<p class="text-muted">{{ transient.status }}</p>
-							<br>
-						</div>
+					<div class="col-xs-5">
+						<div class="box box-default box-solid">
+            				<div class="box-header with-border">
+            					<strong style="float:left;margin-right:10px;">Status:</strong>
+            					<p style="float:left" id="transient_status_name" >{{ transient.status }}</p>
+							</div>
+							<div class="box-body">
+								<div class="btn-group-horizontal">
+	                            	<!-- Hard coded for now, but this should be changed D.C. -->
+	                                <button type="button" data-status_id="5" class="transientStatusChange btn btn-primary">Following</button>
+	                                <button type="button" data-status_id="2" class="transientStatusChange btn btn-warning">Watch</button>
+	                                <button type="button" data-status_id="6" class="transientStatusChange btn btn-danger">Ignore</button>
+
+	                                <div class="btn-group">
+	                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+	                                        <span class="caret"></span>
+	                                    </button>
+	                                    <ul class="dropdown-menu">
+	                                        {% for status in transient_statuses %}
+	                                            <li><a data-status_id="{{ status.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+	                                        {% endfor %}
+	                                    </ul>
+	                                </div>
+	                            </div>
+							</div>
+            			</div>
 					</div>
 					<div class="col-xs-4">
 						<div class="form-group">
@@ -99,6 +118,7 @@
 									None
 								{% endif %}
 							</p>
+							<br>
 						</div>
 					</div>
 					<div class="col-xs-4">
@@ -122,6 +142,7 @@
 							<p class="text-muted">
 								{{ transient.obs_group.name }}
 							</p>
+							<br>
 						</div>
 					</div>
 					<div class="col-xs-4">
@@ -136,6 +157,7 @@
 									None
 								{% endif %}
 							</p>
+							<br>
 						</div>
 					</div>
 					<div class="col-xs-4">
@@ -166,6 +188,7 @@
 						<div class="form-group">
 							<strong>Is in K2 Field?</strong>
 							<p><a target="_blank" href="http://api.keplerscience.org/is-k2-observing?ra={{ transient.ra }}&dec={{ transient.dec }}">Go to K2 API</a></p>
+							<br>
 						</div>
 					</div>
 					<div class="col-xs-4">
@@ -697,6 +720,45 @@
 				event.preventDefault();
 				add_transient_followup();
 			});
+
+			function transientStatusChangeErr() {
+                alert("Transient Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
+            }
+
+			$('.transientStatusChange').on('click', function(event){
+			    var transient_id = $('#transient_pk').val()
+                var status_id = $(this).attr('data-status_id')
+
+                var url = 'http://127.0.0.1:8000/api/transients/' + transient_id + '/'
+                var status_url = 'http://127.0.0.1:8000/api/transientstatuses/' + status_id + '/'
+                var putData = { "status": status_url }
+
+                $.ajax({
+                  type: "PATCH",
+                  url: url,
+                  csrfmiddlewaretoken: "{{ csrf_token }}",
+                  data: putData,
+                  success: function(data, textStatus, jqXHR) {
+                      if (jqXHR.status == 200 && textStatus == "success") {
+
+                          var t = 1
+                          var tokens = data.status.split("/")
+                          var status_name = tokens[tokens.length-2]
+                          $('#transient_status_name').text(status_name)
+                          
+                          {#alert(textStatus)#}
+                      } else {
+                          transientStatusChangeErr()
+                      }
+                  },
+                  error: function(XMLHttpRequest, textStatus, errorThrown) {
+                      transientStatusChangeErr()
+                      {#alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));#}
+                  }
+                });
+            });
+
+
 
 			function ToggleObservationTaskForm(followup_id,expand)
 			{
