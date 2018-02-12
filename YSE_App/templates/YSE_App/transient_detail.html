@@ -1,6 +1,7 @@
 {% extends 'YSE_App/base.html' %}
 {% load static from staticfiles %}
 {% load transient_detail_extras %}
+{% load widget_tweaks %}
 
 {% block styles %}
 	<!-- include Aladin Lite CSS file in the head section of your page -->
@@ -326,14 +327,7 @@
 									</div>
 									<div class="item">
 										<strong>Pan-STARRS Footprint</strong>
-										<div>
-											{% if transient|get_ps1_image %}
-												<a href="http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color" class="ps1-thumb" title="Link to PanSTARRS-1" target="_blank">
-													<img src="{{ transient|get_ps1_image }}" style='width:240px' alt="" />
-												</a>
-											{% else %}
-												<p class="text-muted">Coordinates are outside the PS1 footprint</p>
-											{% endif %}
+										<div id="ps1_image">
 										</div>
 									</div>
 								</div>
@@ -388,6 +382,12 @@
 								<a class="btn btn-block btn-primary" href="http://adsabs.harvard.edu/cgi-bin/nph-abs_connect?db_key=AST&db_key=PRE&qform=AST&arxiv_sel=astro-ph&arxiv_sel=cond-mat&arxiv_sel=cs&arxiv_sel=gr-qc&arxiv_sel=hep-ex&arxiv_sel=hep-lat&arxiv_sel=hep-ph&arxiv_sel=hep-th&arxiv_sel=math&arxiv_sel=math-ph&arxiv_sel=nlin&arxiv_sel=nucl-ex&arxiv_sel=nucl-th&arxiv_sel=physics&arxiv_sel=quant-ph&arxiv_sel=q-bio&sim_query=YES&ned_query=YES&adsobj_query=YES&obj_req=YES&aut_logic=OR&obj_logic=OR&author=&object={{ transient.ra }}%20+{{ transient.dec }}%3A0.002778%0D%0A{{ transient.name }}&start_mon=&start_year=&end_mon=&end_year=&ttl_logic=OR&title=&txt_logic=OR&text=&nr_to_return=200&start_nr=1&jou_pick=ALL&ref_stems=&data_and=ALL&group_and=ALL&start_entry_day=&start_entry_mon=&start_entry_year=&end_entry_day=&end_entry_mon=&end_entry_year=&min_score=&sort=SCORE&data_type=SHORT&aut_syn=YES&ttl_syn=YES&txt_syn=YES&aut_wt=1.0&obj_wt=1.0&ttl_wt=0.3&txt_wt=3.0&aut_wgt=YES&obj_wgt=YES&ttl_wgt=YES&txt_wgt=YES&ttl_sco=YES&txt_sco=YES&version=1">ADS</a>
 							</div>
 						</div>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<a class="btn btn-block btn-primary" href="https://asas-sn.osu.edu/" target="_blank">ASAS-SN</a>
+							</div>
+						</div>
+
 					</div>
 				</div>
 			</div>
@@ -402,6 +402,7 @@
 					<li><a href="#resources_tab" data-toggle="tab">Resources</a></li>
 					<li><a href="#photometry_tab" data-toggle="tab">Detailed Photometry</a></li>
 					<li><a href="#spectra_tab" data-toggle="tab">Spectra</a></li>
+					<li><a href="#comments_tab" data-toggle="tab">Comments</a></li>
 				</ul>
 				<div class="tab-content">
 					<div class="active tab-pane" id="followup_tab">
@@ -553,8 +554,8 @@
 								  <!--<li><a target="_blank" href="{% url 'finderchart' transient.id %}">Generate Finder Chart</a></li>-->
 								</ul>
 								
-								<!-- {% static "" as baseUrl %}
-								<img src="{{baseUrl}}/YSE_App/images/findercharts/{{transient.name}}/{{transient.name}}.finder.png" style='width:240px' alt="" /> -->
+								<!--{% static "" as baseUrl %}
+								<img src="{{baseUrl}}/YSE_App/images/findercharts/{{transient.name}}/{{transient.name}}.finder.png" style='width:240px' alt="" />-->
 								<br><br>
 							</div>
 							<div class="col-xs-12">
@@ -577,9 +578,9 @@
 													<tr>
 														<td>{{ telescope }}</td>
 														<td>{{ obsnight.0.obs_date }}</td>
-														<td>{{ obsnight.0|rise_time:transient.CoordString }}</td>
-														<td>{{ obsnight.0|set_time:transient.CoordString }}</td>
-														<td>{{ obsnight.0|moon_angle:transient.CoordString }} deg</td>
+														<td id="rise_time_{{obsnight.0.id}}"></td>
+														<td id="set_time_{{obsnight.0.id}}"></td>
+														<td id="moon_angle_{{obsnight.0.id}}"></td>
 														<td><img src="{% url 'airmassplot' transient.id obsnight.0.id telescope.id %}" style='width:240px' alt="" /><br></td>
 													</tr>
 												{% endif %}
@@ -607,9 +608,9 @@
 												<tr>
 													<td>{{ too_resource.telescope }}</td>
 													<td>{{ too_resource.deltahours }}</td>
-													<td>{{ too_resource|tonight_rise_time:transient.CoordString }}</td>
-													<td>{{ too_resource|tonight_set_time:transient.CoordString }}</td>
-													<td>{{ too_resource|too_moon_angle:transient.CoordString }} deg</td>
+													<td id="tonight_rise_time_{{too_resource.id}}"></td>
+													<td id="tonight_set_time_{{too_resource.id}}"></td>
+													<td id="tonight_moon_angle_{{too_resource.id}}"></td>
 													<td><img src="{% url 'airmassplot' transient.id 0 too_resource.telescope_id %}" style='width:240px' alt="" /><br></td>
 												</tr>
 											{% endif %}
@@ -621,11 +622,39 @@
 					</div>
 					<div class="tab-pane" id="photometry_tab">
 						<h4>Photometry for {{transient.name}}</h4>
-						<td><img src="{% url 'lightcurveplot' transient.id %}" style='width:240px' alt="" /><br></td>
+						<div id="lcplot"></div>
 					</div>
 					<div class="tab-pane" id="spectra_tab">
 						<h4>Spectra for {{transient.name}}</h4>
 					</div>
+					<div class="tab-pane" id="comments_tab">
+					  <h4>Comments for {{transient.name}}</h4>
+					  {% for l in logs %}
+					  <b>{{ l.created_by }}: </b>{{l.comment }} ({{l.modified_date}} UT)<br>
+					  {% endfor %}
+					  <p id="add_comment_container"></p>
+					  <form id="add_transient_comment" action="{% url 'add_transient_comment' %}" method="post">
+					    <input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
+					    {% csrf_token %}
+					    {% for hidden_field in form.hidden_fields %}
+					    {{ hidden_field }}
+					    {% endfor %}
+					    <br>
+					    <div class="form-group">
+					      <label>Add Comment:</label>
+					      {% render_field transient_comment_form.comment class+="form-control" %}
+					      <!--<input type="comment" class="form-control" id="comment">-->
+					    </div>
+					    <div class="form-group">
+					      <button type="submit" class="btn btn-block btn-primary btn-lg">Submit</button>
+					    </div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+					</div>
+
 				</div>
 			</div>
 		</div>
@@ -638,8 +667,12 @@
 
 	<script src="{% static 'YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
 	<script src="{% static 'YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
-
+	<script type="text/javascript" src="https://mpld3.github.io/js/d3.v3.min.js"></script>
+	<script type="text/javascript" src="https://mpld3.github.io/js/mpld3.v0.3.1.dev1.js"></script>
+	<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-0.12.13.min.js"></script>
+	
 	<script>
+
 		$(function() {
 			$('#example1').DataTable({
 				  'paging'      : false,
@@ -715,6 +748,42 @@
 				$('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
 			});
 
+			// Submit comment on submit
+          		$('#add_transient_comment').on('submit', function(event){
+		                event.preventDefault();
+                		add_transient_comment();
+			});
+
+		        function add_transient_comment(){
+		                var data = $('#add_transient_comment').serialize()
+				var transient_id = $('#transient_pk').val()
+				data = (data + "&transient=" + transient_id)
+				$.ajax({
+					url : "{% url 'add_transient_comment' %}", // the endpoint
+					type : "POST", // http method
+					data : data, // data sent with the post request
+
+					// handle a successful response
+					success : function(json) {
+		                                if (json.data['comment']){
+                                          		// Construct HTML to append container
+		                                        var commentHTML = "<b>"+json.data['created_by'] + ": </b>" + json.data['comment'] + " (" + json.data['modified_date'] + " UT)<br>"
+
+		                                        $("#add_comment_container").append(commentHTML)
+                                                }
+		                                // Close & reset form box
+						$('#add_transient_comment')[0].reset();
+
+					},
+
+					// handle a non-successful response
+					error : function(xhr,errmsg,err) {
+						alert(xhr.status + ": " + xhr.responseText);
+					}
+				});
+			};
+		
+		
 			// Submit post on submit
 			$('#add_transient_followup').on('submit', function(event){
 				event.preventDefault();
@@ -1068,7 +1137,7 @@
 								format: 'MM/DD/YYYY HH:mm', 
 								locale: {
 									format: 'MM/DD/YYYY HH:mm'
-								} 
+								}
 							});
 
 							// Re-Initialize daterange
@@ -1145,5 +1214,56 @@
 				}
 			});
 		});
+
+	  $( document ).ready(function(){
+	  $.get("{% url 'get_ps1_image' transient.id %}").done(function(json){
+	  var rows = $("#ps1_image")
+	  if (json["jpegurl"]) {
+	  htmltext = "<a href=\"http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color\" class=\"ps1-thumb\" title=\"Link to PanSTARRS-1\" target=\"_blank\"><img src=\"" + json["jpegurl"] + "\" style='width:240px' alt=\"\" /></a>"
+	  } else {
+	  var htmltext = "<p class=\"text-muted\">Coordinates are outside the PS1 footprint</p>"
+	  }
+	  
+	  $(rows).append(htmltext)
+	  });
+
+	  $.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
+	  var rows = $("#lcplot")
+	  $(rows).prepend(htmlresponse)
+	  });
+	  
+	  {% for obsnight in observing_nights %}
+	  $.get("{% url 'rise_time' transient.id obsnight.0.id %}").done(function(json){
+	  var rows = $("#rise_time_{{obsnight.0.id}}")
+	  $(rows).append(json["rise_time"])
+	  });
+	  $.get("{% url 'set_time' transient.id obsnight.0.id %}").done(function(json){
+	  var rows = $("#set_time_{{obsnight.0.id}}")
+	  $(rows).append(json["set_time"])
+	  });
+	  $.get("{% url 'moon_angle' transient.id obsnight.0.id %}").done(function(json){
+	  var rows = $("#moon_angle_{{obsnight.0.id}}")
+	  $(rows).append(json["moon_angle"])
+	  });
+	  {% endfor %}
+
+	  {% for too_resource in too_resource_list %}
+	  {% if too_resource.deltahours > 0 %}
+	  $.get("{% url 'tonight_rise_time' transient.id too_resource.id %}").done(function(json){
+	  var rows = $("#tonight_rise_time_{{too_resource.id}}")
+	  $(rows).append(json["rise_time"])
+	  });
+	  $.get("{% url 'tonight_set_time' transient.id too_resource.id %}").done(function(json){
+	  var rows = $("#tonight_set_time_{{too_resource.id}}")
+	  $(rows).append(json["set_time"])
+	  });
+	  $.get("{% url 'tonight_moon_angle' transient.id too_resource.id %}").done(function(json){
+	  var rows = $("#tonight_moon_angle_{{too_resource.id}}")
+	  $(rows).append(json["moon_angle"])
+	  });
+	  {% endif %}
+	  {% endfor %}
+	  });
+			    
 	</script>
 {% endblock %}

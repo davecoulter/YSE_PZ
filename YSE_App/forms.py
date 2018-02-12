@@ -47,6 +47,14 @@ class TransientFollowupForm(ModelForm):
 			'offset_east',
 			'transient']
 
+class TransientCommentForm(ModelForm):
+	class Meta:
+		model = Log
+		fields = [
+			'comment',
+			'transient']
+
+		
 class TransientObservationTaskForm(ModelForm):
 	class Meta:
 		model = TransientObservationTask

@@ -39,6 +39,18 @@ def IsK2Pixel(ra, dec):
 		print("K2 API call failed")
 		return (True, ("K2 API error: %s" % e))
 
+def send_email_simple(to_addr, subject, message):
+
+	smtpserver = "%s:%s" % (settings.SMTP_HOST, settings.SMTP_PORT)
+	from_addr = "%s@gmail.com" % settings.SMTP_LOGIN
+
+	base_url = "https://ziggy.ucolick.org/yse/" 
+	if settings.DEBUG:
+		base_url =  "https://ziggy.ucolick.org/yse_test/"
+
+	sendemail(from_addr, to_addr, subject, message, 
+			  settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
+	
 def SendTransientAlert(transient_id, transient_name, ra, dec):
 
 	print("Sending Alert")
