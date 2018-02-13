@@ -206,7 +206,10 @@ def transient_detail(request, slug):
 		alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 		transient_followup_form = TransientFollowupForm()
 		transient_observation_task_form = TransientObservationTaskForm()
-		transient_statuses = TransientStatus.objects.all()
+		all_transient_statuses = TransientStatus.objects.all()
+		transient_status_follow = TransientStatus.objects.get(name="Following")
+		transient_status_watch = TransientStatus.objects.get(name="Watch")
+		transient_status_ignore = TransientStatus.objects.get(name="Ignore")
 		transient_comment_form = TransientCommentForm()
 
 		# Get associated Observations
@@ -259,7 +262,10 @@ def transient_detail(request, slug):
 			'transient_observation_task_form': transient_observation_task_form,
 			'transient_comment_form': transient_comment_form,
 			'alt_names': alt_names,
-			'transient_statuses': transient_statuses,
+			'all_transient_statuses': all_transient_statuses,
+			'transient_status_follow': transient_status_follow,
+			'transient_status_watch': transient_status_watch,
+			'transient_status_ignore': transient_status_ignore,
 			'logs':logs,
 		}
 

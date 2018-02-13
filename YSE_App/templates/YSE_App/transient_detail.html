@@ -63,17 +63,15 @@
 							</div>
 							<div class="box-body">
 								<div class="btn-group-horizontal">
-	                            	<!-- Hard coded for now, but this should be changed D.C. -->
-	                                <button type="button" data-status_id="5" class="transientStatusChange btn btn-primary">Following</button>
-	                                <button type="button" data-status_id="2" class="transientStatusChange btn btn-warning">Watch</button>
-	                                <button type="button" data-status_id="6" class="transientStatusChange btn btn-danger">Ignore</button>
-
+									<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_follow.id }}" class="transientStatusChange btn btn-primary">{{ transient_status_follow.name }}</button>
+									<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_watch.id }}" class="transientStatusChange btn btn-warning">{{ transient_status_watch.name }}</button>
+									<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_ignore.id }}" class="transientStatusChange btn btn-danger">{{ transient_status_ignore.name }}</button>
 	                                <div class="btn-group">
-	                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+	                                    <button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
 	                                        <span class="caret"></span>
 	                                    </button>
 	                                    <ul class="dropdown-menu">
-	                                        {% for status in transient_statuses %}
+	                                        {% for status in all_transient_statuses %}
 	                                            <li><a data-status_id="{{ status.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 	                                        {% endfor %}
 	                                    </ul>
