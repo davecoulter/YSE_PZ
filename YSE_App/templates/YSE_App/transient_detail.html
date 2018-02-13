@@ -796,13 +796,24 @@
 
 			$('.transientStatusChange').on('click', function(event){
                 var status_id = $(this).attr('data-status_id')
-                var url = "{% url 'transient-detail' transient.id %}"
-                var status_url = "{% url 'transientstatus-list' %}" + status_id + "/"
+                var url_target = "{% url 'transient-detail' transient.id %}"
+                var status_target = "{% url 'transientstatus-list' %}" + status_id + "/"
+
+                var base_url = window.location.protocol + "//" + window.location.hostname
+                var port = window.location.port
+                var api_url = base_url + url_target
+                var status_url = base_url + status_target
+
+                if (port != "") {
+                    api_url = base_url + ":" + port + url_target
+                    status_url = base_url + ":" + port + status_target
+                }
+
                 var putData = { "status": status_url }
 
                 $.ajax({
                   type: "PATCH",
-                  url: url,
+                  url: api_url,
                   csrfmiddlewaretoken: "{{ csrf_token }}",
                   data: putData,
                   success: function(data, textStatus, jqXHR) {
