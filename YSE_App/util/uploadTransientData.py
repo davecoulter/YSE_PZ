@@ -43,6 +43,9 @@ class upload():
 						  help="use default settings for foundation")
 		parser.add_option('-e','--onlyexisting', default=False, action="store_true",
 						  help="only add light curves for existing objects")
+		parser.add_option('-m','--mjdmatchmin', default=0.05, type="float",
+						  help="""if clobber flag not set, photometric observation with MJD separation 
+less than this, in the same filter/instrument are treated as the same data.  Allows updates to the photometry""")
 
 		
 		return(parser)
@@ -143,7 +146,7 @@ class upload():
 				closeID = None
 				for p in photepochs:
 					pmjd = Time(p['obs_date'],format='isot').mjd
-					if p['photometry'] == self.photdataid and np.abs(pmjd - mjd) < 0.05 and p['band'] == bandid:
+					if p['photometry'] == self.photdataid and np.abs(pmjd - mjd) < self.options.mjdmatchmin and p['band'] == bandid:
 						closeID = p['url']
 						break
 				if closeID and self.options.clobber:
