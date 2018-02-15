@@ -606,9 +606,17 @@ def get_hst_image(request,transient_id):
 		fitsurllist += ["https://hla.stsci.edu/cgi-bin/getdata.cgi?config=ops&amp;dataset=%s"%str(hst.obstable["obs_id"][i]).lower()]
 	print("Run time was: ",(datetime.datetime.now() - startTime).total_seconds(),"seconds")
 
-	jpegurldict = {"jpegurl":hst.jpglist,
-				   "fitsurl":fitsurllist,#list(hst.obstable["dataURL"]),
-				   "obsdate":list(Time(hst.obstable["t_min"],format='mjd',out_subfmt='date').iso),
-				   "filters":list(hst.obstable["filters"]),
-				   "inst":list(hst.obstable["instrument_name"])}
+	if len(hst.jpglist):
+		jpegurldict = {"jpegurl":hst.jpglist,
+					   "fitsurl":fitsurllist,#list(hst.obstable["dataURL"]),
+					   "obsdate":list(Time(hst.obstable["t_min"],format='mjd',out_subfmt='date').iso),
+					   "filters":list(hst.obstable["filters"]),
+					   "inst":list(hst.obstable["instrument_name"])}
+	else:
+		jpegurldict = {"jpegurl":[],
+					   "fitsurl":[],
+					   "obsdate":[],
+					   "filters":[],
+					   "inst":[]}
+
 	return(JsonResponse(jpegurldict))
