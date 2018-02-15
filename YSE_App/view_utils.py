@@ -584,3 +584,31 @@ def get_ps1_image(request,transient_id):
 
 	jpegurldict = {"jpegurl":jpegurl}
 	return(JsonResponse(jpegurldict))
+
+
+def get_hst_image(request,transient_id):
+	
+	try:
+		t = Transient.objects.get(pk=transient_id)
+	except t.DoesNotExist:
+		raise Http404("Transient id does not exist")
+
+	startTime = datetime.datetime.now()
+	from . import common
+	hst=common.mast_query.hstImages(t.ra,t.dec,'Object')
+	hst.getObstable()
+	hst.getJPGurl()
+	print("I found",hst.Nimages,"HST images of",hst.object,"located at coordinates",hst.ra,hst.dec)
+	print("The cut out images have the following URLs:")
+	fitsurllist = []
+	for jpg,i in zip(hst.jpglist,range(len(hst.jpglist))):
+		print(jpg)
+		fitsurllist += ["https://hla.stsci.edu/cgi-bin/getdata.cgi?config=ops&amp;dataset=%s"%str(hst.obstable["obs_id"][i]).lower()]
+	print("Run time was: ",(datetime.datetime.now() - startTime).total_seconds(),"seconds")
+
+	jpegurldict = {"jpegurl":hst.jpglist,
+				   "fitsurl":fitsurllist,#list(hst.obstable["dataURL"]),
+				   "obsdate":list(Time(hst.obstable["t_min"],format='mjd',out_subfmt='date').iso),
+				   "filters":list(hst.obstable["filters"]),
+				   "inst":list(hst.obstable["instrument_name"])}
+	return(JsonResponse(jpegurldict))

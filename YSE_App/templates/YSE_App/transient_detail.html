@@ -309,6 +309,7 @@
 									<li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
 									<li data-target="#carousel-example-generic" data-slide-to="1" class=""></li>
 									<li data-target="#carousel-example-generic" data-slide-to="2" class=""></li>
+									<li data-target="#carousel-example-generic" data-slide-to="3" class=""></li>
 								</ol>
 								<div class="carousel-inner">
 									<div class="item active">
@@ -326,6 +327,11 @@
 									<div class="item">
 										<strong>Pan-STARRS Footprint</strong>
 										<div id="ps1_image">
+										</div>
+									</div>
+									<div class="item">
+										<strong>HST Image</strong>
+										<div id="hst_image">
 										</div>
 									</div>
 								</div>
@@ -399,7 +405,8 @@
 					<li class="active"><a href="#followup_tab" data-toggle="tab">Follow-up</a></li>
 					<li><a href="#resources_tab" data-toggle="tab">Resources</a></li>
 					<li><a href="#photometry_tab" data-toggle="tab">Detailed Photometry</a></li>
-					<li><a href="#spectra_tab" data-toggle="tab">Spectra</a></li>
+					<li><a href="#spectra_tab" data-toggle="tab">Spectra</a></li>		
+					<li><a href="#hst_tab" data-toggle="tab">HST Data</a></li>
 					<li><a href="#comments_tab" data-toggle="tab">Comments</a></li>
 				</ul>
 				<div class="tab-content">
@@ -625,27 +632,42 @@
 					<div class="tab-pane" id="spectra_tab">
 						<h4>Spectra for {{transient.name}}</h4>
 					</div>
+					<div class="tab-pane" id="hst_tab">
+						<h4>HST Images for {{transient.name}}</h4>
+						<table class="table table-bordered table-striped">
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>Filter</th>
+									<th>Instrument</th>
+									<th>Image</th>
+								</tr>
+							</thead>
+							<tbody id="hst_image_list">
+							</tbody>
+						</table>
+					</div>
 					<div class="tab-pane" id="comments_tab">
-					  <h4>Comments for {{transient.name}}</h4>
-					  {% for l in logs %}
-					  <b>{{ l.created_by }}: </b>{{l.comment }} ({{l.modified_date}} UT)<br>
-					  {% endfor %}
-					  <p id="add_comment_container"></p>
-					  <form id="add_transient_comment" action="{% url 'add_transient_comment' %}" method="post">
-					    <input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
-					    {% csrf_token %}
-					    {% for hidden_field in form.hidden_fields %}
-					    {{ hidden_field }}
-					    {% endfor %}
-					    <br>
-					    <div class="form-group">
-					      <label>Add Comment:</label>
-					      {% render_field transient_comment_form.comment class+="form-control" %}
-					      <!--<input type="comment" class="form-control" id="comment">-->
-					    </div>
-					    <div class="form-group">
-					      <button type="submit" class="btn btn-block btn-primary btn-lg">Submit</button>
-					    </div>
+						<h4>Comments for {{transient.name}}</h4>
+						{% for l in logs %}
+						<b>{{ l.created_by }}: </b>{{l.comment }} ({{l.modified_date}} UT)<br>
+						{% endfor %}
+						<p id="add_comment_container"></p>
+						<form id="add_transient_comment" action="{% url 'add_transient_comment' %}" method="post">
+						<input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
+						{% csrf_token %}
+						{% for hidden_field in form.hidden_fields %}
+						{{ hidden_field }}
+						{% endfor %}
+						<br>
+						<div class="form-group">
+					    	<label>Add Comment:</label>
+					    	{% render_field transient_comment_form.comment class+="form-control" %}
+					    	<!--<input type="comment" class="form-control" id="comment">-->
+						</div>
+						<div class="form-group">
+							<button type="submit" class="btn btn-block btn-primary btn-lg">Submit</button>
+						</div><
 					</form>
 				</div>
 			</div>
@@ -1222,16 +1244,37 @@
 		});
 
 	  $( document ).ready(function(){
-	  $.get("{% url 'get_ps1_image' transient.id %}").done(function(json){
-	  var rows = $("#ps1_image")
-	  if (json["jpegurl"]) {
-	  htmltext = "<a href=\"http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color\" class=\"ps1-thumb\" title=\"Link to PanSTARRS-1\" target=\"_blank\"><img src=\"" + json["jpegurl"] + "\" style='width:240px' alt=\"\" /></a>"
-	  } else {
-	  var htmltext = "<p class=\"text-muted\">Coordinates are outside the PS1 footprint</p>"
-	  }
+	  	$.get("{% url 'get_ps1_image' transient.id %}").done(function(json){
+	  	var rows = $("#ps1_image")
+	  	if (json["jpegurl"]) {
+	  	htmltext = "<a href=\"http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color\" class=\"ps1-thumb\" title=\"Link to PanSTARRS-1\" target=\"_blank\"><img src=\"" + json["jpegurl"] + "\" style='width:240px' alt=\"\" /></a>"
+		  } else {
+		  var htmltext = "<p class=\"text-muted\">Coordinates are outside the PS1 footprint</p>"
+	  	}
 	  
-	  $(rows).append(htmltext)
-	  });
+		  $(rows).append(htmltext)
+		});
+
+		$.get("{% url 'get_hst_image' transient.id %}").done(function(json){
+			var rows = $("#hst_image")
+  			var rows_full = $("#hst_image_list")
+  			var htmltext = "<p class=\"text-muted\">No HST Images available</p>"
+	  		if (json.jpegurl[0]) {
+	  			var htmltext = "<img src=\"" + json.jpegurl[0] + "\" style='width:240px' alt=\"\" /></a>"
+	  		}
+			$(rows).append(htmltext)
+
+	  		for(var ju in json.jpegurl){
+				var htmltextfull = "<tr>" + 
+				"<td>" + json.obsdate[ju] + "</td>" + 
+				"<td>" + json.filters[ju] + "</td>" +
+				"<td>" + json.inst[ju] + "</td>" + 
+				"<td><a href='" + json.fitsurl[ju] + "' target='_blank'><img src='" + json.jpegurl[ju] + "' style='width:240px' alt='' /></a></td>" //+ 
+				"</tr>"
+				$(rows_full).append(htmltextfull)
+	  		}
+
+		});
 
 	  $.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
 	  var rows = $("#lcplot")
