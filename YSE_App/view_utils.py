@@ -415,7 +415,7 @@ def lightcurveplot(request, transient_id):
 					 line_width=3)#, legend='today (%i)'%today)
 		ax.add_layout(vline)
 		#ax.renderers.extend([vline])
-		ax.legend.location = 'top_right'
+		ax.legend.location = 'top_left'
 
 		#ax.vlines(today,ymin=-10,ymax=30,
 		#		  color='k',label='today (%i)'%today,zorder=1)
