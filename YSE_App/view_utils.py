@@ -426,6 +426,7 @@ def lightcurveplot(request, transient_id):
 			ax.y_range=Range1d(np.max(mag)+0.25,np.min(mag)-0.5)
 		#ax.legend()
 		ax.plot_height = 400
+		ax.plot_width = 500
 		
 		#ax.grid(color='lightgray', alpha=0.7)
 		#g = mpld3.fig_to_html(fig,template_type='simple')
