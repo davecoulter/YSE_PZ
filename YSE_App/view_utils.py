@@ -397,8 +397,6 @@ def lightcurveplot(request, transient_id):
 		count = 0
 		for b in np.unique(band):
 			coloridx = count % len(np.unique(colorlist))
-			#ax.errorbar(mjd[band == b].tolist(),mag[band == b].tolist(),
-			#			yerr=magerr[band == b].tolist(),fmt='o',label=b,zorder=30)
 			ax.circle(mjd[band == b].tolist(),mag[band == b].tolist(),
 					  color=colorlist[coloridx],size=7,legend=b)
 
@@ -412,13 +410,10 @@ def lightcurveplot(request, transient_id):
 		today = Time(datetime.datetime.today()).mjd
 		ax.line(today,20,line_width=3,line_color='black',legend='today (%i)'%today)
 		vline = Span(location=today, dimension='height', line_color='black',
-					 line_width=3)#, legend='today (%i)'%today)
+					 line_width=3)
 		ax.add_layout(vline)
-		#ax.renderers.extend([vline])
-		ax.legend.location = 'top_left'
-
-		#ax.vlines(today,ymin=-10,ymax=30,
-		#		  color='k',label='today (%i)'%today,zorder=1)
+		ax.legend.location = 'bottom_left'
+		ax.legend.label_height = 1
 
 		ax.xaxis.axis_label = 'MJD'
 		ax.yaxis.axis_label = 'Mag'
@@ -430,7 +425,8 @@ def lightcurveplot(request, transient_id):
 			ax.x_range=Range1d(np.min(mjd)-10,np.max(mjd)+10)
 			ax.y_range=Range1d(np.max(mag)+0.25,np.min(mag)-0.5)
 		#ax.legend()
-
+		ax.plot_height = 400
+		
 		#ax.grid(color='lightgray', alpha=0.7)
 		#g = mpld3.fig_to_html(fig,template_type='simple')
 
