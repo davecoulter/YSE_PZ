@@ -37,9 +37,11 @@ def get_all_phot_for_transient(transient_id=None):
 	photometry = TransientPhotometry.objects.filter(transient=transient_id)
 
 	photdata = False
+	pidlist = []
 	for p in photometry:
-		photdata = TransientPhotData.objects.filter(photometry=p.id)
-	
+		pidlist += [p.id]
+	photdata = TransientPhotData.objects.filter(photometry__in=pidlist)
+
 	if photdata:	
 		return(photdata)
 	else:
@@ -337,7 +339,10 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
 
 		yr,mn,day,hr,minu,sec = night_start.iso.replace(':',' ').replace('-',' ').split()
 		starttime = datetime.datetime(int(yr),int(mn),int(day),int(hr),int(minu))
-		xlow = datetime.datetime(int(yr),int(mn),int(day),int(hr)-1,int(minu))
+		if int(hr) == 0:
+			xlow = datetime.datetime(int(yr),int(mn),int(day)-1,23,int(minu))
+		else:
+			xlow = datetime.datetime(int(yr),int(mn),int(day),int(hr)-1,int(minu))
 		yr,mn,day,hr,minu,sec = night_end.iso.replace(':',' ').replace('-',' ').split()
 		endtime = datetime.datetime(int(yr),int(mn),int(day),int(hr),int(minu))
 		xhi = datetime.datetime(int(yr),int(mn),int(day),int(hr)+1,int(minu))
