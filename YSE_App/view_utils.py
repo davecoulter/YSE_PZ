@@ -376,7 +376,7 @@ def lightcurveplot(request, transient_id):
 
 		ax=figure()
 
-		mjd,mag,magerr,band,instrument = \
+		mjd,mag,magerr,band,telescope = \
 			np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 		limmjd = None
 		for p in photdata:
@@ -391,7 +391,8 @@ def lightcurveplot(request, transient_id):
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
 			else: magerr = np.append(magerr,0)
 			band = np.append(band,str(p.band.name))
-			instrument = np.append(instrument,str(p.band.instrument.name))
+			import pdb; pdb.set_trace()
+			telescope = np.append(telescope,str(p.band.instrument.telescope.name))
 		
 		ax.title.text = "%s"%transient.name
 		colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
@@ -399,10 +400,10 @@ def lightcurveplot(request, transient_id):
 		count = 0
 
 		bandunq,idx = np.unique(band,return_index=True)
-		for b,i in zip(bandunq,instrument[idx]):
+		for b,t in zip(bandunq,telescope[idx]):
 			coloridx = count % len(np.unique(colorlist))
 			ax.circle(mjd[band == b].tolist(),mag[band == b].tolist(),
-					  color=colorlist[coloridx],size=7,legend='%s - %s'%(i,b))
+					  color=colorlist[coloridx],size=7,legend='%s - %s'%(t,b))
 
 			err_xs,err_ys = [],[]
 			for x,y,yerr in zip(mjd[band == b].tolist(),mag[band == b].tolist(),magerr[band == b].tolist()):
