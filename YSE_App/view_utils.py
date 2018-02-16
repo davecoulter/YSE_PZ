@@ -391,7 +391,6 @@ def lightcurveplot(request, transient_id):
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
 			else: magerr = np.append(magerr,0)
 			band = np.append(band,str(p.band.name))
-			import pdb; pdb.set_trace()
 			telescope = np.append(telescope,str(p.band.instrument.telescope.name))
 		
 		ax.title.text = "%s"%transient.name
