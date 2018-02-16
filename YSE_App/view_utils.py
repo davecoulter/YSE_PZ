@@ -376,8 +376,8 @@ def lightcurveplot(request, transient_id):
 
 		ax=figure()
 
-		mjd,mag,magerr,band = \
-			np.array([]),np.array([]),np.array([]),np.array([])
+		mjd,mag,magerr,band,instrument = \
+			np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 		limmjd = None
 		for p in photdata:
 			if p.flux and np.abs(p.flux) > 1e10: continue
@@ -390,16 +390,19 @@ def lightcurveplot(request, transient_id):
 			mag = np.append(mag,[p.mag])
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
 			else: magerr = np.append(magerr,0)
-			band = np.append(band,str(p.band))
+			band = np.append(band,str(p.band.name))
+			instrument = np.append(instrument,str(p.band.instrument.name))
 		
 		ax.title.text = "%s"%transient.name
 		colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
 					 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
 		count = 0
-		for b in np.unique(band):
+
+		bandunq,idx = np.unique(band,return_index=True)
+		for b,i in zip(bandunq,instrument[idx]):
 			coloridx = count % len(np.unique(colorlist))
 			ax.circle(mjd[band == b].tolist(),mag[band == b].tolist(),
-					  color=colorlist[coloridx],size=7,legend=b)
+					  color=colorlist[coloridx],size=7,legend='%s - %s'%(i,b))
 
 			err_xs,err_ys = [],[]
 			for x,y,yerr in zip(mjd[band == b].tolist(),mag[band == b].tolist(),magerr[band == b].tolist()):

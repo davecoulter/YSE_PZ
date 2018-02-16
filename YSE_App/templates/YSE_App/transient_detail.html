@@ -413,7 +413,7 @@
 					<li><a href="#resources_tab" data-toggle="tab">Resources</a></li>
 					<li><a href="#photometry_tab" data-toggle="tab">Detailed Photometry</a></li>
 					<li><a href="#spectra_tab" data-toggle="tab">Spectra</a></li>		
-					<li><a href="#hst_tab" data-toggle="tab">HST Data</a></li>
+					<li><a href="#hst_tab" data-toggle="tab" id="hst_tab_header"></a></li>
 					<li><a href="#comments_tab" data-toggle="tab">Comments</a></li>
 				</ul>
 				<div class="tab-content">
@@ -1264,10 +1264,17 @@
 		$.get("{% url 'get_hst_image' transient.id %}").done(function(json){
 			var rows = $("#hst_image")
   			var rows_full = $("#hst_image_list")
+  			var rows_tab = $("#hst_tab_header")
   			var htmltext = "<p class=\"text-muted\">No HST Images available</p>"
 	  		if (json.jpegurl[0]) {
 	  			var htmltext = "<img src=\"" + json.jpegurl[0] + "\" style='width:240px' alt=\"\" /></a>"
-	  		}
+				var headertext = "HST Data"
+				$(rows_tab).append(headertext)
+
+	  		} else {
+				var htmltext = "<font color='red'>HST Data</font>"
+				$(rows_tab).append(htmltext)
+			}
 			$(rows).append(htmltext)
 
 	  		for(var ju in json.jpegurl){
