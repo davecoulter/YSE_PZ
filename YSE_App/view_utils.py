@@ -376,8 +376,8 @@ def lightcurveplot(request, transient_id):
 
 		ax=figure()
 
-		mjd,mag,magerr,band,telescope = \
-			np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+		mjd,mag,magerr,band,bandstr,telescope = \
+			np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 		limmjd = None
 		for p in photdata:
 			if p.flux and np.abs(p.flux) > 1e10: continue
@@ -390,22 +390,24 @@ def lightcurveplot(request, transient_id):
 			mag = np.append(mag,[p.mag])
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
 			else: magerr = np.append(magerr,0)
-			band = np.append(band,str(p.band.name))
-			telescope = np.append(telescope,str(p.band.instrument.telescope.name))
+			bandstr = np.append(bandstr,str(p.band))
+			band = np.append(band,p.band)
+			#telescope = np.append(telescope,str(p.band.instrument.telescope.name))
 		
 		ax.title.text = "%s"%transient.name
 		colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
 					 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
 		count = 0
 
-		bandunq,idx = np.unique(band,return_index=True)
-		for b,t in zip(bandunq,telescope[idx]):
+		bandunq,idx = np.unique(bandstr,return_index=True)
+		for bs,b in zip(bandunq,band[idx]):
 			coloridx = count % len(np.unique(colorlist))
-			ax.circle(mjd[band == b].tolist(),mag[band == b].tolist(),
-					  color=colorlist[coloridx],size=7,legend='%s - %s'%(t,b))
+			ax.circle(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
+					  color=colorlist[coloridx],size=7,legend='%s - %s'%(
+					b.instrument.telescope.name,b.name))
 
 			err_xs,err_ys = [],[]
-			for x,y,yerr in zip(mjd[band == b].tolist(),mag[band == b].tolist(),magerr[band == b].tolist()):
+			for x,y,yerr in zip(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),magerr[bandstr == bs].tolist()):
 				err_xs.append((x, x))
 				err_ys.append((y - yerr, y + yerr))
 			ax.multi_line(err_xs, err_ys, color=colorlist[coloridx])
