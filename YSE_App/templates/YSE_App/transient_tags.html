@@ -127,7 +127,7 @@
 						}
 
 					}
-					var api_url = base_url + "/get_transient_tags/?" + queryString
+					var api_url = base_url + "{% url 'get_transient_tags' %}?" + queryString
 					
 					$.ajax({
 						type: "GET",
