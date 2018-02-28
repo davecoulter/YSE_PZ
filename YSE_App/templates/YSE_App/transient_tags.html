@@ -153,8 +153,10 @@
 									spec_class = value["TNS_spec_class"]
 									internal_survey = value["internal_survey"]
 
+                                    target_url = "{% url 'transient_detail' slug="123456789" %}".replace("123456789",slug)
+
 									row = "<tr>" +
-											"<td><a href='" + base_url + "/transient_detail/" + slug + "/'>" + name + "</a></td>" +
+											"<td><a href='" + target_url + "'>" + name + "</a></td>" +
 											"<td>" + ra + "</td>" +
 											"<td>" + dec + "</td>" +
 											"<td>" + disc_date + "</td>" +
