@@ -43,6 +43,9 @@ class upload():
 						  help="use default settings for foundation")
 		parser.add_option('-e','--onlyexisting', default=False, action="store_true",
 						  help="only add light curves for existing objects")
+		parser.add_option('-m','--mjdmatchmin', default=0.05, type="float",
+						  help="""if clobber flag not set, photometric observation with MJD separation 
+less than this, in the same filter/instrument are treated as the same data.  Allows updates to the photometry""")
 
 		
 		return(parser)
@@ -63,11 +66,15 @@ class upload():
 			transname = sn.SNID
 			
 		if not transid:
-			# upload the basic transient data
-			basicdatacmd = "http -a %s:%s POST %s/transients/ name='%s' ra='%s' dec='%s' status='%s' obs_group=%s"%(
-				self.options.login,self.options.password,self.options.postURL,transname,sn.RA.split()[0],sn.DECL.split()[0],
-				statusid,obsid)
-		import pdb; pdb.set_trace()
+			if type(sn.RA) == float:
+				# upload the basic transient data
+				basicdatacmd = "http -a %s:%s POST %s/transients/ name='%s' ra='%s' dec='%s' status='%s' obs_group=%s"%(
+					self.options.login,self.options.password,self.options.postURL,transname,float(sn.RA),float(sn.DECL),
+					statusid,obsid)
+			else:
+				basicdatacmd = "http -a %s:%s POST %s/transients/ name='%s' ra='%s' dec='%s' status='%s' obs_group=%s"%(
+					self.options.login,self.options.password,self.options.postURL,transname,sn.RA.split()[0],sn.DECL.split()[0],
+					statusid,obsid)
 		#else:
 		#	basicdatacmd = "http -a %s:%s PATCH %s/transients/%s/ name='%s' ra='%s' dec='%s' status=%s obs_group=%s"%(
 		#		self.options.login,self.options.password,self.options.postURL,transid,transname,sn.RA.split()[0],sn.DECL.split()[0],
@@ -99,8 +106,10 @@ class upload():
 			
 		# create photometry object, if it doesn't exist
 		photheaderdata = db.get_objects_from_DB('photometry')
-		self.parsePhotHeaderData(photheaderdata,transname,sn.RA.split()[0],sn.DECL.split()[0],db=db)
-
+		if type(sn.RA) == float:
+			self.parsePhotHeaderData(photheaderdata,transname,sn.RA,sn.DECL,db=db)
+		else:
+			self.parsePhotHeaderData(photheaderdata,transname,sn.RA.split()[0],sn.DECL.split()[0],db=db)
 		# get the filter IDs
 		
 		# upload the photometry
@@ -124,7 +133,8 @@ class upload():
 			if flux > 0:
 				PhotUploadDict['mag'] = mag
 				PhotUploadDict['mag_err'] = magerr
-			if np.abs(mjd - sn.SEARCH_PEAKMJD) < 0.5:
+
+			if 'SEARCH_PEAKMJD' in sn.__dict__.keys() and np.abs(mjd - sn.SEARCH_PEAKMJD) < 0.5:
 				PhotUploadDict['discovery_point'] = 1
 				
 			if not transid:
@@ -136,7 +146,7 @@ class upload():
 				closeID = None
 				for p in photepochs:
 					pmjd = Time(p['obs_date'],format='isot').mjd
-					if p['photometry'] == self.photdataid and np.abs(pmjd - mjd) < 0.05 and p['band'] == bandid:
+					if p['photometry'] == self.photdataid and np.abs(pmjd - mjd) < self.options.mjdmatchmin and p['band'] == bandid:
 						closeID = p['url']
 						break
 				if closeID and self.options.clobber:

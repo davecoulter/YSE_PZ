@@ -37,9 +37,11 @@ def get_all_phot_for_transient(transient_id=None):
 	photometry = TransientPhotometry.objects.filter(transient=transient_id)
 
 	photdata = False
+	pidlist = []
 	for p in photometry:
-		photdata = TransientPhotData.objects.filter(photometry=p.id)
-	
+		pidlist += [p.id]
+	photdata = TransientPhotData.objects.filter(photometry__in=pidlist)
+
 	if photdata:	
 		return(photdata)
 	else:
@@ -337,7 +339,10 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
 
 		yr,mn,day,hr,minu,sec = night_start.iso.replace(':',' ').replace('-',' ').split()
 		starttime = datetime.datetime(int(yr),int(mn),int(day),int(hr),int(minu))
-		xlow = datetime.datetime(int(yr),int(mn),int(day),int(hr)-1,int(minu))
+		if int(hr) == 0:
+			xlow = datetime.datetime(int(yr),int(mn),int(day)-1,23,int(minu))
+		else:
+			xlow = datetime.datetime(int(yr),int(mn),int(day),int(hr)-1,int(minu))
 		yr,mn,day,hr,minu,sec = night_end.iso.replace(':',' ').replace('-',' ').split()
 		endtime = datetime.datetime(int(yr),int(mn),int(day),int(hr),int(minu))
 		xhi = datetime.datetime(int(yr),int(mn),int(day),int(hr)+1,int(minu))
@@ -361,6 +366,7 @@ def lightcurveplot(request, transient_id):
 		from bokeh.resources import CDN
 		from bokeh.embed import file_html
 		from bokeh.models import Range1d,Span
+		from bokeh.core.properties import FontSizeSpec
 		tstart = time.time()
 		
 		transient = Transient.objects.get(pk=transient_id)
@@ -370,8 +376,8 @@ def lightcurveplot(request, transient_id):
 
 		ax=figure()
 
-		mjd,mag,magerr,band = \
-			np.array([]),np.array([]),np.array([]),np.array([])
+		mjd,mag,magerr,band,bandstr,telescope = \
+			np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 		limmjd = None
 		for p in photdata:
 			if p.flux and np.abs(p.flux) > 1e10: continue
@@ -384,21 +390,24 @@ def lightcurveplot(request, transient_id):
 			mag = np.append(mag,[p.mag])
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
 			else: magerr = np.append(magerr,0)
-			band = np.append(band,str(p.band))
+			bandstr = np.append(bandstr,str(p.band))
+			band = np.append(band,p.band)
+			#telescope = np.append(telescope,str(p.band.instrument.telescope.name))
 		
 		ax.title.text = "%s"%transient.name
 		colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
 					 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
 		count = 0
-		for b in np.unique(band):
+
+		bandunq,idx = np.unique(bandstr,return_index=True)
+		for bs,b in zip(bandunq,band[idx]):
 			coloridx = count % len(np.unique(colorlist))
-			#ax.errorbar(mjd[band == b].tolist(),mag[band == b].tolist(),
-			#			yerr=magerr[band == b].tolist(),fmt='o',label=b,zorder=30)
-			ax.circle(mjd[band == b].tolist(),mag[band == b].tolist(),
-					  color=colorlist[coloridx],size=7,legend=b)
+			ax.circle(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
+					  color=colorlist[coloridx],size=7,legend='%s - %s'%(
+					b.instrument.telescope.name,b.name))
 
 			err_xs,err_ys = [],[]
-			for x,y,yerr in zip(mjd[band == b].tolist(),mag[band == b].tolist(),magerr[band == b].tolist()):
+			for x,y,yerr in zip(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),magerr[bandstr == bs].tolist()):
 				err_xs.append((x, x))
 				err_ys.append((y - yerr, y + yerr))
 			ax.multi_line(err_xs, err_ys, color=colorlist[coloridx])
@@ -407,14 +416,14 @@ def lightcurveplot(request, transient_id):
 		today = Time(datetime.datetime.today()).mjd
 		ax.line(today,20,line_width=3,line_color='black',legend='today (%i)'%today)
 		vline = Span(location=today, dimension='height', line_color='black',
-					 line_width=3)#, legend='today (%i)'%today)
+					 line_width=3)
 		ax.add_layout(vline)
-		#ax.renderers.extend([vline])
-		ax.legend.location = 'top_right'
-
-		#ax.vlines(today,ymin=-10,ymax=30,
-		#		  color='k',label='today (%i)'%today,zorder=1)
-
+		ax.legend.location = 'bottom_left'
+		ax.legend.label_height = 1
+		ax.legend.glyph_height = 10
+		#import pdb; pdb.set_trace()
+		ax.legend.label_text_font_size = "7pt"#FontSizeSpec("10")
+		
 		ax.xaxis.axis_label = 'MJD'
 		ax.yaxis.axis_label = 'Mag'
 
@@ -425,7 +434,9 @@ def lightcurveplot(request, transient_id):
 			ax.x_range=Range1d(np.min(mjd)-10,np.max(mjd)+10)
 			ax.y_range=Range1d(np.max(mag)+0.25,np.min(mag)-0.5)
 		#ax.legend()
-
+		ax.plot_height = 400
+		ax.plot_width = 500
+		
 		#ax.grid(color='lightgray', alpha=0.7)
 		#g = mpld3.fig_to_html(fig,template_type='simple')
 
@@ -578,4 +589,40 @@ def get_ps1_image(request,transient_id):
 		jpegurl=""
 
 	jpegurldict = {"jpegurl":jpegurl}
+	return(JsonResponse(jpegurldict))
+
+
+def get_hst_image(request,transient_id):
+	
+	try:
+		t = Transient.objects.get(pk=transient_id)
+	except t.DoesNotExist:
+		raise Http404("Transient id does not exist")
+
+	startTime = datetime.datetime.now()
+	from . import common
+	hst=common.mast_query.hstImages(t.ra,t.dec,'Object')
+	hst.getObstable()
+	hst.getJPGurl()
+	print("I found",hst.Nimages,"HST images of",hst.object,"located at coordinates",hst.ra,hst.dec)
+	print("The cut out images have the following URLs:")
+	fitsurllist = []
+	for jpg,i in zip(hst.jpglist,range(len(hst.jpglist))):
+		print(jpg)
+		fitsurllist += ["https://hla.stsci.edu/cgi-bin/getdata.cgi?config=ops&amp;dataset=%s"%str(hst.obstable["obs_id"][i]).lower()]
+	print("Run time was: ",(datetime.datetime.now() - startTime).total_seconds(),"seconds")
+
+	if len(hst.jpglist):
+		jpegurldict = {"jpegurl":hst.jpglist,
+					   "fitsurl":fitsurllist,#list(hst.obstable["dataURL"]),
+					   "obsdate":list(Time(hst.obstable["t_min"],format='mjd',out_subfmt='date').iso),
+					   "filters":list(hst.obstable["filters"]),
+					   "inst":list(hst.obstable["instrument_name"])}
+	else:
+		jpegurldict = {"jpegurl":[],
+					   "fitsurl":[],
+					   "obsdate":[],
+					   "filters":[],
+					   "inst":[]}
+
 	return(JsonResponse(jpegurldict))
