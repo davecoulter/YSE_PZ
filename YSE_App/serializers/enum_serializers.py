@@ -208,3 +208,20 @@ class InformationSourceSerializer(serializers.HyperlinkedModelSerializer):
 		instance.name = validated_data.get('name', instance.name)
 		instance.save()
 		return instance
+
+class WebAppColorSerializer(serializers.HyperlinkedModelSerializer):
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+
+	class Meta:
+		model = WebAppColor
+		fields = "__all__"
+
+	def create(self, validated_data):
+		return WebAppColor.objects.create(**validated_data)
+
+	def update(self, instance, validated_data):
+		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
+		instance.color = validated_data.get('color', instance.color)
+		instance.save()
+		return instance

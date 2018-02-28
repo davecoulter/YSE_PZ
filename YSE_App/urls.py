@@ -20,6 +20,9 @@ urlpatterns = [
     url(r'^dashboard/$', views.dashboard, name='dashboard'),
     url(r'^calendar/$', views.calendar, name='calendar'),
     url(r'^followup/$', views.followup, name='followup'),
+	url(r'^transient_tags/$', views.transient_tags, name='transient_tags'),
+	url(r'^get_transient_tags/$', views.get_transient_tags, name='get_transient_tags'),
+
     url(r'^dashboard_example/$', views.dashboard_example, name='dashboard_example'),
     url(r'^transient_edit/$', views.transient_edit, name='transient_edit'),
     url(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
@@ -69,6 +72,7 @@ router.register(r'phases', api_views.PhaseViewSet)
 router.register(r'transientclasses', api_views.TransientClassViewSet)
 router.register(r'classicalnighttypes', api_views.ClassicalNightTypeViewSet)
 router.register(r'informationsources', api_views.InformationSourceViewSet)
+router.register(r'webappcolors', api_views.WebAppColorViewSet)
 router.register(r'transientfollowups', api_views.TransientFollowupViewSet)
 router.register(r'hostfollowups', api_views.HostFollowupViewSet)
 router.register(r'hosts', api_views.HostViewSet)
@@ -102,6 +106,7 @@ router.register(r'telescopes', api_views.TelescopeViewSet)
 router.register(r'transients', api_views.TransientViewSet)
 router.register(r'alternatetransientnames', api_views.AlternateTransientNamesViewSet)
 router.register(r'users', api_views.UserViewSet)
+router.register(r'transienttags', api_views.TransientTagViewSet)
 
 # Login/Logout
 api_url_patterns = [url(r'^api/', include(router.urls)),

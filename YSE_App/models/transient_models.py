@@ -3,6 +3,7 @@ from YSE_App.models.base import *
 from YSE_App.models.enum_models import *
 from YSE_App.models.photometric_band_models import *
 from YSE_App.models.host_models import *
+from YSE_App.models.tag_models import *
 from YSE_App.common.utilities import GetSexigesimalString
 from YSE_App.common.alert import IsK2Pixel, SendTransientAlert
 from django.dispatch import receiver
@@ -25,6 +26,7 @@ class Transient(BaseModel):
 	abs_mag_peak_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 	antares_classification = models.ForeignKey(AntaresClassification, null=True, blank=True, on_delete=models.SET_NULL)
 	internal_survey = models.ForeignKey(InternalSurvey, null=True, blank=True, on_delete=models.SET_NULL)
+	tags = models.ManyToManyField(TransientTag, blank=True)
 
 	### Properties ###
 	# Required

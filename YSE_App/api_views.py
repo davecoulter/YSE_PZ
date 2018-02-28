@@ -79,6 +79,11 @@ class ClassicalNightTypeViewSet(viewsets.ReadOnlyModelViewSet):
 	serializer_class = ClassicalNightTypeSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+class WebAppColorViewSet(viewsets.ReadOnlyModelViewSet):
+	queryset = WebAppColor.objects.all()
+	serializer_class = WebAppColorSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
 class InformationSourceViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = InformationSource.objects.all()
 	serializer_class = InformationSourceSerializer
@@ -265,4 +270,10 @@ class AlternateTransientNamesViewSet(custom_viewsets.ListCreateRetrieveUpdateVie
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = User.objects.all()
 	serializer_class = UserSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
+### `Tag` ViewSets ###
+class TransientTagViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = TransientTag.objects.all()
+	serializer_class = TransientTagSerializer
 	permission_classes = (permissions.IsAuthenticated,)
