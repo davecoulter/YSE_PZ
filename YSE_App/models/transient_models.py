@@ -82,8 +82,8 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 		is_k2_C16_validated, C16_msg = IsK2Pixel(instance.ra, instance.dec, "16")
 		is_k2_C17_validated, C17_msg = IsK2Pixel(instance.ra, instance.dec, "17")
 
-		print("K2 C16 Val: %s; K2 Val Msg: %s" % (is_k2_C16_validated, msg))
-		print("K2 C17 Val: %s; K2 Val Msg: %s" % (is_k2_C17_validated, msg))
+		print("K2 C16 Val: %s; K2 Val Msg: %s" % (is_k2_C16_validated, C16_msg))
+		print("K2 C17 Val: %s; K2 Val Msg: %s" % (is_k2_C17_validated, C17_msg))
 
 		if is_k2_C16_validated:
 			instance.k2_validated = True
