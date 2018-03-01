@@ -8,16 +8,16 @@ from YSE_App.models.profile_models import Profile
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-def IsK2Pixel(ra, dec):
+def IsK2Pixel(ra, dec, campaign_num):
 
-	print("Checking K2")
+	print("Checking K2 Campaign %s API" % campaign_num)
 	print("Input: (%0.5f, %0.5f)" % (ra, dec))
 
 	YES = 'yes'
 	HTTP_SUCCESS = 200
 
-	url_formatter = "%s?ra=%0.5f&dec=%0.5f"
-	formatted_url = url_formatter % (settings.KEPLER_API_ENDPOINT, ra, dec)
+	url_formatter = "%s?ra=%0.5f&dec=%0.5f&campaign=%s"
+	formatted_url = url_formatter % (settings.KEPLER_API_ENDPOINT, ra, dec, campaign_num)
 
 	try:
 		r = requests.get(formatted_url)
