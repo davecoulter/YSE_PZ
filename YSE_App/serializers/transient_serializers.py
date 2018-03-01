@@ -24,18 +24,23 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 		fields = "__all__"
 
 	def create(self, validated_data):
-		transient_tags = validated_data.pop('tags')
+
+		tags_exist = 'tags' in validated_data.keys()
+		transient_tags = None
+		if tags_exist:
+			transient_tags = validated_data.pop('tags')
 
 		transient = Transient.objects.create(**validated_data)
 		transient.save()
 
-		for tag in transient_tags:
-			tag_result = TransientTag.objects.filter(pk=tag.id)
-			if tag_result.exists():
-				t = tag_result.first()
-				transient.tags.add(t)
+		if tags_exist:
+			for tag in transient_tags:
+				tag_result = TransientTag.objects.filter(pk=tag.id)
+				if tag_result.exists():
+					t = tag_result.first()
+					transient.tags.add(t)
 
-		transient.save()
+			transient.save()
 
 		return transient
 
@@ -72,17 +77,18 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 		instance.k2_msg = validated_data.get('k2_msg', instance.k2_msg)
 		instance.TNS_spec_class = validated_data.get('TNS_spec_class', instance.TNS_spec_class)
 
-		# Disassociate existing `Transient Tags`
-		transient_tags = instance.tags.all()
-		for tag in transient_tags:
-			instance.tags.remove(tag)
+		if 'tags' in validated_data.keys():
+			# Disassociate existing `Transient Tags`
+			transient_tags = instance.tags.all()
+			for tag in transient_tags:
+				instance.tags.remove(tag)
 
-		transient_tags = validated_data.pop('tags')
-		for tag in transient_tags:
-			tag_result = TransientTag.objects.filter(pk=tag.id)
-			if tag_result.exists():
-				t = tag_result.first()
-				instance.tags.add(t)
+			transient_tags = validated_data.pop('tags')
+			for tag in transient_tags:
+				tag_result = TransientTag.objects.filter(pk=tag.id)
+				if tag_result.exists():
+					t = tag_result.first()
+					instance.tags.add(t)
 
 		instance.save()
 
