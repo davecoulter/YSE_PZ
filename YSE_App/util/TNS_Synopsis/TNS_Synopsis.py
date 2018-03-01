@@ -380,7 +380,10 @@ class DBOps():
 		cmd = '%s PUT %s '%(self.baseputurl.split('PUT')[0],objectid)
 		for k,v in zip(objectdict.keys(),objectdict.values()):
 			if '<url>' not in str(v):
-				cmd += '%s="%s" '%(k,v)
+				if k != 'tags':
+					cmd += '%s="%s" '%(k,v)
+				else:
+					cmd += '%s:=[] '%k
 			else:
 				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
 		objectdata = runDBcommand(cmd)
