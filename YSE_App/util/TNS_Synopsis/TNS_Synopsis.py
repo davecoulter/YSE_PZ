@@ -358,7 +358,10 @@ class DBOps():
 		cmd = '%s%s '%(self.baseposturl,self.options.__dict__['%sapi'%table])
 		for k,v in zip(objectdict.keys(),objectdict.values()):
 			if '<url>' not in str(v):
-				cmd += '%s="%s" '%(k,v)
+				if k != 'tags':
+					cmd += '%s="%s" '%(k,v)
+				else:
+					cmd += '%s:=[] '%(k)
 			else:
 				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
 
@@ -813,16 +816,17 @@ class processTNS():
 						db.options.best_spec_classapi = db.options.transientclassesapi
 
 						newobjdict = {'name':objs[j].decode("utf-8"),
-									  'ra':sc.ra.deg,
-									  'dec':sc.dec.deg,
-									  #'status':statusid,
-									  'obs_group':groupid,
-									  'host':hosturl,
-									  'candidate_hosts':hostcoords,
-									  'best_spec_class':eventid,
-									  'TNS_spec_class':evt_type,
-									  'mw_ebv':ebv,
-									  'disc_date':disc_date.replace(' ','T')}
+							      'ra':sc.ra.deg,
+							      'dec':sc.dec.deg,
+							      #'status':statusid,
+							      'obs_group':groupid,
+							      'host':hosturl,
+							      'candidate_hosts':hostcoords,
+							      'best_spec_class':eventid,
+							      'TNS_spec_class':evt_type,
+							      'mw_ebv':ebv,
+							      'disc_date':disc_date.replace(' ','T'),
+							      'tags':[]}
 						if nondetectdate: newobjdict['non_detect_date'] = nondetectdate.replace(' ','T')
 						if nondetectmaglim: newobjdict['non_detect_limit'] = nondetectmaglim
 						if nondetectfilt:
@@ -942,10 +946,11 @@ class processTNS():
 					sc = SkyCoord(ras[j].decode("utf-8"),decs[j].decode("utf-8"),FK5,unit=(u.hourangle,u.deg))
 					db.options.best_spec_classapi = db.options.transientclassesapi
 					newobjdict = {'name':objs[j].decode("utf-8"),
-								  'ra':sc.ra.deg,
-								  'dec':sc.dec.deg,
-								  'status':statusid,
-								  'obs_group':groupid}
+						      'ra':sc.ra.deg,
+						      'dec':sc.dec.deg,
+						      'status':statusid,
+						      'obs_group':groupid,
+						      'tags':[]}
 
 					if dbid:
 						transientid = db.put_object_to_DB('transient',newobjdict,dbid)
