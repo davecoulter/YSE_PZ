@@ -109,3 +109,11 @@ class InformationSource(BaseModel):
 
 	def __str__(self):
 		return self.name
+
+class WebAppColor(BaseModel):
+	### Properties ###
+	# Required
+	color = models.CharField(max_length=64)
+
+	def __str__(self):
+		return self.color

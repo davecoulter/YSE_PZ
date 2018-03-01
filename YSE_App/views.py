@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse_lazy
 from django.db.models import Q
+from rest_framework.renderers import JSONRenderer
 import requests
 
 from .models import *
@@ -15,6 +16,7 @@ from . import view_utils
 import datetime
 import pytz
 from pytz import timezone
+from .serializers import *
 
 # Create your views here.
 
@@ -160,6 +162,31 @@ def followup(request):
 	}
 	return render(request, 'YSE_App/transient_followup.html', context)
 
+@login_required
+def transient_tags(request):
+	all_transient_tags = TransientTag.objects.all()
+	context = {
+		'all_transient_tags': all_transient_tags
+	}
+	return render(request, 'YSE_App/transient_tags.html', context)
+
+@login_required
+def get_transient_tags(request):
+	id_str= request.GET.getlist('tagid')
+	ids = []
+	for id in id_str:
+		ids.append(int(id))
+
+	transient_queryset = Transient.objects.filter(tags__in=ids).distinct()
+	transient_objs = [t for t in transient_queryset]
+
+	serializer = TransientSerializer(transient_objs, context={'request': request}, many=True)
+	return_data = {}
+
+	for i,data in enumerate(serializer.data):
+		return_data[i] = data
+
+	return JsonResponse(return_data)
 
 @login_required
 def dashboard_example(request):
@@ -201,16 +228,26 @@ def transient_detail(request, slug):
 
 	obs = None
 	if len(transient) == 1:
+
+		transient_obj = transient.first() # This should throw an exception if more than one or none are returned
+
 		transient_id = transient[0].id
 		
 		alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 		transient_followup_form = TransientFollowupForm()
 		transient_observation_task_form = TransientObservationTaskForm()
+
+		# Status update properties
 		all_transient_statuses = TransientStatus.objects.all()
 		transient_status_follow = TransientStatus.objects.get(name="Following")
 		transient_status_watch = TransientStatus.objects.get(name="Watch")
 		transient_status_ignore = TransientStatus.objects.get(name="Ignore")
 		transient_comment_form = TransientCommentForm()
+
+		# Transient tag
+		all_colors = WebAppColor.objects.all()
+		all_transient_tags = TransientTag.objects.all()
+		assigned_transient_tags = transient_obj.tags.all()
 
 		# Get associated Observations
 		followups = TransientFollowup.objects.filter(transient__pk=transient_id)
@@ -227,14 +264,14 @@ def transient_detail(request, slug):
 		else:
 			followups = None
 
-		hostdata = Host.objects.filter(pk=transient[0].host_id)
+		hostdata = Host.objects.filter(pk=transient_obj.host_id)
 		if hostdata:
 			hostphotdata = view_utils.get_recent_phot_for_host(host_id=hostdata[0].id)
-			transient[0].hostdata = hostdata[0]
+			transient_obj.hostdata = hostdata[0]
 		else: 
 			hostphotdata = None
 
-		if hostphotdata: transient[0].hostphotdata = hostphotdata
+		if hostphotdata: transient_obj.hostphotdata = hostphotdata
 
 		lastphotdata = view_utils.get_recent_phot_for_transient(transient_id=transient_id)
 		firstphotdata = view_utils.get_disc_mag_for_transient(transient_id=transient_id)
@@ -252,7 +289,7 @@ def transient_detail(request, slug):
 		date_format='%m/%d/%Y %H:%M:%S'
 
 		context = {
-			'transient':transient[0],
+			'transient':transient_obj,
 			'followups':followups,
 			'telescope_list': tellist,
 			'observing_nights': obsnights,
@@ -267,6 +304,9 @@ def transient_detail(request, slug):
 			'transient_status_watch': transient_status_watch,
 			'transient_status_ignore': transient_status_ignore,
 			'logs':logs,
+			'all_transient_tags': all_transient_tags,
+			'assigned_transient_tags': assigned_transient_tags,
+			'all_colors': all_colors,
 		}
 
 		if lastphotdata and firstphotdata:

@@ -3,6 +3,7 @@ from YSE_App.models.base import *
 from YSE_App.models.enum_models import *
 from YSE_App.models.photometric_band_models import *
 from YSE_App.models.host_models import *
+from YSE_App.models.tag_models import *
 from YSE_App.common.utilities import GetSexigesimalString
 from YSE_App.common.alert import IsK2Pixel, SendTransientAlert
 from django.dispatch import receiver
@@ -25,6 +26,7 @@ class Transient(BaseModel):
 	abs_mag_peak_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 	antares_classification = models.ForeignKey(AntaresClassification, null=True, blank=True, on_delete=models.SET_NULL)
 	internal_survey = models.ForeignKey(InternalSurvey, null=True, blank=True, on_delete=models.SET_NULL)
+	tags = models.ManyToManyField(TransientTag, blank=True)
 
 	### Properties ###
 	# Required
@@ -77,14 +79,22 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 		print("Transient Created: %s" % instance.name)
 		print("Internal Survey: %s" % instance.internal_survey)
 
-		is_k2_validated, msg = IsK2Pixel(instance.ra, instance.dec)
+		is_k2_C16_validated, C16_msg = IsK2Pixel(instance.ra, instance.dec, "16")
+		is_k2_C17_validated, C17_msg = IsK2Pixel(instance.ra, instance.dec, "17")
 
-		print("K2 Val: %s; K2 Val Msg: %s" % (is_k2_validated, msg))
-		instance.k2_validated = is_k2_validated
-		instance.k2_msg = msg
+		print("K2 C16 Val: %s; K2 Val Msg: %s" % (is_k2_C16_validated, C16_msg))
+		print("K2 C17 Val: %s; K2 Val Msg: %s" % (is_k2_C17_validated, C17_msg))
+
+		if is_k2_C16_validated:
+			instance.k2_validated = True
+			instance.k2_msg = C16_msg
+		elif is_k2_C17_validated:
+			instance.k2_validated = True
+			instance.k2_msg = C17_msg
+
 		instance.save()
 
-		if is_k2_validated:
+		if is_k2_C17_validated:
 			# coord_string = GetSexigesimalString(instance.ra, instance.dec)
 			coord_string = instance.CoordString()
 			SendTransientAlert(instance.id, instance.name, coord_string[0], coord_string[1])

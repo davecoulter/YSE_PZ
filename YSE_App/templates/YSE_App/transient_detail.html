@@ -57,28 +57,28 @@
 					</div>
 					<div class="col-xs-5">
 						<div class="box box-default box-solid">
-            				<div class="box-header with-border">
-            					<strong style="float:left;margin-right:10px;">Status:</strong>
-            					<p style="float:left" id="transient_status_name" >{{ transient.status }}</p>
+							<div class="box-header with-border">
+								<strong style="float:left;margin-right:10px;">Status:</strong>
+								<p style="float:left" id="transient_status_name" >{{ transient.status }}</p>
 							</div>
 							<div class="box-body">
 								<div class="btn-group-horizontal">
 									<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_follow.id }}" class="transientStatusChange btn btn-primary">{{ transient_status_follow.name }}</button>
 									<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_watch.id }}" class="transientStatusChange btn btn-warning">{{ transient_status_watch.name }}</button>
 									<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_ignore.id }}" class="transientStatusChange btn btn-danger">{{ transient_status_ignore.name }}</button>
-	                                <div class="btn-group">
-	                                    <button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-	                                        <span class="caret"></span>
-	                                    </button>
-	                                    <ul class="dropdown-menu">
-	                                        {% for status in all_transient_statuses %}
-	                                            <li><a data-status_id="{{ status.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
-	                                        {% endfor %}
-	                                    </ul>
-	                                </div>
-	                            </div>
+									<div class="btn-group">
+										<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+											<span class="caret"></span>
+										</button>
+										<ul class="dropdown-menu">
+											{% for status in all_transient_statuses %}
+												<li><a data-status_id="{{ status.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+											{% endfor %}
+										</ul>
+									</div>
+								</div>
 							</div>
-            			</div>
+						</div>
 					</div>
 					<div class="col-xs-4">
 						<div class="form-group">
@@ -392,6 +392,55 @@
 							</div>
 						</div>
 					</div>
+
+					<div class="col-xs-12">
+						<div class="col-xs-6">
+
+							<div class="box box-default box-solid">
+								<div class="box-header with-border">
+									<strong>Available Tags</strong>
+								</div>
+								<div id="external-events" class="box-body">
+									{% for tag in all_transient_tags %}
+										<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
+									{% endfor %}
+								</div>
+							</div>
+
+							<div class="box box-default box-solid">
+								<div class="box-header with-border">
+									<strong>Create Tag</strong>
+								</div>
+								<div class="box-body">
+									<div class="btn-group" style="width: 100%; margin-bottom: 10px;">
+										<ul class="fc-color-picker" id="color-chooser">
+											{% for c in all_colors %}
+												<li><a data-color_id="{{ c.id }}" class="text-{{c.color}}" href="#"><i class="fa fa-square"></i></a></li>
+											{% endfor %}
+										</ul>
+									</div>
+									<div class="input-group">
+										<input id="new-event" type="text" class="form-control" placeholder="Event Title">
+										<div class="input-group-btn">
+											<button id="add-new-event" type="button" class="btn btn-primary btn-flat">Add</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-xs-6">
+							<div id="associated-events" class="box box-default box-solid">
+								<div class="box-header with-border">
+									<strong>Associated Tags</strong>
+								</div>
+								<div class="box-body" id="associated-events-list">
+									{% for tag in assigned_transient_tags %}
+										<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
+									{% endfor %}
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 			<div class="col-xs-13">
@@ -660,6 +709,7 @@
 						{% endfor %}
 						<p id="add_comment_container"></p>
 						<form id="add_transient_comment" action="{% url 'add_transient_comment' %}" method="post">
+
 						<input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
 						{% csrf_token %}
 						{% for hidden_field in form.hidden_fields %}
@@ -667,6 +717,7 @@
 						{% endfor %}
 						<br>
 						<div class="form-group">
+
 					    	<label>Add Comment:</label>
 					    	{% render_field transient_comment_form.comment class+="form-control" %}
 					    	<!--<input type="comment" class="form-control" id="comment">-->
@@ -700,6 +751,159 @@
 	<script>
 
 		$(function() {
+
+			// initialize the external events
+			function init_events(ele) {
+				ele.each(function () {
+
+					var eventObject = {
+						title: $.trim($(this).text())
+					}
+					// store the Event Object in the DOM element so we can get to it later
+					$(this).data('eventObject', eventObject)
+
+					// make the event draggable using jQuery UI
+					$(this).draggable({
+						zIndex			: 1070,
+						revert			: true,	// will cause the event to go back to its
+						revertDuration	:0  //		original position after the drag
+					})
+				})
+			}
+
+			init_events($('#external-events div.external-event'))
+
+			// Make target canvas draggable
+			$("#associated-events").droppable({
+				drop:function(e,source){
+
+					$("#associated-events-list").append(source.draggable);
+					// Now, get all associated events and PATCH transient with them
+					var tag_ids = $("#associated-events-list").children("div").map(function() {return $(this).attr("data-tag_id")})
+
+					var base_url = window.location.protocol + "//" + window.location.hostname
+					var port = window.location.port
+					if (port != "") {
+						base_url = base_url + ":" + port
+					}
+
+					var tag_urls = []
+					for (i=0; i< tag_ids.length; i++) {
+						tag_urls.push(base_url + "{% url 'transienttag-list' %}" + tag_ids[i] + "/")
+					}
+
+					var transient_target = "{% url 'transient-detail' transient.id %}"
+					var api_url = base_url + transient_target
+
+					var patchData = { "tags": tag_urls }
+					var jsonData = JSON.stringify(patchData)
+
+					$.ajax({
+						type: "PATCH",
+						url: api_url,
+						csrfmiddlewaretoken: "{{ csrf_token }}",
+						data: jsonData,
+						contentType: "application/json; charset=utf-8",
+ 						dataType: "json",
+						success: function(data, textStatus, jqXHR) {
+							if (textStatus == "success") {
+
+							} else {
+								alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+							}
+						},
+						error: function(XMLHttpRequest, textStatus, errorThrown) {
+							// alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+							alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));
+						}
+					});
+
+				}
+			});
+
+			/* ADDING EVENTS */
+			var currColor = '#3c8dbc' //Red by default
+			var currColorID = "1"
+			//Color chooser button
+			var colorChooser = $('#color-chooser-btn')
+			$('#color-chooser > li > a').click(function (e) {
+			  e.preventDefault()
+			  //Save color
+			  currColor = $(this).css('color')
+			  currColorID = $(this).attr('data-color_id')
+			  //Add color effect to button
+			  $('#add-new-event').css({ 'background-color': currColor, 'border-color': currColor })
+			})
+
+
+			$('#add-new-event').click(function (e) {
+			  e.preventDefault()
+			  //Get value and make sure it is not null
+			  var val = $('#new-event').val()
+			  if (val.length == 0) {
+				return
+			  }
+
+				var url_target = "{% url 'transienttag-list' %}"
+				var color_target = "{% url 'webappcolor-list' %}" + currColorID + "/"
+
+				var base_url = window.location.protocol + "//" + window.location.hostname
+				var port = window.location.port
+				var api_url = base_url + url_target
+				var color_url = base_url + color_target
+
+				if (port != "") {
+					api_url = base_url + ":" + port + url_target
+					color_url = base_url + ":" + port + color_target
+				}
+
+				var postData = { "name": val,
+								"color": color_url }
+
+			  $.ajax({
+				  type: "POST",
+				  url: api_url,
+				  csrfmiddlewaretoken: "{{ csrf_token }}",
+				  data: postData,
+				  success: function(data, textStatus, jqXHR) {
+					  if (textStatus == "success") {
+
+						var tokens = data.url.split("/")
+						var tag_id = tokens[tokens.length-2]
+
+						  //Create events
+						  var event = $('<div />')
+						  event.css({
+							'background-color': currColor,
+							'border-color'    : currColor,
+							'color'           : '#fff'
+						  }).addClass('external-event').attr('data-tag_id', tag_id)
+						  event.html(val)
+						  $('#external-events').prepend(event)
+
+						  //Add draggable funtionality
+						  init_events(event)
+						  //Remove event from text input
+							$('#new-event').val('')
+
+					  } else {
+							//Remove event from text input
+							$('#new-event').val('')
+						  // transientStatusChangeErr()
+						  alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+					  }
+				  },
+				  error: function(XMLHttpRequest, textStatus, errorThrown) {
+						$('#new-event').val('')
+						alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+					  // alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));
+					  //Remove event from text input
+					
+				  }
+				});
+
+			})
+
 			$('#example1').DataTable({
 				  'paging'      : false,
 				  'lengthChange': false,
@@ -775,13 +979,13 @@
 			});
 
 			// Submit comment on submit
-          		$('#add_transient_comment').on('submit', function(event){
-		                event.preventDefault();
-                		add_transient_comment();
+				$('#add_transient_comment').on('submit', function(event){
+						event.preventDefault();
+						add_transient_comment();
 			});
 
-		        function add_transient_comment(){
-		                var data = $('#add_transient_comment').serialize()
+				function add_transient_comment(){
+						var data = $('#add_transient_comment').serialize()
 				var transient_id = $('#transient_pk').val()
 				data = (data + "&transient=" + transient_id)
 				$.ajax({
@@ -791,13 +995,13 @@
 
 					// handle a successful response
 					success : function(json) {
-		                                if (json.data['comment']){
-                                          		// Construct HTML to append container
-		                                        var commentHTML = "<b>"+json.data['created_by'] + ": </b>" + json.data['comment'] + " (" + json.data['modified_date'] + " UT)<br>"
+										if (json.data['comment']){
+												// Construct HTML to append container
+												var commentHTML = "<b>"+json.data['created_by'] + ": </b>" + json.data['comment'] + " (" + json.data['modified_date'] + " UT)<br>"
 
-		                                        $("#add_comment_container").append(commentHTML)
-                                                }
-		                                // Close & reset form box
+												$("#add_comment_container").append(commentHTML)
+												}
+										// Close & reset form box
 						$('#add_transient_comment')[0].reset();
 
 					},
@@ -817,49 +1021,49 @@
 			});
 
 			function transientStatusChangeErr() {
-                alert("Transient Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
-            }
+				alert("Transient Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
+			}
 
 			$('.transientStatusChange').on('click', function(event){
-                var status_id = $(this).attr('data-status_id')
-                var url_target = "{% url 'transient-detail' transient.id %}"
-                var status_target = "{% url 'transientstatus-list' %}" + status_id + "/"
+				var status_id = $(this).attr('data-status_id')
+				var url_target = "{% url 'transient-detail' transient.id %}"
+				var status_target = "{% url 'transientstatus-list' %}" + status_id + "/"
 
-                var base_url = window.location.protocol + "//" + window.location.hostname
-                var port = window.location.port
-                var api_url = base_url + url_target
-                var status_url = base_url + status_target
+				var base_url = window.location.protocol + "//" + window.location.hostname
+				var port = window.location.port
+				var api_url = base_url + url_target
+				var status_url = base_url + status_target
 
-                if (port != "") {
-                    api_url = base_url + ":" + port + url_target
-                    status_url = base_url + ":" + port + status_target
-                }
+				if (port != "") {
+					api_url = base_url + ":" + port + url_target
+					status_url = base_url + ":" + port + status_target
+				}
 
-                var putData = { "status": status_url }
+				var putData = { "status": status_url }
 
-                $.ajax({
-                  type: "PATCH",
-                  url: api_url,
-                  csrfmiddlewaretoken: "{{ csrf_token }}",
-                  data: putData,
-                  success: function(data, textStatus, jqXHR) {
-                      if (jqXHR.status == 200 && textStatus == "success") {
+				$.ajax({
+				  type: "PATCH",
+				  url: api_url,
+				  csrfmiddlewaretoken: "{{ csrf_token }}",
+				  data: putData,
+				  success: function(data, textStatus, jqXHR) {
+					  if (jqXHR.status == 200 && textStatus == "success") {
 
-                          var tokens = data.status.split("/")
-                          var status_name = tokens[tokens.length-2]
-                          $('#transient_status_name').text(status_name)
-                          
-                          {#alert(textStatus)#}
-                      } else {
-                          transientStatusChangeErr()
-                      }
-                  },
-                  error: function(XMLHttpRequest, textStatus, errorThrown) {
-                      transientStatusChangeErr()
-                      {#alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));#}
-                  }
-                });
-            });
+						  var tokens = data.status.split("/")
+						  var status_name = tokens[tokens.length-2]
+						  $('#transient_status_name').text(status_name)
+						  
+						  {#alert(textStatus)#}
+					  } else {
+						  transientStatusChangeErr()
+					  }
+				  },
+				  error: function(XMLHttpRequest, textStatus, errorThrown) {
+					  transientStatusChangeErr()
+					  {#alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));#}
+				  }
+				});
+			});
 
 
 
@@ -1324,6 +1528,6 @@
 	  {% endif %}
 	  {% endfor %}
 	  });
-			    
+				
 	</script>
 {% endblock %}

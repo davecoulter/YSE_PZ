@@ -4,7 +4,7 @@ from YSE_App.serializers.followup_serializers import *
 from YSE_App.serializers.host_serializers import *
 from YSE_App.serializers.instrument_serializers import *
 from YSE_App.serializers.log_serializers import *
-from YSE_App.serializers.observation_task_models import *
+from YSE_App.serializers.observation_task_serializers import *
 from YSE_App.serializers.observatory_serializers import *
 from YSE_App.serializers.on_call_date_serializers import *
 from YSE_App.serializers.phot_serializers import *
@@ -16,3 +16,4 @@ from YSE_App.serializers.telescope_resource_serializers import *
 from YSE_App.serializers.telescope_serializers import *
 from YSE_App.serializers.transient_serializers import *
 from YSE_App.serializers.user_serializers import *
+from YSE_App.serializers.tag_serializers import *

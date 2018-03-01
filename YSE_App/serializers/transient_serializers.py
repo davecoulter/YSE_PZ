@@ -14,6 +14,7 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 	abs_mag_peak_band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), allow_null=True, required=False, view_name='photometricband-detail')
 	antares_classification = serializers.HyperlinkedRelatedField(queryset=AntaresClassification.objects.all(), allow_null=True, required=False, view_name='antaresclassification-detail')
 	internal_survey = serializers.HyperlinkedRelatedField(queryset=InternalSurvey.objects.all(), allow_null=True, required=False, view_name='internalsurvey-detail')
+	tags = serializers.HyperlinkedRelatedField(queryset=TransientTag.objects.all(), many=True, view_name='transienttag-detail')
 
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
@@ -23,7 +24,25 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 		fields = "__all__"
 
 	def create(self, validated_data):
-		return Transient.objects.create(**validated_data)
+
+		tags_exist = 'tags' in validated_data.keys()
+		transient_tags = None
+		if tags_exist:
+			transient_tags = validated_data.pop('tags')
+
+		transient = Transient.objects.create(**validated_data)
+		transient.save()
+
+		if tags_exist:
+			for tag in transient_tags:
+				tag_result = TransientTag.objects.filter(pk=tag.id)
+				if tag_result.exists():
+					t = tag_result.first()
+					transient.tags.add(t)
+
+			transient.save()
+
+		return transient
 
 	def update(self, instance, validated_data):
 		instance.status_id = validated_data.get('status', instance.status)
@@ -57,6 +76,19 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 		instance.k2_validated = validated_data.get('k2_validated', instance.k2_validated)
 		instance.k2_msg = validated_data.get('k2_msg', instance.k2_msg)
 		instance.TNS_spec_class = validated_data.get('TNS_spec_class', instance.TNS_spec_class)
+
+		if 'tags' in validated_data.keys():
+			# Disassociate existing `Transient Tags`
+			transient_tags = instance.tags.all()
+			for tag in transient_tags:
+				instance.tags.remove(tag)
+
+			transient_tags = validated_data.pop('tags')
+			for tag in transient_tags:
+				tag_result = TransientTag.objects.filter(pk=tag.id)
+				if tag_result.exists():
+					t = tag_result.first()
+					instance.tags.add(t)
 
 		instance.save()
 
