@@ -92,7 +92,7 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 			instance.tags.add(k2c16tag)
 
 		elif is_k2_C17_validated:
-			k2c17tag = TransientTag.objects.get(name='K2 C16')
+			k2c17tag = TransientTag.objects.get(name='K2 C17')
 			instance.k2_validated = True
 			instance.k2_msg = C17_msg
 			instance.tags.add(k2c17tag)
