@@ -401,7 +401,10 @@ class DBOps():
 		cmd = '%s PATCH %s '%(self.baseputurl.split('PUT')[0],objectid)
 		for k,v in zip(objectdict.keys(),objectdict.values()):
 			if '<url>' not in str(v):
-				cmd += '%s="%s" '%(k,v)
+				if k != 'tags':
+					cmd += '%s="%s" '%(k,v)
+				else:
+					cmd += '%s:=[] '%k
 			else:
 				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
 		objectdata = runDBcommand(cmd)
@@ -861,17 +864,17 @@ class processTNS():
 									observatoryid = db.post_object_to_DB(
 										'observatory',{'name':'Unknown','tz_name':0,'utc_offset':0})
 									teldict= {'name':'Unknown',
-											  'observatory':observatoryid,
-											  'longitude':0,
-											  'latitude':0,
-											  'elevation':0}
+										  'observatory':observatoryid,
+										  'longitude':0,
+										  'latitude':0,
+										  'elevation':0}
 									telid = db.post_object_to_DB('telescope',teldict)
 									instrumentid = db.post_object_to_DB(
 										'instrument',{'name':'Unknown','telescope':telid})
 
 								phottabledict = {'transient':transientid,
-												 'obs_group':groupid,
-												 'instrument':instrumentid}
+										 'obs_group':groupid,
+										 'instrument':instrumentid}
 								phottableid = db.post_object_to_DB('photometry',phottabledict)
 
 								for f in np.unique(tfilt):
