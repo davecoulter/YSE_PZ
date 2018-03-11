@@ -553,7 +553,7 @@ class processTNS():
 			print(ras)
 			decs = re.findall(reg_dec,body)
 			print(decs)
-			import pdb; pdb.set_trace()
+
 			try:
 				########################################################
 				# For Item in Email, Get TNS
