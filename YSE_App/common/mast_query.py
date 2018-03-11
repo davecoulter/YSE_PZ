@@ -18,7 +18,7 @@ class hstImages():
 		self.radius=0.0001
 
 		## Selection criteria
-		self.minexp=160
+		self.minexp=80
 		self.allowed_detector=['WFPC2/WFC','PC/WFC','ACS/WFC','ACS/HRC','ACS/SBC','WFC3/UVIS','WFC3/IR']
 		self.badfilter=['DETECTION']
 		self.collection=['HLA','HST']
