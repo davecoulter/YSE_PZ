@@ -540,8 +540,9 @@ class processTNS():
 					cdispo = str(part.get('Content-Disposition'))
 					
 					# skip any text/plain (txt) attachments
-					if ctype == 'text/plain' and 'attachment' not in cdispo:
+					if (ctype == 'text/plain' or ctype == 'text/html') and 'attachment' not in cdispo:
 						body = part.get_payload(decode=True)  # decode
+						#body = part.get_payload()#[0]._payload.encode('utf-8')
 						break
 			# not multipart - i.e. plain text, no attachments, keeping fingers crossed
 			else:
@@ -927,7 +928,7 @@ class processTNS():
 				# Mark messages as "Seen"
 				result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')
 
-			except: # ValueError as err:
+			except:
 				for j in range(len(objs)):
 					print('Something went wrong!!!	Sticking to basic info only')
 					print("Object: %s\nRA: %s\nDEC: %s" % (objs[j].decode('utf-8'),
