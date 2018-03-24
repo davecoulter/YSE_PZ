@@ -467,6 +467,8 @@ class processTNS():
 						  help='clobber output file')
 		parser.add_option('-s','--settingsfile', default=None, type="string",
 						  help='settings file (login/password info)')
+		parser.add_option('--status', default='New', type="string",
+						  help='transient status to enter in YS_PZ')
 		
 		if config:
 			parser.add_option('--login', default=config.get('main','login'), type="string",
@@ -795,7 +797,7 @@ class processTNS():
 							groupid = db.get_ID_from_DB('observationgroups','Unknown')#db.post_object_to_DB('observationgroup',{'name':source_group})
 
 						# get the status
-						statusid = db.get_ID_from_DB('transientstatuses','New')
+						statusid = db.get_ID_from_DB('transientstatuses',self.status)
 						if not statusid: raise RuntimeError('Error : not all statuses are defined')
 						
 						# put in the hosts
@@ -823,17 +825,17 @@ class processTNS():
 						db.options.best_spec_classapi = db.options.transientclassesapi
 
 						newobjdict = {'name':objs[j].decode("utf-8"),
-							      'ra':sc.ra.deg,
-							      'dec':sc.dec.deg,
-							      #'status':statusid,
-							      'obs_group':groupid,
-							      'host':hosturl,
-							      'candidate_hosts':hostcoords,
-							      'best_spec_class':eventid,
-							      'TNS_spec_class':evt_type,
-							      'mw_ebv':ebv,
-							      'disc_date':disc_date.replace(' ','T'),
-							      'tags':[]}
+									  'ra':sc.ra.deg,
+									  'dec':sc.dec.deg,
+									  #'status':statusid,
+									  'obs_group':groupid,
+									  'host':hosturl,
+									  'candidate_hosts':hostcoords,
+									  'best_spec_class':eventid,
+									  'TNS_spec_class':evt_type,
+									  'mw_ebv':ebv,
+									  'disc_date':disc_date.replace(' ','T'),
+									  'tags':[]}
 						if nondetectdate: newobjdict['non_detect_date'] = nondetectdate.replace(' ','T')
 						if nondetectmaglim: newobjdict['non_detect_limit'] = nondetectmaglim
 						if nondetectfilt:
@@ -943,7 +945,7 @@ class processTNS():
 						groupid = db.get_ID_from_DB('observationgroups','Unknown')#db.post_object_to_DB('observationgroup',{'name':source_group})
 
 					# get the status
-					statusid = db.get_ID_from_DB('transientstatuses','New')
+					statusid = db.get_ID_from_DB('transientstatuses',self.status)
 					if not statusid: raise RuntimeError('Error : not all statuses are defined')
 					
 					dbid = db.get_ID_from_DB('transients',snid)
@@ -1026,4 +1028,5 @@ if __name__ == "__main__":
 	tnsproc.dblogin = options.dblogin
 	tnsproc.dbpassword = options.dbpassword
 	tnsproc.dburl = options.dburl
+	tnsproc.status = options.status
 	tnsproc.ProcessTNSEmails(post=True,db=db)
