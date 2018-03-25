@@ -310,7 +310,9 @@ class DBOps():
 
 		parser.add_option('-s','--settingsfile', default=None, type="string",
 						  help='settings file (login/password info)')
-			
+		parser.add_option('--status', default='New', type="string",
+						  help='transient status to enter in YS_PZ')
+
 		if config:
 			parser.add_option('--login', default=config.get('main','login'), type="string",
 							  help='gmail login (default=%default)')
@@ -886,25 +888,27 @@ class processTNS():
 										bandid = db.post_object_to_DB('band',{'name':f,'instrument':instrumentid})
 						
 									# put in the photometry
-									for m,me,f,fe,od,df in zip(tmag[(f == tfilt) & (ins == tinst)],
-															   tmagerr[(f == tfilt) & (ins == tinst)],
-															   tflux[(f == tfilt) & (ins == tinst)],
-															   tfluxerr[(f == tfilt) & (ins == tinst)],
-															   tobsdate[(f == tfilt) & (ins == tinst)],
-															   disc_flag[(f == tfilt) & (ins == tinst)]):
-										if not m and not me and not f and not fe: continue
-										# TODO: compare od to disc_date.replace(' ','T')
-										# if they're close or equal?  Set discovery flag
-										photdatadict = {'obs_date':od.replace(' ','T'),
-														'band':bandid,
-														'photometry':phottableid}
-										if m: photdatadict['mag'] = m
-										if me: photdatadict['mag_err'] = me
-										if f: photdatadict['flux'] = f
-										if fe: photdatadict['flux_err'] = fe
-										if df: photdatadict['discovery_point'] = 1
-										photdataid = db.post_object_to_DB('photdata',photdatadict)
-
+									try:
+										for m,me,f,fe,od,df in zip(tmag[(f == tfilt) & (ins == tinst)],
+																   tmagerr[(f == tfilt) & (ins == tinst)],
+																   tflux[(f == tfilt) & (ins == tinst)],
+																   tfluxerr[(f == tfilt) & (ins == tinst)],
+																   tobsdate[(f == tfilt) & (ins == tinst)],
+																   disc_flag[(f == tfilt) & (ins == tinst)]):
+											if not m and not me and not f and not fe: continue
+											# TODO: compare od to disc_date.replace(' ','T')
+											# if they're close or equal?  Set discovery flag
+											photdatadict = {'obs_date':od.replace(' ','T'),
+															'band':bandid,
+															'photometry':phottableid}
+											if m: photdatadict['mag'] = m
+											if me: photdatadict['mag_err'] = me
+											if f: photdatadict['flux'] = f
+											if fe: photdatadict['flux_err'] = fe
+											if df: photdatadict['discovery_point'] = 1
+											photdataid = db.post_object_to_DB('photdata',photdatadict)
+									except:
+										print('Error getting photometry!!')
 							# put in the galaxy photometry
 							if ned_mag:
 								try:

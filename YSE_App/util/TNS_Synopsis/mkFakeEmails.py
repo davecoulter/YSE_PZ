@@ -74,6 +74,7 @@ if __name__ == "__main__":
 	emailtext = "Dear <em class=\"placeholder\">Dr. David Jones</em><br/><br/><br/>The following new transient/s were reported on:<br/><br/>"
 
 	for s,r,d in zip(options.snid.split(','),options.ra.split(','),options.dec.split(',')):
+		if '+' not in d and '-' not in d: d = '+%s'%d
 		linetmpl = "<a href=\"https://wis-tns.weizmann.ac.il/object/%s\"><em class=\"placeholder\">%s</em></a> RA=<em class=\"placeholder\">%s</em>, DEC=<em class=\"placeholder\">%s</em>, Discovery date=<em class=\"placeholder\">None</em>, Discovery mag=<em class=\"placeholder\">None</em> <em class=\"placeholder\">None</em>, Filter: <em class=\"placeholder\">None</em>, Reporter: <em class=\"placeholder\">None</em>, Source group: <em class=\"placeholder\">None</em><br/>"%(s,s,r,d)
 		emailtext += linetmpl
 	emailtext += """<br/><br/>Best Regards,<br/>The TNS team"""
