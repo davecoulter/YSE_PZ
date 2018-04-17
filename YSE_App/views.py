@@ -235,6 +235,9 @@ def transient_detail(request, slug):
 		
 		alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 		transient_followup_form = TransientFollowupForm()
+		start_date = datetime.date.today()-datetime.timedelta(days=1); end_date = datetime.date.today()+datetime.timedelta(days=60)
+		transient_followup_form.fields["classical_resource"].queryset = ClassicalResource.objects.filter(end_date_valid__range=(start_date, end_date))
+
 		transient_observation_task_form = TransientObservationTaskForm()
 
 		# Status update properties
