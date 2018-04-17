@@ -22,6 +22,7 @@ import os
 from astropy.coordinates import SkyCoord
 from astropy.coordinates import ICRS, Galactic, FK4, FK5
 from astropy.time import Time
+import coreapi
 
 reg_obj = b"https://wis-tns.weizmann.ac.il/object/(\w+)"
 #reg_ra = b"\d{4}\w+\sRA[\=a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -424,22 +425,23 @@ class DBOps():
 
 		if debug: tstart = time.time()
 		cmd = '%s%s/'%(self.basegeturl,tablename)
-		output = os.popen(cmd).read()
+		auth = coreapi.auth.BasicAuthentication(
+			username=self.dblogin,
+			password=self.dbpassword,
+		)
+		client = coreapi.Client(auth=auth)
 		try:
-			data = json.loads(output)
+			schema = client.get('%s%s'%(self.dburl,tablename))
 		except:
-			print(cmd)
-			print(os.popen(cmd).read())
-			raise RuntimeError('Error : cmd output not in JSON format')
-			
+			raise RuntimeError('Error : couldn\'t get schema!')
+				
 		idlist,namelist = [],[]
-		for i in range(len(data)):
-			namelist += [data[i]['name']]
-			idlist += [data[i]['url']]
+		for i in range(len(schema)):
+			namelist += [schema[i]['name']]
+			idlist += [schema[i]['url']]
 
 		if debug:
 			print('GET took %.1f seconds'%(time.time()-tstart))
-			
 		if fieldname not in namelist: return(None)
 
 		return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
@@ -1040,4 +1042,4 @@ if __name__ == "__main__":
 	tnsproc.dburl = options.dburl
 	tnsproc.status = options.status
 	tnsproc.ProcessTNSEmails(post=True,db=db)
-	print('TNS -> YSE_PZ took %.1f seconds'%(tstart-time.time()))
+	print('TNS -> YSE_PZ took %.1f seconds'%(time.time()-tstart))
