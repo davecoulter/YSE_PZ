@@ -420,9 +420,9 @@ def lightcurveplot(request, transient_id):
 		ax.add_layout(vline)
 		ax.legend.location = 'bottom_left'
 		ax.legend.label_height = 1
-		ax.legend.glyph_height = 10
+		ax.legend.glyph_height = 5
 		#import pdb; pdb.set_trace()
-		ax.legend.label_text_font_size = "7pt"#FontSizeSpec("10")
+		ax.legend.label_text_font_size = "4pt"#FontSizeSpec("10")
 		
 		ax.xaxis.axis_label = 'MJD'
 		ax.yaxis.axis_label = 'Mag'
@@ -624,5 +624,24 @@ def get_hst_image(request,transient_id):
 					   "obsdate":[],
 					   "filters":[],
 					   "inst":[]}
+
+	return(JsonResponse(jpegurldict))
+
+def get_legacy_image(request,transient_id):
+	
+	try:
+		t = Transient.objects.get(pk=transient_id)
+	except t.DoesNotExist:
+		raise Http404("Transient id does not exist")
+
+	jpegurl = "http://legacysurvey.org/viewer/jpeg-cutout?ra=%.7f&dec=%.7f&layer=decals-dr5&pixscale=0.27&bands=grz"%(
+		t.ra,t.dec)
+
+	fitsurl = "http://legacysurvey.org/viewer/fits-cutout?ra=%.7f&dec=%.7f&layer=decals-dr5&pixscale=0.27&bands=grz"%(
+		t.ra,t.dec)
+	
+	print(jpegurl,fitsurl)
+	jpegurldict = {"jpegurl":jpegurl,
+				   "fitsurl":fitsurl}
 
 	return(JsonResponse(jpegurldict))

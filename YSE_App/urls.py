@@ -56,6 +56,8 @@ urlpatterns = [
 		view_utils.get_ps1_image, name='get_ps1_image'),
 	url(r'^get_hst_image/(?P<transient_id>[0-9]+)',
 		view_utils.get_hst_image, name='get_hst_image'),
+	url(r'^get_legacy_image/(?P<transient_id>[0-9]+)',
+		view_utils.get_legacy_image, name='get_legacy_image'),
 
 ]
 

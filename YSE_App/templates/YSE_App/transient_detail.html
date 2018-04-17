@@ -330,8 +330,8 @@
 										</div>
 									</div>
 									<div class="item">
-										<strong>HST Image</strong>
-										<div id="hst_image">
+										<strong>Legacy Survey Image</strong>
+										<div id="legacy_image">
 										</div>
 									</div>
 								</div>
@@ -1488,7 +1488,14 @@
 				"</tr>"
 				$(rows_full).append(htmltextfull)
 	  		}
+	  	});
 
+	  	$.get("{% url 'get_legacy_image' transient.id %}").done(function(json){
+			var rows = $("#legacy_image")
+
+	  		var htmltext = "<a href="+json.fitsurl+"><img src=\"" + json.jpegurl + "\" style='width:240px' alt=\"\" /></a>"
+
+			$(rows).append(htmltext)
 		});
 
 	  $.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
