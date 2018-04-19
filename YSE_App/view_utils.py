@@ -299,150 +299,151 @@ class finder(TemplateView):
 # client 
     
 def airmassplot(request, transient_id, obs_id, telescope_id):
-		import random
-		import django
-		import datetime
-		from astroplan.plots import plot_airmass
+	import random
+	import django
+	import datetime
+	from astroplan.plots import plot_airmass
 		
-		from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-		from matplotlib.figure import Figure
-		from matplotlib.dates import DateFormatter
-		from matplotlib import rcParams
-		rcParams['figure.figsize'] = (7,7)
+	from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+	from matplotlib.figure import Figure
+	from matplotlib.dates import DateFormatter
+	from matplotlib import rcParams
+	rcParams['figure.figsize'] = (7,7)
 		
-		transient = Transient.objects.get(pk=transient_id)
-		if int(obs_id):
-			obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
-			obs_date = obsnight.obs_date
-		else:
-			obs_date = datetime.date.today() #time.now()
+	transient = Transient.objects.get(pk=transient_id)
+	if int(obs_id):
+		obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
+		obs_date = obsnight.obs_date
+	else:
+		obs_date = datetime.date.today() #time.now()
 			
-		telescope = Telescope.objects.get(pk=telescope_id)
+	telescope = Telescope.objects.get(pk=telescope_id)
+	
+	target = SkyCoord(transient.ra,transient.dec,unit=u.deg)
+	time = Time(str(obs_date).split('+')[0], format='iso')
 		
-		target = SkyCoord(transient.ra,transient.dec,unit=u.deg)
-		time = Time(str(obs_date).split('+')[0], format='iso')
+	location = EarthLocation.from_geodetic(telescope.longitude*u.deg, telescope.latitude*u.deg,telescope.elevation*u.m)
+	tel = Observer(location=location, name=telescope.name, timezone="UTC")
 		
-		location = EarthLocation.from_geodetic(telescope.longitude*u.deg, telescope.latitude*u.deg,telescope.elevation*u.m)
-		tel = Observer(location=location, name=telescope.name, timezone="UTC")
-		
-		fig=Figure()
-		ax=fig.add_subplot(111)
-		canvas=FigureCanvas(fig)
+	fig=Figure()
+	ax=fig.add_subplot(111)
+	canvas=FigureCanvas(fig)
 
-		ax.set_title("%s, %s, %s"%(telescope.tostring(),transient.name, obs_date))
+	ax.set_title("%s, %s, %s"%(telescope.tostring(),transient.name, obs_date))
 
-		night_start = tel.twilight_evening_astronomical(time,which="previous")
-		night_end = tel.twilight_morning_astronomical(time,which="previous")
-		delta_t = night_end - night_start
-		observe_time = night_start + delta_t*np.linspace(0, 1, 75)
-		plot_airmass(target, tel, observe_time, ax=ax)	  
+	night_start = tel.twilight_evening_astronomical(time,which="previous")
+	night_end = tel.twilight_morning_astronomical(time,which="previous")
+	if night_end < night_start:
+		night_end = tel.twilight_morning_astronomical(time,which="next")
+	delta_t = night_end - night_start
+	observe_time = night_start + delta_t*np.linspace(0, 1, 75)
+	plot_airmass(target, tel, observe_time, ax=ax)	  
 
-		yr,mn,day,hr,minu,sec = night_start.iso.replace(':',' ').replace('-',' ').split()
-		starttime = datetime.datetime(int(yr),int(mn),int(day),int(hr),int(minu))
-		if int(hr) == 0:
-			xlow = datetime.datetime(int(yr),int(mn),int(day)-1,23,int(minu))
-		else:
-			xlow = datetime.datetime(int(yr),int(mn),int(day),int(hr)-1,int(minu))
-		yr,mn,day,hr,minu,sec = night_end.iso.replace(':',' ').replace('-',' ').split()
-		endtime = datetime.datetime(int(yr),int(mn),int(day),int(hr),int(minu))
-		xhi = datetime.datetime(int(yr),int(mn),int(day),int(hr)+1,int(minu))
-		ax.axvline(starttime,color='r',label='18 deg twilight')#night_start.iso)
-		ax.axvline(endtime,color='r')
-		ax.legend(loc='lower right')
-		
-		ax.set_xlim([xlow,xhi])
-		
-		response=django.http.HttpResponse(content_type='image/png')
-		canvas.print_png(response)
-		return response
+	yr,mn,day,hr,minu,sec = night_start.iso.replace(':',' ').replace('-',' ').split()
+	starttime = datetime.datetime(int(yr),int(mn),int(day),int(hr),int(minu))
+	if int(hr) == 0:
+		xlow = datetime.datetime(int(yr),int(mn),int(day)-1,23,int(minu))
+	else:
+		xlow = datetime.datetime(int(yr),int(mn),int(day),int(hr)-1,int(minu))
+	yr,mn,day,hr,minu,sec = night_end.iso.replace(':',' ').replace('-',' ').split()
+	endtime = datetime.datetime(int(yr),int(mn),int(day),int(hr),int(minu))
+	xhi = datetime.datetime(int(yr),int(mn),int(day),int(hr)+1,int(minu))
+	ax.axvline(starttime,color='r',label='18 deg twilight')#night_start.iso)
+	ax.axvline(endtime,color='r')
+	ax.legend(loc='lower right')
+	ax.set_xlim([xlow,xhi])
+
+	response=django.http.HttpResponse(content_type='image/png')
+	canvas.print_png(response)
+	return response
 
 def lightcurveplot(request, transient_id):
 	
-		import random
-		import django
-		import datetime
-		import time
-		from bokeh.plotting import figure
-		from bokeh.resources import CDN
-		from bokeh.embed import file_html
-		from bokeh.models import Range1d,Span
-		from bokeh.core.properties import FontSizeSpec
-		tstart = time.time()
+	import random
+	import django
+	import datetime
+	import time
+	from bokeh.plotting import figure
+	from bokeh.resources import CDN
+	from bokeh.embed import file_html
+	from bokeh.models import Range1d,Span
+	from bokeh.core.properties import FontSizeSpec
+	tstart = time.time()
 		
-		transient = Transient.objects.get(pk=transient_id)
-		photdata = get_all_phot_for_transient(transient_id)
-		if not photdata:
-			return django.http.HttpResponse('')
+	transient = Transient.objects.get(pk=transient_id)
+	photdata = get_all_phot_for_transient(transient_id)
+	if not photdata:
+		return django.http.HttpResponse('')
 
-		ax=figure()
+	ax=figure()
 
-		mjd,mag,magerr,band,bandstr,telescope = \
-			np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
-		limmjd = None
-		for p in photdata:
-			if p.flux and np.abs(p.flux) > 1e10: continue
-			if not p.mag: continue
+	mjd,mag,magerr,band,bandstr,telescope = \
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+	limmjd = None
+	for p in photdata:
+		if p.flux and np.abs(p.flux) > 1e10: continue
+		if not p.mag: continue
 			
-			if p.discovery_point:
-				limmjd = p.date_to_mjd()-30
+		if p.discovery_point:
+			limmjd = p.date_to_mjd()-30
 				
-			mjd = np.append(mjd,[p.date_to_mjd()])
-			mag = np.append(mag,[p.mag])
-			if p.mag_err: magerr = np.append(magerr,p.mag_err)
-			else: magerr = np.append(magerr,0)
-			bandstr = np.append(bandstr,str(p.band))
-			band = np.append(band,p.band)
+		mjd = np.append(mjd,[p.date_to_mjd()])
+		mag = np.append(mag,[p.mag])
+		if p.mag_err: magerr = np.append(magerr,p.mag_err)
+		else: magerr = np.append(magerr,0)
+		bandstr = np.append(bandstr,str(p.band))
+		band = np.append(band,p.band)
 			#telescope = np.append(telescope,str(p.band.instrument.telescope.name))
 		
-		ax.title.text = "%s"%transient.name
-		colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
-					 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
-		count = 0
+	ax.title.text = "%s"%transient.name
+	colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
+				 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
+	count = 0
 
-		bandunq,idx = np.unique(bandstr,return_index=True)
-		for bs,b in zip(bandunq,band[idx]):
-			coloridx = count % len(np.unique(colorlist))
-			ax.circle(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
-					  color=colorlist[coloridx],size=7,legend='%s - %s'%(
-					b.instrument.telescope.name,b.name))
+	bandunq,idx = np.unique(bandstr,return_index=True)
+	for bs,b in zip(bandunq,band[idx]):
+		coloridx = count % len(np.unique(colorlist))
+		ax.circle(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
+				  color=colorlist[coloridx],size=7,legend='%s - %s'%(
+					  b.instrument.telescope.name,b.name))
 
-			err_xs,err_ys = [],[]
-			for x,y,yerr in zip(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),magerr[bandstr == bs].tolist()):
-				err_xs.append((x, x))
-				err_ys.append((y - yerr, y + yerr))
-			ax.multi_line(err_xs, err_ys, color=colorlist[coloridx])
-			count += 1
+		err_xs,err_ys = [],[]
+		for x,y,yerr in zip(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),magerr[bandstr == bs].tolist()):
+			err_xs.append((x, x))
+			err_ys.append((y - yerr, y + yerr))
+		ax.multi_line(err_xs, err_ys, color=colorlist[coloridx])
+		count += 1
 			
-		today = Time(datetime.datetime.today()).mjd
-		ax.line(today,20,line_width=3,line_color='black',legend='today (%i)'%today)
-		vline = Span(location=today, dimension='height', line_color='black',
-					 line_width=3)
-		ax.add_layout(vline)
-		ax.legend.location = 'bottom_left'
-		ax.legend.label_height = 1
-		ax.legend.glyph_height = 5
-		#import pdb; pdb.set_trace()
-		ax.legend.label_text_font_size = "4pt"#FontSizeSpec("10")
+	today = Time(datetime.datetime.today()).mjd
+	ax.line(today,20,line_width=3,line_color='black',legend='today (%i)'%today)
+	vline = Span(location=today, dimension='height', line_color='black',
+				 line_width=3)
+	ax.add_layout(vline)
+	ax.legend.location = 'bottom_left'
+	ax.legend.label_height = 1
+	ax.legend.glyph_height = 5
+	#import pdb; pdb.set_trace()
+	ax.legend.label_text_font_size = "4pt"#FontSizeSpec("10")
 		
-		ax.xaxis.axis_label = 'MJD'
-		ax.yaxis.axis_label = 'Mag'
+	ax.xaxis.axis_label = 'MJD'
+	ax.yaxis.axis_label = 'Mag'
 
-		if limmjd:
-			ax.x_range = Range1d(limmjd,np.max(mjd)+10)
-			ax.y_range = Range1d(np.max(mag[mjd > limmjd])+0.25,np.min(mag[mjd > limmjd])-0.5)
-		else:
-			ax.x_range=Range1d(np.min(mjd)-10,np.max(mjd)+10)
-			ax.y_range=Range1d(np.max(mag)+0.25,np.min(mag)-0.5)
-		#ax.legend()
-		ax.plot_height = 400
-		ax.plot_width = 500
+	if limmjd:
+		ax.x_range = Range1d(limmjd,np.max(mjd)+10)
+		ax.y_range = Range1d(np.max(mag[mjd > limmjd])+0.25,np.min(mag[mjd > limmjd])-0.5)
+	else:
+		ax.x_range=Range1d(np.min(mjd)-10,np.max(mjd)+10)
+		ax.y_range=Range1d(np.max(mag)+0.25,np.min(mag)-0.5)
+	#ax.legend()
+	ax.plot_height = 400
+	ax.plot_width = 500
 		
-		#ax.grid(color='lightgray', alpha=0.7)
-		#g = mpld3.fig_to_html(fig,template_type='simple')
+	#ax.grid(color='lightgray', alpha=0.7)
+	#g = mpld3.fig_to_html(fig,template_type='simple')
 
-		g = file_html(ax,CDN,"my plot")
+	g = file_html(ax,CDN,"my plot")
 		
-		return HttpResponse(g.replace('width: 90%','width: 100%'))
+	return HttpResponse(g.replace('width: 90%','width: 100%'))
 
 def rise_time(request,transient_id,obs_id):
 
