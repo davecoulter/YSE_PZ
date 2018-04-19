@@ -4,7 +4,7 @@ from django.template import loader
 from django.views import generic
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.db.models import Q
 from rest_framework.renderers import JSONRenderer
 import requests
@@ -21,7 +21,7 @@ from .serializers import *
 # Create your views here.
 
 def index(request):
-	if request.user.is_authenticated():
+	if request.user.is_authenticated:
 		return HttpResponseRedirect(reverse_lazy('dashboard'))
 	return render(request, 'YSE_App/index.html')
 
