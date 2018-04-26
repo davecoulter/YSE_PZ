@@ -24,6 +24,10 @@ from bokeh.models import Range1d,Span
 from bokeh.core.properties import FontSizeSpec
 from .data import PhotometryService, SpectraService, ObservingResourceService
 import time
+from .serializers import *
+from rest_framework.request import Request
+from django.contrib.auth.decorators import login_required
+import json
 
 def get_recent_phot_for_host(user, host_id=None):
 	allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
@@ -629,14 +633,49 @@ def get_authorized_classical_resources(user):
 
 	return allowed_resources
 
-
 def get_authorized_too_resources(user):
 	allowed_resources = ObservingResourceService.GetAuthorizedToOResource_ByUser(user)
 
 	return allowed_resources
 
-
 def get_authorized_queued_resources(user):
 	allowed_resources = ObservingResourceService.GetAuthorizedQueuedResource_ByUser(user)
 
 	return allowed_resources
+
+def get_transient(request, slug):
+	t = Transient.objects.filter(slug=slug)
+
+	return_dict = {"transient":""}
+	if t.exists():
+		transient = t[0]
+		serializer = TransientSerializer(instance=transient, context={"request":Request(request)})
+		return_dict["transient"] = serializer.data
+
+	return JsonResponse(return_dict)
+
+
+def find_separation(host_queryset, query_coord, sep_threshold):
+	for host in host_queryset:
+		host_coord = SkyCoord(host.ra, host.dec, unit=(u.deg, u.deg))
+		sep = host_coord.separation(query_coord)
+		if sep.arcminute <= sep_threshold:
+			yield host
+
+def get_host(request, ra, dec, sep):
+
+	query_coord = SkyCoord(ra,dec,unit=(u.deg, u.deg))
+	host_candidates = find_separation(Host.objects.all(), query_coord, float(sep))
+
+	serialized_hosts = []
+	for host in host_candidates:
+		serialized_hosts.append(
+			{"host_ra":host.ra,"host_dec":host.dec,"host_name":host.name}
+		)
+
+	return_dict = {"requested ra":float(ra),
+				   "requested dec":float(dec),
+				   "requested sep":float(sep),
+				   "host candidates":serialized_hosts }
+
+	return JsonResponse(return_dict)

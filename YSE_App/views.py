@@ -8,6 +8,7 @@ from django.urls import reverse_lazy
 from django.db.models import Q
 from rest_framework.renderers import JSONRenderer
 import requests
+from django.template.defaulttags import register
 
 from .models import *
 from .forms import *
@@ -195,7 +196,7 @@ def get_transient_tags(request):
 def dashboard_example(request):
 	return render(request, 'YSE_App/dashboard_example.html')
 
-from django.template.defaulttags import register
+
 @register.filter
 def get_item(dictionary, key):
 	return dictionary.get(key)
@@ -234,7 +235,7 @@ def transient_detail(request, slug):
 
 		transient_obj = transient.first() # This should throw an exception if more than one or none are returned
 		transient_id = transient[0].id
-		
+
 		alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 
 		transient_followup_form = TransientFollowupForm()
@@ -261,7 +262,7 @@ def transient_detail(request, slug):
 		if followups:
 			for i in range(len(followups)):
 				followups[i].observation_set = TransientObservationTask.objects.filter(followup=followups[i].id)
-				
+
 				if followups[i].classical_resource:
 					followups[i].resource = followups[i].classical_resource
 				elif followups[i].too_resource:
@@ -275,7 +276,7 @@ def transient_detail(request, slug):
 		if hostdata:
 			hostphotdata = view_utils.get_recent_phot_for_host(request.user, host_id=hostdata[0].id)
 			transient_obj.hostdata = hostdata[0]
-		else: 
+		else:
 			hostphotdata = None
 
 		if hostphotdata: transient_obj.hostphotdata = hostphotdata
@@ -333,7 +334,7 @@ def transient_detail(request, slug):
 	else:
 		return Http404('Transient not found')
 
-
+@login_required
 def transient_edit(request, transient_id=None):
 	# if this is a POST request we need to process the form data
 	if request.method == 'POST':
