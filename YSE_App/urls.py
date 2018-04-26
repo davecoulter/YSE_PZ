@@ -28,6 +28,10 @@ urlpatterns = [
     url(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
     # ex: /yse/transient_detail/5/
     url(r'^transient_detail/(?P<slug>[a-zA-Z0-9_-]+)/$', views.transient_detail, name='transient_detail'),
+
+	url(r'^get_transient/(?P<slug>[a-zA-Z0-9_-]+)/$', view_utils.get_transient, name='get_transient'),
+	url(r'^get_host/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<sep>\d+\.?\d?)/$', view_utils.get_host, name='get_host'),
+
     url(r'^login/$', views.auth_login, name='auth_login'),
     url(r'^logout/$', views.auth_logout, name='auth_logout'),
     url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)/(?P<telescope_id>[a-zA-Z0-9]+)", 
@@ -52,6 +56,10 @@ urlpatterns = [
 		view_utils.tonight_set_time, name='tonight_set_time'),
 	url(r'^tonight_moon_angle/(?P<transient_id>[0-9]+)/(?P<too_id>[a-zA-Z0-9_-]+)',
 		view_utils.tonight_moon_angle, name='tonight_moon_angle'),
+
+	url(r'^delta_too_hours/(?P<transient_id>[0-9]+)/(?P<too_id>[a-zA-Z0-9_-]+)',
+		view_utils.delta_too_hours, name='delta_too_hours'),
+
 	url(r'^get_ps1_image/(?P<transient_id>[0-9]+)',
 		view_utils.get_ps1_image, name='get_ps1_image'),
 	url(r'^get_hst_image/(?P<transient_id>[0-9]+)',
@@ -89,27 +97,33 @@ router.register(r'transientobservationtasks', api_views.TransientObservationTask
 router.register(r'hostobservationtasks', api_views.HostObservationTaskViewSet)
 router.register(r'observatories', api_views.ObservatoryViewSet)
 router.register(r'oncalldates', api_views.OnCallDateViewSet)
-router.register(r'transientphotometry', api_views.TransientPhotometryViewSet)
-router.register(r'hostphotometry', api_views.HostPhotometryViewSet)
-router.register(r'transientphotdata', api_views.TransientPhotDataViewSet)
-router.register(r'hostphotdata', api_views.HostPhotDataViewSet)
+
+router.register(r'transientphotometry', api_views.TransientPhotometryViewSet, base_name='transientphotometry')
+router.register(r'hostphotometry', api_views.HostPhotometryViewSet, base_name='hostphotometry')
+router.register(r'transientphotdata', api_views.TransientPhotDataViewSet, base_name='transientphotdata')
+router.register(r'hostphotdata', api_views.HostPhotDataViewSet, base_name='hostphotdata')
+
 router.register(r'transientimages', api_views.TransientImageViewSet)
 router.register(r'hostimages', api_views.HostImageViewSet)
 router.register(r'photometricbands', api_views.PhotometricBandViewSet)
 router.register(r'principalinvestigators', api_views.PrincipalInvestigatorViewSet)
 router.register(r'profiles', api_views.ProfileViewSet)
-router.register(r'transientspectra', api_views.TransientSpectrumViewSet)
-router.register(r'hostspectra', api_views.HostSpectrumViewSet)
-router.register(r'transientspectdata', api_views.TransientSpecDataViewSet)
-router.register(r'hostspectdata', api_views.HostSpecDataViewSet)
-router.register(r'tooresources', api_views.ToOResourceViewSet)
-router.register(r'queuedresources', api_views.QueuedResourceViewSet)
-router.register(r'classicalresources', api_views.ClassicalResourceViewSet)
-router.register(r'classicalobservingdates', api_views.ClassicalObservingDateViewSet)
+
+router.register(r'transientspectra', api_views.TransientSpectrumViewSet, base_name='transientspectrum')
+router.register(r'hostspectra', api_views.HostSpectrumViewSet, base_name='hostspectrum')
+router.register(r'transientspecdata', api_views.TransientSpecDataViewSet, base_name='transientspecdata')
+router.register(r'hostspecdata', api_views.HostSpecDataViewSet, base_name='hostspecdata')
+
+router.register(r'tooresources', api_views.ToOResourceViewSet, base_name='tooresource')
+router.register(r'queuedresources', api_views.QueuedResourceViewSet, base_name='queuedresource')
+router.register(r'classicalresources', api_views.ClassicalResourceViewSet, base_name='classicalresource')
+router.register(r'classicalobservingdates', api_views.ClassicalObservingDateViewSet, base_name='classicalobservingdate')
+
 router.register(r'telescopes', api_views.TelescopeViewSet)
 router.register(r'transients', api_views.TransientViewSet)
 router.register(r'alternatetransientnames', api_views.AlternateTransientNamesViewSet)
 router.register(r'users', api_views.UserViewSet)
+router.register(r'groups', api_views.GroupViewSet)
 router.register(r'transienttags', api_views.TransientTagViewSet)
 
 # Login/Logout

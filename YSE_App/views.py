@@ -8,6 +8,7 @@ from django.urls import reverse_lazy
 from django.db.models import Q
 from rest_framework.renderers import JSONRenderer
 import requests
+from django.template.defaulttags import register
 
 from .models import *
 from .forms import *
@@ -67,7 +68,7 @@ def dashboard(request):
 
 	k2_transients = Transient.objects.filter(k2_validated=1).order_by('-modified_date')
 	for i in range(len(k2_transients)):
-		disc = view_utils.get_disc_mag_for_transient(transient_id=k2_transients[i].id)
+		disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=k2_transients[i].id)
 		if disc:
 			k2_transients[i].disc_mag = disc.mag
 			k2_transients[i].disc_date = disc.obs_date
@@ -78,7 +79,7 @@ def dashboard(request):
 		new_transients = Transient.objects.filter(status=status_new[0]).order_by('-modified_date')
 		new_notk2_transients = new_transients.exclude(k2_validated=1).order_by('-modified_date')
 		for i in range(len(new_notk2_transients)):
-			disc = view_utils.get_disc_mag_for_transient(transient_id=new_notk2_transients[i].id)
+			disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=new_notk2_transients[i].id)
 			if disc:
 				new_notk2_transients[i].disc_mag = disc.mag
 				new_notk2_transients[i].disc_date = disc.obs_date
@@ -87,7 +88,7 @@ def dashboard(request):
 	if len(status_watch) == 1:
 		watch_transients = Transient.objects.exclude(k2_validated=1).filter(status=status_watch[0])
 		for i in range(len(watch_transients)):
-			disc = view_utils.get_disc_mag_for_transient(transient_id=watch_transients[i].id)
+			disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=watch_transients[i].id)
 			if disc:
 				watch_transients[i].disc_mag = disc.mag
 				watch_transients[i].disc_date = disc.obs_date
@@ -96,7 +97,7 @@ def dashboard(request):
 	if len(status_followrequest) == 1:
 		followup_requested_transients = Transient.objects.exclude(k2_validated=1).filter(status=status_followrequest[0])
 		for i in range(len(followup_requested_transients)):
-			disc = view_utils.get_disc_mag_for_transient(transient_id=followup_requested_transients[i].id)
+			disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=followup_requested_transients[i].id)
 			if disc:
 				followup_requested_transients[i].disc_mag = disc.mag
 				followup_requested_transients[i].disc_date = disc.obs_date
@@ -105,7 +106,7 @@ def dashboard(request):
 	if len(status_following) == 1:
 		following_transients = Transient.objects.exclude(k2_validated=1).filter(status=status_following[0])
 		for i in range(len(following_transients)):
-			disc = view_utils.get_disc_mag_for_transient(transient_id=following_transients[i].id)
+			disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=following_transients[i].id)
 			if disc:
 				following_transients[i].disc_mag = disc.mag
 				following_transients[i].disc_date = disc.obs_date
@@ -114,7 +115,7 @@ def dashboard(request):
 	if len(status_following) == 1:
 		finishedfollowing_transients = Transient.objects.exclude(k2_validated=1).filter(status=status_finishedfollowing[0])
 		for i in range(len(finishedfollowing_transients)):
-			disc = view_utils.get_disc_mag_for_transient(transient_id=finishedfollowing_transients[i].id)
+			disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=finishedfollowing_transients[i].id)
 			if disc:
 				finishedfollowing_transients[i].disc_mag = disc.mag
 				finishedfollowing_transients[i].disc_date = disc.obs_date
@@ -141,20 +142,23 @@ def followup(request):
 												   Q(status=status_followrequest[2]) |
 												   Q(status=status_followrequest[3]))
 	for i in range(len(followup_transients)):
-		disc = view_utils.get_disc_mag_for_transient(transient_id=followup_transients[i].id)
-		if disc: followup_transients[i].disc_mag = disc.mag
-		followup_transients[i].followups = \
-			TransientFollowup.objects.filter(transient=followup_transients[i].id)
+		disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=followup_transients[i].id)
+
+		if disc:
+			followup_transients[i].disc_mag = disc.mag
+
+		followup_transients[i].followups = TransientFollowup.objects.filter(transient=followup_transients[i].id)
+
 		for j in range(len(followup_transients[i].followups)):
+
 			if followup_transients[i].followups[j].classical_resource:
-				followup_transients[i].followups[j].resource = \
-					followup_transients[i].followups[j].classical_resource
+				followup_transients[i].followups[j].resource = followup_transients[i].followups[j].classical_resource
+
 			elif followup_transients[i].followups[j].too_resource:
-				followup_transients[i].followups[j].resource = \
-					followup_transients[i].followups[j].too_resource
+				followup_transients[i].followups[j].resource = followup_transients[i].followups[j].too_resource
+
 			elif followup_transients[i].followups[j].queued_resource:
-				followup_transients[i].followups[j].resource = \
-					followup_transients[i].followups[j].queued_resource
+				followup_transients[i].followups[j].resource = followup_transients[i].followups[j].queued_resource
 
 	context = {
 		'transients': followup_transients,
@@ -192,7 +196,7 @@ def get_transient_tags(request):
 def dashboard_example(request):
 	return render(request, 'YSE_App/dashboard_example.html')
 
-from django.template.defaulttags import register
+
 @register.filter
 def get_item(dictionary, key):
 	return dictionary.get(key)
@@ -230,13 +234,14 @@ def transient_detail(request, slug):
 	if len(transient) == 1:
 
 		transient_obj = transient.first() # This should throw an exception if more than one or none are returned
-
 		transient_id = transient[0].id
-		
+
 		alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
+
 		transient_followup_form = TransientFollowupForm()
-		start_date = datetime.date.today()-datetime.timedelta(days=1); end_date = datetime.date.today()+datetime.timedelta(days=60)
-		transient_followup_form.fields["classical_resource"].queryset = ClassicalResource.objects.filter(end_date_valid__range=(start_date, end_date))
+		transient_followup_form.fields["classical_resource"].queryset = view_utils.get_authorized_classical_resources(request.user)
+		transient_followup_form.fields["too_resource"].queryset = view_utils.get_authorized_too_resources(request.user)
+		transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user)
 
 		transient_observation_task_form = TransientObservationTaskForm()
 
@@ -257,7 +262,7 @@ def transient_detail(request, slug):
 		if followups:
 			for i in range(len(followups)):
 				followups[i].observation_set = TransientObservationTask.objects.filter(followup=followups[i].id)
-				
+
 				if followups[i].classical_resource:
 					followups[i].resource = followups[i].classical_resource
 				elif followups[i].too_resource:
@@ -269,24 +274,26 @@ def transient_detail(request, slug):
 
 		hostdata = Host.objects.filter(pk=transient_obj.host_id)
 		if hostdata:
-			hostphotdata = view_utils.get_recent_phot_for_host(host_id=hostdata[0].id)
+			hostphotdata = view_utils.get_recent_phot_for_host(request.user, host_id=hostdata[0].id)
 			transient_obj.hostdata = hostdata[0]
-		else: 
+		else:
 			hostphotdata = None
 
 		if hostphotdata: transient_obj.hostphotdata = hostphotdata
 
-		lastphotdata = view_utils.get_recent_phot_for_transient(transient_id=transient_id)
-		firstphotdata = view_utils.get_disc_mag_for_transient(transient_id=transient_id)
-		
-		obsnights,tellist = view_utils.getObsNights(transient[0])
-		too_resources = ToOResource.objects.all()
-		
-		for i in range(len(too_resources)):
-			telescope = too_resources[i].telescope
-			too_resources[i].telescope_id = telescope.id
-			observatory = Observatory.objects.get(pk=telescope.observatory_id)
-			too_resources[i].deltahours = too_resources[i].awarded_too_hours - too_resources[i].used_too_hours
+		lastphotdata = view_utils.get_recent_phot_for_transient(request.user, transient_id=transient_id)
+		firstphotdata = view_utils.get_disc_mag_for_transient(request.user, transient_id=transient_id)
+
+		# obsnights,tellist = view_utils.getObsNights(transient[0])
+		# too_resources = ToOResource.objects.all()
+		#
+		# for i in range(len(too_resources)):
+		# 	telescope = too_resources[i].telescope
+		# 	too_resources[i].telescope_id = telescope.id
+		# 	observatory = Observatory.objects.get(pk=telescope.observatory_id)
+		# 	too_resources[i].deltahours = too_resources[i].awarded_too_hours - too_resources[i].used_too_hours
+		obsnights = view_utils.get_obs_nights_happening_soon(request.user)
+		too_resources = view_utils.get_too_resources(request.user)
 
 		date = datetime.datetime.now(tz=pytz.utc)
 		date_format='%m/%d/%Y %H:%M:%S'
@@ -294,7 +301,7 @@ def transient_detail(request, slug):
 		context = {
 			'transient':transient_obj,
 			'followups':followups,
-			'telescope_list': tellist,
+			# 'telescope_list': tellist,
 			'observing_nights': obsnights,
 			'too_resource_list': too_resources,
 			'nowtime':date.strftime(date_format),
@@ -327,7 +334,7 @@ def transient_detail(request, slug):
 	else:
 		return Http404('Transient not found')
 
-
+@login_required
 def transient_edit(request, transient_id=None):
 	# if this is a POST request we need to process the form data
 	if request.method == 'POST':

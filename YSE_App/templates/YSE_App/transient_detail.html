@@ -632,22 +632,18 @@
 											<th>Airmass Plot</th>
 										</tr>
 									</thead>
-									<tbody>
-										{% for telescope in telescope_list %}
-											{% for obsnight in observing_nights %}
-												{% if obsnight.0.happening_soon and obsnight.0.telescope == telescope.tostring and obsnight.1 %}
-													<tr>
-														<td>{{ telescope }}</td>
-														<td>{{ obsnight.0.obs_date }}</td>
-														<td id="rise_time_{{obsnight.0.id}}"></td>
-														<td id="set_time_{{obsnight.0.id}}"></td>
-														<td id="moon_angle_{{obsnight.0.id}}"></td>
-														<td><img src="{% url 'airmassplot' transient.id obsnight.0.id telescope.id %}" style='width:240px' alt="" /><br></td>
-													</tr>
-												{% endif %}
-											{% endfor %}
-										{% endfor %}
-									</tbody>
+                                    <tbody>
+                                        {% for obsnight in observing_nights %}
+                                            <tr>
+                                                <td>{{ obsnight.resource.telescope }}</td>
+                                                <td>{{ obsnight.obs_date }}</td>
+                                                <td id="rise_time_{{ obsnight.id }}"></td>
+                                                <td id="set_time_{{ obsnight.id }}"></td>
+                                                <td id="moon_angle_{{ obsnight.id }}"></td>
+                                                <td><img src="{% url 'airmassplot' transient.id obsnight.id obsnight.resource.telescope.id %}" style='width:240px' alt="" /><br></td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
 								</table>
 							</div>
 							<div class="col-xs-12">
@@ -663,20 +659,18 @@
 											<th>Airmass Plot</th>
 										</tr>
 									</thead>
-									<tbody>
-										{% for too_resource in too_resource_list %}
-											{% if too_resource.deltahours > 0 %}
-												<tr>
-													<td>{{ too_resource.telescope }}</td>
-													<td>{{ too_resource.deltahours }}</td>
-													<td id="tonight_rise_time_{{too_resource.id}}"></td>
-													<td id="tonight_set_time_{{too_resource.id}}"></td>
-													<td id="tonight_moon_angle_{{too_resource.id}}"></td>
-													<td><img src="{% url 'airmassplot' transient.id 0 too_resource.telescope_id %}" style='width:240px' alt="" /><br></td>
-												</tr>
-											{% endif %}
-										{% endfor %}
-									</tbody>
+                                    <tbody>
+                                        {% for too_resource in too_resource_list %}
+                                            <tr>
+                                                <td>{{ too_resource.telescope }}</td>
+                                                <td id="delta_too_hours_{{too_resource.id}}"></td>
+                                                <td id="tonight_rise_time_{{too_resource.id}}"></td>
+                                                <td id="tonight_set_time_{{too_resource.id}}"></td>
+                                                <td id="tonight_moon_angle_{{too_resource.id}}"></td>
+                                                <td><img src="{% url 'airmassplot' transient.id 0 too_resource.telescope.id %}" style='width:240px' alt="" /><br></td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
 								</table>
 							</div>
 						</div>
@@ -1504,35 +1498,43 @@
 	  });
 	  
 	  {% for obsnight in observing_nights %}
-	  $.get("{% url 'rise_time' transient.id obsnight.0.id %}").done(function(json){
-	  var rows = $("#rise_time_{{obsnight.0.id}}")
-	  $(rows).append(json["rise_time"])
-	  });
-	  $.get("{% url 'set_time' transient.id obsnight.0.id %}").done(function(json){
-	  var rows = $("#set_time_{{obsnight.0.id}}")
-	  $(rows).append(json["set_time"])
-	  });
-	  $.get("{% url 'moon_angle' transient.id obsnight.0.id %}").done(function(json){
-	  var rows = $("#moon_angle_{{obsnight.0.id}}")
-	  $(rows).append(json["moon_angle"])
-	  });
+          $.get("{% url 'rise_time' transient.id obsnight.id %}").done(function(json){
+          var rows = $("#rise_time_{{obsnight.id}}")
+          $(rows).append(json["rise_time"])
+          });
+          $.get("{% url 'set_time' transient.id obsnight.id %}").done(function(json){
+          var rows = $("#set_time_{{obsnight.id}}")
+          $(rows).append(json["set_time"])
+          });
+          $.get("{% url 'moon_angle' transient.id obsnight.id %}").done(function(json){
+          var rows = $("#moon_angle_{{obsnight.id}}")
+          $(rows).append(json["moon_angle"])
+          });
 	  {% endfor %}
 
 	  {% for too_resource in too_resource_list %}
-	  {% if too_resource.deltahours > 0 %}
-	  $.get("{% url 'tonight_rise_time' transient.id too_resource.id %}").done(function(json){
-	  var rows = $("#tonight_rise_time_{{too_resource.id}}")
-	  $(rows).append(json["rise_time"])
-	  });
-	  $.get("{% url 'tonight_set_time' transient.id too_resource.id %}").done(function(json){
-	  var rows = $("#tonight_set_time_{{too_resource.id}}")
-	  $(rows).append(json["set_time"])
-	  });
-	  $.get("{% url 'tonight_moon_angle' transient.id too_resource.id %}").done(function(json){
-	  var rows = $("#tonight_moon_angle_{{too_resource.id}}")
-	  $(rows).append(json["moon_angle"])
-	  });
-	  {% endif %}
+          {% if too_resource.used_too_hours < too_resource.awarded_too_hours %}
+
+              $.get("{% url 'tonight_rise_time' transient.id too_resource.id %}").done(function(json){
+                  var rows = $("#tonight_rise_time_{{too_resource.id}}")
+                  $(rows).append(json["rise_time"])
+              });
+
+              $.get("{% url 'tonight_set_time' transient.id too_resource.id %}").done(function(json){
+                  var rows = $("#tonight_set_time_{{too_resource.id}}")
+                  $(rows).append(json["set_time"])
+              });
+
+              $.get("{% url 'tonight_moon_angle' transient.id too_resource.id %}").done(function(json){
+                  var rows = $("#tonight_moon_angle_{{too_resource.id}}")
+                  $(rows).append(json["moon_angle"])
+              });
+
+              $.get("{% url 'delta_too_hours' transient.id too_resource.id %}").done(function(json){
+                  var rows = $("#delta_too_hours_{{too_resource.id}}")
+                  $(rows).append(json["delta_too_hours"])
+              });
+          {% endif %}
 	  {% endfor %}
 	  });
 				

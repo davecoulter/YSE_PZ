@@ -5,10 +5,12 @@ from YSE_App.models.instrument_models import *
 from YSE_App.models.followup_models import *
 from YSE_App.models.transient_models import *
 from YSE_App.models.host_models import *
+from django.contrib.auth.models import Group
 
 class Spectrum(BaseModel):
 	class Meta:
 		abstract = True
+
 	### Entity relationships ###
 	# Required
 	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
@@ -26,6 +28,8 @@ class Spectrum(BaseModel):
 	spec_plot_file = models.CharField(max_length=512, null=True, blank=True)
 	spec_data_file = models.CharField(max_length=512, null=True, blank=True)
 	spectrum_notes = models.TextField(null=True, blank=True)
+
+	groups = models.ManyToManyField(Group, blank=True)
 
 class TransientSpectrum(Spectrum):
 	### Entity relationships ###
@@ -56,6 +60,7 @@ class HostSpectrum(Spectrum):
 
 	def __str__(self):
 		return 'Spectrum: %s - %s' % (self.host.HostString(), self.obs_date.strftime('%m/%d/%Y'))
+
 
 class SpecData(BaseModel):
 	class Meta:

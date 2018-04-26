@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'YSE_App.apps.YseAppConfig',
     'rest_framework',
     'rest_framework.authtoken',
-    'widget_tweaks'
+    'widget_tweaks',
 ]
 
 MIDDLEWARE = [
@@ -78,6 +78,10 @@ TEMPLATES = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend', # this is default
+)
+
 WSGI_APPLICATION = 'YSE_PZ.wsgi.application'
 
 
@@ -105,7 +109,8 @@ REST_FRAMEWORK = {
        'rest_framework.authentication.BasicAuthentication',
        'rest_framework.authentication.SessionAuthentication',
     ],
-    'PAGE_SIZE': 10
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 100
 }
 
 # Password validation

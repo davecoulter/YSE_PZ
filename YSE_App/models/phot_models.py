@@ -6,6 +6,7 @@ from YSE_App.models.followup_models import *
 from YSE_App.models.transient_models import *
 from YSE_App.models.host_models import *
 from astropy.time import Time
+from django.contrib.auth.models import Group
 
 class Photometry(BaseModel):
 
@@ -16,6 +17,7 @@ class Photometry(BaseModel):
 	# Required
 	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
 	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
+	groups = models.ManyToManyField(Group, blank=True)
 
 class TransientPhotometry(Photometry):
 	### Entity relationships ###

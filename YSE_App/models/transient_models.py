@@ -12,6 +12,7 @@ from django.utils.text import slugify
 from autoslug import AutoSlugField
 
 class Transient(BaseModel):
+
 	### Entity relationships ###
 	# Required
 	status = models.ForeignKey(TransientStatus, models.SET(get_sentinel_transientstatus))
@@ -78,6 +79,10 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 	if created:
 		print("Transient Created: %s" % instance.name)
 		print("Internal Survey: %s" % instance.internal_survey)
+
+
+
+
 
 		is_k2_C16_validated, C16_msg = IsK2Pixel(instance.ra, instance.dec, "16")
 		is_k2_C17_validated, C17_msg = IsK2Pixel(instance.ra, instance.dec, "17")

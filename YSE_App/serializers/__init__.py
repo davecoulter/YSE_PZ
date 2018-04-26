@@ -16,4 +16,5 @@ from YSE_App.serializers.telescope_resource_serializers import *
 from YSE_App.serializers.telescope_serializers import *
 from YSE_App.serializers.transient_serializers import *
 from YSE_App.serializers.user_serializers import *
+from YSE_App.serializers.group_serializers import *
 from YSE_App.serializers.tag_serializers import *

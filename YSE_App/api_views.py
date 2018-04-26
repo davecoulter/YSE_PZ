@@ -9,6 +9,7 @@ from rest_framework.reverse import reverse
 
 from .models import *
 from .serializers import *
+from .data import PhotometryService, SpectraService, ObservingResourceService
 
 ### `Additional Info` ViewSets ###
 class TransientWebResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
@@ -116,6 +117,7 @@ class HostSEDViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 class InstrumentViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = Instrument.objects.all()
 	serializer_class = InstrumentSerializer
+	lookup_field = "id"
 	permission_classes = (permissions.IsAuthenticated,)
 
 class InstrumentConfigViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
@@ -157,26 +159,45 @@ class OnCallDateViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	serializer_class = OnCallDateSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+
+
 ### `Phot` ViewSets ###
 class TransientPhotometryViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = TransientPhotometry.objects.all()
 	serializer_class = TransientPhotometrySerializer
 	permission_classes = (permissions.IsAuthenticated,)
+	lookup_field = "id"
+
+	def get_queryset(self):
+		allowed_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser(self.request.user)
+		return allowed_phot
 
 class HostPhotometryViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = HostPhotometry.objects.all()
 	serializer_class = HostPhotometrySerializer
 	permission_classes = (permissions.IsAuthenticated,)
+	lookup_field = "id"
+
+	def get_queryset(self):
+		allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser(self.request.user)
+		return allowed_phot
 
 class TransientPhotDataViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = TransientPhotData.objects.all()
 	serializer_class = TransientPhotDataSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+	def get_queryset(self):
+		allowed_phot_data = PhotometryService.GetAuthorizedTransientPhotData_ByUser(self.request.user)
+		return allowed_phot_data
+
+
 class HostPhotDataViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = HostPhotData.objects.all()
 	serializer_class = HostPhotDataSerializer
 	permission_classes = (permissions.IsAuthenticated,)
+
+	def get_queryset(self):
+		allowed_phot_data = PhotometryService.GetAuthorizedHostPhotData_ByUser(self.request.user)
+		return allowed_phot_data
+
+
 
 class TransientImageViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = TransientImage.objects.all()
@@ -192,6 +213,7 @@ class HostImageViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 class PhotometricBandViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = PhotometricBand.objects.all()
 	serializer_class = PhotometricBandSerializer
+	lookup_field = "id"
 	permission_classes = (permissions.IsAuthenticated,)
 
 ### `Principal Investigator` ViewSets ###
@@ -208,46 +230,72 @@ class ProfileViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 
 ### `Spectra` ViewSets ###
 class TransientSpectrumViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = TransientSpectrum.objects.all()
 	serializer_class = TransientSpectrumSerializer
 	permission_classes = (permissions.IsAuthenticated,)
+	lookup_field = "id"
+
+	def get_queryset(self):
+		allowed_spec = SpectraService.GetAuthorizedTransientSpectrum_ByUser(self.request.user)
+		return allowed_spec
 
 class HostSpectrumViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = HostSpectrum.objects.all()
 	serializer_class = HostSpectrumSerializer
 	permission_classes = (permissions.IsAuthenticated,)
+	lookup_field = "id"
+
+	def get_queryset(self):
+		allowed_spec = SpectraService.GetAuthorizedHostSpectrum_ByUser(self.request.user)
+		return allowed_spec
 
 class TransientSpecDataViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = TransientSpecData.objects.all()
 	serializer_class = TransientSpecDataSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+	def get_queryset(self):
+		allowed_spec_data = SpectraService.GetAuthorizedTransientSpecData_ByUser(self.request.user)
+		return allowed_spec_data
+
 class HostSpecDataViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = HostSpecData.objects.all()
 	serializer_class = HostSpecDataSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+	def get_queryset(self):
+		allowed_spec_data = SpectraService.GetAuthorizedHostSpecData_ByUser(self.request.user)
+		return allowed_spec_data
+
 ### `Telescope Resource` ViewSets ###
 class ToOResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = ToOResource.objects.all()
 	serializer_class = ToOResourceSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+	def get_queryset(self):
+		allowed_resource = ObservingResourceService.GetAuthorizedToOResource_ByUser(self.request.user)
+		return allowed_resource
+
 class QueuedResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = QueuedResource.objects.all()
 	serializer_class = QueuedResourceSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+	def get_queryset(self):
+		allowed_resource = ObservingResourceService.GetAuthorizedQueuedResource_ByUser(self.request.user)
+		return allowed_resource
+
 class ClassicalResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = ClassicalResource.objects.all()
 	serializer_class = ClassicalResourceSerializer
 	lookup_field = "id"
 	permission_classes = (permissions.IsAuthenticated,)
 
+	def get_queryset(self):
+		allowed_resource = ObservingResourceService.GetAuthorizedClassicalResource_ByUser(self.request.user)
+		return allowed_resource
+
 class ClassicalObservingDateViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = ClassicalObservingDate.objects.all()
 	serializer_class = ClassicalObservingDateSerializer
 	permission_classes = (permissions.IsAuthenticated,)
+
+	def get_queryset(self):
+		allowed_resource = ObservingResourceService.GetAuthorizedClassicalObservingDate_ByUser(self.request.user)
+		return allowed_resource
 
 ### `Telescope` ViewSets ###
 class TelescopeViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
@@ -270,6 +318,12 @@ class AlternateTransientNamesViewSet(custom_viewsets.ListCreateRetrieveUpdateVie
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = User.objects.all()
 	serializer_class = UserSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
+### `Group` ViewSets ###
+class GroupViewSet(viewsets.ReadOnlyModelViewSet):
+	queryset = Group.objects.all()
+	serializer_class = GroupSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
 ### `Tag` ViewSets ###
