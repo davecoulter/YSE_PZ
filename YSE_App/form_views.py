@@ -22,12 +22,19 @@ from django.forms.models import model_to_dict
 from .common import alert
 import numpy as np
 
+def mkFollowupForm():
+	pass
+	
+	#form = TransientFollowupForm()
+	#form.fields["status"].queryset = FollowupStatus.objects.filter(name='Requested')
 
+	#return render(request, 'YSE_App/form_snippets/transient_followup_form.html', {'form': form})	
+	
 class AddTransientFollowupFormView(FormView):
 	form_class = TransientFollowupForm
 	template_name = 'YSE_App/form_snippets/transient_followup_form.html'
 	success_url = '/form-success/'
-
+	
 	def form_invalid(self, form):
 		response = super(AddTransientFollowupFormView, self).form_invalid(form)
 		if self.request.is_ajax():
@@ -179,7 +186,7 @@ class AddTransientCommentFormView(FormView):
 			transient_name = instance.transient.name
 			base_url = "https://ziggy.ucolick.org/yse/" 
 			if settings.DEBUG:
-				base_url =  "https://ziggy.ucolick.org/yse_test/"
+				base_url =	"https://ziggy.ucolick.org/yse_test/"
 			subject = "YSE_PZ: new comment added to event %s"%transient_name
 			body = """\
 			<html>

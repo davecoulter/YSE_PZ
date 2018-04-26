@@ -973,7 +973,7 @@ class processTNS():
 						      'tags':[]}
 
 					if dbid:
-						transientid = db.put_object_to_DB('transient',newobjdict,dbid)
+						transientid = db.patch_object_to_DB('transient',newobjdict,dbid)
 					else:
 						transientid = db.post_object_to_DB('transient',newobjdict)
 

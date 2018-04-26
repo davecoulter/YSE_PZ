@@ -41,13 +41,15 @@ class finder():
 		parser.add_option('-o','--outputFinderFileName', default=None, type="string",
 						  help='output filename for finder chart (default=%default)')
 		parser.add_option('-f','--outputOffsetFileName', default=None, type="string",
-						  help='output filename for finder chart (default=%default)')
+						  help='output filename for offset stars (default=%default)')
 		parser.add_option('-s','--snid', default=None, type="string",
 						  help='Object name - optional (default=%default)')
 		parser.add_option('-r','--ra', default=None, type="string",
 						  help='RA of target (default=%default)')
 		parser.add_option('-d','--dec', default=None, type="string",
 						  help='Dec of target (default=%default)')
+		parser.add_option('--roundlim', default=0.2, type="float",
+						  help='roundness limit to call a source a star (default=%default)')
 
 		return(parser)
 			
@@ -166,7 +168,7 @@ RA (to targ): %.3f E, Dec (to targ): %.3f N"""%(i,ra_str,dec_str,m,ro.arcsec,do.
 
 	def getOffsetStarsWrap(self,finderim,PS1=True):
 		xpos,ypos,ralist,declist,mag,raofflist,decofflist = \
-			self.getOffsetStars(finderim,PS1=PS1,roundlo=-0.2,roundhi=0.2)
+			self.getOffsetStars(finderim,PS1=PS1,roundlo=-self.options.roundlim,roundhi=self.options.roundlim)
 		if xpos is None:
 			print('getOffsetStars failed!  Relaxing roundness limit and trying again')
 			xpos,ypos,ralist,declist,mag,raofflist,decofflist = \

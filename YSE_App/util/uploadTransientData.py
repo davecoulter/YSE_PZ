@@ -93,8 +93,12 @@ less than this, in the same filter/instrument are treated as the same data.  All
 			sn.SNID = sn.otherID[2:]
 		transid = db.get_ID_from_DB('transients',sn.SNID)
 		if self.options.onlyexisting and not transid:
-			print('Object %s not found!  Returning'%sn.SNID)
-			return()
+			print('Object %s not found!  Trying %s'%(sn.SNID,sn.otherID))
+			sn.SNID = sn.otherID
+			transid = db.get_ID_from_DB('transients',sn.SNID)
+			if self.options.onlyexisting and not transid:
+				print('Object %s not found!  Returning'%sn.SNID)
+				return()
 		print('uploading object %s'%sn.SNID)
 		
 		if self.options.useheader:
