@@ -10,11 +10,11 @@ class LogSerializer(serializers.HyperlinkedModelSerializer):
 	transient_image = serializers.HyperlinkedRelatedField(queryset=TransientImage.objects.all(), allow_null=True, required=False, view_name='transientimage-detail')
 	host_image = serializers.HyperlinkedRelatedField(queryset=HostImage.objects.all(), allow_null=True, required=False, view_name='hostimage-detail')
 	
-	transient_spectrum = serializers.HyperlinkedRelatedField(queryset=TransientSpectrum.objects.all(), allow_null=True, required=False, view_name='transientspectrum-detail')
-	host_spectrum = serializers.HyperlinkedRelatedField(queryset=HostSpectrum.objects.all(), allow_null=True, required=False, view_name='hostspectrum-detail')
+	transient_spectrum = serializers.HyperlinkedRelatedField(queryset=TransientSpectrum.objects.all(), allow_null=True, required=False, view_name='transientspectrum-detail', lookup_field="id")
+	host_spectrum = serializers.HyperlinkedRelatedField(queryset=HostSpectrum.objects.all(), allow_null=True, required=False, view_name='hostspectrum-detail', lookup_field="id")
 	
-	transient_photometry = serializers.HyperlinkedRelatedField(queryset=TransientPhotometry.objects.all(), allow_null=True, required=False, view_name='transientphotometry-detail')
-	host_photometry = serializers.HyperlinkedRelatedField(queryset=HostPhotometry.objects.all(), allow_null=True, required=False, view_name='hostphotometry-detail')
+	transient_photometry = serializers.HyperlinkedRelatedField(queryset=TransientPhotometry.objects.all(), allow_null=True, required=False, view_name='transientphotometry-detail', lookup_field="id")
+	host_photometry = serializers.HyperlinkedRelatedField(queryset=HostPhotometry.objects.all(), allow_null=True, required=False, view_name='hostphotometry-detail', lookup_field="id")
 	
 	transient_web_resource = serializers.HyperlinkedRelatedField(queryset=TransientWebResource.objects.all(), allow_null=True, required=False, view_name='transientwebresource-detail')
 	host_web_resource = serializers.HyperlinkedRelatedField(queryset=HostWebResource.objects.all(), allow_null=True, required=False, view_name='hostwebresource-detail')
@@ -25,7 +25,7 @@ class LogSerializer(serializers.HyperlinkedModelSerializer):
 	transient_followup = serializers.HyperlinkedRelatedField(queryset=TransientFollowup.objects.all(), allow_null=True, required=False, view_name='transientfollowup-detail')
 	host_followup = serializers.HyperlinkedRelatedField(queryset=HostFollowup.objects.all(), allow_null=True, required=False, view_name='hostfollowup-detail')
 	
-	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), allow_null=True, required=False, view_name='instrument-detail')
+	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), allow_null=True, required=False, view_name='instrument-detail', lookup_field="id")
 	instrument_config = serializers.HyperlinkedRelatedField(queryset=InstrumentConfig.objects.all(), allow_null=True, required=False, view_name='instrumentconfig-detail')
 	config_element = serializers.HyperlinkedRelatedField(queryset=ConfigElement.objects.all(), allow_null=True, required=False, view_name='configelement-detail')
 	

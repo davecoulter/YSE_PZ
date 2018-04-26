@@ -3,7 +3,7 @@ from YSE_App.models import *
 from django.contrib.auth.models import User
 
 class PhotometricBandSerializer(serializers.HyperlinkedModelSerializer):
-	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail')
+	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail', lookup_field="id")
 
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
@@ -11,6 +11,9 @@ class PhotometricBandSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta:
 		model = PhotometricBand
 		fields = "__all__"
+		extra_kwargs = {
+			'url': {'view_name': 'photometricband-detail', 'lookup_field': 'id'}
+		}
 
 	def create(self, validated_data):
 		return PhotometricBand.objects.create(**validated_data)

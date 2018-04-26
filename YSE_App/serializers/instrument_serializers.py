@@ -11,6 +11,9 @@ class InstrumentSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta:
 		model = Instrument
 		fields = "__all__"
+		extra_kwargs = {
+			'url': {'view_name': 'instrument-detail', 'lookup_field': 'id'}
+		}
 
 	def create(self, validated_data):
 		return Instrument.objects.create(**validated_data)
@@ -28,7 +31,7 @@ class InstrumentSerializer(serializers.HyperlinkedModelSerializer):
 		return instance
 
 class InstrumentConfigSerializer(serializers.HyperlinkedModelSerializer):
-	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail')
+	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail', lookup_field="id")
 	
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
@@ -52,7 +55,7 @@ class InstrumentConfigSerializer(serializers.HyperlinkedModelSerializer):
 		return instance
 
 class ConfigElementSerializer(serializers.HyperlinkedModelSerializer):
-	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail')
+	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail', lookup_field="id")
 	instrument_config = serializers.HyperlinkedRelatedField(queryset=InstrumentConfig.objects.all(), many=True, view_name='instrumentconfig-detail')
 	
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')

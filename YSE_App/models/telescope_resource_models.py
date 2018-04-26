@@ -9,6 +9,7 @@ from astropy.coordinates import EarthLocation
 from astropy.coordinates import get_moon, SkyCoord
 from astropy.time import Time
 import astropy.units as u
+from django.contrib.auth.models import Group
 
 class TelescopeResource(BaseModel):
 	class Meta:
@@ -19,6 +20,7 @@ class TelescopeResource(BaseModel):
 	telescope = models.ForeignKey(Telescope, on_delete=models.CASCADE)
 	# Optional
 	principal_investigator = models.ForeignKey(PrincipalInvestigator, null=True, blank=True, on_delete=models.SET_NULL)
+	groups = models.ManyToManyField(Group, blank=True)
 
 	### Properties ###
 	# Required
@@ -51,6 +53,11 @@ class ClassicalResource(TelescopeResource):
 	
 	def __str__(self):
 		return "Classical Resource: %s; Valid: %s to %s" % (self.telescope.name, self.begin_date_valid.strftime('%m/%d/%Y'), self.end_date_valid.strftime('%m/%d/%Y'))
+
+
+
+
+
 
 class ClassicalObservingDate(BaseModel):
 	### Entity relationships ###
