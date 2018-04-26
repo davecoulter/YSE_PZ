@@ -21,14 +21,6 @@ from django.http import JsonResponse
 from django.forms.models import model_to_dict
 from .common import alert
 import numpy as np
-
-def mkFollowupForm():
-	pass
-	
-	#form = TransientFollowupForm()
-	#form.fields["status"].queryset = FollowupStatus.objects.filter(name='Requested')
-
-	#return render(request, 'YSE_App/form_snippets/transient_followup_form.html', {'form': form})	
 	
 class AddTransientFollowupFormView(FormView):
 	form_class = TransientFollowupForm
