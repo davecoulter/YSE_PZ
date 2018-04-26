@@ -2,6 +2,7 @@ from rest_framework import serializers
 from YSE_App.models import *
 from django.contrib.auth.models import User, Group
 from rest_framework.exceptions import PermissionDenied
+from .auth_helpers import NotAuthorizedToAccessParent
 
 class TransientPhotometrySerializer(serializers.HyperlinkedModelSerializer):
 	transient = serializers.HyperlinkedRelatedField(queryset=Transient.objects.all(), view_name='transient-detail')
@@ -204,13 +205,11 @@ class TransientPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 
 	def create(self, validated_data):
 		transient_phot_data = TransientPhotData.objects.create(**validated_data)
+
 		parent_photometry = TransientPhotometry.objects.get(pk=transient_phot_data.photometry.id)
-		existing_groups = parent_photometry.groups.all()
 		user_groups = self.context['request'].user.groups.all()
 
-		# Does the phot record belong to a group that the user belongs to?
-		authorized_groups = len(set.intersection(set(user_groups),set(existing_groups))) > 0
-		if not authorized_groups:
+		if NotAuthorizedToAccessParent(parent_photometry, user_groups):
 			raise PermissionDenied(
 				{"message": "You don't have permission to create transient photometry data point for",
 				 "transient_photometry_id": parent_photometry.id})
@@ -224,7 +223,6 @@ class TransientPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 		instance.photometry_id = validated_data.get('photometry', instance.photometry)
 		instance.band_id = validated_data.get('obs_group', instance.band)
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
-		
 		instance.obs_date = validated_data.get('obs_date', instance.obs_date)
 		instance.flux_zero_point = validated_data.get('flux_zero_point', instance.flux_zero_point)
 		instance.flux = validated_data.get('flux', instance.flux)
@@ -236,13 +234,9 @@ class TransientPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 		instance.discovery_point = validated_data.get('discovery_point', instance.discovery_point)
 
 		new_parent_photometry = TransientPhotometry.objects.get(pk=instance.photometry_id.id)
-		existing_groups = new_parent_photometry.groups.all()
-		groupsExist = existing_groups.count() > 0
 		user_groups = self.context['request'].user.groups.all()
 
-		# Does the phot record belong to a group that the user belongs to?
-		authorized_groups = len(set.intersection(set(user_groups), set(existing_groups))) > 0
-		if groupsExist and not authorized_groups:
+		if NotAuthorizedToAccessParent(new_parent_photometry, user_groups):
 			raise PermissionDenied(
 				{"message": "You don't have permission to modify transient photometry data point for",
 				 "transient_photometry_id": new_parent_photometry.id })
@@ -264,13 +258,11 @@ class HostPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 
 	def create(self, validated_data):
 		host_phot_data = HostPhotData.objects.create(**validated_data)
+
 		parent_photometry = HostPhotometry.objects.get(pk=host_phot_data.photometry.id)
-		existing_groups = parent_photometry.groups.all()
 		user_groups = self.context['request'].user.groups.all()
 
-		# Does the phot record belong to a group that the user belongs to?
-		authorized_groups = len(set.intersection(set(user_groups), set(existing_groups))) > 0
-		if not authorized_groups:
+		if NotAuthorizedToAccessParent(parent_photometry, user_groups):
 			raise PermissionDenied(
 				{"message": "You don't have permission to create host photometry data point for",
 				 "host_photometry_id": parent_photometry.id})
@@ -283,7 +275,6 @@ class HostPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 		instance.photometry_id = validated_data.get('photometry', instance.photometry)
 		instance.band_id = validated_data.get('obs_group', instance.band)
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
-		
 		instance.obs_date = validated_data.get('obs_date', instance.obs_date)
 		instance.flux_zero_point = validated_data.get('flux_zero_point', instance.flux_zero_point)
 		instance.flux = validated_data.get('flux', instance.flux)
@@ -294,13 +285,9 @@ class HostPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 		instance.dq = validated_data.get('dq', instance.dq)
 
 		new_parent_photometry = HostPhotometry.objects.get(pk=instance.photometry_id.id)
-		existing_groups = new_parent_photometry.groups.all()
-		groupsExist = existing_groups.count() > 0
 		user_groups = self.context['request'].user.groups.all()
 
-		# Does the phot record belong to a group that the user belongs to?
-		authorized_groups = len(set.intersection(set(user_groups), set(existing_groups))) > 0
-		if groupsExist and not authorized_groups:
+		if NotAuthorizedToAccessParent(new_parent_photometry, user_groups):
 			raise PermissionDenied(
 				{"message": "You don't have permission to modify host photometry data point for",
 				 "host_photometry_id": new_parent_photometry.id})

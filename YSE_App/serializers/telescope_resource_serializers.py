@@ -2,6 +2,7 @@ from rest_framework import serializers
 from YSE_App.models import *
 from django.contrib.auth.models import User
 from rest_framework.exceptions import PermissionDenied
+from .auth_helpers import NotAuthorizedToAccessParent
 
 class ToOResourceSerializer(serializers.HyperlinkedModelSerializer):
 	telescope = serializers.HyperlinkedRelatedField(queryset=Telescope.objects.all(), view_name='telescope-detail')
@@ -288,13 +289,11 @@ class ClassicalObservingDateSerializer(serializers.HyperlinkedModelSerializer):
 
 	def create(self, validated_data):
 		classical_observing_date = ClassicalObservingDate.objects.create(**validated_data)
+
 		parent_resource = ClassicalResource.objects.get(pk=classical_observing_date.resource.id)
-		existing_groups = parent_resource.groups.all()
 		user_groups = self.context['request'].user.groups.all()
 
-		# Does the phot record belong to a group that the user belongs to?
-		authorized_groups = len(set.intersection(set(user_groups), set(existing_groups))) > 0
-		if not authorized_groups:
+		if NotAuthorizedToAccessParent(parent_resource, user_groups):
 			raise PermissionDenied(
 				{"message": "You don't have permission to create classical observing date for",
 				 "classical_resource_id": parent_resource.id})
@@ -306,19 +305,13 @@ class ClassicalObservingDateSerializer(serializers.HyperlinkedModelSerializer):
 	def update(self, instance, validated_data):
 		instance.resource_id = validated_data.get('resource', instance.resource)
 		instance.night_type_id = validated_data.get('night_type', instance.night_type)
-
 		instance.obs_date = validated_data.get('obs_date', instance.obs_date)
-
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 
 		new_parent_classical_resource = ClassicalResource.objects.get(pk=instance.resource_id.id)
-		existing_groups = new_parent_classical_resource.groups.all()
-		groupsExist = existing_groups.count() > 0
 		user_groups = self.context['request'].user.groups.all()
 
-		# Does the phot record belong to a group that the user belongs to?
-		authorized_groups = len(set.intersection(set(user_groups), set(existing_groups))) > 0
-		if groupsExist and not authorized_groups:
+		if NotAuthorizedToAccessParent(new_parent_classical_resource, user_groups):
 			raise PermissionDenied(
 				{"message": "You don't have permission to modify classical observing date point for",
 				 "classical_resource_id": new_parent_classical_resource.id})

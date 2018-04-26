@@ -2,6 +2,7 @@ from rest_framework import serializers
 from YSE_App.models import *
 from django.contrib.auth.models import User
 from rest_framework.exceptions import PermissionDenied
+from .auth_helpers import NotAuthorizedToAccessParent
 
 class TransientSpectrumSerializer(serializers.HyperlinkedModelSerializer):
 	transient = serializers.HyperlinkedRelatedField(queryset=Transient.objects.all(), view_name='transient-detail')
@@ -225,13 +226,11 @@ class TransientSpecDataSerializer(serializers.HyperlinkedModelSerializer):
 
 	def create(self, validated_data):
 		transient_spec_data = TransientSpecData.objects.create(**validated_data)
+
 		parent_spectrum = TransientSpectrum.objects.get(pk=transient_spec_data.spectrum.id)
-		existing_groups = parent_spectrum.groups.all()
 		user_groups = self.context['request'].user.groups.all()
 
-		# Does the phot record belong to a group that the user belongs to?
-		authorized_groups = len(set.intersection(set(user_groups), set(existing_groups))) > 0
-		if not authorized_groups:
+		if NotAuthorizedToAccessParent(parent_spectrum, user_groups):
 			raise PermissionDenied(
 				{"message": "You don't have permission to create transient spectrum data point for",
 				 "transient_photometry_id": parent_spectrum.id})
@@ -242,22 +241,16 @@ class TransientSpecDataSerializer(serializers.HyperlinkedModelSerializer):
 
 	def update(self, instance, validated_data):
 		instance.spectrum_id = validated_data.get('spectrum', instance.spectrum)
-
 		instance.wavelength = validated_data.get('wavelength', instance.wavelength)
 		instance.flux = validated_data.get('flux', instance.flux)
 		instance.wavelength_err = validated_data.get('wavelength_err', instance.wavelength_err)
 		instance.flux_err = validated_data.get('flux_err', instance.flux_err)
-
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 
 		new_parent_spectrum = TransientSpectrum.objects.get(pk=instance.spectrum_id.id)
-		existing_groups = new_parent_spectrum.groups.all()
-		groupsExist = existing_groups.count() > 0
 		user_groups = self.context['request'].user.groups.all()
 
-		# Does the phot record belong to a group that the user belongs to?
-		authorized_groups = len(set.intersection(set(user_groups), set(existing_groups))) > 0
-		if groupsExist and not authorized_groups:
+		if NotAuthorizedToAccessParent(new_parent_spectrum, user_groups):
 			raise PermissionDenied(
 				{"message": "You don't have permission to modify transient spectrum data point for",
 				 "transient_spectrum_id": new_parent_spectrum.id})
@@ -278,13 +271,11 @@ class HostSpecDataSerializer(serializers.HyperlinkedModelSerializer):
 
 	def create(self, validated_data):
 		host_spec_data = HostSpecData.objects.create(**validated_data)
+
 		parent_spectrum = HostSpectrum.objects.get(pk=host_spec_data.spectrum.id)
-		existing_groups = parent_spectrum.groups.all()
 		user_groups = self.context['request'].user.groups.all()
 
-		# Does the phot record belong to a group that the user belongs to?
-		authorized_groups = len(set.intersection(set(user_groups), set(existing_groups))) > 0
-		if not authorized_groups:
+		if NotAuthorizedToAccessParent(parent_spectrum, user_groups):
 			raise PermissionDenied(
 				{"message": "You don't have permission to create host spectrum data point for",
 				 "host_spectrum_id": parent_spectrum.id})
@@ -295,22 +286,16 @@ class HostSpecDataSerializer(serializers.HyperlinkedModelSerializer):
 
 	def update(self, instance, validated_data):
 		instance.spectrum_id = validated_data.get('spectrum', instance.spectrum)
-
 		instance.wavelength = validated_data.get('wavelength', instance.wavelength)
 		instance.flux = validated_data.get('flux', instance.flux)
 		instance.wavelength_err = validated_data.get('wavelength_err', instance.wavelength_err)
 		instance.flux_err = validated_data.get('flux_err', instance.flux_err)
-
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 
 		new_parent_spectrum = HostSpectrum.objects.get(pk=instance.spectrum_id.id)
-		existing_groups = new_parent_spectrum.groups.all()
-		groupsExist = existing_groups.count() > 0
 		user_groups = self.context['request'].user.groups.all()
 
-		# Does the phot record belong to a group that the user belongs to?
-		authorized_groups = len(set.intersection(set(user_groups), set(existing_groups))) > 0
-		if groupsExist and not authorized_groups:
+		if NotAuthorizedToAccessParent(new_parent_spectrum, user_groups):
 			raise PermissionDenied(
 				{"message": "You don't have permission to modify host spectrum data point for",
 				 "host_spectrum_id": new_parent_spectrum.id})
