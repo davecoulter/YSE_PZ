@@ -111,22 +111,24 @@ def SendTransientAlert(transient_id, transient_name, ra, dec):
 	# Send email to everyone regardless of business hours
 	all_users = User.objects.filter().exclude(username='admin')
 	for user in all_users:
-		sendemail(from_addr, user.email, subject, html_msg, 
-					settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
+		if user.email:
+			sendemail(from_addr, user.email, subject, html_msg, 
+					  settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
 
 	if business_hours:
 		print("Sending SMS to everyone")
 		for user in all_users:
 			print("Sending text to: %s" % user.username)
 
-			profile = Profile.objects.get(user__id =user.id)
-			phone_email = "%s%s%s@%s" % (profile.phone_area, 
-								profile.phone_first_three, 
-								profile.phone_last_four,
-								profile.phone_provider_str)
+			profile = Profile.objects.filter(user__id =user.id)
+			for p in profile:
+				phone_email = "%s%s%s@%s" % (p.phone_area, 
+											 p.phone_first_three, 
+											 p.phone_last_four,
+											 p.phone_provider_str)
 
-			sendsms(from_addr, phone_email, subject, txt_msg, 
-					settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
+				sendsms(from_addr, phone_email, subject, txt_msg, 
+						settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
 	else:		
 		print("Non-business hours... only send SMS to On Call list")
 

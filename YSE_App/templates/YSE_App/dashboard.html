@@ -1,4 +1,6 @@
 {% extends 'YSE_App/base.html' %}
+{% load static from staticfiles %}
+{% load widget_tweaks %}
 
 {% block content_header %}
     <h1>
@@ -40,7 +42,7 @@
           <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
           <td>{{ t.CoordString.0 }}</td>
           <td>{{ t.CoordString.1 }}</td>
-          <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+          <td><span class="hidden">{{ t.disc_date|date:"y m d" }}</span>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
           <td>{{ t.disc_mag }}</td>
           <td>{{ t.obs_group.name }}</td>
           <td>{{ t.best_spec_class }}</td>
@@ -87,7 +89,7 @@
             <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
             <td>{{ t.CoordString.0 }}</td>
             <td>{{ t.CoordString.1 }}</td>
-            <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+            <td><span class="hidden">{{ t.disc_date|date:"y m d" }}</span>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
 	        <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
 	        <td>{{ t.best_spec_class }}</td>
@@ -134,7 +136,7 @@
             <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
             <td>{{ t.CoordString.0 }}</td>
             <td>{{ t.CoordString.1 }}</td>
-            <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+            <td><span class="hidden">{{ t.disc_date|date:"y m d" }}</span>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
 	        <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
 	        <td>{{ t.best_spec_class }}</td>
@@ -180,8 +182,8 @@
             <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
             <td>{{ t.CoordString.0 }}</td>
             <td>{{ t.CoordString.1 }}</td>
-            <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
-	        <td>{{ t.disc_mag }}</td>
+            <td><span class="hidden">{{ t.disc_date|date:"y m d" }}</span>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+  	        <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
 	        <td>{{ t.best_spec_class }}</td>
 	        <td>{{ t.host.redshift }}</td>
@@ -213,7 +215,7 @@
           <th>RA</th>
           <th>DEC</th>
           <th>Disc. Date</th>
-	      <th>Disc. Mag</th>
+  	      <th>Disc. Mag</th>
           <th>Discovery Source</th>
           <th>Spec Class</th>
 	      <th>Host-<i>z</i></th>
@@ -226,8 +228,8 @@
             <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
             <td>{{ t.CoordString.0 }}</td>
             <td>{{ t.CoordString.1 }}</td>
-            <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
-	        <td>{{ t.disc_mag }}</td>
+            <td><span class="hidden">{{ t.disc_date|date:"y m d" }}</span>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+	          <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
 	        <td>{{ t.best_spec_class }}</td>
 	        <td>{{ t.host.redshift }}</td>
@@ -262,8 +264,8 @@
           <th>Disc. Mag</th>
           <th>Discovery Source</th>
           <th>Spec Class</th>
-	      <th>Host-<i>z</i></th>
-	      <th>Internal Survey</th>
+  	      <th>Host-<i>z</i></th>
+	        <th>Internal Survey</th>
         </tr>
         </thead>
         <tbody>
@@ -272,8 +274,8 @@
             <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
             <td>{{ t.CoordString.0 }}</td>
             <td>{{ t.CoordString.1 }}</td>
-            <td>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
-	    <td>{{ t.disc_mag }}</td>
+            <td><span class="hidden">{{ t.disc_date|date:"y m d" }}</span>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
+            <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
 	    <td>{{ t.best_spec_class }}</td>
 	    <td>{{ t.host.redshift }}</td>
@@ -292,5 +294,17 @@
   <!-- /.box -->
   
 {% endblock %}
+
+{% block scripts %}
+<script>
+  $( document ).ready(function(){
+    $('#new_transient_tbl').DataTable( {
+      "order": [[ 3, "desc" ]]
+    });
+  });
+</script>
+{% endblock %}
+
+
   
 

@@ -72,7 +72,7 @@ class Transient(BaseModel):
 
 	def __str__(self):
 		return self.name
-
+	
 @receiver(models.signals.post_save, sender=Transient)
 def execute_after_save(sender, instance, created, *args, **kwargs):
 	if created:
@@ -90,16 +90,14 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 			instance.k2_validated = True
 			instance.k2_msg = C16_msg
 			instance.tags.add(k2c16tag)
-
+			
 		elif is_k2_C17_validated:
 			k2c17tag = TransientTag.objects.get(name='K2 C17')
 			instance.k2_validated = True
 			instance.k2_msg = C17_msg
 			instance.tags.add(k2c17tag)
 
-
 		instance.save()
-
 		if is_k2_C17_validated:
 			# coord_string = GetSexigesimalString(instance.ra, instance.dec)
 			coord_string = instance.CoordString()

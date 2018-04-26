@@ -36,8 +36,8 @@ urlpatterns = [
 	url(r'^finderchart/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderchart, name='finderchart'),
 	url(r'^finderim/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderim, name='finderim'),
 	
-    # url(r'^add_transient_followup/$', form_views.add_transient_followup, name='add_transient_followup'),
-    url(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
+	url(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
+    #url(r'^add_transient_followup/', mkFollowupForm, name='add_transient_followup'),
     url(r'^add_transient_observation_task/', AddTransientObservationTaskFormView.as_view(), name='add_transient_observation_task'),
     url(r'^add_transient_comment/', AddTransientCommentFormView.as_view(), name='add_transient_comment'),
 	url(r'^rise_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',
