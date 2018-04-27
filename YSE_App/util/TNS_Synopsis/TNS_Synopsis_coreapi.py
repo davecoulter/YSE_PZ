@@ -459,12 +459,10 @@ class DBOps():
 		except:
 			raise RuntimeError('Error : couldn\'t get schema!')
 
-		if 'results' not in schema.keys():
+		if 'transient' not in schema.keys():
 			return None
-		if len(schema['results']) > 1:
-			raise RuntimeError('Error : multiple object matches!!')
 
-		return(schema['results'][0]['url'])
+		return(schema['transient']['url'])
 
 	def get_host_from_DB(self,hostname,hostra,hostdec,matchrad=0.0008,debug=False):
 
