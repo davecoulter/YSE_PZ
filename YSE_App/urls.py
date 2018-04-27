@@ -1,4 +1,5 @@
 from django.conf.urls import url, include
+from django.urls import path
 from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.contrib import admin
@@ -66,6 +67,7 @@ urlpatterns = [
 	url(r'^get_legacy_image/(?P<transient_id>[0-9]+)',
 		view_utils.get_legacy_image, name='get_legacy_image'),
 
+    path('accounts/', include('django.contrib.auth.urls')),
 ]
 
 router = DefaultRouter()
