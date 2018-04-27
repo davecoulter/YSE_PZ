@@ -24,7 +24,7 @@
         </div>
         <div class="box-body">
 
-          <table id="followup_tbl" class="table table-bordered table-hover sorttable">
+          <table id="followup_{{ t }}_tbl" class="table table-bordered table-hover sorttable">
 	    <thead>
 	      <tr>
 		<th>Transient</th>
@@ -68,4 +68,16 @@
 
 
     
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $( document ).ready(function(){
+    {% for t in telescopes %}
+    $('#followup_{{ t }}_tbl').DataTable( {
+      "order": [[ 3, "desc" ]]
+    });
+    {% endfor %}
+  });
+</script>
 {% endblock %}
