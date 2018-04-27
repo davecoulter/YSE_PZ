@@ -8,6 +8,7 @@ import urllib.request
 import ast
 from astropy.time import Time
 import numpy as np
+import coreapi
 
 class upload():
 	def __init__(self):
@@ -91,11 +92,11 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 		sn = snana.SuperNova(self.options.inputfile)
 		if self.options.foundationdefaults:
 			sn.SNID = sn.otherID[2:]
-		transid = db.get_ID_from_DB('transients',sn.SNID)
+		transid = db.get_transient_from_DB(sn.SNID)
 		if self.options.onlyexisting and not transid:
 			print('Object %s not found!	 Trying %s'%(sn.SNID,sn.otherID))
 			sn.SNID = sn.otherID
-			transid = db.get_ID_from_DB('transients',sn.SNID)
+			transid = db.get_transient_from_DB(sn.SNID)
 			if self.options.onlyexisting and not transid:
 				print('Object %s not found!	 Returning'%sn.SNID)
 				return()
@@ -105,7 +106,7 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 			transid = self.uploadHeader(sn)			
 			transname = sn.SNID
 		else:
-			transid = db.get_ID_from_DB('transients',sn.SNID)
+			transid = db.get_transient_from_DB(sn.SNID)
 			transname = sn.SNID
 			
 		# create photometry object, if it doesn't exist
@@ -170,7 +171,7 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 		self.obsgroupid = db.get_ID_from_DB('observationgroups',self.options.obsgroup)
 		if not self.obsgroupid:
 			self.obsgroupid = db.get_ID_from_DB('observationgroups','Unknown')
-		self.snidid = db.get_ID_from_DB('transients',snid)
+		self.snidid = db.get_transient_from_DB(snid)
 
 		inDB = False
 		if type(photheaderdata) == list or not self.snidid:
@@ -354,32 +355,58 @@ class DBOps():
 		cmd = '%s%s '%(self.basegeturl,self.options.__dict__['%sapi'%table])
 		objectdata = runDBcommand(cmd)
 
-		if type(objectdata) != list and 'url' not in objectdata:
+		if 'results' not in objectdata or type(objectdata['results']) != list and 'url' not in objectdata['results'][0]:
 			print(cmd)
 			print(objectdata)
 			raise RuntimeError('Error : failure adding object')
 		else:
-			return(objectdata)
-		
-	def get_ID_from_DB(self,tablename,fieldname):
-		cmd = '%s%s/'%(self.basegeturl,tablename)
-		output = os.popen(cmd).read()
+			return(objectdata['results'])
+
+
+	def get_ID_from_DB(self,tablename,fieldname,debug=False):
+
+		if debug: tstart = time.time()
+		auth = coreapi.auth.BasicAuthentication(
+			username=self.dblogin,
+			password=self.dbpassword,
+		)
+		client = coreapi.Client(auth=auth)
 		try:
-			data = json.loads(output)
+			schema = client.get('%s%s'%(self.dburl,tablename))
 		except:
-			print(cmd)
-			print(os.popen(cmd).read())
-			raise RuntimeError('Error : cmd output not in JSON format')
-			
+			raise RuntimeError('Error : couldn\'t get schema!')
+
 		idlist,namelist = [],[]
-		for i in range(len(data)):
-			namelist += [data[i]['name']]
-			idlist += [data[i]['url']]
+		for i in range(len(schema['results'])):
+			namelist += [schema['results'][i]['name']]
+			idlist += [schema['results'][i]['url']]
+
+		if debug:
+			print('GET took %.1f seconds'%(time.time()-tstart))
 
 		if fieldname not in namelist: return(None)
 
 		return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
 
+	def get_transient_from_DB(self,fieldname,debug=False):
+
+		if debug: tstart = time.time()
+		tablename = 'transients'
+		auth = coreapi.auth.BasicAuthentication(
+			username=self.dblogin,
+			password=self.dbpassword,
+		)
+		client = coreapi.Client(auth=auth)
+		try:
+			schema = client.get('%s%s'%(self.dburl.replace('/api','/get_transient'),fieldname))
+		except:
+			raise RuntimeError('Error : couldn\'t get schema!')
+
+		if not schema['transient']:
+			return None
+
+		return(schema['transient']['url'])
+	
 	def get_key_from_object(self,objid,fieldname):
 		cmd = '%s%s'%(self.basegetobjurl,objid)
 		output = os.popen(cmd).read()
@@ -401,11 +428,11 @@ class DBOps():
 		data = json.loads(output)
 
 		translist,instlist,obsgrouplist,idlist = [],[],[],[]
-		for i in range(len(data)):
-			obsgrouplist += [data[i]['obs_group']]
-			instlist += [data[i]['instrument']]
-			translist += [data[i]['transient']]
-			idlist += [data[i]['url']]
+		for i in range(len(data['results'])):
+			obsgrouplist += [data['results'][i]['obs_group']]
+			instlist += [data['results'][i]['instrument']]
+			translist += [data['results'][i]['transient']]
+			idlist += [data['results'][i]['url']]
 
 		if obsgroup not in obsgrouplist or instrument not in instlist or transient not in translist:
 			return(None)
@@ -423,10 +450,10 @@ class DBOps():
 		data = json.loads(output)
 
 		idlist,namelist,instlist = [],[],[]
-		for i in range(len(data)):
-			namelist += [data[i]['name']]
-			idlist += [data[i]['url']]
-			instlist += [data[i]['instrument']]
+		for i in range(len(data['results'])):
+			namelist += [data['results'][i]['name']]
+			idlist += [data['results'][i]['url']]
+			instlist += [data['results'][i]['instrument']]
 
 		if fieldname not in namelist or instrument not in instlist: return(None)
 
