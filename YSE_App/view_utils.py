@@ -656,11 +656,14 @@ def get_transient(request, slug):
 
 
 def find_separation(host_queryset, query_coord, sep_threshold):
+
+	ra,dec = [],[]
 	for host in host_queryset:
-		host_coord = SkyCoord(host.ra, host.dec, unit=(u.deg, u.deg))
-		sep = host_coord.separation(query_coord)
-		if sep.arcminute <= sep_threshold:
-			yield host
+		ra += [host.ra]; dec += [host.dec]
+	host_coords = SkyCoord(ra, dec, unit=(u.deg, u.deg))
+	sep = host_coords.separation(query_coord)
+	for idx in np.where(sep.arcminute <= sep_threshold)[0]:
+		yield host_queryset[int(idx)]
 
 def get_host(request, ra, dec, sep):
 

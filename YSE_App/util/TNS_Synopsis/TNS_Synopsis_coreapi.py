@@ -361,7 +361,7 @@ class DBOps():
 		cmd = '%s%s '%(self.baseposturl,self.options.__dict__['%sapi'%table])
 		for k,v in zip(objectdict.keys(),objectdict.values()):
 			if '<url>' not in str(v):
-				if k != 'tags':
+				if k != 'tags' and k != 'groups':
 					cmd += '%s="%s" '%(k,v)
 				else:
 					cmd += '%s:=[] '%(k)
@@ -383,7 +383,7 @@ class DBOps():
 		cmd = '%s PUT %s '%(self.baseputurl.split('PUT')[0],objectid)
 		for k,v in zip(objectdict.keys(),objectdict.values()):
 			if '<url>' not in str(v):
-				if k != 'tags':
+				if k != 'tags' and k != 'groups':
 					cmd += '%s="%s" '%(k,v)
 				else:
 					cmd += '%s:=[] '%k
@@ -404,7 +404,7 @@ class DBOps():
 		cmd = '%s PATCH %s '%(self.baseputurl.split('PUT')[0],objectid)
 		for k,v in zip(objectdict.keys(),objectdict.values()):
 			if '<url>' not in str(v):
-				if k != 'tags':
+				if k != 'tags' and k != 'groups':
 					cmd += '%s="%s" '%(k,v)
 				else:
 					cmd += '%s:=[] '%k
@@ -424,7 +424,6 @@ class DBOps():
 	def get_ID_from_DB(self,tablename,fieldname,debug=False):
 
 		if debug: tstart = time.time()
-		cmd = '%s%s/'%(self.basegeturl,tablename)
 		auth = coreapi.auth.BasicAuthentication(
 			username=self.dblogin,
 			password=self.dbpassword,
@@ -434,11 +433,11 @@ class DBOps():
 			schema = client.get('%s%s'%(self.dburl,tablename))
 		except:
 			raise RuntimeError('Error : couldn\'t get schema!')
-				
+
 		idlist,namelist = [],[]
-		for i in range(len(schema)):
-			namelist += [schema[i]['name']]
-			idlist += [schema[i]['url']]
+		for i in range(len(schema['results'])):
+			namelist += [schema['results'][i]['name']]
+			idlist += [schema['results'][i]['url']]
 
 		if debug:
 			print('GET took %.1f seconds'%(time.time()-tstart))
@@ -446,6 +445,46 @@ class DBOps():
 
 		return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
 
+	def get_transient_from_DB(self,fieldname,debug=False):
+
+		if debug: tstart = time.time()
+		tablename = 'transients'
+		auth = coreapi.auth.BasicAuthentication(
+			username=self.dblogin,
+			password=self.dbpassword,
+		)
+		client = coreapi.Client(auth=auth)
+		try:
+			schema = client.get('%s%s'%(self.dburl.replace('/api','/get_transient'),fieldname))
+		except:
+			raise RuntimeError('Error : couldn\'t get schema!')
+
+		if 'results' not in schema.keys():
+			return None
+		if len(schema['results']) > 1:
+			raise RuntimeError('Error : multiple object matches!!')
+
+		return(schema['results'][0]['url'])
+
+	def get_host_from_DB(self,hostname,hostra,hostdec,matchrad=0.0008,debug=False):
+
+		if debug: tstart = time.time()
+		tablename = 'transienthosts'
+		auth = coreapi.auth.BasicAuthentication(
+			username=self.dblogin,
+			password=self.dbpassword,
+		)
+		client = coreapi.Client(auth=auth)
+		try:
+			schema = client.get('%s%.7f/%.7f/%.4f/'%(self.dburl.replace('/api','/get_host'),hostra,hostdec,matchrad))
+		except:
+			raise RuntimeError('Error : couldn\'t get schema!')
+
+		if 'results' not in schema.keys():
+			return None
+
+		return(schema['results'][0]['url'])
+	
 	def get_key_from_object(self,objid,fieldname):
 		cmd = '%s%s'%(self.basegetobjurl,objid)
 		output = os.popen(cmd).read()
@@ -490,6 +529,8 @@ class processTNS():
 							  help='database password, if post=True (default=%default)')
 			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
 							  help='URL to POST transients to a database (default=%default)')
+			parser.add_option('--hostmatchrad', default=config.get('main','hostmatchrad'), type="float",
+							  help='matching radius for hosts (arcmin) (default=%default)')
 
 		else:
 			parser.add_option('--login', default="", type="string",
@@ -502,6 +543,8 @@ class processTNS():
 							  help='database password, if post=True (default=%default)')
 			parser.add_option('--url', default="", type="string",
 							  help='URL to POST transients to a database (default=%default)')
+			parser.add_option('--hostmatchrad', default=0.001, type="float",
+							  help='matching radius for hosts (arcmin) (default=%default)')
 			
 		return(parser)
 
@@ -801,9 +844,9 @@ class processTNS():
 					if post:
 						snid = objs[j].decode("utf-8")
 						# if source_group doesn't exist, we need to add it
-						groupid = db.get_ID_from_DB('observationgroups',source_group)
-						if not groupid:
-							groupid = db.get_ID_from_DB('observationgroups','Unknown')#db.post_object_to_DB('observationgroup',{'name':source_group})
+						obsgroupid = db.get_ID_from_DB('observationgroups',source_group)
+						if not obsgroupid:
+							obsgroupid = db.get_ID_from_DB('observationgroups','Unknown')#db.post_object_to_DB('observationgroup',{'name':source_group})
 
 						# get the status
 						statusid = db.get_ID_from_DB('transientstatuses',self.status)
@@ -814,8 +857,15 @@ class processTNS():
 						for z,name,ra,dec,sep,mag in zip(galaxy_zs,galaxy_names,galaxy_ras,galaxy_decs,galaxy_seps,galaxy_mags):
 							if sep == np.min(galaxy_seps):
 								hostdict = {'name':name,'ra':ra,'dec':dec,'redshift':z}
-								hostoutput = db.post_object_to_DB('host',hostdict,return_full=True)
-								hosturl = hostoutput['url']
+								hosturl = db.get_host_from_DB(name,ra,dec,self.hostmatchrad)
+								if not hosturl:
+									print('Adding new host!')
+									hostoutput = db.post_object_to_DB('host',hostdict,return_full=True)
+									hosturl = hostoutput['url']
+									hostexists = False
+								else:
+									print('Host at coord RA,DEC=%.7f,%.7f already exists in DB'%(ra,dec))
+									hostexists = True
 								ned_mag = mag
 								
 							hostcoords += 'ra=%.7f, dec=%.7f\n'%(ra,dec)
@@ -826,7 +876,7 @@ class processTNS():
 							eventid = db.get_ID_from_DB('transientclasses','Unknown')#db.post_object_to_DB('transientclasses',{'name':evt_type})
 							
 						# first check if already exists
-						dbid = db.get_ID_from_DB('transients',snid)
+						dbid = db.get_transient_from_DB(snid)
 						k2id = db.get_ID_from_DB('internalsurveys','K2')
 						# then POST or PUT, depending
 						# put in main transient
@@ -837,14 +887,15 @@ class processTNS():
 									  'ra':sc.ra.deg,
 									  'dec':sc.dec.deg,
 									  #'status':statusid,
-									  'obs_group':groupid,
+									  'obs_group':obsgroupid,
 									  'host':hosturl,
 									  'candidate_hosts':hostcoords,
 									  'best_spec_class':eventid,
 									  'TNS_spec_class':evt_type,
 									  'mw_ebv':ebv,
 									  'disc_date':disc_date.replace(' ','T'),
-									  'tags':[]}
+									  'tags':[],
+									  'groups':[]}
 						if nondetectdate: newobjdict['non_detect_date'] = nondetectdate.replace(' ','T')
 						if nondetectmaglim: newobjdict['non_detect_limit'] = nondetectmaglim
 						if nondetectfilt:
@@ -885,8 +936,9 @@ class processTNS():
 										'instrument',{'name':'Unknown','telescope':telid})
 
 								phottabledict = {'transient':transientid,
-										 'obs_group':groupid,
-										 'instrument':instrumentid}
+												 'obs_group':obsgroupid,
+												 'instrument':instrumentid,
+												 'groups':[]}
 								phottableid = db.post_object_to_DB('photometry',phottabledict)
 
 								for f in np.unique(tfilt):
@@ -907,7 +959,8 @@ class processTNS():
 											# if they're close or equal?  Set discovery flag
 											photdatadict = {'obs_date':od.replace(' ','T'),
 															'band':bandid,
-															'photometry':phottableid}
+															'photometry':phottableid,
+															'groups':[]}
 											if m: photdatadict['mag'] = m
 											if me: photdatadict['mag_err'] = me
 											if f: photdatadict['flux'] = f
@@ -916,8 +969,8 @@ class processTNS():
 											photdataid = db.post_object_to_DB('photdata',photdatadict)
 									except:
 										print('Error getting photometry!!')
-							# put in the galaxy photometry
-							if ned_mag:
+							# put in the galaxy photometry, if the host wasn't already in the DB
+							if ned_mag and not hostexists:
 								try:
 									unknowninstid = db.get_ID_from_DB('instruments','Unknown')
 									unknowngroupid = db.get_ID_from_DB('observationgroups','NED')
@@ -927,14 +980,16 @@ class processTNS():
 								
 									hostphottabledict = {'host':hosturl,
 														 'obs_group':unknowngroupid,
-														 'instrument':unknowninstid}
+														 'instrument':unknowninstid,
+														 'groups':[]}
 									hostphottableid = db.post_object_to_DB('hostphotometry',hostphottabledict)
 						
 									# put in the photometry
 									hostphotdatadict = {'obs_date':disc_date.replace(' ','T'),#'2000-01-01 00:00:00',
 														'mag':ned_mag.decode('utf-8')[:-1],
 														'band':unknownbandid,
-														'photometry':hostphottableid}
+														'photometry':hostphottableid,
+														'groups':[]}
 									hostphotdataid = db.post_object_to_DB('hostphotdata',hostphotdatadict)
 								except:
 									print('getting host mag failed')
@@ -951,9 +1006,9 @@ class processTNS():
 					snid = objs[j].decode("utf-8")
 					# if source_group doesn't exist, we need to add it
 					source_group = "Unknown"
-					groupid = db.get_ID_from_DB('observationgroups',source_group)
-					if not groupid:
-						groupid = db.get_ID_from_DB('observationgroups','Unknown')#db.post_object_to_DB('observationgroup',{'name':source_group})
+					obsgroupid = db.get_ID_from_DB('observationgroups',source_group)
+					if not obsgroupid:
+						obsgroupid = db.get_ID_from_DB('observationgroups','Unknown')#db.post_object_to_DB('observationgroup',{'name':source_group})
 
 					# get the status
 					statusid = db.get_ID_from_DB('transientstatuses',self.status)
@@ -966,11 +1021,12 @@ class processTNS():
 					sc = SkyCoord(ras[j].decode("utf-8"),decs[j].decode("utf-8"),FK5,unit=(u.hourangle,u.deg))
 					db.options.best_spec_classapi = db.options.transientclassesapi
 					newobjdict = {'name':objs[j].decode("utf-8"),
-						      'ra':sc.ra.deg,
-						      'dec':sc.dec.deg,
-						      'status':statusid,
-						      'obs_group':groupid,
-						      'tags':[]}
+								  'ra':sc.ra.deg,
+								  'dec':sc.dec.deg,
+								  'status':statusid,
+								  'obs_group':groupid,
+								  'tags':[],
+								  'groups':[]}
 
 					if dbid:
 						transientid = db.patch_object_to_DB('transient',newobjdict,dbid)
@@ -1028,7 +1084,8 @@ if __name__ == "__main__":
 	else: config=None
 	parser = tnsproc.add_options(usage=usagestring,config=config)
 	options,  args = parser.parse_args()
-
+	tnsproc.hostmatchrad = options.hostmatchrad
+	
 	db = DBOps()
 	parser = db.add_options(usage=usagestring,config=config)
 	options,  args = parser.parse_args()
@@ -1041,5 +1098,6 @@ if __name__ == "__main__":
 	tnsproc.dbpassword = options.dbpassword
 	tnsproc.dburl = options.dburl
 	tnsproc.status = options.status
+
 	tnsproc.ProcessTNSEmails(post=True,db=db)
 	print('TNS -> YSE_PZ took %.1f seconds'%(time.time()-tstart))

@@ -30,7 +30,7 @@ urlpatterns = [
     url(r'^transient_detail/(?P<slug>[a-zA-Z0-9_-]+)/$', views.transient_detail, name='transient_detail'),
 
 	url(r'^get_transient/(?P<slug>[a-zA-Z0-9_-]+)/$', view_utils.get_transient, name='get_transient'),
-	url(r'^get_host/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<sep>\d+\.?\d?)/$', view_utils.get_host, name='get_host'),
+	url(r'^get_host/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<sep>\d+\.?\d*)/$', view_utils.get_host, name='get_host'),
 
     url(r'^login/$', views.auth_login, name='auth_login'),
     url(r'^logout/$', views.auth_logout, name='auth_logout'),
