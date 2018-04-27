@@ -469,7 +469,7 @@ class DBOps():
 	def get_host_from_DB(self,hostname,hostra,hostdec,matchrad=0.0008,debug=False):
 
 		if debug: tstart = time.time()
-		tablename = 'transienthosts'
+		tablename = 'hosts'
 		auth = coreapi.auth.BasicAuthentication(
 			username=self.dblogin,
 			password=self.dbpassword,
@@ -480,10 +480,16 @@ class DBOps():
 		except:
 			raise RuntimeError('Error : couldn\'t get schema!')
 
-		if 'results' not in schema.keys():
+		if not len(schema['host candidates']):
 			return None
 
-		return(schema['results'][0]['url'])
+		seplist = []
+		for i in range(len(schema['host candidates'])):
+			seplist += [schema['host candidates'][i]['host_sep']]
+		minsep = np.where(seplist == np.min(seplist))[0].astype(int)
+		if len(minsep) > 1: minsep = [minsep[0]]
+
+		return('%s%s/%s/'%(self.dburl,tablename,schema['host candidates'][minsep[0]]['host_id']))
 	
 	def get_key_from_object(self,objid,fieldname):
 		cmd = '%s%s'%(self.basegetobjurl,objid)
@@ -1024,7 +1030,7 @@ class processTNS():
 								  'ra':sc.ra.deg,
 								  'dec':sc.dec.deg,
 								  'status':statusid,
-								  'obs_group':groupid,
+								  'obs_group':obsgroupid,
 								  'tags':[],
 								  'groups':[]}
 

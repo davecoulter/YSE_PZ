@@ -663,7 +663,7 @@ def find_separation(host_queryset, query_coord, sep_threshold):
 	host_coords = SkyCoord(ra, dec, unit=(u.deg, u.deg))
 	sep = host_coords.separation(query_coord)
 	for idx in np.where(sep.arcminute <= sep_threshold)[0]:
-		yield host_queryset[int(idx)]
+		yield host_queryset[int(idx)],sep.arcminute[idx]
 
 def get_host(request, ra, dec, sep):
 
@@ -671,9 +671,11 @@ def get_host(request, ra, dec, sep):
 	host_candidates = find_separation(Host.objects.all(), query_coord, float(sep))
 
 	serialized_hosts = []
-	for host in host_candidates:
+	for host,sep in host_candidates:
 		serialized_hosts.append(
-			{"host_ra":host.ra,"host_dec":host.dec,"host_name":host.name}
+			{"host_ra":host.ra,"host_dec":host.dec,
+			 "host_name":host.name,"host_id":host.id,
+			 "host_sep":sep}
 		)
 
 	return_dict = {"requested ra":float(ra),
