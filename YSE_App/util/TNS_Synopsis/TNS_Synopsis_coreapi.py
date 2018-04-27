@@ -459,7 +459,7 @@ class DBOps():
 		except:
 			raise RuntimeError('Error : couldn\'t get schema!')
 
-		if 'transient' not in schema.keys():
+		if not schema['transient']:
 			return None
 
 		return(schema['transient']['url'])
