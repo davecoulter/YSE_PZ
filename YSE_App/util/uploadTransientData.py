@@ -132,7 +132,8 @@ less than this, in the same filter/instrument are treated as the same data.  All
 							  'forced':1,
 							  'dq':1,
 							  'band':bandid,
-							  'flux_zero_point':27.5}
+							  'flux_zero_point':27.5,
+							  'groups':[]}
 			
 			if flux > 0:
 				PhotUploadDict['mag'] = mag
@@ -184,12 +185,14 @@ less than this, in the same filter/instrument are treated as the same data.  All
 							'status':db.get_ID_from_DB('transientstatuses',self.options.status),
 							'name':snid,
 							'ra':ra,
-							'dec':dec}
+							'dec':dec,
+							'groups':[]}
 				self.snidid = db.post_object_to_DB('transient',postdict)
 
 			photpostdict = {'instrument':self.instid,
 							'obs_group':self.obsgroupid,
-							'transient':self.snidid}
+							'transient':self.snidid,
+							'groups':[]}
 			self.photdataid = db.post_object_to_DB('photometry',photpostdict)
 
 			
@@ -289,7 +292,10 @@ class DBOps():
 		cmd = '%s%s '%(self.baseposturl,self.options.__dict__['%sapi'%table])
 		for k,v in zip(objectdict.keys(),objectdict.values()):
 			if '<url>' not in str(v):
-				cmd += '%s="%s" '%(k,v)
+				if k != 'tags' and k != 'groups':
+					cmd += '%s="%s" '%(k,v)
+				else:
+					cmd += '%s:=[] '%(k)
 			else:
 				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
 
@@ -308,9 +314,13 @@ class DBOps():
 		cmd = '%s PUT %s '%(self.baseputurl.split('PUT')[0],objectid)
 		for k,v in zip(objectdict.keys(),objectdict.values()):
 			if '<url>' not in str(v):
-				cmd += '%s="%s" '%(k,v)
+                if k != 'tags' and k != 'groups':
+                    cmd += '%s="%s" '%(k,v)
+                else:
+                    cmd += '%s:=[] '%k
 			else:
-				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
+                cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
+
 		objectdata = runDBcommand(cmd)
 
 		if type(objectdata) != list and 'url' not in objectdata:
