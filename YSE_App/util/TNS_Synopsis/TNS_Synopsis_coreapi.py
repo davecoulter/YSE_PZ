@@ -24,9 +24,6 @@ from astropy.coordinates import ICRS, Galactic, FK4, FK5
 from astropy.time import Time
 import coreapi
 
-TNS2YSE_instdict = {'PS1':'Pan-STARRS',
-					'ASASSN-4':'ASAS-SN'}
-
 reg_obj = b"https://wis-tns.weizmann.ac.il/object/(\w+)"
 #reg_ra = b"\d{4}\w+\sRA[\=a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
 #reg_dec = b"DEC[\=a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)\,\s\w+"
