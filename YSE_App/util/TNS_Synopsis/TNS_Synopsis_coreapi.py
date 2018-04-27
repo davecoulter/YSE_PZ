@@ -24,6 +24,9 @@ from astropy.coordinates import ICRS, Galactic, FK4, FK5
 from astropy.time import Time
 import coreapi
 
+TNS2YSE_instdict = {'PS1':'Pan-STARRS',
+					'ASASSN-4':'ASAS-SN'}
+
 reg_obj = b"https://wis-tns.weizmann.ac.il/object/(\w+)"
 #reg_ra = b"\d{4}\w+\sRA[\=a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
 #reg_dec = b"DEC[\=a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)\,\s\w+"
@@ -445,6 +448,36 @@ class DBOps():
 
 		return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
 
+	def get_band_from_DB(self,fieldname,instrumentid,debug=False):
+
+		tablename = 'photometricbands'
+		
+		if debug: tstart = time.time()
+		auth = coreapi.auth.BasicAuthentication(
+			username=self.dblogin,
+			password=self.dbpassword,
+		)
+		client = coreapi.Client(auth=auth)
+		try:
+			schema = client.get('%s%s'%(self.dburl,tablename))
+		except:
+			raise RuntimeError('Error : couldn\'t get schema!')
+
+		idlist,namelist,instlist = [],[],[]
+		for i in range(len(schema['results'])):
+			namelist += [schema['results'][i]['name']]
+			idlist += [schema['results'][i]['url']]
+			instlist += [schema['results'][i]['instrument']]
+			
+		if debug:
+			print('GET took %.1f seconds'%(time.time()-tstart))
+
+		if not len(np.where((np.array(namelist) == fieldname) &
+							(np.array(instlist) == instrumentid))[0]): return(None)
+		
+		return(np.array(idlist)[np.where((np.array(namelist) == fieldname) &
+										 (np.array(instlist) == instrumentid))][0])
+	
 	def get_transient_from_DB(self,fieldname,debug=False):
 
 		if debug: tstart = time.time()
@@ -713,7 +746,7 @@ class processTNS():
 								if photkeydict['filter'] in header:
 									tfilt = np.append(tfilt,datarow[header == photkeydict['filter']])
 								if photkeydict['inst'] in header:
-									tinst = np.append(tinst,datarow[header == photkeydict['inst']])
+									tinst = np.append(tinst,datarow[header == photkeydict['inst']][0].split('_')[1])
 								if photkeydict['obsdate'] in header:
 									tobsdate = np.append(tobsdate,datarow[header == photkeydict['obsdate']])
 								if photkeydict['remarks'] in header and photkeydict['maglim'] in header:
@@ -924,7 +957,10 @@ class processTNS():
 							# the photometry table probably won't exist, so add this in
 							# phot table needs an instrument, which needs a telescope, which needs an observatory
 							for ins in np.unique(tinst):
-								instrumentid = db.get_ID_from_DB('instruments',ins)
+								if ins in TNS2YSE_instdict.keys():
+									instrumentid = db.get_ID_from_DB('instruments',TNS2YSE_instdict[ins])
+								else:
+									instrumentid = db.get_ID_from_DB('instruments',ins)
 								if not instrumentid:
 									instrumentid = db.get_ID_from_DB('instruments','Unknown')
 								if not instrumentid:
@@ -946,19 +982,18 @@ class processTNS():
 								phottableid = db.post_object_to_DB('photometry',phottabledict)
 
 								for f in np.unique(tfilt):
-									bandid = db.get_ID_from_DB('photometricbands',f)
+									bandid = db.get_band_from_DB(f,instrumentid)
 									if not bandid:
 										bandid = db.post_object_to_DB('band',{'name':f,'instrument':instrumentid})
-						
 									# put in the photometry
 									try:
-										for m,me,f,fe,od,df in zip(tmag[(f == tfilt) & (ins == tinst)],
-																   tmagerr[(f == tfilt) & (ins == tinst)],
-																   tflux[(f == tfilt) & (ins == tinst)],
-																   tfluxerr[(f == tfilt) & (ins == tinst)],
-																   tobsdate[(f == tfilt) & (ins == tinst)],
-																   disc_flag[(f == tfilt) & (ins == tinst)]):
-											if not m and not me and not f and not fe: continue
+										for m,me,flx,fe,od,df in zip(tmag[(f == tfilt) & (ins == tinst)],
+																	 tmagerr[(f == tfilt) & (ins == tinst)],
+																	 tflux[(f == tfilt) & (ins == tinst)],
+																	 tfluxerr[(f == tfilt) & (ins == tinst)],
+																	 tobsdate[(f == tfilt) & (ins == tinst)],
+																	 disc_flag[(f == tfilt) & (ins == tinst)]):
+											if not m and not me and not flx and not fe: continue
 											# TODO: compare od to disc_date.replace(' ','T')
 											# if they're close or equal?  Set discovery flag
 											photdatadict = {'obs_date':od.replace(' ','T'),
@@ -967,12 +1002,13 @@ class processTNS():
 															'groups':[]}
 											if m: photdatadict['mag'] = m
 											if me: photdatadict['mag_err'] = me
-											if f: photdatadict['flux'] = f
+											if flx: photdatadict['flux'] = flx
 											if fe: photdatadict['flux_err'] = fe
 											if df: photdatadict['discovery_point'] = 1
 											photdataid = db.post_object_to_DB('photdata',photdatadict)
 									except:
 										print('Error getting photometry!!')
+										
 							# put in the galaxy photometry, if the host wasn't already in the DB
 							if ned_mag and not hostexists:
 								try:
