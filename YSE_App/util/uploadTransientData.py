@@ -45,7 +45,7 @@ class upload():
 						  help="only add light curves for existing objects")
 		parser.add_option('-m','--mjdmatchmin', default=0.05, type="float",
 						  help="""if clobber flag not set, photometric observation with MJD separation 
-less than this, in the same filter/instrument are treated as the same data.  Allows updates to the photometry""")
+less than this, in the same filter/instrument are treated as the same data.	 Allows updates to the photometry""")
 
 		
 		return(parser)
@@ -93,11 +93,11 @@ less than this, in the same filter/instrument are treated as the same data.  All
 			sn.SNID = sn.otherID[2:]
 		transid = db.get_ID_from_DB('transients',sn.SNID)
 		if self.options.onlyexisting and not transid:
-			print('Object %s not found!  Trying %s'%(sn.SNID,sn.otherID))
+			print('Object %s not found!	 Trying %s'%(sn.SNID,sn.otherID))
 			sn.SNID = sn.otherID
 			transid = db.get_ID_from_DB('transients',sn.SNID)
 			if self.options.onlyexisting and not transid:
-				print('Object %s not found!  Returning'%sn.SNID)
+				print('Object %s not found!	 Returning'%sn.SNID)
 				return()
 		print('uploading object %s'%sn.SNID)
 		
@@ -157,7 +157,7 @@ less than this, in the same filter/instrument are treated as the same data.  All
 				if closeID and self.options.clobber:
 					photdata = db.patch_object_to_DB('photdata',PhotUploadDict,closeID)
 				elif closeID and not self.options.clobber:
-					print('data point at MJD %i exists!  not clobbering'%pmjd)
+					print('data point at MJD %i exists!	 not clobbering'%pmjd)
 				else:
 					photdata = db.post_object_to_DB('photdata',PhotUploadDict)
 								
@@ -314,12 +314,12 @@ class DBOps():
 		cmd = '%s PUT %s '%(self.baseputurl.split('PUT')[0],objectid)
 		for k,v in zip(objectdict.keys(),objectdict.values()):
 			if '<url>' not in str(v):
-                if k != 'tags' and k != 'groups':
-                    cmd += '%s="%s" '%(k,v)
-                else:
-                    cmd += '%s:=[] '%k
+				if k != 'tags' and k != 'groups':
+					cmd += '%s="%s" '%(k,v)
+				else:
+					cmd += '%s:=[] '%k
 			else:
-                cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
+				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
 
 		objectdata = runDBcommand(cmd)
 
@@ -458,7 +458,7 @@ if __name__ == "__main__":
 	db = DBOps()
 	if config:
 		parser = db.add_options(usage=usagestring,config=config)
-		dboptions,  args = parser.parse_args()
+		dboptions,	args = parser.parse_args()
 		db.options = dboptions
 	db.init_params()
 		
