@@ -183,7 +183,8 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 
 	def uploadBasicSpectrum(self):
 		from txtobj import txtobj
-
+		# spectra need SNID
+		
 def runDBcommand(cmd):
 	try:
 		return(json.loads(os.popen(cmd).read()))
@@ -274,104 +275,6 @@ class DBOps():
 
 			return(parser)
 			
-	def post_object_to_DB(self,table,objectdict,return_full=False):
-		cmd = '%s%s '%(self.baseposturl,self.options.__dict__['%sapi'%table])
-		for k,v in zip(objectdict.keys(),objectdict.values()):
-			if '<url>' not in str(v):
-				if k != 'tags' and k != 'groups':
-					cmd += '%s="%s" '%(k,v)
-				else:
-					cmd += '%s:=[] '%(k)
-			else:
-				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
-
-		objectdata = runDBcommand(cmd)
-
-		if type(objectdata) != list and 'url' not in objectdata:
-			print(cmd)
-			print(objectdata)
-			raise RuntimeError('Error : failure adding object')
-		if return_full:
-			return(objectdata)
-		else:
-			return(objectdata['url'])
-
-	def put_object_to_DB(self,table,objectdict,objectid,return_full=False):
-		cmd = '%s PUT %s '%(self.baseputurl.split('PUT')[0],objectid)
-		for k,v in zip(objectdict.keys(),objectdict.values()):
-			if '<url>' not in str(v):
-				if k != 'tags' and k != 'groups':
-					cmd += '%s="%s" '%(k,v)
-				else:
-					cmd += '%s:=[] '%k
-			else:
-				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
-
-		objectdata = runDBcommand(cmd)
-
-		if type(objectdata) != list and 'url' not in objectdata:
-			print('cmd %s failed'%cmd)
-			print(objectdata)
-			raise RuntimeError('Error : failure adding object')
-		if return_full:
-			return(objectdata)
-		else:
-			return(objectdata['url'])
-
-	def patch_object_to_DB(self,table,objectdict,objectid,return_full=False):
-		cmd = '%s PATCH %s '%(self.baseputurl.split('PUT')[0],objectid)
-		for k,v in zip(objectdict.keys(),objectdict.values()):
-			if '<url>' not in str(v):
-				cmd += '%s="%s" '%(k,v)
-			else:
-				cmd += '%s="%s%s%s/" '%(k,self.dburl,self.options.__dict__['%sapi'%k],v.split('/')[1])
-		objectdata = runDBcommand(cmd)
-
-		if type(objectdata) != list and 'url' not in objectdata:
-			print('cmd %s failed'%cmd)
-			print(objectdata)
-			raise RuntimeError('Error : failure adding object')
-		if return_full:
-			return(objectdata)
-		else:
-			return(objectdata['url'])
-
-	def get_objects_from_DB(self,table):
-		cmd = '%s%s?limit=100000 '%(self.basegeturl,self.options.__dict__['%sapi'%table])
-		objectdata = runDBcommand(cmd)
-
-		if 'results' not in objectdata or type(objectdata['results']) != list and 'url' not in objectdata['results'][0]:
-			print(cmd)
-			print(objectdata)
-			raise RuntimeError('Error : failure adding object')
-		else:
-			return(objectdata['results'])
-
-
-	def get_ID_from_DB(self,tablename,fieldname,debug=False):
-
-		if debug: tstart = time.time()
-		auth = coreapi.auth.BasicAuthentication(
-			username=self.dblogin,
-			password=self.dbpassword,
-		)
-		client = coreapi.Client(auth=auth)
-		try:
-			schema = client.get('%s%s'%(self.dburl,tablename))
-		except:
-			raise RuntimeError('Error : couldn\'t get schema!')
-
-		idlist,namelist = [],[]
-		for i in range(len(schema['results'])):
-			namelist += [schema['results'][i]['name']]
-			idlist += [schema['results'][i]['url']]
-
-		if debug:
-			print('GET took %.1f seconds'%(time.time()-tstart))
-
-		if fieldname not in namelist: return(None)
-
-		return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
 
 	def get_transient_from_DB(self,fieldname,debug=False):
 
@@ -391,61 +294,7 @@ class DBOps():
 			return None
 
 		return(schema['transient']['url'])
-	
-	def get_key_from_object(self,objid,fieldname):
-		cmd = '%s%s?limit=100000'%(self.basegetobjurl,objid)
-		output = os.popen(cmd).read()
-		try:
-			data = json.loads(output)
-		except:
-			print(cmd)
-			print(os.popen(cmd).read())
-			raise RuntimeError('Error : cmd output not in JSON format')
-
-		if fieldname in data:
-			val = data[fieldname]
-			return(val)
-		else: return(None)
-
-	def getPhotObjfromDB(self,table,transient,instrument,obsgroup):
-		cmd = '%s%s?limit=100000 '%(self.basegeturl,self.options.__dict__['%sapi'%table])
-		output = os.popen(cmd).read()
-		data = json.loads(output)
-
-		translist,instlist,obsgrouplist,idlist = [],[],[],[]
-		for i in range(len(data['results'])):
-			obsgrouplist += [data['results'][i]['obs_group']]
-			instlist += [data['results'][i]['instrument']]
-			translist += [data['results'][i]['transient']]
-			idlist += [data['results'][i]['url']]
-
-		if obsgroup not in obsgrouplist or instrument not in instlist or transient not in translist:
-			return(None)
-		iObs = np.where((np.array(translist) == transient) &
-						(np.array(instlist) == instrument) &
-						(np.array(obsgrouplist) == obsgroup))[0]
-		if not len(iObs): return(None)
-
-		return(np.array(idlist)[iObs][0])
-
-				
-	def getBandfromDB(self,table,fieldname,instrument):
-		cmd = '%s%s?limit=100000 '%(self.basegeturl,self.options.__dict__['%sapi'%table])
-		output = os.popen(cmd).read()
-		data = json.loads(output)
-
-		idlist,namelist,instlist = [],[],[]
-		for i in range(len(data['results'])):
-			namelist += [data['results'][i]['name']]
-			idlist += [data['results'][i]['url']]
-			instlist += [data['results'][i]['instrument']]
-
-		if fieldname not in namelist or instrument not in instlist: return(None)
-
-		return(np.array(idlist)[np.where((np.array(namelist) == fieldname) &
-										 (np.array(instlist) == instrument))][0])
-
-		
+			
 if __name__ == "__main__":
 
 	# execute only if run as a script
@@ -481,5 +330,7 @@ if __name__ == "__main__":
 		upl.uploadBasicPhotometry(db=db)
 	elif options.inputformat == 'snana':
 		upl.uploadSNANAPhotometry(db=db)
+	elif options.inputformat == 'spectrum':
+		upl.uploadBasicSpectrum(db=db)
 	else:
 		raise RuntimeError('Error : input option not found')
