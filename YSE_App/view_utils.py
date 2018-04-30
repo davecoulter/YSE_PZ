@@ -4,11 +4,12 @@ from django.http import HttpResponse,JsonResponse
 from django.shortcuts import render, get_object_or_404, render_to_response
 import copy
 from .models import *
+from django.db import models
 from astropy.coordinates import EarthLocation
 from astropy.coordinates import get_moon, SkyCoord
 from astropy.time import Time
 import astropy.units as u
-import datetime
+import datetime, dateutil
 import json
 import numpy as np
 from django.conf import settings as djangoSettings
@@ -729,17 +730,27 @@ def add_transient_phot(request):
 		for e in existingphot:
 			if e.photometry.id == int(transientphot.id):
 				if e.band == band:
-					mjd = Time(e.obs_date.isoformat().split('+')[0],format='isot').mjd
+					print(e.id,e.obs_date)
+					try:
+						mjd = Time(e.obs_date.isoformat().split('+')[0],format='isot').mjd
+					except:
+						mjd = Time(e.obs_date,format='isot').mjd
 					if np.abs(mjd - pmjd) < hd['mjdmatchmin']:
 						obsExists = True
 						if hd['clobber']:
-							e.delete()
-							TransientPhotData.objects.create(
-								obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
-								mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
-								dq=p['dq'],photometry=transientphot,
-								discovery_point=p['discovery_point'],band=band,
-								created_by_id=user.id,modified_by_id=user.id)
+							#e.delete()
+							e.obs_date = p['obs_date']
+							e.flux = p['flux']
+							e.flux_err = p['flux_err']
+							e.mag = p['mag']
+							e.mag_err = p['mag_err']
+							e.forced = p['forced']
+							e.dq = p['dq']
+							e.photometry = transientphot
+							e.discovery_point = p['discovery_point']
+							e.band = band
+							e.modified_by_id = user.id
+							e.save()
 
 		if not obsExists:
 			TransientPhotData.objects.create(obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
