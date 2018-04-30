@@ -9,7 +9,7 @@ from astropy.coordinates import EarthLocation
 from astropy.coordinates import get_moon, SkyCoord
 from astropy.time import Time
 import astropy.units as u
-import datetime, dateutil
+import datetime
 import json
 import numpy as np
 from django.conf import settings as djangoSettings
