@@ -688,13 +688,15 @@ def add_transient_phot(request):
 		return JsonResponse(return_dict)
 	status = status[0]
 
+	allgroups = []
 	if ph['groups']:
-		group = Group.objects.filter(name=ph['groups'])
-		if not len(group):
-			return_dict = {"message":"group %s is not in DB"%ph['groups']}
-			return JsonResponse(return_dict)
-		group = group[0]
-	else: group = None
+		for photgroup in ph['groups'].split(','):
+			group = Group.objects.filter(name=photgroup)
+			if not len(group):
+				return_dict = {"message":"group %s is not in DB"%ph['groups']}
+				return JsonResponse(return_dict)
+			group = group[0]
+			allgroups += [group]
 
 	# get or create transient
 	transient = Transient.objects.filter(name=tr['name'])
@@ -712,9 +714,11 @@ def add_transient_phot(request):
 			instrument=instrument,obs_group=obs_group,transient=transient,
 			created_by_id=user.id,modified_by_id=user.id)
 	else: transientphot = transientphot[0]
-	if group and group not in transientphot.groups.all():
-		transientphot.groups.add(group)
-		transientphot.save()
+	if len(allgroups):
+		for group in allgroups:
+			if group not in transientphot.groups.all():
+				transientphot.groups.add(group)
+				transientphot.save()
 		
 	existingphot = TransientPhotData.objects.filter(photometry=transientphot)
 
@@ -730,7 +734,6 @@ def add_transient_phot(request):
 		for e in existingphot:
 			if e.photometry.id == int(transientphot.id):
 				if e.band == band:
-					print(e.id,e.obs_date)
 					try:
 						mjd = Time(e.obs_date.isoformat().split('+')[0],format='isot').mjd
 					except:
