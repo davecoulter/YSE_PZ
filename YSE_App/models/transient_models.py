@@ -80,10 +80,6 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 		print("Transient Created: %s" % instance.name)
 		print("Internal Survey: %s" % instance.internal_survey)
 
-
-
-
-
 		is_k2_C16_validated, C16_msg = IsK2Pixel(instance.ra, instance.dec, "16")
 		is_k2_C17_validated, C17_msg = IsK2Pixel(instance.ra, instance.dec, "17")
 

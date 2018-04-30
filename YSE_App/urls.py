@@ -27,10 +27,10 @@ urlpatterns = [
     url(r'^dashboard_example/$', views.dashboard_example, name='dashboard_example'),
     url(r'^transient_edit/$', views.transient_edit, name='transient_edit'),
     url(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
-    # ex: /yse/transient_detail/5/
     url(r'^transient_detail/(?P<slug>[a-zA-Z0-9_-]+)/$', views.transient_detail, name='transient_detail'),
 
 	url(r'^get_transient/(?P<slug>[a-zA-Z0-9_-]+)/$', view_utils.get_transient, name='get_transient'),
+	url(r'^add_transient_phot/', view_utils.add_transient_phot, name='add_transient_phot'),
 	url(r'^get_host/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<sep>\d+\.?\d*)/$', view_utils.get_host, name='get_host'),
 
     url(r'^login/$', views.auth_login, name='auth_login'),

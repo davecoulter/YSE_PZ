@@ -5,6 +5,7 @@
 import os
 import json
 import urllib.request
+import urllib
 import ast
 from astropy.time import Time
 import numpy as np
@@ -34,10 +35,14 @@ class upload():
 						  help='transient status (new, follow, etc')
 		parser.add_option('--obsgroup', default='Foundation', type="string",
 						  help='group who observed this transient')
+		parser.add_option('--permissionsgroup', default='', type="string",
+						  help='group that has permission to view this photometry on YSE_PZ')
 		parser.add_option('--inputformat', default='snana', type="string",
 						  help="input file format, can be 'basic' or 'snana' (photometry only) ")
 		parser.add_option('--instrument', default='GPC1', type="string",
 						  help="instrument name")
+		parser.add_option('--forcedphot', default=0, type="int",
+						  help="set to 1 if forced photometry")
 		parser.add_option('-u','--useheader', default=False, action="store_true",
 						  help="if set, grab keys from the file header and try to POST to db")
 		parser.add_option('-f','--foundationdefaults', default=False, action="store_true",
@@ -94,9 +99,10 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 			sn.SNID = sn.otherID[2:]
 		transid = db.get_transient_from_DB(sn.SNID)
 		if self.options.onlyexisting and not transid:
-			print('Object %s not found!	 Trying %s'%(sn.SNID,sn.otherID))
-			sn.SNID = sn.otherID
-			transid = db.get_transient_from_DB(sn.SNID)
+			if 'otherID' in sn.__dict__.keys():
+				print('Object %s not found!	 Trying %s'%(sn.SNID,sn.otherID))
+				sn.SNID = sn.otherID
+				transid = db.get_transient_from_DB(sn.SNID)
 			if self.options.onlyexisting and not transid:
 				print('Object %s not found!	 Returning'%sn.SNID)
 				return()
@@ -109,93 +115,68 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 			transid = db.get_transient_from_DB(sn.SNID)
 			transname = sn.SNID
 			
-		# create photometry object, if it doesn't exist
-		photheaderdata = db.get_objects_from_DB('photometry')
+		# get dictionaries for transient and photometry
 		if type(sn.RA) == float:
-			self.parsePhotHeaderData(photheaderdata,transname,sn.RA,sn.DECL,db=db)
+			transientdict,photdict = self.parsePhotHeaderData(transname,sn.RA,sn.DECL)
 		else:
-			self.parsePhotHeaderData(photheaderdata,transname,sn.RA.split()[0],sn.DECL.split()[0],db=db)
+			transientdict,photdict = self.parsePhotHeaderData(transname,sn.RA.split()[0],sn.DECL.split()[0])
 		# get the filter IDs
+
+		PhotUploadAll = {'transient':transientdict,
+						 'photheader':photdict}
 		
 		# upload the photometry
 		for mjd,flux,fluxerr,mag,magerr,flt in zip(
 				sn.MJD,sn.FLUXCAL,sn.FLUXCALERR,sn.MAG,sn.MAGERR,sn.FLT):
 
 			obsdate = Time(mjd,format='mjd').isot
-			bandid = db.getBandfromDB('band',flt,self.instid)
-			if not bandid:
-				raise RuntimeError('Error : band %s is not defined in the DB!!'%flt)
 			
 			PhotUploadDict = {'obs_date':obsdate,
 							  'flux':flux,
 							  'flux_err':fluxerr,
-							  'photometry':self.photdataid,
-							  'forced':1,
+							  'forced':self.options.forcedphot,
 							  'dq':1,
-							  'band':bandid,
+							  'band':flt,
 							  'flux_zero_point':27.5,
 							  'groups':[]}
 			
 			if flux > 0:
 				PhotUploadDict['mag'] = mag
 				PhotUploadDict['mag_err'] = magerr
-
+			else:
+				PhotUploadDict['mag'] = ''
+				PhotUploadDict['mag_err'] = ''
+				
 			if 'SEARCH_PEAKMJD' in sn.__dict__.keys() and np.abs(mjd - sn.SEARCH_PEAKMJD) < 0.5:
 				PhotUploadDict['discovery_point'] = 1
-				
-			if not transid:
-				photdata = db.post_object_to_DB('photdata',PhotUploadDict)
 			else:
-				# if the transient is already in the DB, we need to check for photometry
-				# and avoid duplicate epochs
-				photepochs = db.get_objects_from_DB('photdata')
-				closeID = None
-				for p in photepochs:
-					pmjd = Time(p['obs_date'],format='isot').mjd
-					if p['photometry'] == self.photdataid and np.abs(pmjd - mjd) < self.options.mjdmatchmin and p['band'] == bandid:
-						closeID = p['url']
-						break
-				if closeID and self.options.clobber:
-					photdata = db.patch_object_to_DB('photdata',PhotUploadDict,closeID)
-				elif closeID and not self.options.clobber:
-					print('data point at MJD %i exists!	 not clobbering'%pmjd)
-				else:
-					photdata = db.post_object_to_DB('photdata',PhotUploadDict)
-								
-	def parsePhotHeaderData(self,photheaderdata,snid,ra,dec,db=None):
+				PhotUploadDict['discovery_point'] = 0
+			PhotUploadAll[obsdate] = PhotUploadDict
+			PhotUploadAll['header'] = {'clobber':self.options.clobber,
+									   'mjdmatchmin':self.options.mjdmatchmin}
+		import requests
+		from requests.auth import HTTPBasicAuth
+		url = '%s'%db.dburl.replace('/api','/add_transient_phot')
+		r = requests.post(url = url, data = json.dumps(PhotUploadAll),
+						  auth=HTTPBasicAuth(db.dblogin,db.dbpassword))
 
-		# if no photometry header, then create one
-		self.instid = db.get_ID_from_DB('instruments',self.options.instrument)
-		if not self.instid:
-			self.instid = db.get_ID_from_DB('instruments','Unknown')
-		self.obsgroupid = db.get_ID_from_DB('observationgroups',self.options.obsgroup)
-		if not self.obsgroupid:
-			self.obsgroupid = db.get_ID_from_DB('observationgroups','Unknown')
-		self.snidid = db.get_transient_from_DB(snid)
+		print('YSE_PZ says: %s'%json.loads(r.text)['message'])
+		
+	def parsePhotHeaderData(self,snid,ra,dec):
 
-		inDB = False
-		if type(photheaderdata) == list or not self.snidid:
-			self.photdataid = db.getPhotObjfromDB(
-				'photometry',self.snidid,self.instid,self.obsgroupid)
-			if self.photdataid: inDB = True
-			
-		if not inDB:
+		transientdict = {'obs_group':self.options.obsgroup,
+						 'status':self.options.status,
+						 'name':snid,
+						 'ra':ra,
+						 'dec':dec,
+						 'groups':self.options.permissionsgroup}
 
-			if not self.snidid:
-				postdict = {'obs_group':self.obsgroupid,
-							'status':db.get_ID_from_DB('transientstatuses',self.options.status),
-							'name':snid,
-							'ra':ra,
-							'dec':dec,
-							'groups':[]}
-				self.snidid = db.post_object_to_DB('transient',postdict)
+		photdict = {'instrument':self.options.instrument,
+					'obs_group':self.options.obsgroup,
+					'transient':snid,
+					'groups':self.options.permissionsgroup}
 
-			photpostdict = {'instrument':self.instid,
-							'obs_group':self.obsgroupid,
-							'transient':self.snidid,
-							'groups':[]}
-			self.photdataid = db.post_object_to_DB('photometry',photpostdict)
-
+		return(transientdict,photdict)
 			
 	def uploadBasicPhotometry(self):
 		from txtobj import txtobj
@@ -245,6 +226,10 @@ class DBOps():
 						  help="use default settings for foundation")
 		parser.add_option('-e','--onlyexisting', default=False, action="store_true",
 						  help="only add light curves for existing objects")
+		parser.add_option('--permissionsgroup', default='', type="string",
+						  help='group that has permission to view this photometry on YSE_PZ')
+		parser.add_option('--forcedphot', default=0, type="int",
+						  help="set to 1 if forced photometry")
 		
 		if config:
 			parser.add_option('--login', default=config.get('main','login'), type="string",
@@ -352,7 +337,7 @@ class DBOps():
 			return(objectdata['url'])
 
 	def get_objects_from_DB(self,table):
-		cmd = '%s%s '%(self.basegeturl,self.options.__dict__['%sapi'%table])
+		cmd = '%s%s?limit=100000 '%(self.basegeturl,self.options.__dict__['%sapi'%table])
 		objectdata = runDBcommand(cmd)
 
 		if 'results' not in objectdata or type(objectdata['results']) != list and 'url' not in objectdata['results'][0]:
@@ -408,7 +393,7 @@ class DBOps():
 		return(schema['transient']['url'])
 	
 	def get_key_from_object(self,objid,fieldname):
-		cmd = '%s%s'%(self.basegetobjurl,objid)
+		cmd = '%s%s?limit=100000'%(self.basegetobjurl,objid)
 		output = os.popen(cmd).read()
 		try:
 			data = json.loads(output)
@@ -423,7 +408,7 @@ class DBOps():
 		else: return(None)
 
 	def getPhotObjfromDB(self,table,transient,instrument,obsgroup):
-		cmd = '%s%s '%(self.basegeturl,self.options.__dict__['%sapi'%table])
+		cmd = '%s%s?limit=100000 '%(self.basegeturl,self.options.__dict__['%sapi'%table])
 		output = os.popen(cmd).read()
 		data = json.loads(output)
 
@@ -445,7 +430,7 @@ class DBOps():
 
 				
 	def getBandfromDB(self,table,fieldname,instrument):
-		cmd = '%s%s '%(self.basegeturl,self.options.__dict__['%sapi'%table])
+		cmd = '%s%s?limit=100000 '%(self.basegeturl,self.options.__dict__['%sapi'%table])
 		output = os.popen(cmd).read()
 		data = json.loads(output)
 

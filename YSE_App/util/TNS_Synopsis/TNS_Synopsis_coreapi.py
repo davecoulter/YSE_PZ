@@ -444,7 +444,7 @@ class DBOps():
 		if fieldname not in namelist: return(None)
 
 		return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
-
+	
 	def get_band_from_DB(self,fieldname,instrumentid,debug=False):
 
 		tablename = 'photometricbands'

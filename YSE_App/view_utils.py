@@ -26,8 +26,10 @@ from .data import PhotometryService, SpectraService, ObservingResourceService
 import time
 from .serializers import *
 from rest_framework.request import Request
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 import json
+from .basicauth import *
+from django.views.decorators.csrf import csrf_exempt
 
 def get_recent_phot_for_host(user, host_id=None):
 	allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
@@ -43,7 +45,7 @@ def get_recent_phot_for_host(user, host_id=None):
 
 def get_all_phot_for_transient(user, transient_id=None):
 	allowed_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient_id)
-
+	
 	pidlist = []
 	for p in allowed_phot:
 		pidlist += [p.id]
@@ -158,28 +160,28 @@ def getTimeUntilRiseSet(ra,dec,date,lat,lon,elev,utc_off):
 
 	
 # def telescope_can_observe(ra,dec,date,lat,lon,elev,utc_off):
-# 	if date:
-# 		time = Time(date)
-# 	else:
-# 		time = Time(datetime.datetime.now())
-# 	sc = SkyCoord(ra,dec,unit=u.deg)
+#	if date:
+#		time = Time(date)
+#	else:
+#		time = Time(datetime.datetime.now())
+#	sc = SkyCoord(ra,dec,unit=u.deg)
 #
-# 	location = EarthLocation.from_geodetic(
-# 		lon*u.deg,lat*u.deg,
-# 		elev*u.m)
-# 	tel = Observer(location=location, timezone="UTC")
+#	location = EarthLocation.from_geodetic(
+#		lon*u.deg,lat*u.deg,
+#		elev*u.m)
+#	tel = Observer(location=location, timezone="UTC")
 #
-# 	night_start = tel.twilight_evening_astronomical(time,which="previous")
-# 	night_end = tel.twilight_morning_astronomical(time,which="previous")
-# 	can_obs = False
-# 	for jd in np.arange(night_start.mjd,night_end.mjd,0.02):
-# 		time = Time(jd,format="mjd")
-# 		target_up = tel.target_is_up(time,sc,horizon=18*u.deg)
-# 		if target_up:
-# 			can_obs = True
-# 			break
+#	night_start = tel.twilight_evening_astronomical(time,which="previous")
+#	night_end = tel.twilight_morning_astronomical(time,which="previous")
+#	can_obs = False
+#	for jd in np.arange(night_start.mjd,night_end.mjd,0.02):
+#		time = Time(jd,format="mjd")
+#		target_up = tel.target_is_up(time,sc,horizon=18*u.deg)
+#		if target_up:
+#			can_obs = True
+#			break
 #
-# 	return(can_obs)
+#	return(can_obs)
 
 class finder(TemplateView):
 	template_name = 'YSE_App/finder.html'
@@ -283,7 +285,7 @@ class finder(TemplateView):
 # And it can returns the data which can be plotted on the front end
 # i.e. a tuple of (datetime, airmass) that ChartJS can plot on the 
 # client 
-    
+	
 def airmassplot(request, transient_id, obs_id, telescope_id):
 	import random
 	import django
@@ -643,6 +645,114 @@ def get_authorized_queued_resources(user):
 
 	return allowed_resources
 
+def get_authorized_phot_resources(user):
+	allowed_resources = PhotometryService.GetAuthorizedTransientPhotometry_ByUser(user)
+
+	return allowed_resources
+
+from rest_framework.parsers import JSONParser
+
+@csrf_exempt
+@login_or_basic_auth_required
+def add_transient_phot(request):
+	phot_data = JSONParser().parse(request)
+
+	auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+	credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+	username, password = credentials.split(':', 1)
+	user = auth.authenticate(username=username, password=password)
+	
+	if 'header' in phot_data.keys() and 'transient' in phot_data.keys() and 'photheader' in phot_data.keys():
+		hd = phot_data['header']
+		tr = phot_data['transient']
+		ph = phot_data['photheader']
+	else:
+		return_dict = {"message":"header, transient, and photheader keys are required"}
+		return JsonResponse(return_dict)
+
+	# get all the foreign keys we need
+	instrument = Instrument.objects.filter(name=ph['instrument'])
+	if not len(instrument):
+		instrument = Instrument.objects.filter(name='Unknown')
+	instrument = instrument[0]
+
+	obs_group = ObservationGroup.objects.filter(name=ph['obs_group'])
+	if not len(obs_group):
+		obs_group = ObservationGroup.objects.filter(name='Unknown')
+	obs_group = obs_group[0]
+
+	status = TransientStatus.objects.filter(name=tr['status'])
+	if not len(status):
+		return_dict = {"message":"status %s is not in DB"%tr['status']}
+		return JsonResponse(return_dict)
+	status = status[0]
+
+	if ph['groups']:
+		group = Group.objects.filter(name=ph['groups'])
+		if not len(group):
+			return_dict = {"message":"group %s is not in DB"%ph['groups']}
+			return JsonResponse(return_dict)
+		group = group[0]
+	else: group = None
+
+	# get or create transient
+	transient = Transient.objects.filter(name=tr['name'])
+	if not len(transient):
+		transient = Transient.objects.create(name=tr['name'],ra=tr['ra'],dec=tr['dec'],
+											 status=status,created_by_id=user.id,
+											 obs_group=obs_group,
+											 modified_by_id=user.id)
+	else: transient = transient[0]
+		
+	# get all existing photometry
+	transientphot = TransientPhotometry.objects.filter(transient=transient).filter(instrument=instrument).filter(obs_group=obs_group)
+	if not len(transientphot):
+		transientphot = TransientPhotometry.objects.create(
+			instrument=instrument,obs_group=obs_group,transient=transient,
+			created_by_id=user.id,modified_by_id=user.id)
+	else: transientphot = transientphot[0]
+	if group and group not in transientphot.groups.all():
+		transientphot.groups.add(group)
+		transientphot.save()
+		
+	existingphot = TransientPhotData.objects.filter(photometry=transientphot)
+
+	# loop through new, comp against existing
+	for k in phot_data.keys():
+		if k == 'header' or k == 'transient' or k == 'photheader': continue
+		p = phot_data[k]
+		pmjd = Time(p['obs_date'],format='isot').mjd
+		band = PhotometricBand.objects.filter(name=p['band'])
+		if len(band): band = band[0]
+		
+		obsExists = False
+		for e in existingphot:
+			if e.photometry.id == int(transientphot.id):
+				if e.band == band:
+					mjd = Time(e.obs_date.isoformat().split('+')[0],format='isot').mjd
+					if np.abs(mjd - pmjd) < hd['mjdmatchmin']:
+						obsExists = True
+						if hd['clobber']:
+							e.delete()
+							TransientPhotData.objects.create(
+								obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
+								mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
+								dq=p['dq'],photometry=transientphot,
+								discovery_point=p['discovery_point'],band=band,
+								created_by_id=user.id,modified_by_id=user.id)
+
+		if not obsExists:
+			TransientPhotData.objects.create(obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
+											 mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
+											 dq=p['dq'],photometry=transientphot,
+											 discovery_point=p['discovery_point'],band=band,
+											 created_by_id=user.id,modified_by_id=user.id)
+
+	return_dict = {"message":"success"}
+
+	return JsonResponse(return_dict)
+
+@login_or_basic_auth_required
 def get_transient(request, slug):
 	t = Transient.objects.filter(slug=slug)
 
@@ -665,6 +775,7 @@ def find_separation(host_queryset, query_coord, sep_threshold):
 	for idx in np.where(sep.arcminute <= sep_threshold)[0]:
 		yield host_queryset[int(idx)],sep.arcminute[idx]
 
+@login_or_basic_auth_required		
 def get_host(request, ra, dec, sep):
 
 	query_coord = SkyCoord(ra,dec,unit=(u.deg, u.deg))
