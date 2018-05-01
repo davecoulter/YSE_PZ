@@ -646,7 +646,7 @@ class processTNS():
 			decs = re.findall(reg_dec,body)
 			print(decs)
 
-			if 'hi':
+			try:
 				########################################################
 				# For Item in Email, Get TNS
 				########################################################
@@ -774,7 +774,7 @@ class processTNS():
 					except:
 						print('Error : couldn\'t get photometry!!!')
 
-					if 'hi':
+					try:
 						specinst,specobsdate,specobsgroup,specfiles = \
 							np.array([]),np.array([]),np.array([]),np.array([])
 
@@ -827,7 +827,8 @@ class processTNS():
 								print('uploading TNS spectrum...')
 								os.system('uploadTransientData.py -i %s --spectrum -e -s %s'%(
 									'spec_tns_upload.txt',self.settingsfile))
-					else:
+								os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
+					except:
 						print('Error : couldn\'t get spectra!!!')
 						
 					z = soup.find('div', attrs={'class':'field-redshift'}).find('div').find('b').text
@@ -1092,7 +1093,7 @@ class processTNS():
 				# Mark messages as "Seen"
 				result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')
 
-			else: #except:
+			except:
 				for j in range(len(objs)):
 					print('Something went wrong!!!	Sticking to basic info only')
 					print("Object: %s\nRA: %s\nDEC: %s" % (objs[j].decode('utf-8'),
