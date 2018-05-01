@@ -52,7 +52,8 @@ class upload():
 		parser.add_option('-m','--mjdmatchmin', default=0.05, type="float",
 						  help="""if clobber flag not set, photometric observation with MJD separation 
 less than this, in the same filter/instrument are treated as the same data.	 Allows updates to the photometry""")
-
+		parser.add_option('--spectrum', default=False, action="store_true",
+						  help='input file is a spectrum')
 		
 		return(parser)
 
@@ -181,10 +182,75 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 	def uploadBasicPhotometry(self):
 		from txtobj import txtobj
 
-	def uploadBasicSpectrum(self):
-		from txtobj import txtobj
-		# spectra need SNID
+	def uploadBasicSpectrum(self,db=None):
+
+		SpecDictAll = {}
+		SpecHeader = {}
+		keyslist = ['ra','dec','instrument','rlap','obs_date','redshift',
+					'redshift_err','redshift_quality','spectrum_notes',
+					'obs_group','groups','spec_phase','snid']
+		requiredkeyslist = ['ra','dec','instrument','obs_date','obs_group','snid']
+		fin = open(self.options.inputfile)
+		count = 0
+		for line in fin:
+			line = line.replace('\n','')
+			if not count: header = np.array(line.replace('# ','').split())
+			for key in keyslist:
+				if line.lower().startswith('# %s'%key):
+					SpecHeader[key] = line.split()[-1]
+			count += 1
+		fin.close()
+
+		if 'wavelength' not in header or 'flux' not in header:
+			raise RuntimeError("""Error : incorrect file format.
+			The header should be # wavelength flux fluxerr, with fluxerr optional.""")
+
+		try:
+			spc = {}
+			spc['wavelength'] = np.loadtxt(self.options.inputfile,unpack=True,usecols=[np.where(header == 'wavelength')[0][0]])
+			spc['flux'] = np.loadtxt(self.options.inputfile,unpack=True,usecols=[np.where(header == 'flux')[0][0]])
+		except:
+			raise RuntimeError("""Error : incorrect file format.
+			The header should be # wavelength flux fluxerr, with fluxerr optional.""")
+
+		if 'fluxerr' in header:
+			spc['fluxerr'] = np.loadtxt(self.options.inputfile,unpack=True,usecols=[np.where(header == 'fluxerr')[0][0]])
+		for key in requiredkeyslist:
+			if key not in SpecHeader.keys():
+				raise RuntimeError("""Error: required key %s not in spectrum header.
+				Format should be
+				# key keyval"""%key)			
+		for key in keyslist:
+			if key not in SpecHeader.keys():
+				print('Warning: %s not in spectrum header'%key)
+				SpecHeader[key] = None
+		SpecHeader['clobber'] = self.options.clobber
+		SpecDictAll['header'] = SpecHeader
+
+		SpecDictAll['transient'] = {'name':SpecHeader['snid']}
 		
+		if 'fluxerr' in spc.keys():
+			for w,f,df in zip(spc['wavelength'],spc['flux'],spc['fluxerr']):
+				SpecDict = {'wavelength':w,
+							'flux':f,
+							'flux_err':df}
+				SpecDictAll[w] = SpecDict
+		else:
+			for w,f in zip(spc['wavelength'],spc['flux']):
+				SpecDict = {'wavelength':w,
+							'flux':f,
+							'flux_err':None}
+				SpecDictAll[w] = SpecDict
+				
+		import requests
+		from requests.auth import HTTPBasicAuth
+		url = '%s'%db.dburl.replace('/api','/add_transient_spec')
+		r = requests.post(url = url, data = json.dumps(SpecDictAll),
+						  auth=HTTPBasicAuth(db.dblogin,db.dbpassword))
+
+		print('YSE_PZ says: %s'%json.loads(r.text)['message'])
+
+				
 def runDBcommand(cmd):
 	try:
 		return(json.loads(os.popen(cmd).read()))
@@ -325,12 +391,12 @@ if __name__ == "__main__":
 		
 
 	upl.options = options
-	
-	if options.inputformat == 'basic':
+
+	if options.spectrum:
+		upl.uploadBasicSpectrum(db=db)
+	elif options.inputformat == 'basic':
 		upl.uploadBasicPhotometry(db=db)
 	elif options.inputformat == 'snana':
 		upl.uploadSNANAPhotometry(db=db)
-	elif options.inputformat == 'spectrum':
-		upl.uploadBasicSpectrum(db=db)
 	else:
 		raise RuntimeError('Error : input option not found')

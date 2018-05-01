@@ -31,6 +31,7 @@ urlpatterns = [
 
 	url(r'^get_transient/(?P<slug>[a-zA-Z0-9_-]+)/$', view_utils.get_transient, name='get_transient'),
 	url(r'^add_transient_phot/', view_utils.add_transient_phot, name='add_transient_phot'),
+	url(r'^add_transient_spec/', view_utils.add_transient_spec, name='add_transient_spec'),
 	url(r'^get_host/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<sep>\d+\.?\d*)/$', view_utils.get_host, name='get_host'),
 
     url(r'^login/$', views.auth_login, name='auth_login'),
@@ -38,6 +39,7 @@ urlpatterns = [
     url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)/(?P<telescope_id>[a-zA-Z0-9]+)", 
 		view_utils.airmassplot, name='airmassplot'),
     url(r'^lightcurveplot/(?P<transient_id>[0-9]+)/$', view_utils.lightcurveplot, name='lightcurveplot'),
+    url(r'^spectrumplot/(?P<transient_id>[0-9]+)/$', view_utils.spectrumplot, name='spectrumplot'),
 	url(r'^finderchart/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderchart, name='finderchart'),
 	url(r'^finderim/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderim, name='finderim'),
 	

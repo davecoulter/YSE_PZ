@@ -31,6 +31,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 import json
 from .basicauth import *
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.parsers import JSONParser
 
 def get_recent_phot_for_host(user, host_id=None):
 	allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
@@ -425,6 +426,36 @@ def lightcurveplot(request, transient_id):
 		
 	return HttpResponse(g.replace('width: 90%','width: 100%'))
 
+def spectrumplot(request, transient_id):
+	tstart = time.time()
+	transient = Transient.objects.get(pk=transient_id)
+	spectrum = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id)
+
+	if not len(spectrum):
+		return django.http.HttpResponse('')
+	else:
+		spectrum = spectrum[0]
+	spec = TransientSpecData.objects.filter(spectrum=spectrum)
+	
+	if not len(spec):
+		return django.http.HttpResponse('')
+
+	ax=figure()
+
+	wave,flux = [],[]
+	for s in spec:
+		wave += [s.wavelength]
+		flux += [s.flux]
+	ax.line(np.sort(wave),np.array(flux)[np.argsort(wave)],color='black')
+		
+	ax.title.text = "%s"%transient.name		
+	ax.xaxis.axis_label = r'Wavelength (Angstrom)'
+	ax.yaxis.axis_label = 'Flux'
+	g = file_html(ax,CDN,"my plot")
+
+	return HttpResponse(g.replace('width: 90%','width: 100%'))
+
+
 def rise_time(request,transient_id,obs_id):
 
 	tstart = time.time()
@@ -651,8 +682,6 @@ def get_authorized_phot_resources(user):
 
 	return allowed_resources
 
-from rest_framework.parsers import JSONParser
-
 @csrf_exempt
 @login_or_basic_auth_required
 def add_transient_phot(request):
@@ -764,6 +793,87 @@ def add_transient_phot(request):
 
 	return_dict = {"message":"success"}
 
+	return JsonResponse(return_dict)
+
+@csrf_exempt
+@login_or_basic_auth_required
+def add_transient_spec(request):
+	spec_data = JSONParser().parse(request)
+
+	auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+	credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+	username, password = credentials.split(':', 1)
+	user = auth.authenticate(username=username, password=password)
+	
+	if 'header' in spec_data.keys() and 'transient' in spec_data.keys():
+		hd = spec_data['header']
+		tr = spec_data['transient']
+	else:
+		return_dict = {"message":"header and transient keys are required"}
+		return JsonResponse(return_dict)
+
+	# get all the foreign keys we need
+	instrument = Instrument.objects.filter(name=hd['instrument'])
+	if not len(instrument):
+		instrument = Instrument.objects.filter(name='Unknown')
+	instrument = instrument[0]
+
+	obs_group = ObservationGroup.objects.filter(name=hd['obs_group'])
+	if not len(obs_group):
+		obs_group = ObservationGroup.objects.filter(name='Unknown')
+	obs_group = obs_group[0]
+
+	allgroups = []
+	if hd['groups']:
+		for specgroup in hd['groups'].split(','):
+			group = Group.objects.filter(name=specgroup)
+			if not len(group):
+				return_dict = {"message":"group %s is not in DB"%hd['groups']}
+				return JsonResponse(return_dict)
+			group = group[0]
+			allgroups += [group]
+
+	# get or create transient
+	transient = Transient.objects.filter(name=tr['name'])
+	if not len(transient):
+		return_dict = {"message":"transient %s is not in DB"%tr['name']}
+		return JsonResponse(return_dict)
+	else: transient = transient[0]
+		
+	# get the spectrum
+	transientspec = TransientSpectrum.objects.filter(transient=transient).filter(instrument=instrument).filter(obs_group=obs_group).filter(obs_date=hd['obs_date'])
+	if not len(transientspec):
+		transientspec = TransientSpectrum.objects.create(
+			ra=hd['ra'],dec=hd['dec'],instrument=instrument,obs_group=obs_group,transient=transient,
+			rlap=hd['rlap'],redshift=hd['redshift'],redshift_err=hd['redshift_err'],
+			redshift_quality=hd['redshift_quality'],spectrum_notes=hd['spectrum_notes'],
+			spec_phase=hd['spec_phase'],obs_date=hd['obs_date'],
+			created_by_id=user.id,modified_by_id=user.id)
+	else: transientspec = transientspec[0]
+	if len(allgroups):
+		for group in allgroups:
+			if group not in transientspec.groups.all():
+				transientspec.groups.add(group)
+				transientspec.save()
+
+	# add the spec data
+	existingspec = TransientSpecData.objects.filter(spectrum=transientspec)
+	# loop through new, comp against existing
+	if len(existingspec) and hd['clobber']:
+		for e in existingspec: e.delete()
+	elif len(existingspec):
+		return_dict = {"message":"spectrum exists.  Not clobbering"}
+		return JsonResponse(return_dict)
+
+	for k in spec_data.keys():
+		if k == 'header' or k == 'transient': continue
+		s = spec_data[k]
+
+		TransientSpecData.objects.create(spectrum=transientspec,wavelength=s['wavelength'],
+										 flux=s['flux'],flux_err=s['flux_err'],
+										 created_by_id=user.id,modified_by_id=user.id)
+	
+	return_dict = {"message":"success"}
 	return JsonResponse(return_dict)
 
 @login_or_basic_auth_required

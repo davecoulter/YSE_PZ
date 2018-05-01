@@ -23,6 +23,7 @@ from astropy.coordinates import SkyCoord
 from astropy.coordinates import ICRS, Galactic, FK4, FK5
 from astropy.time import Time
 import coreapi
+import wget
 
 reg_obj = b"https://wis-tns.weizmann.ac.il/object/(\w+)"
 #reg_ra = b"\d{4}\w+\sRA[\=a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -38,7 +39,9 @@ photkeydict = {'magflux':'Mag. / Flux',
 			   'unit':'Units',
 			   'filter':'Filter',
 			   'inst':'Tel / Inst',
-			   'remarks':'Remarks'}
+			   'remarks':'Remarks',
+			   'obsgroup':'Assoc. Groups',
+			   'specfile':'Spectrum ascii file'}
 
 def try_parse_float(s):
 	try:
@@ -430,7 +433,7 @@ class DBOps():
 		)
 		client = coreapi.Client(auth=auth)
 		try:
-			schema = client.get('%s%s'%(self.dburl,tablename))
+			schema = client.get('%s%s?limit=100000'%(self.dburl,tablename))
 		except:
 			raise RuntimeError('Error : couldn\'t get schema!')
 
@@ -456,7 +459,7 @@ class DBOps():
 		)
 		client = coreapi.Client(auth=auth)
 		try:
-			schema = client.get('%s%s'%(self.dburl,tablename))
+			schema = client.get('%s%s?limit=100000'%(self.dburl,tablename))
 		except:
 			raise RuntimeError('Error : couldn\'t get schema!')
 
@@ -520,7 +523,7 @@ class DBOps():
 		return('%s%s/%s/'%(self.dburl,tablename,schema['host candidates'][minsep[0]]['host_id']))
 	
 	def get_key_from_object(self,objid,fieldname):
-		cmd = '%s%s'%(self.basegetobjurl,objid)
+		cmd = '%s%s?limit=100000'%(self.basegetobjurl,objid)
 		output = os.popen(cmd).read()
 		try:
 			data = json.loads(output)
@@ -643,7 +646,7 @@ class processTNS():
 			decs = re.findall(reg_dec,body)
 			print(decs)
 
-			try:
+			if 'hi':
 				########################################################
 				# For Item in Email, Get TNS
 				########################################################
@@ -770,7 +773,63 @@ class processTNS():
 
 					except:
 						print('Error : couldn\'t get photometry!!!')
-									
+
+					if 'hi':
+						specinst,specobsdate,specobsgroup,specfiles = \
+							np.array([]),np.array([]),np.array([]),np.array([])
+
+						tables = soup.find_all('table',attrs={'class':'class-results-table'})
+						for table in tables:
+							data = []
+							table_body = table.find('tbody')
+							header = table.find('thead')
+							headcols = header.find_all('th')
+							header = np.array([ele.text.strip() for ele in headcols])
+							#header.append([ele for ele in headcols if ele])
+							rows = table_body.find_all('tr')
+							for row in rows:
+								cols = row.find_all('td')
+								data.append([ele.text.strip() for ele in cols])
+
+							for datarow in data:
+								datarow = np.array(datarow)
+								if photkeydict['specfile'] not in header: continue
+								if photkeydict['inst'] in header:
+									print(datarow[header == photkeydict['inst']])
+									specinst = np.append(specinst,datarow[header == photkeydict['inst']][0].split('/')[1])
+								if 'Obs-date (UT)' in header:
+									specobsdate = np.append(specobsdate,datarow[header == 'Obs-date (UT)'][0])
+								if photkeydict['obsgroup'] in header:
+									specobsgroup = np.append(specobsgroup,datarow[header == photkeydict['obsgroup']][0])
+								if photkeydict['specfile'] in header:
+									specfile = datarow[header == photkeydict['specfile']][0].encode('utf-8')
+									reg_specfile = b'<a href=".*%s"'%specfile
+									asciifile = re.findall(reg_specfile,html)
+									finalspec = asciifile[0].decode('utf-8').replace('<a href="','').replace('"','')
+									specfiles = np.append(specfiles,finalspec)
+						if len(specfiles):
+							sc = SkyCoord(ras[j].decode("utf-8"),decs[j].decode("utf-8"),FK5,unit=(u.hourangle,u.deg))
+							for s,si,so,sog in zip(specfiles,specinst,specobsdate,specobsgroup):
+								os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
+								dlfile = wget.download(s)
+								fout = open('spec_tns_upload.txt','w')
+								print('# wavelength flux',file=fout)
+								print('# snid %s'%objs[j].decode('utf-8'),file=fout)
+								print('# ra %s'%sc.ra.deg,file=fout)
+								print('# dec %s'%sc.dec.deg,file=fout)
+								print('# instrument %s'%si,file=fout)
+								print('# obs_date %s'%so.replace(' ','T'),file=fout)
+								print('# obs_group %s'%sog,file=fout)
+								fin = open(dlfile,'r')
+								for line in fin:
+									print(line.replace('\n',''),file=fout)
+								fout.close()
+								print('uploading TNS spectrum...')
+								os.system('uploadTransientData.py -i %s --spectrum -e -s %s'%(
+									'spec_tns_upload.txt',self.settingsfile))
+					else:
+						print('Error : couldn\'t get spectra!!!')
+						
 					z = soup.find('div', attrs={'class':'field-redshift'}).find('div').find('b').text
 
 					hn_div = soup.find('div', attrs={'class':'field-hostname'})
@@ -1033,7 +1092,7 @@ class processTNS():
 				# Mark messages as "Seen"
 				result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')
 
-			except:
+			else: #except:
 				for j in range(len(objs)):
 					print('Something went wrong!!!	Sticking to basic info only')
 					print("Object: %s\nRA: %s\nDEC: %s" % (objs[j].decode('utf-8'),
@@ -1135,6 +1194,7 @@ if __name__ == "__main__":
 	tnsproc.dbpassword = options.dbpassword
 	tnsproc.dburl = options.dburl
 	tnsproc.status = options.status
-
+	tnsproc.settingsfile = options.settingsfile
+	
 	tnsproc.ProcessTNSEmails(post=True,db=db)
 	print('TNS -> YSE_PZ took %.1f seconds'%(time.time()-tstart))
