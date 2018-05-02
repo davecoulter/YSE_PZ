@@ -773,63 +773,6 @@ class processTNS():
 
 					except:
 						print('Error : couldn\'t get photometry!!!')
-
-					try:
-						specinst,specobsdate,specobsgroup,specfiles = \
-							np.array([]),np.array([]),np.array([]),np.array([])
-
-						tables = soup.find_all('table',attrs={'class':'class-results-table'})
-						for table in tables:
-							data = []
-							table_body = table.find('tbody')
-							header = table.find('thead')
-							headcols = header.find_all('th')
-							header = np.array([ele.text.strip() for ele in headcols])
-							#header.append([ele for ele in headcols if ele])
-							rows = table_body.find_all('tr')
-							for row in rows:
-								cols = row.find_all('td')
-								data.append([ele.text.strip() for ele in cols])
-
-							for datarow in data:
-								datarow = np.array(datarow)
-								if photkeydict['specfile'] not in header: continue
-								if photkeydict['inst'] in header:
-									print(datarow[header == photkeydict['inst']])
-									specinst = np.append(specinst,datarow[header == photkeydict['inst']][0].split('/')[1])
-								if 'Obs-date (UT)' in header:
-									specobsdate = np.append(specobsdate,datarow[header == 'Obs-date (UT)'][0])
-								if photkeydict['obsgroup'] in header:
-									specobsgroup = np.append(specobsgroup,datarow[header == photkeydict['obsgroup']][0])
-								if photkeydict['specfile'] in header:
-									specfile = datarow[header == photkeydict['specfile']][0].encode('utf-8')
-									reg_specfile = b'<a href=".*%s"'%specfile
-									asciifile = re.findall(reg_specfile,html)
-									finalspec = asciifile[0].decode('utf-8').replace('<a href="','').replace('"','')
-									specfiles = np.append(specfiles,finalspec)
-						if len(specfiles):
-							sc = SkyCoord(ras[j].decode("utf-8"),decs[j].decode("utf-8"),FK5,unit=(u.hourangle,u.deg))
-							for s,si,so,sog in zip(specfiles,specinst,specobsdate,specobsgroup):
-								os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
-								dlfile = wget.download(s)
-								fout = open('spec_tns_upload.txt','w')
-								print('# wavelength flux',file=fout)
-								print('# snid %s'%objs[j].decode('utf-8'),file=fout)
-								print('# ra %s'%sc.ra.deg,file=fout)
-								print('# dec %s'%sc.dec.deg,file=fout)
-								print('# instrument %s'%si,file=fout)
-								print('# obs_date %s'%so.replace(' ','T'),file=fout)
-								print('# obs_group %s'%sog,file=fout)
-								fin = open(dlfile,'r')
-								for line in fin:
-									print(line.replace('\n',''),file=fout)
-								fout.close()
-								print('uploading TNS spectrum...')
-								os.system('uploadTransientData.py -i %s --spectrum -e -s %s'%(
-									'spec_tns_upload.txt',self.settingsfile))
-								os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
-					except:
-						print('Error : couldn\'t get spectra!!!')
 						
 					z = soup.find('div', attrs={'class':'field-redshift'}).find('div').find('b').text
 
@@ -1014,10 +957,10 @@ class processTNS():
 							# the photometry table probably won't exist, so add this in
 							# phot table needs an instrument, which needs a telescope, which needs an observatory
 							for ins in np.unique(tinst):
-								if ins in TNS2YSE_instdict.keys():
-									instrumentid = db.get_ID_from_DB('instruments',TNS2YSE_instdict[ins])
-								else:
-									instrumentid = db.get_ID_from_DB('instruments',ins)
+								#if ins in TNS2YSE_instdict.keys():
+								#	instrumentid = db.get_ID_from_DB('instruments',TNS2YSE_instdict[ins])
+								#else:
+								instrumentid = db.get_ID_from_DB('instruments',ins)
 								if not instrumentid:
 									instrumentid = db.get_ID_from_DB('instruments','Unknown')
 								if not instrumentid:
@@ -1090,6 +1033,64 @@ class processTNS():
 									hostphotdataid = db.post_object_to_DB('hostphotdata',hostphotdatadict)
 								except:
 									print('getting host mag failed')
+
+						try:
+							specinst,specobsdate,specobsgroup,specfiles = \
+								np.array([]),np.array([]),np.array([]),np.array([])
+
+							tables = soup.find_all('table',attrs={'class':'class-results-table'})
+							for table in tables:
+								data = []
+								table_body = table.find('tbody')
+								header = table.find('thead')
+								headcols = header.find_all('th')
+								header = np.array([ele.text.strip() for ele in headcols])
+								#header.append([ele for ele in headcols if ele])
+								rows = table_body.find_all('tr')
+								for row in rows:
+									cols = row.find_all('td')
+									data.append([ele.text.strip() for ele in cols])
+
+								for datarow in data:
+									datarow = np.array(datarow)
+									if photkeydict['specfile'] not in header: continue
+									if photkeydict['inst'] in header:
+										print(datarow[header == photkeydict['inst']])
+										specinst = np.append(specinst,datarow[header == photkeydict['inst']][0].split('/')[1])
+									if 'Obs-date (UT)' in header:
+										specobsdate = np.append(specobsdate,datarow[header == 'Obs-date (UT)'][0])
+									if photkeydict['obsgroup'] in header:
+										specobsgroup = np.append(specobsgroup,datarow[header == photkeydict['obsgroup']][0])
+									if photkeydict['specfile'] in header:
+										specfile = datarow[header == photkeydict['specfile']][0].encode('utf-8')
+										reg_specfile = b'<a href=".*%s"'%specfile
+										asciifile = re.findall(reg_specfile,html)
+										finalspec = asciifile[0].decode('utf-8').replace('<a href="','').replace('"','')
+										specfiles = np.append(specfiles,finalspec)
+							if len(specfiles):
+								sc = SkyCoord(ras[j].decode("utf-8"),decs[j].decode("utf-8"),FK5,unit=(u.hourangle,u.deg))
+								for s,si,so,sog in zip(specfiles,specinst,specobsdate,specobsgroup):
+									os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
+									dlfile = wget.download(s)
+									fout = open('spec_tns_upload.txt','w')
+									print('# wavelength flux',file=fout)
+									print('# snid %s'%objs[j].decode('utf-8'),file=fout)
+									print('# ra %s'%sc.ra.deg,file=fout)
+									print('# dec %s'%sc.dec.deg,file=fout)
+									print('# instrument %s'%si,file=fout)
+									print('# obs_date %s'%so.replace(' ','T'),file=fout)
+									print('# obs_group %s'%sog,file=fout)
+									fin = open(dlfile,'r')
+									for line in fin:
+										print(line.replace('\n',''),file=fout)
+									fout.close()
+									print('uploading TNS spectrum...')
+									os.system('uploadTransientData.py -i %s --spectrum -e -s %s'%(
+										'spec_tns_upload.txt',self.settingsfile))
+									os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
+						except:
+							print('Error : couldn\'t get spectra!!!')
+
 				# Mark messages as "Seen"
 				result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')
 
