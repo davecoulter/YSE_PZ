@@ -13,6 +13,9 @@ class TransientStatus(BaseModel):
 	def __str__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
+
 # If a status gets accidentally deleted, create a proxy status created/modified by `admin` superuser (will always be user.id == 1)
 def get_sentinel_followupstatus():
 	return FollowupStatus.objects.get_or_create(name='StatusDeleted', created_by_id='1', modified_by_id='1')[0]
@@ -23,6 +26,9 @@ class FollowupStatus(BaseModel):
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
+		return self.name
+
+	def natural_key(self):
 		return self.name
 
 # If a status gets accidentally deleted, create a proxy status created/modified by `admin` superuser (will always be user.id == 1)
@@ -37,12 +43,18 @@ class TaskStatus(BaseModel):
 	def __str__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
+
 class AntaresClassification(BaseModel):
 	### Properties ###
 	# Required
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
+		return self.name
+
+	def natural_key(self):
 		return self.name
 
 class InternalSurvey(BaseModel):
@@ -53,12 +65,18 @@ class InternalSurvey(BaseModel):
 	def __str__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
+
 class ObservationGroup(BaseModel):
 	### Properties ###
 	# Required
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
+		return self.name
+
+	def natural_key(self):
 		return self.name
 
 class SEDType(BaseModel):
@@ -69,12 +87,18 @@ class SEDType(BaseModel):
 	def __str__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
+
 class HostMorphology(BaseModel):
 	### Properties ###
 	# Required
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
+		return self.name
+
+	def natural_key(self):
 		return self.name
 
 class Phase(BaseModel):
@@ -85,6 +109,9 @@ class Phase(BaseModel):
 	def __str__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
+
 class TransientClass(BaseModel):
 	### Properties ###
 	# Required
@@ -93,12 +120,18 @@ class TransientClass(BaseModel):
 	def __str__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
+
 class ClassicalNightType(BaseModel):
 	### Properties ###
 	# Required
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
+		return self.name
+
+	def natural_key(self):
 		return self.name
 
 # Where did we get it? e.g. ATel, TNS, PS1, etc
@@ -110,6 +143,9 @@ class InformationSource(BaseModel):
 	def __str__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
+
 class WebAppColor(BaseModel):
 	### Properties ###
 	# Required
@@ -117,3 +153,6 @@ class WebAppColor(BaseModel):
 
 	def __str__(self):
 		return self.color
+
+	def natural_key(self):
+		return self.name

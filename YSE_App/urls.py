@@ -7,7 +7,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import DefaultRouter
 from rest_framework.schemas import get_schema_view
 
-from . import views, view_utils
+from . import views, view_utils, data_utils
 from . import api_views
 from .form_views import *
 
@@ -29,10 +29,11 @@ urlpatterns = [
     url(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
     url(r'^transient_detail/(?P<slug>[a-zA-Z0-9_-]+)/$', views.transient_detail, name='transient_detail'),
 
-	url(r'^get_transient/(?P<slug>[a-zA-Z0-9_-]+)/$', view_utils.get_transient, name='get_transient'),
-	url(r'^add_transient_phot/', view_utils.add_transient_phot, name='add_transient_phot'),
-	url(r'^add_transient_spec/', view_utils.add_transient_spec, name='add_transient_spec'),
-	url(r'^get_host/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<sep>\d+\.?\d*)/$', view_utils.get_host, name='get_host'),
+	url(r'^get_transient/(?P<slug>[a-zA-Z0-9_-]+)/$', data_utils.get_transient, name='get_transient'),
+	url(r'^add_transient_phot/', data_utils.add_transient_phot, name='add_transient_phot'),
+	url(r'^add_transient_spec/', data_utils.add_transient_spec, name='add_transient_spec'),
+	url(r'^get_host/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<sep>\d+\.?\d*)/$', data_utils.get_host, name='get_host'),
+	url(r'^download_data/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_data, name='download_data'),
 
     url(r'^login/$', views.auth_login, name='auth_login'),
     url(r'^logout/$', views.auth_logout, name='auth_logout'),

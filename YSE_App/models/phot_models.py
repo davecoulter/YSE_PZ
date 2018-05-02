@@ -18,6 +18,7 @@ class Photometry(BaseModel):
 	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
 	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
 	groups = models.ManyToManyField(Group, blank=True)
+		
 
 class TransientPhotometry(Photometry):
 	### Entity relationships ###
@@ -31,6 +32,9 @@ class TransientPhotometry(Photometry):
 	def __str__(self):
 		return 'Transient Phot: %s' % (self.transient.name)
 
+	def natural_key(self):
+		return '%s - %s' % (self.obs_group.name,self.instrument.name)
+
 class HostPhotometry(Photometry):
 	### Entity relationships ###
 	# Required
@@ -41,6 +45,9 @@ class HostPhotometry(Photometry):
 
 	def __str__(self):
 		return 'Host Phot: %s ' % (self.host.HostString())
+
+	def natural_key(self):
+		return '%s - %s' % (self.obs_group.name,self.instrument.name)
 
 class PhotData(BaseModel):
 
