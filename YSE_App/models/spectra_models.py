@@ -15,6 +15,9 @@ class Spectrum(BaseModel):
 	# Required
 	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
 	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
+
+	# Optional
+	unit = models.ForeignKey(Unit, null=True, blank=True, on_delete=models.CASCADE)
 	
 	### Properties ###
 	# Required

@@ -85,6 +85,11 @@ class WebAppColorViewSet(viewsets.ReadOnlyModelViewSet):
 	serializer_class = WebAppColorSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+class UnitViewSet(viewsets.ReadOnlyModelViewSet):
+	queryset = Unit.objects.all()
+	serializer_class = UnitSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
 class InformationSourceViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = InformationSource.objects.all()
 	serializer_class = InformationSourceSerializer

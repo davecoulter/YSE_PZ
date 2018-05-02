@@ -117,3 +117,11 @@ class WebAppColor(BaseModel):
 
 	def __str__(self):
 		return self.color
+
+class Unit(BaseModel):
+	### Properties ###
+	# Required
+	name = models.CharField(max_length=128)
+
+	def __str__(self):
+		return self.name

@@ -51,6 +51,9 @@ class PhotData(BaseModel):
 	# Required
 	band = models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
 
+	# Optional
+	unit = models.ForeignKey(Unit, null=True, blank=True, on_delete=models.CASCADE)
+
 	### Properties ###
 	# Required
 	obs_date = models.DateTimeField()

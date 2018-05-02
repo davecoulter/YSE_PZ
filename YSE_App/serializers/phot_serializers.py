@@ -196,6 +196,8 @@ class TransientPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 	photometry = serializers.HyperlinkedRelatedField(queryset=TransientPhotometry.objects.all(), view_name='transientphotometry-detail', lookup_field="id")
 	band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), view_name='photometricband-detail', lookup_field="id")
 
+	unit = serializers.HyperlinkedRelatedField(queryset=Unit.objects.all(), allow_null=True, required=False, view_name='unit-detail')
+
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
@@ -222,6 +224,8 @@ class TransientPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 	def update(self, instance, validated_data):
 		instance.photometry_id = validated_data.get('photometry', instance.photometry)
 		instance.band_id = validated_data.get('obs_group', instance.band)
+		instance.unit_id = validated_data.get('unit', instance.unit)
+
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 		instance.obs_date = validated_data.get('obs_date', instance.obs_date)
 		instance.flux_zero_point = validated_data.get('flux_zero_point', instance.flux_zero_point)
@@ -249,6 +253,8 @@ class HostPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 	photometry = serializers.HyperlinkedRelatedField(queryset=HostPhotometry.objects.all(), view_name='hostphotometry-detail', lookup_field="id")
 	band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), view_name='photometricband-detail', lookup_field="id")
 
+	unit = serializers.HyperlinkedRelatedField(queryset=Unit.objects.all(), allow_null=True, required=False, view_name='unit-detail')
+
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
@@ -274,6 +280,8 @@ class HostPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 	def update(self, instance, validated_data):
 		instance.photometry_id = validated_data.get('photometry', instance.photometry)
 		instance.band_id = validated_data.get('obs_group', instance.band)
+		instance.unit_id = validated_data.get('unit', instance.unit)
+
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 		instance.obs_date = validated_data.get('obs_date', instance.obs_date)
 		instance.flux_zero_point = validated_data.get('flux_zero_point', instance.flux_zero_point)
