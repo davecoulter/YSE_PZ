@@ -156,3 +156,14 @@ class WebAppColor(BaseModel):
 
 	def natural_key(self):
 		return self.name
+
+class Unit(BaseModel):
+	### Properties ###
+	# Required
+	name = models.CharField(max_length=128)
+
+	def __str__(self):
+		return self.name
+
+	def natural_key(self):
+		return self.name
