@@ -439,14 +439,14 @@ class DBOps():
 
 		idlist,namelist = [],[]
 		for i in range(len(schema['results'])):
-			namelist += [schema['results'][i]['name']]
+			namelist += [schema['results'][i]['name'].lower()]
 			idlist += [schema['results'][i]['url']]
 
 		if debug:
 			print('GET took %.1f seconds'%(time.time()-tstart))
-		if fieldname not in namelist: return(None)
+		if fieldname.lower() not in namelist: return(None)
 
-		return(np.array(idlist)[np.where(np.array(namelist) == fieldname)][0])
+		return(np.array(idlist)[np.where(np.array(namelist) == fieldname.lower())][0])
 	
 	def get_band_from_DB(self,fieldname,instrumentid,debug=False):
 

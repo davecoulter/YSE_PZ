@@ -73,6 +73,9 @@ class Transient(BaseModel):
 
 	def __str__(self):
 		return self.name
+
+	def natural_key(self):
+		return self.name
 	
 @receiver(models.signals.post_save, sender=Transient)
 def execute_after_save(sender, instance, created, *args, **kwargs):

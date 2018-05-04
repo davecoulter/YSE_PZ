@@ -16,3 +16,6 @@ class Observatory(BaseModel):
 
 	def __str__(self):
 		return 'Observatory: %s' % self.name
+
+	def natural_key(self):
+		return self.name

@@ -17,6 +17,9 @@ class Instrument(BaseModel):
 	def __str__(self):
 		return "Instrument: %s - %s" % (self.telescope.name, self.name)
 
+	def natural_key(self):
+		return "%s - %s" % (self.telescope.name, self.name)
+
 class InstrumentConfig(BaseModel):
 	### Entity relationships ###
 	# Required
@@ -28,6 +31,9 @@ class InstrumentConfig(BaseModel):
 
 	def __str__(self):
 		return "Config: %s - %s" % (self.instrument.name, self.name)
+
+	def natural_key(self):
+		return "%s - %s" % (self.instrument.name, self.name)
 
 class ConfigElement(BaseModel):
 	### Entity relationships ###
@@ -46,3 +52,6 @@ class ConfigElement(BaseModel):
 
 	def __str__(self):
 		return "Element: %s - %s" % (self.instrument.name, self.name)
+
+	def natural_key(self):
+		return "%s - %s" % (self.instrument.name, self.name)

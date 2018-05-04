@@ -18,6 +18,10 @@ import datetime
 import pytz
 from pytz import timezone
 from .serializers import *
+from django.core import serializers
+import os
+from .data import PhotometryService, SpectraService, ObservingResourceService
+import json
 
 # Create your views here.
 
@@ -352,3 +356,36 @@ def transient_edit(request, transient_id=None):
 		form = TransientForm()
 
 	return render(request, 'YSE_App/transient_edit.html', {'form': form})
+
+
+from wsgiref.util import FileWrapper
+@login_required
+def download_data(request, slug):
+
+	transient = Transient.objects.filter(slug=slug)
+	data = {transient[0].name:{'transient':{},'host':{},'photometry':{},'spectra':{}}}
+	data[transient[0].name]['transient'] = json.loads(serializers.serialize("json", transient, use_natural_foreign_keys=True))
+
+	if transient[0].host:
+		host = Host.objects.filter(id=transient[0].host.id)
+		data[transient[0].name]['host'] = json.loads(serializers.serialize("json", host, use_natural_foreign_keys=True))
+
+	authorized_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser_ByTransient(request.user, transient[0].id)
+	if len(authorized_phot):
+		data[transient[0].name]['photometry'] = json.loads(serializers.serialize("json", authorized_phot,use_natural_foreign_keys=True))
+
+		for p,pd in zip(authorized_phot,range(len(data[transient[0].name]['photometry']))):
+			photdata = TransientPhotData.objects.filter(photometry__in=[p.id])
+			data[transient[0].name]['photometry'][pd]['data'] = json.loads(serializers.serialize("json", photdata, use_natural_foreign_keys=True))
+		
+	authorized_spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient[0].id)
+	if len(authorized_spectra):
+		data[transient[0].name]['spectra'] = json.loads(serializers.serialize("json", authorized_spectra, use_natural_foreign_keys=True))
+
+		for s,sd in zip(authorized_spectra,range(len(data[transient[0].name]['spectra']))):
+			specdata = TransientSpecData.objects.filter(spectrum__in=[s.id])
+			data[transient[0].name]['spectra'][sd]['data'] = json.loads(serializers.serialize("json", specdata, use_natural_foreign_keys=True))
+
+	response = JsonResponse(data)
+	response['Content-Disposition'] = 'attachment; filename=%s' % '%s_data.json'%slug
+	return response

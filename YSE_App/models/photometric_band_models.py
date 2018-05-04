@@ -17,3 +17,6 @@ class PhotometricBand(BaseModel):
 	
 	def __str__(self):
 		return 'Band: %s - %s' % (self.instrument.name, self.name)
+
+	def natural_key(self):
+		return '%s - %s'% (self.instrument.name, self.name)

@@ -19,3 +19,6 @@ class Telescope(BaseModel):
 
 	def tostring(self):
 		return self.name
+
+	def natural_key(self):
+		return self.name

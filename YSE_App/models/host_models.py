@@ -37,6 +37,9 @@ class HostSED(BaseModel):
 			name_str += 'Untyped'
 		return name_str
 
+	def natural_key(self):
+		return self.__str__
+
 class Host(BaseModel):
 	### Entity relationships ###
 	# Optional
@@ -81,4 +84,7 @@ class Host(BaseModel):
 		return '%.7f'%(self.dec)
 
 	def __str__(self):
+		return self.HostString()
+
+	def natural_key(self):
 		return self.HostString()
