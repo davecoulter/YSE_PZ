@@ -443,7 +443,7 @@ def spectrumplot(request, transient_id):
 		flux += [s.flux]
 	ax.line(np.sort(wave),np.array(flux)[np.argsort(wave)],color='black')
 		
-	ax.title.text = "%s"%transient.name		
+	ax.title.text = "%s, %s"%(transient.name,spectrum.instrument)
 	ax.xaxis.axis_label = r'Wavelength (Angstrom)'
 	ax.yaxis.axis_label = 'Flux'
 	g = file_html(ax,CDN,"my plot")

@@ -1056,7 +1056,7 @@ class processTNS():
 									if photkeydict['specfile'] not in header: continue
 									if photkeydict['inst'] in header:
 										print(datarow[header == photkeydict['inst']])
-										specinst = np.append(specinst,datarow[header == photkeydict['inst']][0].split('/')[1])
+										specinst = np.append(specinst,datarow[header == photkeydict['inst']][0].split('/')[1].replace(' ',''))
 									if 'Obs-date (UT)' in header:
 										specobsdate = np.append(specobsdate,datarow[header == 'Obs-date (UT)'][0])
 									if photkeydict['obsgroup'] in header:
@@ -1087,7 +1087,7 @@ class processTNS():
 									print('uploading TNS spectrum...')
 									os.system('uploadTransientData.py -i %s --spectrum -e -s %s'%(
 										'spec_tns_upload.txt',self.settingsfile))
-									os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
+									#os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
 						except:
 							print('Error : couldn\'t get spectra!!!')
 
