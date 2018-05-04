@@ -1087,7 +1087,7 @@ class processTNS():
 									print('uploading TNS spectrum...')
 									os.system('uploadTransientData.py -i %s --spectrum -e -s %s'%(
 										'spec_tns_upload.txt',self.settingsfile))
-									#os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
+									os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
 						except:
 							print('Error : couldn\'t get spectra!!!')
 
