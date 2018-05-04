@@ -196,7 +196,7 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 			line = line.replace('\n','')
 			if not count: header = np.array(line.replace('# ','').split())
 			for key in keyslist:
-				if line.lower().startswith('# %s'%key):
+				if line.lower().startswith('# %s '%key):
 					SpecHeader[key] = line.split()[-1]
 			count += 1
 		fin.close()
