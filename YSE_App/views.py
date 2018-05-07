@@ -143,7 +143,9 @@ def followup(request):
 	followup_transients = Transient.objects.filter(Q(status=status_followrequest[0]) |
 												   Q(status=status_followrequest[1]) |
 												   Q(status=status_followrequest[2]) |
-												   Q(status=status_followrequest[3]))
+												   Q(status=status_followrequest[3]) |
+												   Q(status=status_followrequest[4]) |
+												   Q(status=status_followrequest[5]))
 	for i in range(len(followup_transients)):
 		disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=followup_transients[i].id)
 
