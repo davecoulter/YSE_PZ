@@ -231,16 +231,18 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 		
 		if 'fluxerr' in spc.keys():
 			for w,f,df in zip(spc['wavelength'],spc['flux'],spc['fluxerr']):
-				SpecDict = {'wavelength':w,
-							'flux':f,
-							'flux_err':df}
-				SpecDictAll[w] = SpecDict
+				if f == f:
+					SpecDict = {'wavelength':w,
+								'flux':f,
+								'flux_err':df}
+					SpecDictAll[w] = SpecDict
 		else:
 			for w,f in zip(spc['wavelength'],spc['flux']):
-				SpecDict = {'wavelength':w,
-							'flux':f,
-							'flux_err':None}
-				SpecDictAll[w] = SpecDict
+				if f == f:
+					SpecDict = {'wavelength':w,
+								'flux':f,
+								'flux_err':None}
+					SpecDictAll[w] = SpecDict
 				
 		import requests
 		from requests.auth import HTTPBasicAuth
