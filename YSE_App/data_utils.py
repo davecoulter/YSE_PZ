@@ -101,7 +101,7 @@ def add_transient_phot(request):
 		
 		obsExists = False
 		for e in existingphot:
-			if e.photometry.id == int(transientphot.id):
+			if e.photometry.id == transientphot.id:
 				if e.band == band:
 					try:
 						mjd = Time(e.obs_date.isoformat().split('+')[0],format='isot').mjd
@@ -110,7 +110,6 @@ def add_transient_phot(request):
 					if np.abs(mjd - pmjd) < hd['mjdmatchmin']:
 						obsExists = True
 						if hd['clobber']:
-							#e.delete()
 							e.obs_date = p['obs_date']
 							e.flux = p['flux']
 							e.flux_err = p['flux_err']

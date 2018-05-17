@@ -145,8 +145,8 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 				PhotUploadDict['mag'] = mag
 				PhotUploadDict['mag_err'] = magerr
 			else:
-				PhotUploadDict['mag'] = ''
-				PhotUploadDict['mag_err'] = ''
+				PhotUploadDict['mag'] = None
+				PhotUploadDict['mag_err'] = None
 				
 			if 'SEARCH_PEAKMJD' in sn.__dict__.keys() and np.abs(mjd - sn.SEARCH_PEAKMJD) < 0.5:
 				PhotUploadDict['discovery_point'] = 1
