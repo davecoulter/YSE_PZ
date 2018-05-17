@@ -90,7 +90,12 @@ def add_transient_phot(request):
 				transientphot.save()
 		
 	existingphot = TransientPhotData.objects.filter(photometry=transientphot)
-
+	if hd['delete']:
+		for e in existingphot:
+			if e.photometry.id == transientphot.id:
+				e.delete()
+	existingphot = TransientPhotData.objects.filter(photometry=transientphot)
+				
 	# loop through new, comp against existing
 	for k in phot_data.keys():
 		if k == 'header' or k == 'transient' or k == 'photheader': continue

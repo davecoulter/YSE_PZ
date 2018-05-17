@@ -26,6 +26,8 @@ class upload():
 		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
 		parser.add_option('--clobber', default=False, action="store_true",
 						  help='clobber output file')
+		parser.add_option('--deleteall', default=False, action="store_true",
+						  help='delete all photometry for this transient')
 
 		parser.add_option('-i','--inputfile', default=None, type="string",
 						  help='input file ')
@@ -154,7 +156,8 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 				PhotUploadDict['discovery_point'] = 0
 			PhotUploadAll[obsdate] = PhotUploadDict
 			PhotUploadAll['header'] = {'clobber':self.options.clobber,
-									   'mjdmatchmin':self.options.mjdmatchmin}
+									   'mjdmatchmin':self.options.mjdmatchmin,
+									   'delete':self.options.deleteall}
 		import requests
 		from requests.auth import HTTPBasicAuth
 		url = '%s'%db.dburl.replace('/api','/add_transient_phot')
@@ -282,6 +285,9 @@ class DBOps():
 		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
 		parser.add_option('--clobber', default=False, action="store_true",
 						  help='clobber output file')
+		parser.add_option('--deleteall', default=False, action="store_true",
+						  help='delete all photometry for this transient')
+
 		parser.add_option('-i','--inputfile', default=None, type="string",
 						  help='input file ')
 		parser.add_option('-p','--photometry', default=False, action="store_true",
