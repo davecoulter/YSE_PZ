@@ -721,6 +721,7 @@ class processTNS():
 										if photkeydict['magflux'] in header:
 											tmag = np.append(tmag,datarow[header == photkeydict['magflux']])
 											tflux = np.append(tflux,'')
+											import pdb; pdb.set_trace()
 										else:
 											tmag = np.append(tmag,'')
 											tflux = np.append(tflux,'')
@@ -760,7 +761,7 @@ class processTNS():
 						# set the discovery flag
 						disc_flag = np.zeros(len(tmag))
 						iMagsExist = np.where(tmag != '')[0]
-						if len(iMagsExist) == 1: disc_flag[np.where(tmag != '')] = 1
+						if len(tmag) and len(iMagsExist) == 1: disc_flag[np.where(tmag != '')] = 1
 						elif len(iMagsExist) > 1:
 							mjd = np.zeros(len(iMagsExist))
 							for d in range(len(mjd)):

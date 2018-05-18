@@ -10,6 +10,10 @@ from ..models import *
 
 register = template.Library()
 
+@register.filter(name='replace_space')
+def replace_space(object):
+	return(object.name.replace(' ','_'))
+
 @register.filter(name='rise_time')
 def rise_time(obsnight,coords):
 
