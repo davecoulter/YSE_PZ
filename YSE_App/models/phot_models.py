@@ -60,6 +60,7 @@ class PhotData(BaseModel):
 
 	# Optional
 	unit = models.ForeignKey(Unit, null=True, blank=True, on_delete=models.CASCADE)
+	data_quality = models.ForeignKey(DataQuality, null=True, blank=True, on_delete=models.CASCADE)
 
 	### Properties ###
 	# Required
@@ -73,7 +74,8 @@ class PhotData(BaseModel):
 	mag = models.FloatField(null=True, blank=True)
 	mag_err = models.FloatField(null=True, blank=True)
 	forced = models.NullBooleanField(null=True, blank=True)
-	dq = models.NullBooleanField(null=True, blank=True)
+	# dq = models.NullBooleanField(null=True, blank=True)
+
 
 class TransientPhotData(PhotData):
 	# Entity relationships ###

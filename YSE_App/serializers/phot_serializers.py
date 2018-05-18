@@ -197,6 +197,7 @@ class TransientPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 	band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), view_name='photometricband-detail', lookup_field="id")
 
 	unit = serializers.HyperlinkedRelatedField(queryset=Unit.objects.all(), allow_null=True, required=False, view_name='unit-detail')
+	data_quality = serializers.HyperlinkedRelatedField(queryset=DataQuality.objects.all(), allow_null=True, required=False, view_name='dataquality-detail')
 
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
@@ -225,6 +226,7 @@ class TransientPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 		instance.photometry_id = validated_data.get('photometry', instance.photometry)
 		instance.band_id = validated_data.get('obs_group', instance.band)
 		instance.unit_id = validated_data.get('unit', instance.unit)
+		instance.data_quality_id = validated_data.get('data_quality', instance.data_quality)
 
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 		instance.obs_date = validated_data.get('obs_date', instance.obs_date)
@@ -234,7 +236,7 @@ class TransientPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 		instance.mag = validated_data.get('mag', instance.mag)
 		instance.mag_err = validated_data.get('mag_err', instance.mag_err)
 		instance.forced = validated_data.get('forced', instance.forced)
-		instance.dq = validated_data.get('dq', instance.dq)
+		# instance.dq = validated_data.get('dq', instance.dq)
 		instance.discovery_point = validated_data.get('discovery_point', instance.discovery_point)
 
 		new_parent_photometry = TransientPhotometry.objects.get(pk=instance.photometry_id.id)
@@ -254,6 +256,7 @@ class HostPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 	band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), view_name='photometricband-detail', lookup_field="id")
 
 	unit = serializers.HyperlinkedRelatedField(queryset=Unit.objects.all(), allow_null=True, required=False, view_name='unit-detail')
+	data_quality = serializers.HyperlinkedRelatedField(queryset=DataQuality.objects.all(), allow_null=True, required=False, view_name='dataquality-detail')
 
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
@@ -281,6 +284,7 @@ class HostPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 		instance.photometry_id = validated_data.get('photometry', instance.photometry)
 		instance.band_id = validated_data.get('obs_group', instance.band)
 		instance.unit_id = validated_data.get('unit', instance.unit)
+		instance.data_quality_id = validated_data.get('data_quality', instance.data_quality)
 
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 		instance.obs_date = validated_data.get('obs_date', instance.obs_date)
@@ -290,7 +294,7 @@ class HostPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 		instance.mag = validated_data.get('mag', instance.mag)
 		instance.mag_err = validated_data.get('mag_err', instance.mag_err)
 		instance.forced = validated_data.get('forced', instance.forced)
-		instance.dq = validated_data.get('dq', instance.dq)
+		# instance.dq = validated_data.get('dq', instance.dq)
 
 		new_parent_photometry = HostPhotometry.objects.get(pk=instance.photometry_id.id)
 		user_groups = self.context['request'].user.groups.all()

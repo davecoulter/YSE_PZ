@@ -11,6 +11,7 @@ class TransientSpectrumSerializer(serializers.HyperlinkedModelSerializer):
 	followup = serializers.HyperlinkedRelatedField(queryset=TransientFollowup.objects.all(), allow_null=True, required=False, view_name='transientfollowup-detail')
 	spec_phase = serializers.HyperlinkedRelatedField(queryset=Phase.objects.all(), allow_null=True, required=False, view_name='phase-detail')
 	unit = serializers.HyperlinkedRelatedField(queryset=Unit.objects.all(), allow_null=True, required=False, view_name='unit-detail')
+	data_quality = serializers.HyperlinkedRelatedField(queryset=DataQuality.objects.all(), allow_null=True, required=False, view_name='dataquality-detail')
 
 	groups = serializers.HyperlinkedRelatedField(queryset=Group.objects.all(), many=True, view_name='group-detail')
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
@@ -57,6 +58,7 @@ class TransientSpectrumSerializer(serializers.HyperlinkedModelSerializer):
 		instance.followup_id = validated_data.get('followup', instance.followup)
 		instance.spec_phase_id = validated_data.get('spec_phase', instance.spec_phase)
 		instance.unit_id = validated_data.get('unit', instance.unit)
+		instance.data_quality_id = validated_data.get('data_quality', instance.data_quality)
 
 		instance.ra = validated_data.get('ra', instance.ra)
 		instance.dec = validated_data.get('dec', instance.dec)
@@ -119,6 +121,7 @@ class HostSpectrumSerializer(serializers.HyperlinkedModelSerializer):
 	obs_group = serializers.HyperlinkedRelatedField(queryset=ObservationGroup.objects.all(), view_name='observationgroup-detail')
 	followup = serializers.HyperlinkedRelatedField(queryset=HostFollowup.objects.all(), allow_null=True, required=False, view_name='hostfollowup-detail')
 	unit = serializers.HyperlinkedRelatedField(queryset=Unit.objects.all(), allow_null=True, required=False, view_name='unit-detail')
+	data_quality = serializers.HyperlinkedRelatedField(queryset=DataQuality.objects.all(), allow_null=True, required=False, view_name='dataquality-detail')
 
 	groups = serializers.HyperlinkedRelatedField(queryset=Group.objects.all(), many=True, view_name='group-detail')
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
@@ -164,6 +167,7 @@ class HostSpectrumSerializer(serializers.HyperlinkedModelSerializer):
 		instance.obs_group_id = validated_data.get('obs_group', instance.obs_group)
 		instance.followup_id = validated_data.get('followup', instance.followup)
 		instance.unit_id = validated_data.get('unit', instance.unit)
+		instance.data_quality_id = validated_data.get('data_quality', instance.data_quality)
 
 		instance.ra = validated_data.get('ra', instance.ra)
 		instance.dec = validated_data.get('dec', instance.dec)

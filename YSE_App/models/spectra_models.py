@@ -18,6 +18,7 @@ class Spectrum(BaseModel):
 
 	# Optional
 	unit = models.ForeignKey(Unit, null=True, blank=True, on_delete=models.CASCADE)
+	data_quality = models.ForeignKey(DataQuality, null=True, blank=True, on_delete=models.CASCADE)
 	
 	### Properties ###
 	# Required

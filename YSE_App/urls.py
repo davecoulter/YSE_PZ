@@ -90,6 +90,9 @@ router.register(r'classicalnighttypes', api_views.ClassicalNightTypeViewSet)
 router.register(r'informationsources', api_views.InformationSourceViewSet)
 router.register(r'webappcolors', api_views.WebAppColorViewSet)
 router.register(r'units', api_views.UnitViewSet)
+
+router.register(r'dataquality', api_views.DataQualityViewSet)
+
 router.register(r'transientfollowups', api_views.TransientFollowupViewSet)
 router.register(r'hostfollowups', api_views.HostFollowupViewSet)
 router.register(r'hosts', api_views.HostViewSet)

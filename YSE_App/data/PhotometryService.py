@@ -43,7 +43,15 @@ def GetAuthorizedTransientPhotData_ByUser(user):
     allowed_phot = GetAuthorizedTransientPhotometry_ByUser(user)
     phot_ids = allowed_phot.values('id')
     allowed_phot_data_query = Q(photometry__id__in=phot_ids)
-    allowed_phot_data = TransientPhotData.objects.filter(allowed_phot_data_query)
+    allowed_phot_data = TransientPhotData.objects.exclude(data_quality__isnull=False).filter(allowed_phot_data_query)
+
+    return allowed_phot_data
+
+def GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id):
+    allowed_phot = GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient_id)
+    phot_ids = allowed_phot.values('id')
+    allowed_phot_data_query = Q(photometry__id__in=phot_ids)
+    allowed_phot_data = TransientPhotData.objects.exclude(data_quality__isnull=False).filter(allowed_phot_data_query)
 
     return allowed_phot_data
 
@@ -51,6 +59,14 @@ def GetAuthorizedHostPhotData_ByUser(user):
     allowed_phot = GetAuthorizedHostPhotometry_ByUser(user)
     phot_ids = allowed_phot.values('id')
     allowed_phot_data_query = Q(photometry__id__in=phot_ids)
-    allowed_phot_data = HostPhotData.objects.filter(allowed_phot_data_query)
+    allowed_phot_data = HostPhotData.objects.exclude(data_quality__isnull=False).filter(allowed_phot_data_query)
+
+    return allowed_phot_data
+
+def GetAuthorizedHostPhotData_ByUser_ByHost(user, host_id):
+    allowed_phot = GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
+    phot_ids = allowed_phot.values('id')
+    allowed_phot_data_query = Q(photometry__id__in=phot_ids)
+    allowed_phot_data = HostPhotData.objects.exclude(data_quality__isnull=False).filter(allowed_phot_data_query)
 
     return allowed_phot_data

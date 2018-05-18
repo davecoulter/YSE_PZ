@@ -90,6 +90,11 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet):
 	serializer_class = UnitSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+class DataQualityViewSet(viewsets.ReadOnlyModelViewSet):
+		queryset = DataQuality.objects.all()
+		serializer_class = DataQualitySerializer
+		permission_classes = (permissions.IsAuthenticated,)
+
 class InformationSourceViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = InformationSource.objects.all()
 	serializer_class = InformationSourceSerializer

@@ -41,12 +41,7 @@ def get_recent_phot_for_host(user, host_id=None):
 		return(None)
 
 def get_all_phot_for_transient(user, transient_id=None):
-	allowed_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient_id)
-	
-	pidlist = []
-	for p in allowed_phot:
-		pidlist += [p.id]
-	photdata = TransientPhotData.objects.filter(photometry__in=pidlist)
+	photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id)
 
 	if photdata:	
 		return(photdata)
@@ -54,42 +49,22 @@ def get_all_phot_for_transient(user, transient_id=None):
 		return(None)
 
 def get_recent_phot_for_transient(user, transient_id=None):
-	allowed_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient_id)
-
-	photdata = False
-	for p in allowed_phot:
-		photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')
+	photdata = get_all_phot_for_transient(user, transient_id).order_by('-obs_date')
 
 	if photdata:
 		return(photdata[0])
 	else:
 		return(None)
 
-def get_disc_phot_for_transient(user, transient_id=None):
-	allowed_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient_id)
-
-	firstphot = None
-	for p in allowed_phot:
-		photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')[::-1]
-		for ph in photdata:
-			if ph.discovery_point:
-				return(ph)
-			elif ph.mag:
-				firstphot = ph
-			
-	return(firstphot)
-
 def get_disc_mag_for_transient(user, transient_id=None):
-	allowed_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient_id)
+	photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id).order_by('obs_date')
 
 	firstphot = None
-	for p in allowed_phot:
-			photdata = TransientPhotData.objects.filter(photometry=p.id).order_by('-obs_date')[::-1]
-			for ph in photdata:
-				if ph.discovery_point:
-					return(ph)
-				elif ph.mag:
-					firstphot = ph
+	for ph in photdata:
+		if ph.discovery_point:
+			return(ph)
+		elif ph.mag:
+			firstphot = ph
 
 	return(firstphot)
 

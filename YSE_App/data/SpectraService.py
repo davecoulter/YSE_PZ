@@ -14,7 +14,7 @@ def GetUserGroupQuery(user):
 
 def GetAuthorizedTransientSpectrum_ByUser(user):
     group_query_tuple = GetUserGroupQuery(user)
-    allowed_spec = TransientSpectrum.objects.filter(group_query_tuple[0] | group_query_tuple[1]).distinct()
+    allowed_spec = TransientSpectrum.objects.exclude(data_quality__isnull=False).filter(group_query_tuple[0] | group_query_tuple[1]).distinct()
 
     return allowed_spec
 
@@ -28,7 +28,7 @@ def GetAuthorizedTransientSpectrum_ByUser_ByTransient(user, transient_id):
 
 def GetAuthorizedHostSpectrum_ByUser(user):
     host_query_tuple = GetUserGroupQuery(user)
-    allowed_phot = HostSpectrum.objects.filter(host_query_tuple[0] | host_query_tuple[1]).distinct()
+    allowed_phot = HostSpectrum.objects.exclude(data_quality__isnull=False).filter(host_query_tuple[0] | host_query_tuple[1]).distinct()
 
     return allowed_phot
 
