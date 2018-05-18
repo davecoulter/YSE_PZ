@@ -721,7 +721,6 @@ class processTNS():
 										if photkeydict['magflux'] in header:
 											tmag = np.append(tmag,datarow[header == photkeydict['magflux']])
 											tflux = np.append(tflux,'')
-											import pdb; pdb.set_trace()
 										else:
 											tmag = np.append(tmag,'')
 											tflux = np.append(tflux,'')
