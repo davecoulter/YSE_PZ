@@ -39,34 +39,72 @@ def GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id):
 
     return allowed_phot_by_group_by_host
 
-def GetAuthorizedTransientPhotData_ByUser(user):
+def GetAuthorizedTransientPhotData_ByUser(user, includeBadData=False):
     allowed_phot = GetAuthorizedTransientPhotometry_ByUser(user)
     phot_ids = allowed_phot.values('id')
     allowed_phot_data_query = Q(photometry__id__in=phot_ids)
-    allowed_phot_data = TransientPhotData.objects.exclude(data_quality__isnull=False).filter(allowed_phot_data_query)
+    allowed_phot_data = _GetTransientPhotData(includeBadData, allowed_phot_data_query)
 
     return allowed_phot_data
 
-def GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id):
+def GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id, includeBadData=False):
     allowed_phot = GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient_id)
     phot_ids = allowed_phot.values('id')
     allowed_phot_data_query = Q(photometry__id__in=phot_ids)
-    allowed_phot_data = TransientPhotData.objects.exclude(data_quality__isnull=False).filter(allowed_phot_data_query)
+    allowed_phot_data = _GetTransientPhotData(includeBadData, allowed_phot_data_query)
 
     return allowed_phot_data
 
-def GetAuthorizedHostPhotData_ByUser(user):
+def GetAuthorizedHostPhotData_ByUser(user, includeBadData=False):
     allowed_phot = GetAuthorizedHostPhotometry_ByUser(user)
     phot_ids = allowed_phot.values('id')
     allowed_phot_data_query = Q(photometry__id__in=phot_ids)
-    allowed_phot_data = HostPhotData.objects.exclude(data_quality__isnull=False).filter(allowed_phot_data_query)
+    allowed_phot_data = _GetHostPhotData(includeBadData, allowed_phot_data_query)
 
     return allowed_phot_data
 
-def GetAuthorizedHostPhotData_ByUser_ByHost(user, host_id):
+def GetAuthorizedHostPhotData_ByUser_ByHost(user, host_id, includeBadData=False):
     allowed_phot = GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
     phot_ids = allowed_phot.values('id')
     allowed_phot_data_query = Q(photometry__id__in=phot_ids)
-    allowed_phot_data = HostPhotData.objects.exclude(data_quality__isnull=False).filter(allowed_phot_data_query)
+    allowed_phot_data = _GetHostPhotData(includeBadData, allowed_phot_data_query)
 
     return allowed_phot_data
+
+def GetAuthorizedTransientPhotData_ByPhotometry(user, photometry_id, includeBadData=False):
+    # First check if they're allowed to access...
+    allowed_phot = GetAuthorizedTransientPhotometry_ByUser(user).filter(pk=photometry_id)
+
+    phot_data = None
+    if allowed_phot:
+        #... then get the data according to the dq flag preference
+        query = Q(photometry__id=photometry_id)
+        phot_data = _GetTransientPhotData(includeBadData, query)
+
+    return phot_data
+
+def GetAuthorizedHostPhotData_ByPhotometry(user, photometry_id, includeBadData=False):
+    # First check if they're allowed to access...
+    allowed_phot = GetAuthorizedHostPhotometry_ByUser(user).filter(photometry__id=photometry_id)
+
+    phot_data = None
+    if allowed_phot:
+        # ... then get the data according to the dq flag preference
+        query = Q(pk=photometry_id)
+        phot_data = _GetHostPhotData(includeBadData, query)
+
+    return phot_data
+
+
+# This are private methods. Don't invoke them outside of this module!
+def _GetTransientPhotData(includeBadData,filter):
+    if includeBadData:
+        return TransientPhotData.objects.filter(filter)
+    else:
+        return TransientPhotData.objects.exclude(data_quality__isnull=False).filter(filter)
+
+def _GetHostPhotData(includeBadData, filter):
+    if includeBadData:
+        return HostPhotData.objects.filter(filter)
+    else:
+        return HostPhotData.objects.exclude(data_quality__isnull=False).filter(filter)

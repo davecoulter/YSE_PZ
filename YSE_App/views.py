@@ -371,20 +371,25 @@ def download_data(request, slug):
 		host = Host.objects.filter(id=transient[0].host.id)
 		data[transient[0].name]['host'] = json.loads(serializers.serialize("json", host, use_natural_foreign_keys=True))
 
+
+	# Get photometry by user & transient
 	authorized_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser_ByTransient(request.user, transient[0].id)
 	if len(authorized_phot):
 		data[transient[0].name]['photometry'] = json.loads(serializers.serialize("json", authorized_phot,use_natural_foreign_keys=True))
 
+		# Get data points
 		for p,pd in zip(authorized_phot,range(len(data[transient[0].name]['photometry']))):
-			photdata = TransientPhotData.objects.filter(photometry__in=[p.id])
+			photdata = PhotometryService.GetAuthorizedTransientPhotData_ByPhotometry(request.user, p.id, includeBadData=True)
 			data[transient[0].name]['photometry'][pd]['data'] = json.loads(serializers.serialize("json", photdata, use_natural_foreign_keys=True))
-		
-	authorized_spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient[0].id)
+
+
+	# Get spectra by user & transient
+	authorized_spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient[0].id, includeBadData=True)
 	if len(authorized_spectra):
 		data[transient[0].name]['spectra'] = json.loads(serializers.serialize("json", authorized_spectra, use_natural_foreign_keys=True))
 
 		for s,sd in zip(authorized_spectra,range(len(data[transient[0].name]['spectra']))):
-			specdata = TransientSpecData.objects.filter(spectrum__in=[s.id])
+			specdata = SpectraService.GetAuthorizedHostSpecData_BySpectrum(request.user, includeBadData=True)
 			data[transient[0].name]['spectra'][sd]['data'] = json.loads(serializers.serialize("json", specdata, use_natural_foreign_keys=True))
 
 	response = JsonResponse(data)

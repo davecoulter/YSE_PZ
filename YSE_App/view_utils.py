@@ -49,7 +49,9 @@ def get_all_phot_for_transient(user, transient_id=None):
 		return(None)
 
 def get_recent_phot_for_transient(user, transient_id=None):
-	photdata = get_all_phot_for_transient(user, transient_id).order_by('-obs_date')
+	photdata = get_all_phot_for_transient(user, transient_id)
+	if photdata:
+		photdata = photdata.order_by('-obs_date')
 
 	if photdata:
 		return(photdata[0])
@@ -57,7 +59,9 @@ def get_recent_phot_for_transient(user, transient_id=None):
 		return(None)
 
 def get_disc_mag_for_transient(user, transient_id=None):
-	photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id).order_by('obs_date')
+	photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id)
+	if photdata:
+		photdata = photdata.order_by('obs_date')
 
 	firstphot = None
 	for ph in photdata:
