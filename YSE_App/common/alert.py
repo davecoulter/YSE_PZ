@@ -10,6 +10,8 @@ from email.mime.multipart import MIMEMultipart
 
 def IsK2Pixel(ra, dec, campaign_num):
 
+	ra = float(ra); dec = float(dec)
+	
 	print("Checking K2 Campaign %s API" % campaign_num)
 	print("Input: (%0.5f, %0.5f)" % (ra, dec))
 
@@ -145,17 +147,18 @@ def SendTransientAlert(transient_id, transient_name, ra, dec):
 			on_call_users = ocd.user.all()
 			for user in on_call_users:
 				print("Alerting on call user: %s" % user.username)
-				profile = Profile.objects.get(user__id =user.id)
+				profile = Profile.objects.filter(user__id =user.id)
 
-				phone_email = "%s%s%s@%s" % (profile.phone_area, 
-								profile.phone_first_three, 
-								profile.phone_last_four,
-								profile.phone_provider_str)
+				for p in profile:
+					phone_email = "%s%s%s@%s" % (profile.phone_area, 
+												 profile.phone_first_three, 
+												 profile.phone_last_four,
+												 profile.phone_provider_str)
 
-				print("Target SMS: %s" % phone_email)
+					print("Target SMS: %s" % phone_email)
 
-				sendsms(from_addr, phone_email, subject, txt_msg, 
-					settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
+					sendsms(from_addr, phone_email, subject, txt_msg, 
+							settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
 
 def sendemail(from_addr, to_addr,
 			subject, message,

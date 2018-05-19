@@ -77,7 +77,7 @@ def add_transient_phot(request):
 	else: transient = transient[0]
 		
 	# get all existing photometry
-	transientphot = TransientPhotometry.objects.filter(transient=transient).filter(instrument=instrument).filter(obs_group=obs_group)
+	transientphot = TransientPhotometry.objects.filter(transient=transient).filter(instrument=instrument)#.filter(obs_group=obs_group)
 	if not len(transientphot):
 		transientphot = TransientPhotometry.objects.create(
 			instrument=instrument,obs_group=obs_group,transient=transient,
@@ -90,11 +90,11 @@ def add_transient_phot(request):
 				transientphot.save()
 		
 	existingphot = TransientPhotData.objects.filter(photometry=transientphot)
-	if hd['delete']:
-		for e in existingphot:
-			if e.photometry.id == transientphot.id:
-				e.delete()
-	existingphot = TransientPhotData.objects.filter(photometry=transientphot)
+	#if hd['delete']:
+	#	for e in existingphot:
+	#		if e.photometry.id == transientphot.id:
+	#			e.delete()
+	#existingphot = TransientPhotData.objects.filter(photometry=transientphot)
 				
 	# loop through new, comp against existing
 	for k in phot_data.keys():
@@ -115,13 +115,20 @@ def add_transient_phot(request):
 					if np.abs(mjd - pmjd) < hd['mjdmatchmin']:
 						obsExists = True
 						if hd['clobber']:
+							if p['data_quality']:
+								dq = DataQuality.objects.filter(name=p['data_quality'])
+								if not dq:
+									dq = DataQuality.objects.filter(name='Bad')
+								dq = dq[0]
+							else: dq = None
+								
 							e.obs_date = p['obs_date']
 							e.flux = p['flux']
 							e.flux_err = p['flux_err']
 							e.mag = p['mag']
 							e.mag_err = p['mag_err']
 							e.forced = p['forced']
-							e.dq = p['dq']
+							e.data_quality = dq
 							e.photometry = transientphot
 							e.discovery_point = p['discovery_point']
 							e.band = band
@@ -129,9 +136,15 @@ def add_transient_phot(request):
 							e.save()
 
 		if not obsExists:
+			if p['data_quality']:
+				dq = DataQuality.objects.filter(name=p['data_quality'])
+				if not dq:
+					dq = DataQuality.objects.filter(name='Bad')
+				dq = dq[0]
+			else: dq = None
 			TransientPhotData.objects.create(obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
 											 mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
-											 dq=p['dq'],photometry=transientphot,
+											 data_quality=dq,photometry=transientphot,
 											 discovery_point=p['discovery_point'],band=band,
 											 created_by_id=user.id,modified_by_id=user.id)
 
@@ -183,7 +196,15 @@ def add_transient_spec(request):
 		return_dict = {"message":"transient %s is not in DB"%tr['name']}
 		return JsonResponse(return_dict)
 	else: transient = transient[0]
-		
+
+	if hd['data_quality']:
+		dq = DataQuality.objects.filter(name=hd['data_quality'])
+		if not dq:
+			dq = DataQuality.objects.filter(name='Bad')
+			dq = dq[0]
+	else: dq = None
+
+	
 	# get the spectrum
 	transientspec = TransientSpectrum.objects.filter(transient=transient).filter(instrument=instrument).filter(obs_group=obs_group).filter(obs_date=hd['obs_date'])
 	if not len(transientspec):
@@ -191,15 +212,28 @@ def add_transient_spec(request):
 			ra=hd['ra'],dec=hd['dec'],instrument=instrument,obs_group=obs_group,transient=transient,
 			rlap=hd['rlap'],redshift=hd['redshift'],redshift_err=hd['redshift_err'],
 			redshift_quality=hd['redshift_quality'],spectrum_notes=hd['spectrum_notes'],
-			spec_phase=hd['spec_phase'],obs_date=hd['obs_date'],
+			spec_phase=hd['spec_phase'],obs_date=hd['obs_date'],data_quality=dq,
 			created_by_id=user.id,modified_by_id=user.id)
-	else: transientspec = transientspec[0]
+	else:
+		transientspec = transientspec[0]
+		if hd['clobber']:
+			transientspec.data_quality = dq
+			transientspec.ra = hd['ra']
+			transientspec.dec = hd['dec']
+			transientspec.rlap = hd['rlap']
+			transientspec.redshift = hd['redshift']
+			transientspec.redshift_err = hd['redshift_err']
+			transientspec.redshift_quality = hd['redshift_quality']
+			transientspec.spectrum_notes = hd['spectrum_notes']
+			transientspec.spec_phase = hd['spec_phase']
+			transientspec.modified_by_id = user.id
+			transientspec.save()
 	if len(allgroups):
 		for group in allgroups:
 			if group not in transientspec.groups.all():
 				transientspec.groups.add(group)
 				transientspec.save()
-
+				
 	# add the spec data
 	existingspec = TransientSpecData.objects.filter(spectrum=transientspec)
 	# loop through new, comp against existing

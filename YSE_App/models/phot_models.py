@@ -33,7 +33,7 @@ class TransientPhotometry(Photometry):
 		return 'Transient Phot: %s' % (self.transient.name)
 
 	def natural_key(self):
-		return '%s - %s' % (self.obs_group.name,self.instrument.name)
+		return '%s - %s' % (self.obs_group.name,self.instrument.telescope.name)
 
 class HostPhotometry(Photometry):
 	### Entity relationships ###

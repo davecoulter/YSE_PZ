@@ -26,8 +26,8 @@ class upload():
 		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
 		parser.add_option('--clobber', default=False, action="store_true",
 						  help='clobber output file')
-		parser.add_option('--deleteall', default=False, action="store_true",
-						  help='delete all photometry for this transient')
+		#parser.add_option('--deleteall', default=False, action="store_true",
+		#				  help='delete all photometry for this transient')
 
 		parser.add_option('-i','--inputfile', default=None, type="string",
 						  help='input file ')
@@ -129,8 +129,8 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 						 'photheader':photdict}
 		
 		# upload the photometry
-		for mjd,flux,fluxerr,mag,magerr,flt in zip(
-				sn.MJD,sn.FLUXCAL,sn.FLUXCALERR,sn.MAG,sn.MAGERR,sn.FLT):
+		for mjd,flux,fluxerr,mag,magerr,flt,i in zip(
+				sn.MJD,sn.FLUXCAL,sn.FLUXCALERR,sn.MAG,sn.MAGERR,sn.FLT,range(len(sn.FLT))):
 
 			obsdate = Time(mjd,format='mjd').isot
 			
@@ -138,7 +138,6 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 							  'flux':flux,
 							  'flux_err':fluxerr,
 							  'forced':self.options.forcedphot,
-							  'dq':1,
 							  'band':flt,
 							  'flux_zero_point':27.5,
 							  'groups':[]}
@@ -154,10 +153,19 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 				PhotUploadDict['discovery_point'] = 1
 			else:
 				PhotUploadDict['discovery_point'] = 0
+
+			if 'DQ' in sn.__dict__.keys():
+				if sn.DQ[i]:
+					PhotUploadDict['data_quality'] = str(sn.DQ[i])
+				else:
+					PhotUploadDict['data_quality'] = None
+			else:
+				PhotUploadDict['data_quality'] = None
+
+				
 			PhotUploadAll[obsdate] = PhotUploadDict
 			PhotUploadAll['header'] = {'clobber':self.options.clobber,
-									   'mjdmatchmin':self.options.mjdmatchmin,
-									   'delete':self.options.deleteall}
+									   'mjdmatchmin':self.options.mjdmatchmin}
 		import requests
 		from requests.auth import HTTPBasicAuth
 		url = '%s'%db.dburl.replace('/api','/add_transient_phot')
@@ -191,7 +199,7 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 		SpecHeader = {}
 		keyslist = ['ra','dec','instrument','rlap','obs_date','redshift',
 					'redshift_err','redshift_quality','spectrum_notes',
-					'obs_group','groups','spec_phase','snid']
+					'obs_group','groups','spec_phase','snid','data_quality']
 		requiredkeyslist = ['ra','dec','instrument','obs_date','obs_group','snid']
 		fin = open(self.options.inputfile)
 		count = 0
@@ -285,8 +293,8 @@ class DBOps():
 		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
 		parser.add_option('--clobber', default=False, action="store_true",
 						  help='clobber output file')
-		parser.add_option('--deleteall', default=False, action="store_true",
-						  help='delete all photometry for this transient')
+		#parser.add_option('--deleteall', default=False, action="store_true",
+		#				  help='delete all photometry for this transient')
 
 		parser.add_option('-i','--inputfile', default=None, type="string",
 						  help='input file ')
@@ -305,6 +313,8 @@ class DBOps():
 						  help='group that has permission to view this photometry on YSE_PZ')
 		parser.add_option('--forcedphot', default=0, type="int",
 						  help="set to 1 if forced photometry")
+		parser.add_option('--obsgroup', default='Foundation', type="string",
+						  help='group who observed this transient')
 		
 		if config:
 			parser.add_option('--login', default=config.get('main','login'), type="string",

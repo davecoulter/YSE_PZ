@@ -50,10 +50,9 @@ def get_all_phot_for_transient(user, transient_id=None):
 
 def get_recent_phot_for_transient(user, transient_id=None):
 	photdata = get_all_phot_for_transient(user, transient_id)
-	if photdata:
-		photdata = photdata.order_by('-obs_date')
 
 	if photdata:
+		photdata = photdata.order_by('-obs_date')
 		return(photdata[0])
 	else:
 		return(None)
@@ -285,7 +284,7 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
 	
 	target = SkyCoord(transient.ra,transient.dec,unit=u.deg)
 	time = Time(str(obs_date).split('+')[0], format='iso')
-		
+
 	location = EarthLocation.from_geodetic(telescope.longitude*u.deg, telescope.latitude*u.deg,telescope.elevation*u.m)
 	tel = Observer(location=location, name=telescope.name, timezone="UTC")
 		
@@ -338,7 +337,9 @@ def lightcurveplot(request, transient_id):
 	for p in photdata:
 		if p.flux and np.abs(p.flux) > 1e10: continue
 		if not p.mag: continue
-			
+		if p.data_quality:
+			continue
+		
 		if p.discovery_point:
 			limmjd = p.date_to_mjd()-30
 				
