@@ -935,6 +935,7 @@ class processTNS():
 									  'groups':[]}
 						if nondetectdate: newobjdict['non_detect_date'] = nondetectdate.replace(' ','T')
 						if nondetectmaglim: newobjdict['non_detect_limit'] = nondetectmaglim
+						if z and z != '---': newobjdict['redshift'] = float(z)
 						if nondetectfilt:
 							nondetectid = db.get_ID_from_DB('photometricbands',nondetectfilt)
 							if nondetectid:
