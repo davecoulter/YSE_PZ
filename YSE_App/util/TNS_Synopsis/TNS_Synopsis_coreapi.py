@@ -24,6 +24,7 @@ from astropy.coordinates import ICRS, Galactic, FK4, FK5
 from astropy.time import Time
 import coreapi
 import wget
+from urllib.parse import unquote
 
 reg_obj = b"https://wis-tns.weizmann.ac.il/object/(\w+)"
 #reg_ra = b"\d{4}\w+\sRA[\=a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -1072,7 +1073,7 @@ class processTNS():
 								sc = SkyCoord(ras[j].decode("utf-8"),decs[j].decode("utf-8"),FK5,unit=(u.hourangle,u.deg))
 								for s,si,so,sog in zip(specfiles,specinst,specobsdate,specobsgroup):
 									os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
-									dlfile = wget.download(s)
+									dlfile = wget.download(unquote(s))
 									fout = open('spec_tns_upload.txt','w')
 									print('# wavelength flux',file=fout)
 									print('# snid %s'%objs[j].decode('utf-8'),file=fout)
