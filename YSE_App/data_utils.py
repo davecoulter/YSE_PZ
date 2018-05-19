@@ -82,7 +82,14 @@ def add_transient_phot(request):
 		transientphot = TransientPhotometry.objects.create(
 			instrument=instrument,obs_group=obs_group,transient=transient,
 			created_by_id=user.id,modified_by_id=user.id)
-	else: transientphot = transientphot[0]
+	else:
+		transientphot = transientphot[0]
+		if hd['clobber']:
+			transientphot.instrument = instrument
+			transientphot.obs_group = obs_group
+			transientphot.modified_by_id = user.id
+			transientphot.save()
+
 	if len(allgroups):
 		for group in allgroups:
 			if group not in transientphot.groups.all():
