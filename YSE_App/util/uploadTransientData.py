@@ -313,6 +313,8 @@ class DBOps():
 						  help='group that has permission to view this photometry on YSE_PZ')
 		parser.add_option('--forcedphot', default=0, type="int",
 						  help="set to 1 if forced photometry")
+		parser.add_option('--obsgroup', default='Foundation', type="string",
+						  help='group who observed this transient')
 		
 		if config:
 			parser.add_option('--login', default=config.get('main','login'), type="string",
