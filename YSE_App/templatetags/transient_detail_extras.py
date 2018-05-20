@@ -1,7 +1,7 @@
 import datetime
 from django.utils import timezone
 from astropy.coordinates import EarthLocation
-from astropy.coordinates import get_moon, SkyCoord
+from astropy.coordinates import get_moon, SkyCoord, FK5
 from astroplan import Observer
 from astropy.time import Time
 import astropy.units as u
@@ -9,6 +9,25 @@ from django import template
 from ..models import *
 
 register = template.Library()
+
+@register.filter(name='galcoords')
+def galcoords(coordstring):
+
+	sc = SkyCoord('%s %s'%(coordstring[0],coordstring[1]),FK5,unit=(u.hourangle,u.deg))
+	return '%.7f  %.7f'%(sc.galactic.l.value,sc.galactic.b.value)
+
+@register.filter(name='galcoordsl')
+def galcoordsl(coordstring):
+
+	sc = SkyCoord('%s %s'%(coordstring[0],coordstring[1]),FK5,unit=(u.hourangle,u.deg))
+	return '%.7f'%sc.galactic.l.value
+
+@register.filter(name='galcoordsb')
+def galcoordsb(coordstring):
+
+	sc = SkyCoord('%s %s'%(coordstring[0],coordstring[1]),FK5,unit=(u.hourangle,u.deg))
+	return '%.7f'%sc.galactic.b.value
+
 
 @register.filter(name='replace_space')
 def replace_space(object):
