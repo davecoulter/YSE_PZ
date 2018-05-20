@@ -299,7 +299,7 @@ def getDSSImage(ra,dec,filt,size,outfile):
 	else:
 		outdlfile = '%s/%.7f_%.7f_%s.DSS.fits'%(os.path.dirname(outfile),ra,dec,time.time())
 
-	urllib.requests.urlretrieve(QueryUrl,filename=outdlfile)
+	urllib.request.urlretrieve(QueryUrl,filename=outdlfile)
 	
 	if os.path.exists(outdlfile):
 		return(outdlfile)
