@@ -13,7 +13,7 @@ import numpy as np
 from photutils import CircularAperture,aperture_photometry
 import pylab as plt
 import time
-import urllib
+import urllib.request
 
 class finder():
 	def __init__(self):
@@ -285,11 +285,11 @@ def panstamps_lite(ra,dec,filt,size,outfile):
 			outdlfile = '%.7f_%.7f_%s.PS1.fits'%(ra,dec,time.time())
 		else:
 			outdlfile = '%s/%.7f_%.7f_%s.PS1.fits'%(os.path.dirname(outfile),ra,dec,time.time())
-		urllib.urlretrieve (s, filename=outdlfile)
+		urllib.request.urlretrieve (s, filename=outdlfile)
 		break
 
-	if os.path.exists(dlfile):
-		return(dlfile)
+	if os.path.exists(outdlfile):
+		return(outdlfile)
 	else: return(None)
 
 def getDSSImage(ra,dec,filt,size,outfile):
@@ -299,10 +299,10 @@ def getDSSImage(ra,dec,filt,size,outfile):
 	else:
 		outdlfile = '%s/%.7f_%.7f_%s.DSS.fits'%(os.path.dirname(outfile),ra,dec,time.time())
 
-	dlfile = urllib.urlretrieve(QueryUrl,filename=outdlfile)
+	urllib.requests.urlretrieve(QueryUrl,filename=outdlfile)
 	
-	if os.path.exists(dlfile):
-		return(dlfile)
+	if os.path.exists(outdlfile):
+		return(outdlfile)
 	else: return(None)
 
 def GetSexigesimalString(ra_decimal, dec_decimal):
