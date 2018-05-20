@@ -1,5 +1,6 @@
 {% extends 'YSE_App/base.html' %}
 {% load static from staticfiles %}
+{% load dashboard_extras %}
 {% load widget_tweaks %}
 
 {% block content_header %}
@@ -39,9 +40,9 @@
         <tbody>
         {% for t in k2_transients %}
         <tr>
-          <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
-          <td>{{ t.CoordString.0 }}</td>
-          <td>{{ t.CoordString.1 }}</td>
+          <td><span class="hidden">{{ t.name|snidsort }}</span><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
+          <td><span title="{{ t.ra }}">{{ t.CoordString.0 }}</span></td>
+          <td><span title="{{ t.dec }}">{{ t.CoordString.1 }}</span></td>
           <td><span class="hidden">{{ t.disc_date|date:"y m d" }}</span>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
           <td>{{ t.disc_mag }}</td>
           <td>{{ t.obs_group.name }}</td>
@@ -86,9 +87,9 @@
         <tbody>
         {% for t in new_transients %}
           <tr>
-            <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
-            <td>{{ t.CoordString.0 }}</td>
-            <td>{{ t.CoordString.1 }}</td>
+            <td><span class="hidden">{{ t.name|snidsort }}</span><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
+            <td><span title="{{ t.ra }}">{{ t.CoordString.0 }}</span></td>
+            <td><span title="{{ t.dec }}">{{ t.CoordString.1 }}</span></td>
             <td><span class="hidden">{{ t.disc_date|date:"y m d" }}</span>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
 	        <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
@@ -133,9 +134,9 @@
         <tbody>
         {% for t in followup_requested_transients %}
           <tr>
-            <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
-            <td>{{ t.CoordString.0 }}</td>
-            <td>{{ t.CoordString.1 }}</td>
+            <td><span class="hidden">{{ t.name|snidsort }}</span><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
+            <td><span title="{{ t.ra }}">{{ t.CoordString.0 }}</span></td>
+            <td><span title="{{ t.dec }}">{{ t.CoordString.1 }}</span></td>
             <td><span class="hidden">{{ t.disc_date|date:"y m d" }}</span>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
 	        <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
@@ -179,9 +180,9 @@
         <tbody>
         {% for t in following_transients %}
           <tr>
-            <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
-            <td>{{ t.CoordString.0 }}</td>
-            <td>{{ t.CoordString.1 }}</td>
+            <td><span class="hidden">{{ t.name|snidsort }}</span><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
+            <td><span title="{{ t.ra }}">{{ t.CoordString.0 }}</span></td>
+            <td><span title="{{ t.dec }}">{{ t.CoordString.1 }}</span></td>
             <td><span class="hidden">{{ t.disc_date|date:"y m d" }}</span>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
   	        <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
@@ -225,9 +226,9 @@
         <tbody>
         {% for t in watch_transients %}
           <tr>
-            <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
-            <td>{{ t.CoordString.0 }}</td>
-            <td>{{ t.CoordString.1 }}</td>
+            <td><span class="hidden">{{ t.name|snidsort }}</span><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
+            <td><span title="{{ t.ra }}">{{ t.CoordString.0 }}</span></td>
+            <td><span title="{{ t.dec }}">{{ t.CoordString.1 }}</span></td>
             <td><span class="hidden">{{ t.disc_date|date:"y m d" }}</span>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
 	          <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
@@ -271,9 +272,9 @@
         <tbody>
         {% for t in finishedfollowing_transients %}
           <tr>
-            <td><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
-            <td>{{ t.CoordString.0 }}</td>
-            <td>{{ t.CoordString.1 }}</td>
+            <td><span class="hidden">{{ t.name|snidsort }}</span><a href="{% url 'transient_detail' t.slug %}">{{ t.name }}</a></td>
+            <td><span title="{{ t.ra }}">{{ t.CoordString.0 }}</span></td>
+            <td><span title="{{ t.dec }}">{{ t.CoordString.1 }}</span></td>
             <td><span class="hidden">{{ t.disc_date|date:"y m d" }}</span>{{ t.disc_date|date:"SHORT_DATE_FORMAT" }}</td>
             <td>{{ t.disc_mag }}</td>
             <td>{{ t.obs_group.name }}</td>
@@ -299,22 +300,46 @@
 <script>
   $( document ).ready(function(){
     $('#new_transient_tbl').DataTable( {
-      "order": [[ 3, "desc" ]]
+      "order": [[ 3, "desc" ]],
+      "columnDefs": [
+        {"type":"title-numeric","targets":1},
+        {"type":"title-numeric","targets":2},
+      ]
     });
-  $('#k2_transient_tbl').DataTable( {
-      "order": [[ 3, "desc" ]]
+  $('#k2_transient_tbl').dataTable( {
+      "order": [[ 3, "desc" ]],
+      "columnDefs": [
+        {"type":"title-numeric","targets":1},
+        {"type":"title-numeric","targets":2},
+      ]
     });
   $('#watch_transient_tbl').DataTable( {
-      "order": [[ 3, "desc" ]]
+      "order": [[ 3, "desc" ]],
+      "columnDefs": [
+        {"type":"title-numeric","targets":1},
+        {"type":"title-numeric","targets":2},
+      ]
     });
   $('#following_transient_tbl').DataTable( {
-      "order": [[ 3, "desc" ]]
+      "order": [[ 3, "desc" ]],
+      "columnDefs": [
+        {"type":"title-numeric","targets":1},
+        {"type":"title-numeric","targets":2},
+      ]
     });
   $('#followup_requested_transient_tbl').DataTable( {
-      "order": [[ 3, "desc" ]]
+      "order": [[ 3, "desc" ]],
+      "columnDefs": [
+        {"type":"title-numeric","targets":1},
+        {"type":"title-numeric","targets":2},
+      ]
     });
   $('#finishedfollowing_transient_tbl').DataTable( {
-      "order": [[ 3, "desc" ]]
+      "order": [[ 3, "desc" ]],
+      "columnDefs": [
+        {"type":"title-numeric","targets":1},
+        {"type":"title-numeric","targets":2},
+      ]
     });
   });
 </script>

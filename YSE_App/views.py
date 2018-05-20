@@ -22,6 +22,7 @@ from django.core import serializers
 import os
 from .data import PhotometryService, SpectraService, ObservingResourceService
 import json
+import time
 
 # Create your views here.
 
@@ -77,7 +78,6 @@ def dashboard(request):
 			k2_transients[i].disc_mag = disc.mag
 			k2_transients[i].disc_date = disc.obs_date
 
-	
 	status_new = TransientStatus.objects.filter(name='New').order_by('-modified_date')
 	if len(status_new) == 1:
 		new_transients = Transient.objects.filter(status=status_new[0]).order_by('-modified_date')
@@ -115,6 +115,7 @@ def dashboard(request):
 				following_transients[i].disc_mag = disc.mag
 				following_transients[i].disc_date = disc.obs_date
 
+	tstart = time.time()
 	status_finishedfollowing = TransientStatus.objects.filter(name='FollowupFinished').order_by('-modified_date')
 	if len(status_following) == 1:
 		finishedfollowing_transients = Transient.objects.exclude(k2_validated=1).filter(status=status_finishedfollowing[0])
@@ -123,7 +124,8 @@ def dashboard(request):
 			if disc:
 				finishedfollowing_transients[i].disc_mag = disc.mag
 				finishedfollowing_transients[i].disc_date = disc.obs_date
-
+	print(time.time() - tstart)
+				
 	context = {
 			'k2_transients': k2_transients,
 			'new_transients': new_notk2_transients,
