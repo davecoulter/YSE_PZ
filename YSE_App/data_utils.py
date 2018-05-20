@@ -77,7 +77,7 @@ def add_transient_phot(request):
 	else: transient = transient[0]
 		
 	# get all existing photometry
-	transientphot = TransientPhotometry.objects.filter(transient=transient).filter(instrument=instrument)#.filter(obs_group=obs_group)
+	transientphot = TransientPhotometry.objects.filter(transient=transient).filter(instrument=instrument).filter(obs_group=obs_group)
 	if not len(transientphot):
 		transientphot = TransientPhotometry.objects.create(
 			instrument=instrument,obs_group=obs_group,transient=transient,
