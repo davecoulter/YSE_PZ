@@ -635,11 +635,13 @@
 							<div class="col-xs-12">
 								<h4>Current UTC Time: <strong>{{ nowtime }}</strong></h4>
 								<ul>
-								  <!--<li><a target="_blank" href="{% url 'finderchart' transient.id %}">Generate Finder Chart</a></li>-->
+								  <li><a target="_blank" href="{% url 'finderchart' transient.id %}">Generate Finder Chart</a></li>
 								</ul>
 								
-								<!--{% static "" as baseUrl %}
-								<img src="{{baseUrl}}/YSE_App/images/findercharts/{{transient.name}}/{{transient.name}}.finder.png" style='width:240px' alt="" />-->
+								{% static "" as baseUrl %}
+								{% with "YSE_App/images/findercharts/"|add:transient.name|add:"/"|add:"transient.name"|add:".finder.png" as finderfile %}
+								<img src="{% static finderfile %}" style='width:240px' alt="" />
+								{% endwith %}
 								<br><br>
 							</div>
 							<div class="col-xs-12">
