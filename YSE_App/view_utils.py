@@ -177,10 +177,12 @@ class finder(TemplateView):
 		if not os.path.exists(basedir):
 			os.makedirs(basedir)
 		
-		outputOffsetFileName = '%s/%s.offsetstars.txt'%(
-			basedir,transient.name)
-		outputFinderFileName = '%s/%s.finder.png'%(
-			basedir,transient.name)
+		outputOffsetFileName = '%s/%s/%s.offsetstars.txt'%(
+			basedir,transient.name,transient.name)
+		outputFinderFileName = '%s/%s/%s.finder.png'%(
+			basedir,transient.name,transient.name)
+		if not os.path.exists(os.path.dirname(outputFinderFileName)):
+			os.makedirs(os.path.dirname(outputFinderFileName))
 		#if os.path.exists(outputOffsetFileName) and\
 		#   os.path.exists(outputFinderFileName):
 		#	return HttpResponseRedirect(reverse('transient_detail',
@@ -249,6 +251,8 @@ class finder(TemplateView):
 			basedir,transient.name)
 		outputFinderFileName = '%s/%s.finder.png'%(
 			basedir,transient.name)
+		if not os.path.exists(os.path.dirname(outputFinderFileName)):
+			os.makedirs(os.path.dirname(outputFinderFileName))
 		#if os.path.exists(outputOffsetFileName) and\
 		#   os.path.exists(outputFinderFileName):
 		#	return HttpResponseRedirect(reverse('transient_detail',
