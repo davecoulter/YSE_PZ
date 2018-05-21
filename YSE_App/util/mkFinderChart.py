@@ -48,7 +48,7 @@ class finder():
 						  help='RA of target (default=%default)')
 		parser.add_option('-d','--dec', default=None, type="string",
 						  help='Dec of target (default=%default)')
-		parser.add_option('--roundlim', default=0.2, type="float",
+		parser.add_option('--roundlim', default=0.3, type="float",
 						  help='roundness limit to call a source a star (default=%default)')
 
 		return(parser)

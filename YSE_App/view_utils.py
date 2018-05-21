@@ -218,7 +218,7 @@ class finder(TemplateView):
 			offid,ra_str,dec_str,ra_off,dec_off,mag = \
 				np.loadtxt(outputOffsetFileName,dtype='str',unpack=True)
 			offdictlist = []
-			for i in range(len(offid)):
+			for i in range(len(offid))[1:]:
 				offdict = {'id':offid[i],
 						   'ra':ra_str[i],
 						   'dec':dec_str[i],
