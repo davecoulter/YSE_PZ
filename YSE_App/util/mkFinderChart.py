@@ -53,7 +53,7 @@ class finder():
 
 		return(parser)
 			
-	def mkChart(self,ra,dec,outfile,ax=None,saveImg=True):
+	def mkChart(self,ra,dec,outfile,ax=None,saveImg=True,clobber=True):
 
 		if ':' in ra and ':' in dec:
 			sc = SkyCoord("%s %s"%(ra,dec),FK5,unit=(u.hourangle,u.deg))
@@ -63,7 +63,7 @@ class finder():
 		else:
 			ra,dec = float(ra),float(dec)
 			self.options.ra = float(ra); self.options.dec = float(dec)
-			
+
 		finderim = panstamps_lite(ra,dec,self.options.finderFilt,self.options.finderSizeArcmin,outfile)
 		PS1 = True
 		if not finderim:
@@ -76,6 +76,7 @@ class finder():
 		offdictlist = self.mkPlot(finderim,xpos,ypos,ra,dec,mag,raoff,
 								  decoff,outfile,PS1=PS1,ax=ax,saveImg=saveImg)
 		os.system('rm %s'%finderim)
+
 		return(ax,offdictlist)
 		
 	def mkPlot(self,finderim,xpos,ypos,ra,dec,
@@ -161,6 +162,7 @@ RA (to targ): %.3f E, Dec (to targ): %.3f N"""%(i,ra_str,dec_str,m,ro.arcsec,do.
 		ra_str,dec_str = GetSexigesimalString(sc.ra.deg,sc.dec.deg)
 		ax.set_title(r'ID: %s, $\alpha$ = %s $\delta$ = %s'%(
 				self.options.snid,ra_str,dec_str))
+
 		if saveImg:
 			plt.savefig(outfile,dpi=1000)
 
@@ -287,7 +289,7 @@ def panstamps_lite(ra,dec,filt,size,outfile):
 			outdlfile = '%s/%.7f_%.7f_%s.PS1.fits'%(os.path.dirname(outfile),ra,dec,time.time())
 		urllib.request.urlretrieve (s, filename=outdlfile)
 		break
-
+	print(outdlfile)
 	if os.path.exists(outdlfile):
 		return(outdlfile)
 	else: return(None)

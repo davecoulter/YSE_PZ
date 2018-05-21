@@ -27,6 +27,7 @@ import time
 from .serializers import *
 from rest_framework.request import Request
 from django.contrib.auth.decorators import login_required, permission_required
+import matplotlib.image as mpimg
 
 def get_recent_phot_for_host(user, host_id=None):
 	allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
@@ -163,7 +164,7 @@ class finder(TemplateView):
 	
 	def __init__(self):
 		pass
-	def finderchart(self, request, transient_id):
+	def finderchart(self, request, transient_id, clobber=False):
 		import os
 		from .util import mkFinderChart
 
@@ -180,10 +181,10 @@ class finder(TemplateView):
 			basedir,transient.name)
 		outputFinderFileName = '%s/%s.finder.png'%(
 			basedir,transient.name)
-		if os.path.exists(outputOffsetFileName) and\
-		   os.path.exists(outputFinderFileName):
-			return HttpResponseRedirect(reverse('transient_detail',
-												args=(transient.id,)))
+		#if os.path.exists(outputOffsetFileName) and\
+		#   os.path.exists(outputFinderFileName):
+		#	return HttpResponseRedirect(reverse('transient_detail',
+		#										args=(transient.id,)))
 
 		find = mkFinderChart.finder()
 		parser = find.add_options(usage='')
@@ -191,18 +192,41 @@ class finder(TemplateView):
 		options.ra = str(transient.ra)
 		options.dec = str(transient.dec)
 		options.snid = transient.name
-		#options.outputOffsetFileName = outputOffsetFileName
+		options.outputOffsetFileName = outputOffsetFileName
 		options.outputFinderFileName = outputFinderFileName
 		find.options = options
 		import pylab as plt
-	
+
 		fig=Figure()
-		ax = fig.add_axes([0.2,0.3,0.6,0.6])
-		canvas=FigureCanvas(fig)
-		ax,offdictlist = find.mkChart(options.ra,options.dec,
-									  options.outputFinderFileName,
-									  ax=ax,saveImg=False)
-		
+		if not os.path.exists(options.outputFinderFileName) or \
+		   not os.path.exists(options.outputOffsetFileName) or \
+		   clobber:
+			ax = fig.add_axes([0.2,0.3,0.6,0.6])
+			canvas=FigureCanvas(fig)
+			ax,offdictlist = find.mkChart(options.ra,options.dec,
+										  options.outputFinderFileName,
+										  ax=ax,saveImg=False,
+										  clobber=clobber)
+			fig.savefig(options.outputFinderFileName,dpi=1000)
+		else:
+			image = mpimg.imread(options.outputFinderFileName)
+			ax = fig.add_axes([0,0,1,1])
+			ax.set_xticks([]); ax.set_yticks([])
+			canvas=FigureCanvas(fig)
+			ax.imshow(image)
+
+			offid,ra_str,dec_str,ra_off,dec_off,mag = \
+				np.loadtxt(outputOffsetFileName,dtype='str',unpack=True)
+			offdictlist = []
+			for i in range(len(offid)):
+				offdict = {'id':offid[i],
+						   'ra':ra_str[i],
+						   'dec':dec_str[i],
+						   'ra_off':'%.3f'%float(ra_off[i]),
+						   'dec_off':'%.3f'%float(dec_off[i]),
+						   'mag':'%.3f'%float(mag[i])}
+				offdictlist += [offdict]
+			
 		context = {'t':transient,
 				   'offsets':offdictlist}
 		
@@ -210,7 +234,7 @@ class finder(TemplateView):
 		return render(request,'YSE_App/finder.html',
 					  context)
 
-	def finderim(self, request, transient_id):
+	def finderim(self, request, transient_id, clobber=False):
 		import os
 		from .util import mkFinderChart
 		from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -220,34 +244,44 @@ class finder(TemplateView):
 		basedir = "%sYSE_App/images/findercharts"%(djangoSettings.STATIC_ROOT)
 		if not os.path.exists(basedir):
 			os.makedirs(basedir)
-		
+		print(basedir)
 		outputOffsetFileName = '%s/%s.offsetstars.txt'%(
 			basedir,transient.name)
 		outputFinderFileName = '%s/%s.finder.png'%(
 			basedir,transient.name)
-		if os.path.exists(outputOffsetFileName) and\
-		   os.path.exists(outputFinderFileName):
-			return HttpResponseRedirect(reverse('transient_detail',
-												args=(transient.id,)))
+		#if os.path.exists(outputOffsetFileName) and\
+		#   os.path.exists(outputFinderFileName):
+		#	return HttpResponseRedirect(reverse('transient_detail',
+		#										args=(transient.id,)))
 
 		
-		fig=Figure()
-		ax = fig.add_axes([0.2,0.3,0.6,0.6])
-		canvas=FigureCanvas(fig)
-
 		find = mkFinderChart.finder()
 		parser = find.add_options(usage='')
 		options,  args = parser.parse_args()
 		options.ra = str(transient.ra)
 		options.dec = str(transient.dec)
 		options.snid = transient.name
-		#options.outputOffsetFileName = outputOffsetFileName
+		options.outputOffsetFileName = outputOffsetFileName
 		options.outputFinderFileName = outputFinderFileName
 		find.options = options
-		ax,offdictlist = find.mkChart(options.ra,options.dec,
-									  options.outputFinderFileName,
-									  ax=ax,saveImg=False)
+
+		fig=Figure()
+		if not os.path.exists(options.outputFinderFileName) or \
+		   not os.path.exists(options.outputOffsetFileName) or \
+		   clobber:
+			ax = fig.add_axes([0.2,0.3,0.6,0.6])
+			canvas=FigureCanvas(fig)
 		
+			ax,offdictlist = find.mkChart(options.ra,options.dec,
+										  options.outputFinderFileName,
+										  ax=ax,saveImg=True)
+		else:
+			image = mpimg.imread(options.outputFinderFileName)
+			ax = fig.add_axes([0,0,1,1])
+			ax.set_xticks([]); ax.set_yticks([])
+			canvas=FigureCanvas(fig)
+			ax.imshow(image)
+
 		response=django.http.HttpResponse(content_type='image/png')
 		canvas.print_png(response)
 
