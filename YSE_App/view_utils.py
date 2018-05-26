@@ -20,7 +20,7 @@ import time
 from bokeh.plotting import figure
 from bokeh.resources import CDN
 from bokeh.embed import file_html
-from bokeh.models import Range1d,Span
+from bokeh.models import Range1d,Span,LinearAxis
 from bokeh.core.properties import FontSizeSpec
 from .data import PhotometryService, SpectraService, ObservingResourceService
 import time
@@ -28,6 +28,7 @@ from .serializers import *
 from rest_framework.request import Request
 from django.contrib.auth.decorators import login_required, permission_required
 import matplotlib.image as mpimg
+import calendar
 
 def get_recent_phot_for_host(user, host_id=None):
 	allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
@@ -369,25 +370,33 @@ def lightcurveplot(request, transient_id):
 
 	ax=figure()
 
-	mjd,mag,magerr,band,bandstr,telescope = \
+	mjd,date,mag,magerr,band,bandstr = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr = \
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
 	for p in photdata:
 		if p.flux and np.abs(p.flux) > 1e10: continue
-		if not p.mag: continue
 		if p.data_quality:
 			continue
-		
-		if p.discovery_point:
-			limmjd = p.date_to_mjd()-30
+
+		if p.mag:
+			if p.discovery_point:
+				limmjd = p.date_to_mjd()-30
 				
-		mjd = np.append(mjd,[p.date_to_mjd()])
-		mag = np.append(mag,[p.mag])
-		if p.mag_err: magerr = np.append(magerr,p.mag_err)
-		else: magerr = np.append(magerr,0)
-		bandstr = np.append(bandstr,str(p.band))
-		band = np.append(band,p.band)
-			#telescope = np.append(telescope,str(p.band.instrument.telescope.name))
+			mjd = np.append(mjd,[p.date_to_mjd()])
+			date = np.append(date,[p.obs_date.strftime('%m/%d/%Y')])
+			mag = np.append(mag,[p.mag])
+			if p.mag_err: magerr = np.append(magerr,p.mag_err)
+			else: magerr = np.append(magerr,0)
+			bandstr = np.append(bandstr,str(p.band))
+			band = np.append(band,p.band)
+		elif p.flux and p.flux_zero_point:
+			upperlimmjd = np.append(upperlimmjd,[p.date_to_mjd()])
+			upperlimdate = np.append(upperlimdate,[p.obs_date.strftime('%m/%d/%Y')])
+			upperlimmag = np.append(upperlimmag,[-2.5*np.log10(p.flux + 3*p.flux_err) + p.flux_zero_point])
+			upperlimbandstr = np.append(upperlimbandstr,str(p.band))
+			upperlimband = np.append(upperlimband,p.band)
 		
 	ax.title.text = "%s"%transient.name
 	colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
@@ -405,7 +414,14 @@ def lightcurveplot(request, transient_id):
 		for x,y,yerr in zip(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),magerr[bandstr == bs].tolist()):
 			err_xs.append((x, x))
 			err_ys.append((y - yerr, y + yerr))
-		ax.multi_line(err_xs, err_ys, color=colorlist[coloridx])
+		ax.multi_line(err_xs, err_ys, color=colorlist[coloridx], legend='%s - %s'%(
+					  b.instrument.telescope.name,b.name))
+
+		if len(upperlimmjd[upperlimbandstr == bs]):
+			ax.inverted_triangle(upperlimmjd[upperlimbandstr == bs].tolist(),upperlimmag[upperlimbandstr == bs].tolist(),
+								 color=colorlist[coloridx],size=7,legend='%s - %s'%(
+									 b.instrument.telescope.name,b.name))
+		
 		count += 1
 			
 	today = Time(datetime.datetime.today()).mjd
@@ -416,22 +432,40 @@ def lightcurveplot(request, transient_id):
 	ax.legend.location = 'bottom_left'
 	ax.legend.label_height = 1
 	ax.legend.glyph_height = 5
-	#import pdb; pdb.set_trace()
+
 	ax.legend.label_text_font_size = "4pt"#FontSizeSpec("10")
-		
+	ax.legend.click_policy="hide"
+
+	
 	ax.xaxis.axis_label = 'MJD'
 	ax.yaxis.axis_label = 'Mag'
-
+	
 	if limmjd:
 		ax.x_range = Range1d(limmjd,np.max(mjd)+10)
 		ax.y_range = Range1d(np.max(mag[mjd > limmjd])+0.25,np.min(mag[mjd > limmjd])-0.5)
+		ax.extra_x_ranges = {"dateax": Range1d(limmjd,np.max(mjd)+10)}
+		ax.add_layout(LinearAxis(x_range_name="dateax"), 'above')
+		
 	else:
 		ax.x_range=Range1d(np.min(mjd)-10,np.max(mjd)+10)
 		ax.y_range=Range1d(np.max(mag)+0.25,np.min(mag)-0.5)
-	#ax.legend()
+		ax.extra_x_ranges = {"dateax": Range1d(np.min(mjd)-10,np.max(mjd)+10)}
+		#ax.legend()
 	ax.plot_height = 400
 	ax.plot_width = 500
-		
+	
+
+	majorticks = []; overridedict = {}
+	mjdrange = range(int(np.min(mjd)-100),int(np.max(mjd)+100))
+	times = Time(mjdrange,format='mjd')
+	for m,t in zip(mjdrange,times):
+		tm_list = t.iso.split()[0].split('-')
+		if tm_list[2] == '01':
+			majorticks += [m]
+			overridedict[m] = '%s %i, %i'%(calendar.month_name[int(tm_list[1])][:3],int(tm_list[2]),int(tm_list[0]))
+	ax.xaxis[0].ticker = majorticks
+	ax.xaxis[0].major_label_overrides = overridedict
+	
 	#ax.grid(color='lightgray', alpha=0.7)
 	#g = mpld3.fig_to_html(fig,template_type='simple')
 
@@ -460,14 +494,50 @@ def spectrumplot(request, transient_id):
 		wave += [s.wavelength]
 		flux += [s.flux]
 	ax.line(np.sort(wave),np.array(flux)[np.argsort(wave)],color='black')
-		
-	ax.title.text = "%s, %s"%(transient.name,spectrum.instrument)
+
+	ax.title.text = "%s, %s, %s"%(transient.name,spectrum.obs_date.strftime('%m/%d/%Y'),spectrum.instrument)
 	ax.xaxis.axis_label = r'Wavelength (Angstrom)'
 	ax.yaxis.axis_label = 'Flux'
 	g = file_html(ax,CDN,"my plot")
 
 	return HttpResponse(g.replace('width: 90%','width: 100%'))
 
+def spectrumplotsingle(request, transient_id, spec_id):
+
+	#import pdb; pdb.set_trace()
+	
+	#transient_id = request.GET.get('transient_id')
+	#spec_id = request.GET.get('spec_id')
+	
+	tstart = time.time()
+	print(transient_id,spec_id)
+	transient = Transient.objects.get(pk=transient_id)
+	spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id)
+	spectrum = spectra.filter(id=spec_id)
+	
+	if not len(spectrum):
+		return django.http.HttpResponse('')
+	else:
+		spectrum = spectrum[0]
+	spec = TransientSpecData.objects.filter(spectrum=spectrum)
+	
+	if not len(spec):
+		return django.http.HttpResponse('')
+
+	ax=figure()
+
+	wave,flux = [],[]
+	for s in spec:
+		wave += [s.wavelength]
+		flux += [s.flux]
+	ax.line(np.sort(wave),np.array(flux)[np.argsort(wave)],color='black')
+		
+	ax.title.text = "%s, %s, %s"%(transient.name,spectrum.obs_date.strftime('%m/%d/%Y'),spectrum.instrument)
+	ax.xaxis.axis_label = r'Wavelength (Angstrom)'
+	ax.yaxis.axis_label = 'Flux'
+	g = file_html(ax,CDN,"my plot")
+
+	return HttpResponse(g.replace('width: 90%','width: 100%'))
 
 def rise_time(request,transient_id,obs_id):
 

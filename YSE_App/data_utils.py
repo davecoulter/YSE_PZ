@@ -132,6 +132,7 @@ def add_transient_phot(request):
 							e.obs_date = p['obs_date']
 							e.flux = p['flux']
 							e.flux_err = p['flux_err']
+							e.flux_zero_point = p['flux_zero_point']
 							e.mag = p['mag']
 							e.mag_err = p['mag_err']
 							e.forced = p['forced']
@@ -152,6 +153,7 @@ def add_transient_phot(request):
 			TransientPhotData.objects.create(obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
 											 mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
 											 data_quality=dq,photometry=transientphot,
+											 flux_zero_point=p['flux_zero_point'],
 											 discovery_point=p['discovery_point'],band=band,
 											 created_by_id=user.id,modified_by_id=user.id)
 
