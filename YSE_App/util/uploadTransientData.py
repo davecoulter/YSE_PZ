@@ -45,6 +45,8 @@ class upload():
 						  help="instrument name")
 		parser.add_option('--forcedphot', default=0, type="int",
 						  help="set to 1 if forced photometry")
+		parser.add_option('--fluxzpt', default=None, type="float",
+						  help="flux zero point")
 		parser.add_option('-u','--useheader', default=False, action="store_true",
 						  help="if set, grab keys from the file header and try to POST to db")
 		parser.add_option('-f','--foundationdefaults', default=False, action="store_true",
@@ -139,7 +141,6 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 							  'flux_err':fluxerr,
 							  'forced':self.options.forcedphot,
 							  'band':flt,
-							  'flux_zero_point':27.5,
 							  'groups':[]}
 			
 			if flux > 0:
@@ -148,7 +149,12 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 			else:
 				PhotUploadDict['mag'] = None
 				PhotUploadDict['mag_err'] = None
-				
+
+			if self.options.fluxzpt:
+				PhotUploadDict['flux_zero_point'] = self.options.fluxzpt
+			else:
+				PhotUploadDict['flux_zero_point'] = None
+
 			if 'SEARCH_PEAKMJD' in sn.__dict__.keys() and np.abs(mjd - sn.SEARCH_PEAKMJD) < 0.5:
 				PhotUploadDict['discovery_point'] = 1
 			else:

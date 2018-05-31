@@ -471,6 +471,18 @@
 					<div class="box-header">
 						<h3 class="box-title">Spectrum</h3>
 					</div>
+					{% if all_transient_spectra.count > 1 %}
+					&ensp;&nbsp;<div class="btn-group">
+						<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+							Select from {{ all_transient_spectra.count }} Spectra<span class="caret"></span>
+						</button>
+						<ul class="dropdown-menu">
+							{% for spec in all_transient_spectra %}
+								<li><a spec_plot-id="{{ spec.id }}" class="specPlotChange" href="#">{{ spec }} - {{ spec.instrument.name }}</a></li>
+							{% endfor %}
+						</ul>
+					{% endif %}
+					</div>
 					<div class="box-body" id="specplot"></div>
 				</div>
 			</div>
@@ -1085,6 +1097,18 @@
 			});
 
 
+			$('.specPlotChange').on('click', function(event){
+				var spec_id = $(this).attr('spec_plot-id')
+				var transient_id = {{transient.id}}		
+				url = "{% url 'spectrumplotsingle' -1 -2 %}".replace('-1', transient_id).replace('-2',spec_id);
+				$.get(url).done(function(htmlresponse){
+					var lastNode = $("#specplot").children().last();
+	            	lastNode.prev().remove();
+
+					var rows = $("#specplot")
+	  				$(rows).html(htmlresponse)
+				});
+			});
 
 			function ToggleObservationTaskForm(followup_id,expand)
 			{
@@ -1524,7 +1548,7 @@
 	  
 		$.get("{% url 'spectrumplot' transient.id %}").done(function(htmlresponse){
 		  var rows = $("#specplot")
-	  	$(rows).prepend(htmlresponse)
+	  	$(rows).html(htmlresponse)
 	  	});
 
 	  {% for obsnight in observing_nights %}

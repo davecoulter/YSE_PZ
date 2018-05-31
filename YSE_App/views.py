@@ -305,6 +305,8 @@ def transient_detail(request, slug):
 		date = datetime.datetime.now(tz=pytz.utc)
 		date_format='%m/%d/%Y %H:%M:%S'
 
+		spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id)
+		
 		context = {
 			'transient':transient_obj,
 			'followups':followups,
@@ -324,6 +326,7 @@ def transient_detail(request, slug):
 			'all_transient_tags': all_transient_tags,
 			'assigned_transient_tags': assigned_transient_tags,
 			'all_colors': all_colors,
+			'all_transient_spectra': spectra,
 		}
 
 		if lastphotdata and firstphotdata:
