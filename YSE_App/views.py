@@ -77,37 +77,37 @@ def dashboard(request):
 	followup_requested_transients = None
 	finishedfollowing_transients = None
 
-	k2_transients = Transient.objects.filter(k2_validated=1).order_by('-modified_date')
+	k2_transients = Transient.objects.filter(k2_validated=1).order_by('-disc_date')
 	k2_table = TransientTable(k2_transients,prefix='k2')
 	RequestConfig(request, paginate={'per_page': 10}).configure(k2_table)
 	
 	status_new = TransientStatus.objects.filter(name='New').order_by('-modified_date')
 	if len(status_new) == 1:
-		new_transients = Transient.objects.filter(status=status_new[0]).order_by('-modified_date')
+		new_transients = Transient.objects.filter(status=status_new[0]).order_by('-disc_date')
 	new_table = TransientTable(new_transients,prefix='new')
 	RequestConfig(request, paginate={'per_page': 10}).configure(new_table)
 		
 	status_watch = TransientStatus.objects.filter(name='Watch').order_by('-modified_date')
 	if len(status_watch) == 1:
-		watch_transients = Transient.objects.filter(status=status_watch[0])
+		watch_transients = Transient.objects.filter(status=status_watch[0]).order_by('-disc_date')
 	watch_table = TransientTable(watch_transients,prefix='watch')
 	RequestConfig(request, paginate={'per_page': 10}).configure(watch_table)
 	
 	status_followrequest = TransientStatus.objects.filter(name='FollowupRequested').order_by('-modified_date')
 	if len(status_followrequest) == 1:
-		followup_requested_transients = Transient.objects.filter(status=status_followrequest[0])
+		followup_requested_transients = Transient.objects.filter(status=status_followrequest[0]).order_by('-disc_date')
 	follow_request_table = TransientTable(followup_requested_transients,prefix='followrequest')
 	RequestConfig(request, paginate={'per_page': 10}).configure(follow_request_table)
 		
 	status_following = TransientStatus.objects.filter(name='Following').order_by('-modified_date')
 	if len(status_following) == 1:
-		following_transients = Transient.objects.filter(status=status_following[0])
+		following_transients = Transient.objects.filter(status=status_following[0]).order_by('-disc_date')
 	following_table = TransientTable(following_transients,prefix='following')
 	RequestConfig(request, paginate={'per_page': 10}).configure(following_table)
 
 	status_finishedfollowing = TransientStatus.objects.filter(name='FollowupFinished').order_by('-modified_date')
 	if len(status_finishedfollowing) == 1:
-		finishedfollowing_transients = Transient.objects.filter(status=status_finishedfollowing[0])
+		finishedfollowing_transients = Transient.objects.filter(status=status_finishedfollowing[0]).order_by('-disc_date')
 	finished_following_table = TransientTable(finishedfollowing_transients,prefix='finishedfollowing')
 	RequestConfig(request, paginate={'per_page': 10}).configure(finished_following_table)
 		
