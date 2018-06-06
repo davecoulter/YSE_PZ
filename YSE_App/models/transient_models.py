@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from YSE_App.models.base import *
 from YSE_App.models.enum_models import *
 from YSE_App.models.photometric_band_models import *
@@ -6,6 +7,7 @@ from YSE_App.models.host_models import *
 from YSE_App.models.tag_models import *
 from YSE_App.common.utilities import GetSexigesimalString
 from YSE_App.common.alert import IsK2Pixel, SendTransientAlert
+from YSE_App import models as yse_models
 from django.dispatch import receiver
 from pytz import timezone
 from django.utils.text import slugify
@@ -71,6 +73,34 @@ class Transient(BaseModel):
 		mod_date = self.modified_date.astimezone(timezone('US/Pacific'))
 		return mod_date.strftime(date_format)
 
+	def disc_date_string(self):
+		date_format = '%m/%d/%Y'
+		return self.disc_date.strftime(date_format)
+
+	def disc_mag(self):
+
+		transient_query = Q(transient=self.id)
+		all_phot = yse_models.TransientPhotometry.objects.filter(transient_query)
+		phot_ids = all_phot.values('id')
+		phot_data_query = Q(photometry__id__in=phot_ids)
+		disc_query = Q(discovery_point = 1)
+		disc_mag = yse_models.TransientPhotData.objects.exclude(data_quality__isnull=False).filter(phot_data_query & disc_query)
+		if len(disc_mag):
+			return disc_mag[0].mag
+		else:
+			return None
+			#print(yse_models.TransientPhotData.objects.exclude(data_quality__isnull=False).filter(phot_data_query).order_by('-obs_date')[0].mag)
+			#return yse_models.TransientPhotData.objects.exclude(data_quality__isnull=False).filter(phot_data_query).order_by('-obs_date')[0].mag
+
+	def name_table_sort(self):
+		if len(self.name) > 4:
+			addnums = 7-len(self.name)
+			sortname = "".join([self.name[:4],"".join(['1']*addnums),self.name[4:]])
+
+			return sortname
+		else:
+			return None
+		
 	def __str__(self):
 		return self.name
 

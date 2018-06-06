@@ -9,6 +9,8 @@ from django.db.models import Q
 from rest_framework.renderers import JSONRenderer
 import requests
 from django.template.defaulttags import register
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models.functions import Lower
 
 from .models import *
 from .forms import *
@@ -24,6 +26,10 @@ from .data import PhotometryService, SpectraService, ObservingResourceService
 import json
 import time
 
+from .table_utils import TransientTable
+import django_tables2 as tables
+from django_tables2 import RequestConfig
+
 # Create your views here.
 
 def index(request):
@@ -32,7 +38,7 @@ def index(request):
 	return render(request, 'YSE_App/index.html')
 
 #def add_followup(request,obj):
-#        return '<a href="%s">Add followup for %s</a>' % (obj.firm_url,obj.firm_url)
+#		 return '<a href="%s">Add followup for %s</a>' % (obj.firm_url,obj.firm_url)
 
 # Create your views here.
 def auth_login(request):
@@ -72,68 +78,50 @@ def dashboard(request):
 	finishedfollowing_transients = None
 
 	k2_transients = Transient.objects.filter(k2_validated=1).order_by('-modified_date')
-	for i in range(len(k2_transients)):
-		disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=k2_transients[i].id)
-		if disc:
-			k2_transients[i].disc_mag = disc.mag
-			k2_transients[i].disc_date = disc.obs_date
-
+	k2_table = TransientTable(k2_transients,prefix='k2')
+	RequestConfig(request, paginate={'per_page': 10}).configure(k2_table)
+	
 	status_new = TransientStatus.objects.filter(name='New').order_by('-modified_date')
 	if len(status_new) == 1:
 		new_transients = Transient.objects.filter(status=status_new[0]).order_by('-modified_date')
-		new_notk2_transients = new_transients.exclude(k2_validated=1).order_by('-modified_date')
-		for i in range(len(new_notk2_transients)):
-			disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=new_notk2_transients[i].id)
-			if disc:
-				new_notk2_transients[i].disc_mag = disc.mag
-				new_notk2_transients[i].disc_date = disc.obs_date
-
+	new_table = TransientTable(new_transients,prefix='new')
+	RequestConfig(request, paginate={'per_page': 10}).configure(new_table)
+		
 	status_watch = TransientStatus.objects.filter(name='Watch').order_by('-modified_date')
 	if len(status_watch) == 1:
-		watch_transients = Transient.objects.exclude(k2_validated=1).filter(status=status_watch[0])
-		for i in range(len(watch_transients)):
-			disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=watch_transients[i].id)
-			if disc:
-				watch_transients[i].disc_mag = disc.mag
-				watch_transients[i].disc_date = disc.obs_date
-
+		watch_transients = Transient.objects.filter(status=status_watch[0])
+	watch_table = TransientTable(watch_transients,prefix='watch')
+	RequestConfig(request, paginate={'per_page': 10}).configure(watch_table)
+	
 	status_followrequest = TransientStatus.objects.filter(name='FollowupRequested').order_by('-modified_date')
 	if len(status_followrequest) == 1:
-		followup_requested_transients = Transient.objects.exclude(k2_validated=1).filter(status=status_followrequest[0])
-		for i in range(len(followup_requested_transients)):
-			disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=followup_requested_transients[i].id)
-			if disc:
-				followup_requested_transients[i].disc_mag = disc.mag
-				followup_requested_transients[i].disc_date = disc.obs_date
-
+		followup_requested_transients = Transient.objects.filter(status=status_followrequest[0])
+	follow_request_table = TransientTable(followup_requested_transients,prefix='followrequest')
+	RequestConfig(request, paginate={'per_page': 10}).configure(follow_request_table)
+		
 	status_following = TransientStatus.objects.filter(name='Following').order_by('-modified_date')
 	if len(status_following) == 1:
-		following_transients = Transient.objects.exclude(k2_validated=1).filter(status=status_following[0])
-		for i in range(len(following_transients)):
-			disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=following_transients[i].id)
-			if disc:
-				following_transients[i].disc_mag = disc.mag
-				following_transients[i].disc_date = disc.obs_date
+		following_transients = Transient.objects.filter(status=status_following[0])
+	following_table = TransientTable(following_transients,prefix='following')
+	RequestConfig(request, paginate={'per_page': 10}).configure(following_table)
 
-	tstart = time.time()
 	status_finishedfollowing = TransientStatus.objects.filter(name='FollowupFinished').order_by('-modified_date')
-	if len(status_following) == 1:
-		finishedfollowing_transients = Transient.objects.exclude(k2_validated=1).filter(status=status_finishedfollowing[0])
-		for i in range(len(finishedfollowing_transients)):
-			disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=finishedfollowing_transients[i].id)
-			if disc:
-				finishedfollowing_transients[i].disc_mag = disc.mag
-				finishedfollowing_transients[i].disc_date = disc.obs_date
-	print(time.time() - tstart)
-				
+	if len(status_finishedfollowing) == 1:
+		finishedfollowing_transients = Transient.objects.filter(status=status_finishedfollowing[0])
+	finished_following_table = TransientTable(finishedfollowing_transients,prefix='finishedfollowing')
+	RequestConfig(request, paginate={'per_page': 10}).configure(finished_following_table)
+		
+	transient_categories = [(k2_table,'Validated K2 Transients','k2'),
+							(new_table,'New Transients','new'),
+							(follow_request_table,'Followup Requested','followrequest'),
+							(following_table,'Following','following'),
+							(watch_table,'Watch','watch'),
+							(finished_following_table,'Finished Following','finishedfollowing')]
+		
 	context = {
-			'k2_transients': k2_transients,
-			'new_transients': new_notk2_transients,
-			'watch_transients': watch_transients,
-			'followup_requested_transients': followup_requested_transients,
-			'following_transients': following_transients,
-			'finishedfollowing_transients': finishedfollowing_transients,
+			'transient_categories':transient_categories,
 	}
+
 	return render(request, 'YSE_App/dashboard.html', context)
 
 @login_required
@@ -295,10 +283,10 @@ def transient_detail(request, slug):
 		# too_resources = ToOResource.objects.all()
 		#
 		# for i in range(len(too_resources)):
-		# 	telescope = too_resources[i].telescope
-		# 	too_resources[i].telescope_id = telescope.id
-		# 	observatory = Observatory.objects.get(pk=telescope.observatory_id)
-		# 	too_resources[i].deltahours = too_resources[i].awarded_too_hours - too_resources[i].used_too_hours
+		#	telescope = too_resources[i].telescope
+		#	too_resources[i].telescope_id = telescope.id
+		#	observatory = Observatory.objects.get(pk=telescope.observatory_id)
+		#	too_resources[i].deltahours = too_resources[i].awarded_too_hours - too_resources[i].used_too_hours
 		obsnights = view_utils.get_obs_nights_happening_soon(request.user)
 		too_resources = view_utils.get_too_resources(request.user)
 
