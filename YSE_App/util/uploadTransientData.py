@@ -321,7 +321,9 @@ class DBOps():
 						  help="set to 1 if forced photometry")
 		parser.add_option('--obsgroup', default='Foundation', type="string",
 						  help='group who observed this transient')
-		
+		parser.add_option('--fluxzpt', default=None, type="float",
+						  help="flux zero point")
+
 		if config:
 			parser.add_option('--login', default=config.get('main','login'), type="string",
 							  help='gmail login (default=%default)')
