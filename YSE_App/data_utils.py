@@ -108,13 +108,13 @@ def add_transient_phot(request):
 		if k == 'header' or k == 'transient' or k == 'photheader': continue
 		p = phot_data[k]
 		pmjd = Time(p['obs_date'],format='isot').mjd
-		band = PhotometricBand.objects.filter(name=p['band'])
+		band = PhotometricBand.objects.filter(name=p['band']).filter(instrument__name=ph['instrument'])
 		if len(band): band = band[0]
-		
+
 		obsExists = False
 		for e in existingphot:
 			if e.photometry.id == transientphot.id:
-				if e.band == band:
+				if e.band.name == band.name: # TEMPORARY HACK
 					try:
 						mjd = Time(e.obs_date.isoformat().split('+')[0],format='isot').mjd
 					except:

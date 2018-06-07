@@ -403,7 +403,7 @@ def lightcurveplot(request, transient_id):
 	colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
 				 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
 	count = 0
-
+	
 	bandunq,idx = np.unique(bandstr,return_index=True)
 	for bs,b in zip(bandunq,band[idx]):
 		coloridx = count % len(np.unique(colorlist))
@@ -424,7 +424,7 @@ def lightcurveplot(request, transient_id):
 									 b.instrument.telescope.name,b.name))
 		
 		count += 1
-			
+
 	today = Time(datetime.datetime.today()).mjd
 	ax.line(today,20,line_width=3,line_color='black',legend='today (%i)'%today)
 	vline = Span(location=today, dimension='height', line_color='black',

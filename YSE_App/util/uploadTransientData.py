@@ -53,7 +53,7 @@ class upload():
 						  help="use default settings for foundation")
 		parser.add_option('-e','--onlyexisting', default=False, action="store_true",
 						  help="only add light curves for existing objects")
-		parser.add_option('-m','--mjdmatchmin', default=0.05, type="float",
+		parser.add_option('-m','--mjdmatchmin', default=0.01, type="float",
 						  help="""if clobber flag not set, photometric observation with MJD separation 
 less than this, in the same filter/instrument are treated as the same data.	 Allows updates to the photometry""")
 		parser.add_option('--spectrum', default=False, action="store_true",
@@ -168,8 +168,7 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 			else:
 				PhotUploadDict['data_quality'] = None
 
-				
-			PhotUploadAll[obsdate] = PhotUploadDict
+			PhotUploadAll['%s_%i'%(obsdate,i)] = PhotUploadDict
 			PhotUploadAll['header'] = {'clobber':self.options.clobber,
 									   'mjdmatchmin':self.options.mjdmatchmin}
 		import requests
