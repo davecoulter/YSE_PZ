@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'widget_tweaks',
 	'django_tables2',
+    'explorer'
 ]
 
 MIDDLEWARE = [
@@ -99,6 +100,9 @@ DATABASES = {
         'PORT': config.get('database', 'DATABASE_PORT')
     }
 }
+
+EXPLORER_CONNECTIONS = { 'Default': 'default' }
+EXPLORER_DEFAULT_CONNECTION = 'default'
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
