@@ -114,7 +114,7 @@ def add_transient_phot(request):
 		obsExists = False
 		for e in existingphot:
 			if e.photometry.id == transientphot.id:
-				if e.band.name == band.name: # TEMPORARY HACK
+				if e.band == band:
 					try:
 						mjd = Time(e.obs_date.isoformat().split('+')[0],format='isot').mjd
 					except:
