@@ -72,6 +72,7 @@ urlpatterns = [
 		view_utils.get_legacy_image, name='get_legacy_image'),
 
     path('accounts/', include('django.contrib.auth.urls')),
+	url(r'^explorer/', include('explorer.urls')),
 ]
 
 router = DefaultRouter()
