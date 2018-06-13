@@ -144,7 +144,7 @@ def followup(request):
 	context = {
 		'followup_tables':table_list,
 	}
-	return render(request, 'YSE_App/transient_followup_test.html', context)
+	return render(request, 'YSE_App/transient_followup.html', context)
 
 @login_required
 def transient_tags(request):
