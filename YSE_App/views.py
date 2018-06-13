@@ -146,44 +146,6 @@ def followup(request):
 	}
 	return render(request, 'YSE_App/transient_followup_test.html', context)
 
-
-@login_required
-def followup_bkp(request):
-
-	followup_transients = None
-	
-	status_followrequest = TransientStatus.objects.order_by('-modified_date')
-	followup_transients = Transient.objects.filter(Q(status=status_followrequest[0]) |
-												   Q(status=status_followrequest[1]) |
-												   Q(status=status_followrequest[2]) |
-												   Q(status=status_followrequest[3]) |
-												   Q(status=status_followrequest[4]) |
-												   Q(status=status_followrequest[5]))
-	for i in range(len(followup_transients)):
-		disc = view_utils.get_disc_mag_for_transient(request.user, transient_id=followup_transients[i].id)
-
-		if disc:
-			followup_transients[i].disc_mag = disc.mag
-
-		followup_transients[i].followups = TransientFollowup.objects.filter(transient=followup_transients[i].id)
-
-		for j in range(len(followup_transients[i].followups)):
-
-			if followup_transients[i].followups[j].classical_resource:
-				followup_transients[i].followups[j].resource = followup_transients[i].followups[j].classical_resource
-
-			elif followup_transients[i].followups[j].too_resource:
-				followup_transients[i].followups[j].resource = followup_transients[i].followups[j].too_resource
-
-			elif followup_transients[i].followups[j].queued_resource:
-				followup_transients[i].followups[j].resource = followup_transients[i].followups[j].queued_resource
-
-	context = {
-		'transients': followup_transients,
-		'telescopes':Telescope.objects.all()
-	}
-	return render(request, 'YSE_App/transient_followup.html', context)
-
 @login_required
 def transient_tags(request):
 	all_transient_tags = TransientTag.objects.all()
