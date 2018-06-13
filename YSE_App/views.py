@@ -26,7 +26,7 @@ from .data import PhotometryService, SpectraService, ObservingResourceService
 import json
 import time
 
-from .table_utils import TransientTable
+from .table_utils import TransientTable,FollowupTable
 import django_tables2 as tables
 from django_tables2 import RequestConfig
 
@@ -126,6 +126,29 @@ def dashboard(request):
 
 @login_required
 def followup(request):
+
+	followup_transients = None
+
+	telescopes = Telescope.objects.all()
+
+	table_list = []
+	for t in telescopes:
+		followup_transients = TransientFollowup.objects.filter(Q(too_resource__telescope__name=t) |
+															   Q(classical_resource__telescope__name=t) |
+															   Q(queued_resource__telescope__name=t))
+	
+		followup_table = FollowupTable(followup_transients,prefix=t)
+		RequestConfig(request, paginate={'per_page': 10}).configure(followup_table)
+		table_list += [(t.name,followup_table,t.name.replace(' ','_'),followup_transients)]
+	
+	context = {
+		'followup_tables':table_list,
+	}
+	return render(request, 'YSE_App/transient_followup_test.html', context)
+
+
+@login_required
+def followup_bkp(request):
 
 	followup_transients = None
 	

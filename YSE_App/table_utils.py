@@ -12,7 +12,9 @@ from .data import PhotometryService
 import time
 	
 class TransientTable(tables.Table):
-	
+
+	name_string = tables.TemplateColumn("<a href=\"{% url 'transient_detail' record.slug %}\">{{ record.name }}</a>",
+										verbose_name='Name',orderable=True,order_by='name')
 	ra_string = tables.Column(accessor='CoordString.0',
 							  verbose_name='RA',orderable=True,order_by='ra')
 	dec_string = tables.Column(accessor='CoordString.1',
@@ -42,7 +44,7 @@ class TransientTable(tables.Table):
 			
 	class Meta:
 		model = Transient
-		fields = ('name','ra_string','dec_string','disc_date_string','disc_mag','obs_group','best_spec_class','redshift','host.redshift','status')
+		fields = ('name_string','ra_string','dec_string','disc_date_string','disc_mag','obs_group','best_spec_class','redshift','host.redshift','status')
 		template_name='YSE_App/django-tables2/bootstrap.html'
 		attrs = {
 			'th' : {
@@ -60,6 +62,43 @@ class TransientTable(tables.Table):
 			],
 			"order": [[ 3, "desc" ]],
 		}
+
+class FollowupTable(tables.Table):
+
+	name_string = tables.TemplateColumn("<a href=\"{% url 'transient_detail' record.transient.slug %}\">{{ record.transient.name }}</a>",
+										verbose_name='Name',orderable=True,order_by='name')
+	observation_window = tables.Column(accessor='observation_window',
+							  verbose_name='Observation Window',orderable=True,order_by='valid_start')
+	
+	action = tables.TemplateColumn("<a target=\"_blank\" href=\"{% url 'admin:YSE_App_transientfollowup_change' record.id %}\">Edit</a>",
+								   verbose_name='Action',orderable=False)
+
+	
+	#disc_mag = tables.Column(accessor='disc_mag',
+	#						 verbose_name='Disc. Mag',orderable=True)
+	
+	def __init__(self,*args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		self.base_columns['transient.status'].verbose_name = 'Transient Status'
+		self.base_columns['status'].verbose_name = 'Followup Status'
+	
+	class Meta:
+		model = TransientFollowup
+		fields = ('name_string','transient.status','observation_window','status','action')
+		template_name='YSE_App/django-tables2/bootstrap.html'
+		attrs = {
+			'th' : {
+				'_ordering': {
+					'orderable': 'sortable', # Instead of `orderable`
+					'ascending': 'ascend',	 # Instead of `asc`
+					'descending': 'descend'	 # Instead of `desc`
+				}
+			},
+			'class': 'table table-bordered table-hover',
+			"order": [[ 2, "desc" ]],
+		}
+
 		
 def dashboard_tables(request):
 	

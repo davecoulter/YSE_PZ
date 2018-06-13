@@ -41,6 +41,9 @@ class TransientFollowup(Followup):
 	def __str__(self):
 		return "Transient Followup: [%s]; Valid: %s to %s" % (self.transient.name, self.valid_start.strftime('%m/%d/%Y'), self.valid_stop.strftime('%m/%d/%Y'))
 
+	def observation_window(self):
+		return "%s - %s" % (self.valid_start.strftime('%m/%d/%Y'), self.valid_stop.strftime('%m/%d/%Y'))		
+
 class HostFollowup(Followup):
 	### Entity relationships ###
 	host = models.ForeignKey(Host, on_delete=models.CASCADE)

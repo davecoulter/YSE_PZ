@@ -1,6 +1,7 @@
 {% extends 'YSE_App/base.html' %}
 {% load transient_detail_extras %}
 {% load dashboard_extras %}
+{% load render_table from django_tables2 %}
 {% block content %}
 
 <!-- Content Header (Page header) -->
@@ -17,68 +18,38 @@
     <!-- Main content -->
     <section class="content">
 
-      {% for t in telescopes %}
       <!-- Default box -->
-      <div class="box">
-        <div class="box-header with-border">
-          <h3 class="box-title">Followups for {{t}}</h3>
-        </div>
-        <div class="box-body">
+    {% for followup_table in followup_tables %}
+    {% if followup_table.3|length %}
+   <div class="box" id="{{followup_table.2}}">
+    <div class="box-header with-border">
+      <h3 class="box-title">{{ followup_table.0 }}</h3>
+    </div>
+    <div class="box-body">
 
-          <table id="followup_{{ t|replace_space }}_tbl" class="table table-bordered table-hover sorttable">
-	    <thead>
-	      <tr>
-		<th>Transient</th>
-		<th>Transient Status</th>
-		<th>Observation<br>Window</th>
-		<th>Observatory</th>
-		<th>Telescope</th>
-		<th>Status</th>
-		<th>Action</th>
-	      </tr>
-	    </thead>
-            <tbody>
-	    {% for tr in transients %}
-            {% for f in tr.followups %}
-	    {% if f.resource.telescope == t %}
-	    <tr>
-        <td><span class="hidden">{{ tr.name|snidsort }}</span><a href="{% url 'transient_detail' tr.slug %}">{{ tr.name }}</a></td>
-	      <td>{{ tr.status }}</td>
-	      <td><span class="hidden">{{ f.valid_start|date:"y m d" }}</span>{{ f.valid_start|date:"SHORT_DATE_FORMAT" }} &mdash;<br>{{ f.valid_stop|date:"SHORT_DATE_FORMAT" }}</td>
-	      <td>{{ f.resource.telescope.observatory.name }}</td>
-	      <td>{{ f.resource.telescope.name }}</td>
-	      <td>{{ f.status }}</td>
-	      <td><a target="_blank" href="{% url 'admin:YSE_App_transientfollowup_change' f.id %}">Edit</a></td>
-	    </tr>
-	    {% endif %}
-            {% endfor %}
-	    {% endfor %}
-            </tbody>
-          </table>
+      {% render_table followup_table.1 %}
 
-        </div>
-        <!-- /.box-body -->
-        <div class="box-footer">
-        </div>
-        <!-- /.box-footer-->
-      </div>
-      <!-- /.box -->
-      {% endfor %}
-      
-    </section>
-
-
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer">
+    </div>
+  </div>
+  {% endif %}
+    {% endfor %}
+    <!-- /.box-footer-->
+  
+  <!-- /.box -->
     
 {% endblock %}
 
 {% block scripts %}
 <script>
-  $( document ).ready(function(){
-    {% for t in telescopes %}
-    $('#followup_{{ t|replace_space }}_tbl').DataTable( {
-      "order": [[ 3, "desc" ]]
-    });
-    {% endfor %}
-  });
+  //$( document ).ready(function(){
+  //  {% for t in telescopes %}
+  //  $('#followup_{{ t|replace_space }}_tbl').DataTable( {
+  //    "order": [[ 3, "desc" ]]
+  //  });
+  //  {% endfor %}
+  //});
 </script>
 {% endblock %}

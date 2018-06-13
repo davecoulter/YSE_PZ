@@ -100,6 +100,9 @@ class Transient(BaseModel):
 			return sortname
 		else:
 			return None
+
+	def TableString(self):
+		return '<a href="/yse/transient_detail/%s/">%s</a>'%(self.slug,self.name)
 		
 	def __str__(self):
 		return self.name

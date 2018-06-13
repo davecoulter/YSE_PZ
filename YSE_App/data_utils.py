@@ -127,6 +127,7 @@ def add_transient_phot(request):
 								if not dq:
 									dq = DataQuality.objects.filter(name='Bad')
 								dq = dq[0]
+								print(dq)
 							else: dq = None
 								
 							e.obs_date = p['obs_date']
