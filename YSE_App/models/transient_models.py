@@ -132,10 +132,10 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 			instance.tags.add(k2c17tag)
 
 		instance.save()
-		if is_k2_C17_validated:
+		#if is_k2_C17_validated:
 			# coord_string = GetSexigesimalString(instance.ra, instance.dec)
-			coord_string = instance.CoordString()
-			SendTransientAlert(instance.id, instance.name, coord_string[0], coord_string[1])
+			# coord_string = instance.CoordString()
+			# SendTransientAlert(instance.id, instance.name, coord_string[0], coord_string[1])
 
 # Alternate Host names?
 class AlternateTransientNames(BaseModel):
