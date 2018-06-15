@@ -89,8 +89,6 @@ class Transient(BaseModel):
 			return disc_mag[0].mag
 		else:
 			return None
-			#print(yse_models.TransientPhotData.objects.exclude(data_quality__isnull=False).filter(phot_data_query).order_by('-obs_date')[0].mag)
-			#return yse_models.TransientPhotData.objects.exclude(data_quality__isnull=False).filter(phot_data_query).order_by('-obs_date')[0].mag
 
 	def name_table_sort(self):
 		if len(self.name) > 4:

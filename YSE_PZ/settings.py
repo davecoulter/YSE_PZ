@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'widget_tweaks',
 	'django_tables2',
-    'explorer'
+    'explorer',
+	'bootstrap3'
 ]
 
 MIDDLEWARE = [

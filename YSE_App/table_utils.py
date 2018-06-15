@@ -10,7 +10,13 @@ from django_tables2 import A
 from django.db import models
 from .data import PhotometryService
 import time
-	
+import django_filters
+from django_filters.views import FilterView
+from django_tables2.views import SingleTableMixin
+from django_filters import Filter
+from django_filters.fields import Lookup
+import itertools
+
 class TransientTable(tables.Table):
 
 	name_string = tables.TemplateColumn("<a href=\"{% url 'transient_detail' record.slug %}\">{{ record.name }}</a>",
@@ -98,8 +104,97 @@ class FollowupTable(tables.Table):
 			'class': 'table table-bordered table-hover',
 			"order": [[ 2, "desc" ]],
 		}
-
 		
+#class TransientFilter(django_filters.FilterSet):
+#	name_string = django_filters.CharFilter(name='name',lookup_expr='icontains',
+#											label='Name')
+	
+#	class Meta:
+#		model = Transient
+#		fields = ['name']
+
+def annotate_with_disc_mag(qs):
+
+	all_phot = TransientPhotometry.objects.values('transient')#.filter(transient__in = queryset)
+	phot_ids = all_phot.values('id')
+	
+	phot_data_query = Q(transientphotometry__id__in=phot_ids)
+	disc_query = Q(transientphotometry__transientphotdata__discovery_point = 1)
+	
+	qs = qs.annotate(
+		disc_mag=Min('transientphotometry__transientphotdata__mag',filter=phot_data_query & disc_query),
+	)
+	qs = qs.annotate(
+		obs_group_name=Min('obs_group__name'),
+		host_redshift=Min('host__redshift'),
+		spec_class=Min('best_spec_class__name'),
+		status_name=Min('status__name'))
+	return qs
+	
+class TransientFilter(django_filters.FilterSet):
+
+	#name_string = django_filters.CharFilter(name='name',lookup_expr='icontains',
+	#										label='Name')
+	
+	ex = django_filters.CharFilter(method='filter_ex',label='Search')
+	search_fields = ['name','ra','dec','disc_date','disc_mag','obs_group_name',
+					 'spec_class','redshift','host_redshift',
+					 'status_name']
+
+	class Meta:
+		model = Transient
+		fields = ['ex',]
+	
+	def filter_ex(self, qs, name, value):
+		if value:
+			
+			qs = annotate_with_disc_mag(qs)
+
+			q_parts = value.split()
+
+
+			list1=self.search_fields
+			list2=q_parts
+			perms = [zip(x,list2) for x in itertools.permutations(list1,len(list2))]
+
+			q_totals = Q()
+			for perm in perms:
+				q_part = Q()
+				for p in perm:
+					q_part = q_part & Q(**{p[0]+'__icontains': p[1]})
+				q_totals = q_totals | q_part
+
+			qs = qs.filter(q_totals)
+		return qs
+
+class FollowupFilter(django_filters.FilterSet):
+	
+	ex = django_filters.CharFilter(method='filter_ex',label='Search')
+	search_fields = ['transient__name','transient__status__name','status__name','valid_start','valid_stop']
+
+	class Meta:
+		model = TransientFollowup
+		fields = ['ex',]
+	
+	def filter_ex(self, qs, name, value):
+		if value:
+			q_parts = value.split()
+
+			list1=self.search_fields
+			list2=q_parts
+			perms = [zip(x,list2) for x in itertools.permutations(list1,len(list2))]
+
+			q_totals = Q()
+			for perm in perms:
+				q_part = Q()
+				for p in perm:
+					q_part = q_part & Q(**{p[0]+'__icontains': p[1]})
+				q_totals = q_totals | q_part
+
+			qs = qs.filter(q_totals)
+		return qs
+
+	
 def dashboard_tables(request):
 	
 	k2_transients = Transient.objects.all()

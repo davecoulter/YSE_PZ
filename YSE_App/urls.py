@@ -7,7 +7,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import DefaultRouter
 from rest_framework.schemas import get_schema_view
 
-from . import views, view_utils, data_utils
+from . import views, view_utils, data_utils, table_utils
 from . import api_views
 from .form_views import *
 

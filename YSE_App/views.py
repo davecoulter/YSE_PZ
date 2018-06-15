@@ -26,7 +26,7 @@ from .data import PhotometryService, SpectraService, ObservingResourceService
 import json
 import time
 
-from .table_utils import TransientTable,FollowupTable
+from .table_utils import TransientTable,FollowupTable,TransientFilter,FollowupFilter
 import django_tables2 as tables
 from django_tables2 import RequestConfig
 
@@ -77,49 +77,62 @@ def dashboard(request):
 	followup_requested_transients = None
 	finishedfollowing_transients = None
 
+	
 	k2_transients = Transient.objects.filter(k2_validated=1).order_by('-disc_date')
-	k2_table = TransientTable(k2_transients,prefix='k2')
+	#k2_transients = annotate_with_disc_mag(k2_transients)
+	
+	k2transientfilter = TransientFilter(request.GET, queryset=k2_transients,prefix='k2')
+	k2_table = TransientTable(k2transientfilter.qs,prefix='k2')
 	RequestConfig(request, paginate={'per_page': 10}).configure(k2_table)
 	
 	status_new = TransientStatus.objects.filter(name='New').order_by('-modified_date')
 	if len(status_new) == 1:
 		new_transients = Transient.objects.filter(status=status_new[0]).order_by('-disc_date')
-	new_table = TransientTable(new_transients,prefix='new')
+	newtransientfilter = TransientFilter(request.GET, queryset=new_transients,prefix='new')
+	new_table = TransientTable(newtransientfilter.qs,prefix='new')
 	RequestConfig(request, paginate={'per_page': 10}).configure(new_table)
 		
 	status_watch = TransientStatus.objects.filter(name='Watch').order_by('-modified_date')
 	if len(status_watch) == 1:
 		watch_transients = Transient.objects.filter(status=status_watch[0]).order_by('-disc_date')
-	watch_table = TransientTable(watch_transients,prefix='watch')
+	watchtransientfilter = TransientFilter(request.GET, queryset=watch_transients,prefix='watch')
+	watch_table = TransientTable(watchtransientfilter.qs,prefix='watch')
 	RequestConfig(request, paginate={'per_page': 10}).configure(watch_table)
 	
 	status_followrequest = TransientStatus.objects.filter(name='FollowupRequested').order_by('-modified_date')
 	if len(status_followrequest) == 1:
 		followup_requested_transients = Transient.objects.filter(status=status_followrequest[0]).order_by('-disc_date')
-	follow_request_table = TransientTable(followup_requested_transients,prefix='followrequest')
+	followrequesttransientfilter = TransientFilter(request.GET, queryset=followup_requested_transients,prefix='followrequest')
+	follow_request_table = TransientTable(followrequesttransientfilter.qs,prefix='followrequest')
 	RequestConfig(request, paginate={'per_page': 10}).configure(follow_request_table)
 		
 	status_following = TransientStatus.objects.filter(name='Following').order_by('-modified_date')
 	if len(status_following) == 1:
 		following_transients = Transient.objects.filter(status=status_following[0]).order_by('-disc_date')
-	following_table = TransientTable(following_transients,prefix='following')
+	followingtransientfilter = TransientFilter(request.GET, queryset=following_transients,prefix='following')
+	following_table = TransientTable(followingtransientfilter.qs,prefix='following')
 	RequestConfig(request, paginate={'per_page': 10}).configure(following_table)
 
 	status_finishedfollowing = TransientStatus.objects.filter(name='FollowupFinished').order_by('-modified_date')
 	if len(status_finishedfollowing) == 1:
 		finishedfollowing_transients = Transient.objects.filter(status=status_finishedfollowing[0]).order_by('-disc_date')
-	finished_following_table = TransientTable(finishedfollowing_transients,prefix='finishedfollowing')
+	finishedfollowingtransientfilter = TransientFilter(request.GET, queryset=finishedfollowing_transients,prefix='finishedfollowing')
+	finished_following_table = TransientTable(finishedfollowingtransientfilter.qs,prefix='finishedfollowing')
 	RequestConfig(request, paginate={'per_page': 10}).configure(finished_following_table)
 		
-	transient_categories = [(k2_table,'Validated K2 Transients','k2'),
-							(new_table,'New Transients','new'),
-							(follow_request_table,'Followup Requested','followrequest'),
-							(following_table,'Following','following'),
-							(watch_table,'Watch','watch'),
-							(finished_following_table,'Finished Following','finishedfollowing')]
-		
+	transient_categories = [(k2_table,'Validated K2 Transients','k2',k2transientfilter),
+							(new_table,'New Transients','new',newtransientfilter),
+							(follow_request_table,'Followup Requested','followrequest',followrequesttransientfilter),
+							(following_table,'Following','following',followingtransientfilter),
+							(watch_table,'Watch','watch',watchtransientfilter),
+							(finished_following_table,'Finished Following','finishedfollowing',finishedfollowingtransientfilter)]
+
+	if request.META['QUERY_STRING']:
+		anchor = request.META['QUERY_STRING'].split('-')[0]
+	else: anchor = ''
 	context = {
-			'transient_categories':transient_categories,
+		'transient_categories':transient_categories,
+		'anchor':anchor,
 	}
 
 	return render(request, 'YSE_App/dashboard.html', context)
@@ -136,13 +149,18 @@ def followup(request):
 		followup_transients = TransientFollowup.objects.filter(Q(too_resource__telescope__name=t) |
 															   Q(classical_resource__telescope__name=t) |
 															   Q(queued_resource__telescope__name=t))
-	
-		followup_table = FollowupTable(followup_transients,prefix=t)
+		followuptransientfilter = FollowupFilter(request.GET, queryset=followup_transients,prefix=t)
+		
+		followup_table = FollowupTable(followuptransientfilter.qs,prefix=t)
 		RequestConfig(request, paginate={'per_page': 10}).configure(followup_table)
-		table_list += [(t.name,followup_table,t.name.replace(' ','_'),followup_transients)]
-	
+		table_list += [(t.name,followup_table,t.name.replace(' ','_'),followup_transients,followuptransientfilter)]
+
+	if request.META['QUERY_STRING']:
+		anchor = request.META['QUERY_STRING'].split('-ex')[0]
+	else: anchor = ''
 	context = {
 		'followup_tables':table_list,
+		'anchor':anchor
 	}
 	return render(request, 'YSE_App/transient_followup.html', context)
 
