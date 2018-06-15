@@ -79,8 +79,6 @@ def dashboard(request):
 
 	
 	k2_transients = Transient.objects.filter(k2_validated=1).order_by('-disc_date')
-	#k2_transients = annotate_with_disc_mag(k2_transients)
-	
 	k2transientfilter = TransientFilter(request.GET, queryset=k2_transients,prefix='k2')
 	k2_table = TransientTable(k2transientfilter.qs,prefix='k2')
 	RequestConfig(request, paginate={'per_page': 10}).configure(k2_table)

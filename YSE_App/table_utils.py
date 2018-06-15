@@ -11,10 +11,6 @@ from django.db import models
 from .data import PhotometryService
 import time
 import django_filters
-from django_filters.views import FilterView
-from django_tables2.views import SingleTableMixin
-from django_filters import Filter
-from django_filters.fields import Lookup
 import itertools
 
 class TransientTable(tables.Table):
@@ -105,14 +101,6 @@ class FollowupTable(tables.Table):
 			"order": [[ 2, "desc" ]],
 		}
 		
-#class TransientFilter(django_filters.FilterSet):
-#	name_string = django_filters.CharFilter(name='name',lookup_expr='icontains',
-#											label='Name')
-	
-#	class Meta:
-#		model = Transient
-#		fields = ['name']
-
 def annotate_with_disc_mag(qs):
 
 	all_phot = TransientPhotometry.objects.values('transient')#.filter(transient__in = queryset)
