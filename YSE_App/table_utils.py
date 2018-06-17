@@ -25,6 +25,9 @@ class TransientTable(tables.Table):
 									 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
 	disc_mag = tables.Column(accessor='disc_mag',
 							 verbose_name='Disc. Mag',orderable=True)
+	recent_mag = tables.Column(accessor='recent_mag',
+							   verbose_name='Recent Mag',orderable=True)
+
 	
 	def __init__(self,*args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -43,10 +46,24 @@ class TransientTable(tables.Table):
 			disc_mag=Min('transientphotometry__transientphotdata__mag',filter=phot_data_query & disc_query), #,filter=phot_data_query
 		).order_by(('-' if is_descending else '') + 'disc_mag')
 		return (queryset, True)
-			
+
+	def order_recent_mag(self, queryset, is_descending):
+
+		all_phot = TransientPhotometry.objects.values('transient').filter(transient__in = queryset)
+		phot_ids = all_phot.values('id')
+		
+		phot_data_query = Q(transientphotometry__id__in=phot_ids)
+		queryset = queryset.annotate(
+			recent_magdate=Max('transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
+		).order_by(('-' if is_descending else '') + 'recent_magdate')
+		return (queryset, True)
+
+	
 	class Meta:
 		model = Transient
-		fields = ('name_string','ra_string','dec_string','disc_date_string','disc_mag','obs_group','best_spec_class','redshift','host.redshift','status')
+		fields = ('name_string','ra_string','dec_string','disc_date_string','disc_mag','recent_mag',
+				  'obs_group','best_spec_class','redshift','host.redshift','status')
+		
 		template_name='YSE_App/django-tables2/bootstrap.html'
 		attrs = {
 			'th' : {
@@ -69,6 +86,14 @@ class FollowupTable(tables.Table):
 
 	name_string = tables.TemplateColumn("<a href=\"{% url 'transient_detail' record.transient.slug %}\">{{ record.transient.name }}</a>",
 										verbose_name='Name',orderable=True,order_by='name')
+	ra_string = tables.Column(accessor='transient.CoordString.0',
+							  verbose_name='RA',orderable=True,order_by='transient.ra')
+	dec_string = tables.Column(accessor='transient.CoordString.1',
+							   verbose_name='DEC',orderable=True,order_by='transient.dec')
+	recent_mag = tables.Column(accessor='transient.recent_mag',
+							   verbose_name='Recent Mag',orderable=True)
+
+
 	observation_window = tables.Column(accessor='observation_window',
 							  verbose_name='Observation Window',orderable=True,order_by='valid_start')
 	
@@ -84,10 +109,21 @@ class FollowupTable(tables.Table):
 
 		self.base_columns['transient.status'].verbose_name = 'Transient Status'
 		self.base_columns['status'].verbose_name = 'Followup Status'
-	
+
+	def order_recent_mag(self, queryset, is_descending):
+
+		all_phot = TransientPhotometry.objects.values('transient').filter(transient__transientfollowup__in = queryset)
+		phot_ids = all_phot.values('id')
+		
+		phot_data_query = Q(transient__transientphotometry__id__in=phot_ids)
+		queryset = queryset.annotate(
+			recent_magdate=Max('transient__transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
+		).order_by(('-' if is_descending else '') + 'recent_magdate')
+		return (queryset, True)
+		
 	class Meta:
 		model = TransientFollowup
-		fields = ('name_string','transient.status','observation_window','status','action')
+		fields = ('name_string','ra_string','dec_string','recent_mag','transient.status','observation_window','status','action')
 		template_name='YSE_App/django-tables2/bootstrap.html'
 		attrs = {
 			'th' : {
@@ -97,6 +133,10 @@ class FollowupTable(tables.Table):
 					'descending': 'descend'	 # Instead of `desc`
 				}
 			},
+			"columnDefs": [
+				{"type":"title-numeric","targets":1},
+				{"type":"title-numeric","targets":2},
+			],
 			'class': 'table table-bordered table-hover',
 			"order": [[ 2, "desc" ]],
 		}
@@ -112,6 +152,7 @@ def annotate_with_disc_mag(qs):
 	qs = qs.annotate(
 		disc_mag=Min('transientphotometry__transientphotdata__mag',filter=phot_data_query & disc_query),
 	)
+	
 	qs = qs.annotate(
 		obs_group_name=Min('obs_group__name'),
 		host_redshift=Min('host__redshift'),
