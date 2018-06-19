@@ -89,8 +89,20 @@ class Transient(BaseModel):
 			return disc_mag[0].mag
 		else:
 			return None
-			#print(yse_models.TransientPhotData.objects.exclude(data_quality__isnull=False).filter(phot_data_query).order_by('-obs_date')[0].mag)
-			#return yse_models.TransientPhotData.objects.exclude(data_quality__isnull=False).filter(phot_data_query).order_by('-obs_date')[0].mag
+
+	def recent_mag(self):
+		date_format = '%m/%d/%Y'
+
+		transient_query = Q(transient=self.id)
+		all_phot = yse_models.TransientPhotometry.objects.filter(transient_query)
+		phot_ids = all_phot.values('id')
+		phot_data_query = Q(photometry__id__in=phot_ids)
+		recent_mag = yse_models.TransientPhotData.objects.exclude(data_quality__isnull=False).filter(phot_data_query).order_by('-obs_date')
+
+		if len(recent_mag):
+			return '%.2f, %s'%(recent_mag[0].mag,recent_mag[0].obs_date.strftime(date_format))
+		else:
+			return None
 
 	def name_table_sort(self):
 		if len(self.name) > 4:
@@ -100,7 +112,7 @@ class Transient(BaseModel):
 			return sortname
 		else:
 			return None
-		
+
 	def __str__(self):
 		return self.name
 
@@ -132,10 +144,10 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 			instance.tags.add(k2c17tag)
 
 		instance.save()
-		if is_k2_C17_validated:
+		#if is_k2_C17_validated:
 			# coord_string = GetSexigesimalString(instance.ra, instance.dec)
-			coord_string = instance.CoordString()
-			SendTransientAlert(instance.id, instance.name, coord_string[0], coord_string[1])
+			# coord_string = instance.CoordString()
+			# SendTransientAlert(instance.id, instance.name, coord_string[0], coord_string[1])
 
 # Alternate Host names?
 class AlternateTransientNames(BaseModel):

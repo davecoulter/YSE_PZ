@@ -498,6 +498,18 @@ class DBOps():
 
 		return(schema['transient']['url'])
 
+	def add_phot_to_DB(self,PhotUploadAll):
+
+		print('Adding Photometry')
+		
+		import requests
+		from requests.auth import HTTPBasicAuth
+		url = '%s'%db.dburl.replace('/api','/add_transient_phot')
+		r = requests.post(url = url, data = json.dumps(PhotUploadAll),
+						  auth=HTTPBasicAuth(db.dblogin,db.dbpassword))
+
+		print('YSE_PZ says: %s'%json.loads(r.text)['message'])
+		
 	def get_host_from_DB(self,hostname,hostra,hostdec,matchrad=0.0008,debug=False):
 
 		if debug: tstart = time.time()
@@ -953,64 +965,62 @@ class processTNS():
 							newobjdict['status'] = statusid
 							transientid = db.post_object_to_DB('transient',newobjdict)
 
-						# only add in host info and photometry if galaxy wasn't already in the database
-						# (avoids duplicates)
-						if not dbid:
-							# the photometry table probably won't exist, so add this in
-							# phot table needs an instrument, which needs a telescope, which needs an observatory
-							for ins in np.unique(tinst):
-								#if ins in TNS2YSE_instdict.keys():
-								#	instrumentid = db.get_ID_from_DB('instruments',TNS2YSE_instdict[ins])
-								#else:
-								instrumentid = db.get_ID_from_DB('instruments',ins)
-								if not instrumentid:
-									instrumentid = db.get_ID_from_DB('instruments','Unknown')
-								if not instrumentid:
-									observatoryid = db.post_object_to_DB(
-										'observatory',{'name':'Unknown','tz_name':0,'utc_offset':0})
-									teldict= {'name':'Unknown',
-										  'observatory':observatoryid,
-										  'longitude':0,
-										  'latitude':0,
-										  'elevation':0}
-									telid = db.post_object_to_DB('telescope',teldict)
-									instrumentid = db.post_object_to_DB(
-										'instrument',{'name':'Unknown','telescope':telid})
+						# add the photometry
+						for ins in np.unique(tinst):
 
-								phottabledict = {'transient':transientid,
-												 'obs_group':obsgroupid,
-												 'instrument':instrumentid,
-												 'groups':[]}
-								phottableid = db.post_object_to_DB('photometry',phottabledict)
-
-								for f in np.unique(tfilt):
-									bandid = db.get_band_from_DB(f,instrumentid)
-									if not bandid:
-										bandid = db.post_object_to_DB('band',{'name':f,'instrument':instrumentid})
+							transientdict = {'obs_group':source_group,
+											 'status':self.status,
+											 'name':objs[j].decode("utf-8"),
+											 'ra':sc.ra.deg,
+											 'dec':sc.dec.deg,
+											 'groups':[]}
+								
+							photdict = {'instrument':ins,
+										'obs_group':source_group,
+										'transient':objs[j].decode("utf-8"),
+										'groups':[]}
+								
+							PhotUploadAll = {'transient':transientdict,
+											 'photheader':photdict}
+							try:
+								for f,k in zip(np.unique(tfilt),range(len(np.unique(tfilt)))):
 									# put in the photometry
-									try:
-										for m,me,flx,fe,od,df in zip(tmag[(f == tfilt) & (ins == tinst)],
-																	 tmagerr[(f == tfilt) & (ins == tinst)],
-																	 tflux[(f == tfilt) & (ins == tinst)],
-																	 tfluxerr[(f == tfilt) & (ins == tinst)],
-																	 tobsdate[(f == tfilt) & (ins == tinst)],
-																	 disc_flag[(f == tfilt) & (ins == tinst)]):
-											if not m and not me and not flx and not fe: continue
-											# TODO: compare od to disc_date.replace(' ','T')
-											# if they're close or equal?  Set discovery flag
-											photdatadict = {'obs_date':od.replace(' ','T'),
-															'band':bandid,
-															'photometry':phottableid,
-															'groups':[]}
-											if m: photdatadict['mag'] = m
-											if me: photdatadict['mag_err'] = me
-											if flx: photdatadict['flux'] = flx
-											if fe: photdatadict['flux_err'] = fe
-											if df: photdatadict['discovery_point'] = 1
-											photdataid = db.post_object_to_DB('photdata',photdatadict)
-									except:
-										print('Error getting photometry!!')
+
+									for m,me,flx,fe,od,df in zip(tmag[(f == tfilt) & (ins == tinst)],
+																 tmagerr[(f == tfilt) & (ins == tinst)],
+																 tflux[(f == tfilt) & (ins == tinst)],
+																 tfluxerr[(f == tfilt) & (ins == tinst)],
+																 tobsdate[(f == tfilt) & (ins == tinst)],
+																 disc_flag[(f == tfilt) & (ins == tinst)]):
+										if not m and not me and not flx and not fe: continue
+										# TODO: compare od to disc_date.replace(' ','T')
+										# if they're close or equal?  Set discovery flag
+										PhotUploadDict = {'obs_date':od.replace(' ','T'),
+														  'band':f,
+														  'groups':[]}
+										if m: PhotUploadDict['mag'] = m
+										else: PhotUploadDict['mag'] = None
+										if me: PhotUploadDict['mag_err'] = me
+										else: PhotUploadDict['mag_err'] = None
+										if flx: PhotUploadDict['flux'] = flx
+										else: PhotUploadDict['flux'] = None
+										if fe: PhotUploadDict['flux_err'] = fe
+										else: PhotUploadDict['flux_err'] = None
+										if df: PhotUploadDict['discovery_point'] = 1
+										else: PhotUploadDict['discovery_point'] = 0
+										PhotUploadDict['data_quality'] = 0
+										PhotUploadDict['forced'] = None
+										PhotUploadDict['flux_zero_point'] = None
 										
+										PhotUploadAll['%s_%i'%(od.replace(' ','T'),k)] = PhotUploadDict
+								
+								PhotUploadAll['header'] = {'clobber':True,
+														   'mjdmatchmin':0.01}
+								db.add_phot_to_DB(PhotUploadAll)
+							except:
+								print('Error adding photometry!!')
+
+								
 							# put in the galaxy photometry, if the host wasn't already in the DB
 							if ned_mag and not hostexists:
 								try:

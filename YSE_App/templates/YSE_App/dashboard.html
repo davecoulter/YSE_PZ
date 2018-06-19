@@ -3,6 +3,7 @@
 {% load dashboard_extras %}
 {% load widget_tweaks %}
 {% load render_table from django_tables2 %}
+{% load bootstrap3 %}
 
 {% block content_header %}
     <h1>
@@ -18,9 +19,20 @@
     
   <!-- Default box -->
   {% for transient_cat in transient_categories %}
+
   <div class="box" id="{{transient_cat.2}}">
     <div class="box-header with-border">
       <h3 class="box-title">{{ transient_cat.1 }}</h3>
+    </div>
+    <div align='right'>
+      {% if transient_cat.3 %}
+      <form action="" method="get" class="form form-inline">
+        {% bootstrap_form transient_cat.3.form layout='inline' %}
+        {% with "#"|add:transient_cat.2 as link %}
+        {% bootstrap_button 'filter' %}&ensp;&nbsp;
+        {% endwith %}
+      </form>
+      {% endif %}
     </div>
     <div class="box-body">
 
@@ -35,4 +47,14 @@
   </div>
   <!-- /.box -->
   
+{% endblock %}
+
+{% block scripts %}
+{% if anchor %}
+<script type='text/javascript'>
+$(document).ready(function(){
+    window.location = '#{{ anchor }}'
+});
+</script>
+{% endif %}
 {% endblock %}

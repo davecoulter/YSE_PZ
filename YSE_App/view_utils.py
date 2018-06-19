@@ -63,8 +63,8 @@ def get_disc_mag_for_transient(user, transient_id=None):
 	photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id)
 
 	if photdata:
-		photdata = photdata.order_by('obs_date')
-		
+		photdata = photdata.order_by('-obs_date')
+
 	firstphot = None
 	for ph in photdata:
 		if ph.discovery_point:
@@ -403,7 +403,7 @@ def lightcurveplot(request, transient_id):
 	colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
 				 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
 	count = 0
-
+	
 	bandunq,idx = np.unique(bandstr,return_index=True)
 	for bs,b in zip(bandunq,band[idx]):
 		coloridx = count % len(np.unique(colorlist))
@@ -424,7 +424,7 @@ def lightcurveplot(request, transient_id):
 									 b.instrument.telescope.name,b.name))
 		
 		count += 1
-			
+
 	today = Time(datetime.datetime.today()).mjd
 	ax.line(today,20,line_width=3,line_color='black',legend='today (%i)'%today)
 	vline = Span(location=today, dimension='height', line_color='black',
@@ -451,6 +451,7 @@ def lightcurveplot(request, transient_id):
 		ax.x_range=Range1d(np.min(mjd)-10,np.max(mjd)+10)
 		ax.y_range=Range1d(np.max(mag)+0.25,np.min(mag)-0.5)
 		ax.extra_x_ranges = {"dateax": Range1d(np.min(mjd)-10,np.max(mjd)+10)}
+		ax.add_layout(LinearAxis(x_range_name="dateax"), 'above')
 		#ax.legend()
 	ax.plot_height = 400
 	ax.plot_width = 500
@@ -459,11 +460,23 @@ def lightcurveplot(request, transient_id):
 	majorticks = []; overridedict = {}
 	mjdrange = range(int(np.min(mjd)-100),int(np.max(mjd)+100))
 	times = Time(mjdrange,format='mjd')
-	for m,t in zip(mjdrange,times):
-		tm_list = t.iso.split()[0].split('-')
-		if tm_list[2] == '01':
-			majorticks += [m]
-			overridedict[m] = '%s %i, %i'%(calendar.month_name[int(tm_list[1])][:3],int(tm_list[2]),int(tm_list[0]))
+	if (not limmjd and np.max(mjd)+10 - (np.min(mjd)-10) > 300) or \
+	   (limmjd and np.max(mjd)+10 - limmjd > 300):
+		count = 0
+		for m,t in zip(mjdrange,times):
+			tm_list = t.iso.split()[0].split('-')
+			if tm_list[2] == '01': count += 1
+			if count % 3: continue
+			if tm_list[2] == '01':
+				majorticks += [m]
+				overridedict[m] = '%s %i, %i'%(calendar.month_name[int(tm_list[1])][:3],int(tm_list[2]),int(tm_list[0]))
+	else:
+		for m,t in zip(mjdrange,times):
+			tm_list = t.iso.split()[0].split('-')
+			if tm_list[2] == '01':
+				majorticks += [m]
+				overridedict[m] = '%s %i, %i'%(calendar.month_name[int(tm_list[1])][:3],int(tm_list[2]),int(tm_list[0]))
+
 	ax.xaxis[0].ticker = majorticks
 	ax.xaxis[0].major_label_overrides = overridedict
 	
