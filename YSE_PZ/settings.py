@@ -91,6 +91,14 @@ WSGI_APPLICATION = 'YSE_PZ.wsgi.application'
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 DATABASES = {
+    'explorer': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': config.get('database', 'DATABASE_NAME'),
+        'USER': config.get('database', 'EXPLORER_USER'),
+        'PASSWORD': config.get('database', 'EXPLORER_PASSWORD'),
+        'HOST': config.get('database', 'DATABASE_HOST'),
+        'PORT': config.get('database', 'DATABASE_PORT')
+    },
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': config.get('database', 'DATABASE_NAME'),
@@ -101,8 +109,8 @@ DATABASES = {
     }
 }
 
-EXPLORER_CONNECTIONS = { 'Default': 'default' }
-EXPLORER_DEFAULT_CONNECTION = 'default'
+EXPLORER_CONNECTIONS = { 'Explorer': 'explorer' }
+EXPLORER_DEFAULT_CONNECTION = 'explorer'
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
