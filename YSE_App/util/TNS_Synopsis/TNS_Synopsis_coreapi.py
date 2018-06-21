@@ -510,7 +510,7 @@ class DBOps():
 
 		print('YSE_PZ says: %s'%json.loads(r.text)['message'])
 		
-	def get_host_from_DB(self,hostname,hostra,hostdec,matchrad=0.0008,debug=False):
+	def get_host_from_DB(self,hostname,hostra,hostdec,redshift,matchrad=0.0008,debug=False):
 
 		if debug: tstart = time.time()
 		tablename = 'hosts'
@@ -529,7 +529,7 @@ class DBOps():
 
 		seplist = []
 		for i in range(len(schema['host candidates'])):
-			seplist += [schema['host candidates'][i]['host_sep']]
+			seplist += [schema['host candidates'][i]['host_sep']*redshift]
 		minsep = np.where(seplist == np.min(seplist))[0].astype(int)
 		if len(minsep) > 1: minsep = [minsep[0]]
 
@@ -907,7 +907,7 @@ class processTNS():
 						for z,name,ra,dec,sep,mag in zip(galaxy_zs,galaxy_names,galaxy_ras,galaxy_decs,galaxy_seps,galaxy_mags):
 							if sep == np.min(galaxy_seps):
 								hostdict = {'name':name,'ra':ra,'dec':dec,'redshift':z}
-								hosturl = db.get_host_from_DB(name,ra,dec,self.hostmatchrad)
+								hosturl = db.get_host_from_DB(name,ra,dec,z,self.hostmatchrad)
 								if not hosturl:
 									print('Adding new host!')
 									hostoutput = db.post_object_to_DB('host',hostdict,return_full=True)
