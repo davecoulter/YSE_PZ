@@ -20,7 +20,7 @@ import time
 from bokeh.plotting import figure
 from bokeh.resources import CDN
 from bokeh.embed import file_html
-from bokeh.models import Range1d,Span,LinearAxis
+from bokeh.models import Range1d,Span,LinearAxis,Label,Title
 from bokeh.core.properties import FontSizeSpec
 from .data import PhotometryService, SpectraService, ObservingResourceService
 import time
@@ -29,6 +29,10 @@ from rest_framework.request import Request
 from django.contrib.auth.decorators import login_required, permission_required
 import matplotlib.image as mpimg
 import calendar
+from astropy.table import Table
+import sncosmo
+from .common.BokehLatex import LatexLabel
+from .common.bandpassdict import bandpassdict
 
 def get_recent_phot_for_host(user, host_id=None):
 	allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
@@ -360,7 +364,12 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
 	canvas.print_png(response)
 	return response
 
-def lightcurveplot(request, transient_id):
+def salt2plot(request, transient_id, salt2fit):
+
+	response = lightcurveplot(request,transient_id,salt2=int(salt2fit))
+	return response
+	
+def lightcurveplot(request, transient_id, salt2=False):
 	tstart = time.time()
 
 	transient = Transient.objects.get(pk=transient_id)
@@ -371,16 +380,18 @@ def lightcurveplot(request, transient_id):
 
 	ax=figure()
 
-	mjd,date,mag,magerr,band,bandstr = \
-		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr = \
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
+		np.array([])
 	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
 	for p in photdata:
 		if p.flux and np.abs(p.flux) > 1e10: continue
 		if p.data_quality:
-			continue
-
+			continue			
+			
 		if p.mag:
 			if p.discovery_point:
 				limmjd = p.date_to_mjd()-30
@@ -392,13 +403,33 @@ def lightcurveplot(request, transient_id):
 			else: magerr = np.append(magerr,0)
 			bandstr = np.append(bandstr,str(p.band))
 			band = np.append(band,p.band)
+			if salt2:
+				if str(p.band) in bandpassdict.keys():
+					if p.mag_err: mag_err = p.mag_err
+					else: mag_err = 0.02
+					salt2mjd = np.append(salt2mjd,[p.date_to_mjd()])
+					flux = np.append(flux,10**(-0.4*(p.mag-27.5)))
+					fluxerr = np.append(fluxerr,p.mag*mag_err*0.4*np.log(10))
+					salt2band = np.append(salt2band,bandpassdict[str(p.band)])
+					if 'bessell' in bandpassdict[str(p.band)]: zpsys = np.append(zpsys,'Vega')
+					else: zpsys = np.append(zpsys,'AB')
+				
 		elif p.flux and p.flux_zero_point:
 			upperlimmjd = np.append(upperlimmjd,[p.date_to_mjd()])
 			upperlimdate = np.append(upperlimdate,[p.obs_date.strftime('%m/%d/%Y')])
 			upperlimmag = np.append(upperlimmag,[-2.5*np.log10(p.flux + 3*p.flux_err) + p.flux_zero_point])
 			upperlimbandstr = np.append(upperlimbandstr,str(p.band))
 			upperlimband = np.append(upperlimband,p.band)
-		
+			if salt2:
+				if str(p.band) in bandpassdict.keys():
+					salt2mjd = np.append(salt2mjd,[p.date_to_mjd()])
+					flux = np.append(flux,p.flux)
+					fluxerr = np.append(fluxerr,p.flux_err)
+					salt2band = np.append(salt2band,bandpassdict[str(p.band)])
+					if 'bessell' in bandpassdict[str(p.band)]: zpsys = np.append(zpsys,'Vega')
+					else: zpsys = np.append(zpsys,'AB')
+
+			
 	ax.title.text = "%s"%transient.name
 	colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
 				 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
@@ -480,11 +511,59 @@ def lightcurveplot(request, transient_id):
 	ax.xaxis[0].ticker = majorticks
 	ax.xaxis[0].major_label_overrides = overridedict
 	
-	#ax.grid(color='lightgray', alpha=0.7)
-	#g = mpld3.fig_to_html(fig,template_type='simple')
+	if salt2:
+		model = sncosmo.Model(source='salt2')
+		if transient.redshift:
+			model.set(z=transient.redshift); fitparams = ['t0', 'x0', 'x1', 'c']
+		elif transient.host.redshift:
+			model.set(z=transient.host.redshift); fitparams = ['t0', 'x0', 'x1', 'c']
+		else: fitparams = ['z', 't0', 'x0', 'x1', 'c']
+			
+		zp = np.array([27.5]*len(salt2band))
+		data = Table([salt2mjd,salt2band,flux,fluxerr,zp,zpsys],names=['mjd','band','flux','fluxerr','zp','zpsys'],meta={'t0':salt2mjd[flux == np.max(flux)]})
 
-	g = file_html(ax,CDN,"my plot")
+		result, fitted_model = sncosmo.fit_lc(
+			data, model, fitparams,
+			bounds={'t0':(salt2mjd[flux == np.max(flux)]-10, salt2mjd[flux == np.max(flux)]+10),
+					'z':(0.0,0.7)})  # bounds on parameters (if any)
 		
+		count = 0
+		plotmjd = np.arange(result['parameters'][1]-20,result['parameters'][1]+50,0.5)
+		for bs,b in zip(bandunq,band[idx]):
+			coloridx = count % len(np.unique(colorlist))
+
+			if bs in bandpassdict.keys() and bandpassdict[bs] in salt2band:
+				salt2flux = fitted_model.bandflux(bandpassdict[bs], plotmjd, zp=27.5,zpsys=zpsys[bandpassdict[bs] == salt2band][0])
+				ax.line(plotmjd,-2.5*np.log10(salt2flux)+27.5,color=colorlist[coloridx])
+				
+			count += 1
+
+		lcphase = today-result['parameters'][1]
+		if lcphase > 0: lcphase = '+%.1f'%(lcphase)
+		else: lcphase = '%.1f'%(lcphase)
+		latex1 = LatexLabel(x=10,y=290,x_units='screen',y_units='screen',
+						   render_mode='css', text_font_size='10pt',
+						   text="\mathrm{phase} = %s\ \mathrm{days}"%(
+							   lcphase))
+		latex2 = LatexLabel(x=10,y=275,x_units='screen',y_units='screen',
+						   render_mode='css', text_font_size='10pt',
+						   text="z  = %.3f"%(result.parameters[0]))
+		latex3 = LatexLabel(x=10,y=260,x_units='screen',y_units='screen',
+						   render_mode='css', text_font_size='10pt',
+						   text="t_0  = %i"%(result['parameters'][1]))
+		latex4 = LatexLabel(x=10,y=245,x_units='screen',y_units='screen',
+						   render_mode='css', text_font_size='10pt',
+							text="m_B = %.2f"%(10.635-2.5*np.log10(result['parameters'][2])))
+		latex5 = LatexLabel(x=10,y=230,x_units='screen',y_units='screen',
+						   render_mode='css', text_font_size='10pt',
+						   text="x_1 = %.2f"%(result['parameters'][3]))
+		latex6 = LatexLabel(x=10,y=215,x_units='screen',y_units='screen',
+							render_mode='css', text_font_size='10pt',
+							text="c  = %.2f"%(result['parameters'][4]))
+		for latex in [latex1,latex2,latex3,latex4,latex5,latex6]:
+			ax.add_layout(latex)
+		
+	g = file_html(ax,CDN,"my plot")
 	return HttpResponse(g.replace('width: 90%','width: 100%'))
 
 def spectrumplot(request, transient_id):

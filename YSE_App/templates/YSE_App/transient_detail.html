@@ -248,6 +248,11 @@
 						<div class="box-header">
 							<h3 class="box-title">Photometry</h3>
 						</div>
+						&ensp;&nbsp;<div class="btn-group">
+						<button style="margin-bottom:5px;" type="button" class="plotSALT2" id="salt2plot">
+							Show SALT2 Fit</span>
+						</button>
+					</div>
 						<div class="box-body" id="lcplot"></div>
 					</div>
 				</div>
@@ -1107,6 +1112,38 @@
 					var rows = $("#specplot")
 	  				$(rows).html(htmlresponse)
 				});
+			});
+
+			$('.plotSALT2').on('click', function(event){
+				//var spec_id = $(this).attr('spec_plot-id')
+				//var transient_id = {{transient.id}}		
+				var buttontext = $("#salt2plot").html();
+				var mybutton = "hi";
+				//$(".plotSALT2").html(buttontext);
+				//$(".plotSALT2").html("Hide SALT2 Fit");
+				if (buttontext.indexOf("Show") > -1){
+					url = "{% url 'salt2plot' transient.id 1 %}";
+					$.get(url).done(function(htmlresponse){
+						var lastNode = $("#lcplot").children().last();
+	        	    	lastNode.prev().remove();
+
+						var rows = $("#lcplot");
+	  					$(rows).html(htmlresponse);
+
+	  					$(".plotSALT2").html("Hide SALT2 Fit");
+	  				});
+	  			} else {
+	  				url = "{% url 'salt2plot' transient.id 0 %}";
+					$.get(url).done(function(htmlresponse){
+						var lastNode = $("#lcplot").children().last();
+	        			lastNode.prev().remove();
+
+						var rows = $("#lcplot");
+	  					$(rows).html(htmlresponse);
+
+	  					$(".plotSALT2").html("Show SALT2 Fit");
+	  				});
+				}
 			});
 
 			function ToggleObservationTaskForm(followup_id,expand)
