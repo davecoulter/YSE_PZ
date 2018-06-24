@@ -31,7 +31,6 @@ import matplotlib.image as mpimg
 import calendar
 from astropy.table import Table
 import sncosmo
-from .common.BokehLatex import LatexLabel
 from .common.bandpassdict import bandpassdict
 
 def get_recent_phot_for_host(user, host_id=None):
@@ -541,25 +540,25 @@ def lightcurveplot(request, transient_id, salt2=False):
 		lcphase = today-result['parameters'][1]
 		if lcphase > 0: lcphase = '+%.1f'%(lcphase)
 		else: lcphase = '%.1f'%(lcphase)
-		latex1 = LatexLabel(x=10,y=290,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="\mathrm{phase} = %s\ \mathrm{days}"%(
-							   lcphase))
-		latex2 = LatexLabel(x=10,y=275,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="z  = %.3f"%(result.parameters[0]))
-		latex3 = LatexLabel(x=10,y=260,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="t_0  = %i"%(result['parameters'][1]))
-		latex4 = LatexLabel(x=10,y=245,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-							text="m_B = %.2f"%(10.635-2.5*np.log10(result['parameters'][2])))
-		latex5 = LatexLabel(x=10,y=230,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="x_1 = %.2f"%(result['parameters'][3]))
-		latex6 = LatexLabel(x=10,y=215,x_units='screen',y_units='screen',
-							render_mode='css', text_font_size='10pt',
-							text="c  = %.2f"%(result['parameters'][4]))
+		latex1 = Label(x=10,y=280,x_units='screen',y_units='screen',
+					   render_mode='css', text_font_size='10pt',
+					   text="phase = %s days"%(
+						   lcphase))
+		latex2 = Label(x=10,y=265,x_units='screen',y_units='screen',
+					   render_mode='css', text_font_size='10pt',
+					   text="\uD835\uDE3B  = %.3f"%(result.parameters[0]))
+		latex3 = Label(x=10,y=250,x_units='screen',y_units='screen',
+					   render_mode='css', text_font_size='10pt',
+					   text="\uD835\uDC61\u2080  = %i"%(result['parameters'][1]))
+		latex4 = Label(x=10,y=235,x_units='screen',y_units='screen',
+					   render_mode='css', text_font_size='10pt',
+					   text="\uD835\uDC5A\u2088 = %.2f"%(10.635-2.5*np.log10(result['parameters'][2])))
+		latex5 = Label(x=10,y=220,x_units='screen',y_units='screen',
+					   render_mode='css', text_font_size='10pt',
+					   text="\uD835\uDC65\u2080 = %.2f"%(result['parameters'][3]))
+		latex6 = Label(x=10,y=205,x_units='screen',y_units='screen',
+					   render_mode='css', text_font_size='10pt',
+					   text="\uD835\uDC50  = %.2f"%(result['parameters'][4]))
 		for latex in [latex1,latex2,latex3,latex4,latex5,latex6]:
 			ax.add_layout(latex)
 		
