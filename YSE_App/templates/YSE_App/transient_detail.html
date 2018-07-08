@@ -1578,13 +1578,13 @@
 		});
 
 		$.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
-	  	var rows = $("#lcplot")
-	  	$(rows).prepend(htmlresponse)
+	  		var rows = $("#lcplot");
+	  		$(rows).prepend(htmlresponse);
 	  	});
 	  
 		$.get("{% url 'spectrumplot' transient.id %}").done(function(htmlresponse){
-		  var rows = $("#specplot")
-	  	$(rows).html(htmlresponse)
+			var rows = $("#specplot");
+	  		$(rows).html(htmlresponse);
 	  	});
 
 	  {% for obsnight in observing_nights %}

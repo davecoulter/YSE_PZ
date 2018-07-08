@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'widget_tweaks',
 	'django_tables2',
     'explorer',
-	'bootstrap3'
+	'bootstrap3',
+	'django_filters'
 ]
 
 MIDDLEWARE = [

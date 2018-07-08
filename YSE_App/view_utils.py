@@ -428,7 +428,6 @@ def lightcurveplot(request, transient_id, salt2=False):
 					if 'bessell' in bandpassdict[str(p.band)]: zpsys = np.append(zpsys,'Vega')
 					else: zpsys = np.append(zpsys,'AB')
 
-			
 	ax.title.text = "%s"%transient.name
 	colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
 				 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
@@ -448,7 +447,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 		ax.multi_line(err_xs, err_ys, color=colorlist[coloridx], legend='%s - %s'%(
 					  b.instrument.telescope.name,b.name))
 
-		if len(upperlimmjd[upperlimbandstr == bs]):
+		if len(upperlimbandstr) and len(upperlimmjd[upperlimbandstr == bs]):
 			ax.inverted_triangle(upperlimmjd[upperlimbandstr == bs].tolist(),upperlimmag[upperlimbandstr == bs].tolist(),
 								 color=colorlist[coloridx],size=7,legend='%s - %s'%(
 									 b.instrument.telescope.name,b.name))
@@ -524,7 +523,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 		result, fitted_model = sncosmo.fit_lc(
 			data, model, fitparams,
 			bounds={'t0':(salt2mjd[flux == np.max(flux)]-10, salt2mjd[flux == np.max(flux)]+10),
-					'z':(0.0,0.7)})  # bounds on parameters (if any)
+					'z':(0.0,0.7),'x1':(-3,3),'c':(-0.3,0.3)})  # bounds on parameters (if any)
 		
 		count = 0
 		plotmjd = np.arange(result['parameters'][1]-20,result['parameters'][1]+50,0.5)
@@ -555,7 +554,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 					   text="\uD835\uDC5A\u2088 = %.2f"%(10.635-2.5*np.log10(result['parameters'][2])))
 		latex5 = Label(x=10,y=220,x_units='screen',y_units='screen',
 					   render_mode='css', text_font_size='10pt',
-					   text="\uD835\uDC65\u2080 = %.2f"%(result['parameters'][3]))
+					   text="\uD835\uDC65\u2081 = %.2f"%(result['parameters'][3]))
 		latex6 = Label(x=10,y=205,x_units='screen',y_units='screen',
 					   render_mode='css', text_font_size='10pt',
 					   text="\uD835\uDC50  = %.2f"%(result['parameters'][4]))
