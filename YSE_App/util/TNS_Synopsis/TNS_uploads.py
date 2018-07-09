@@ -73,6 +73,8 @@ class processTNS():
 						  help='if set, scrape TNS pages to update events already in YSE_PZ')
 		parser.add_option('--redoned', default=False, action="store_true",
 						  help='if set, repeat NED search to find host matches (slow-ish)')
+		parser.add_option('--nedradius', default=5, type='float',
+						  help='NED search radius, in arcmin')
 		parser.add_option('--ndays', default=5, type='int',
 						  help='number of days before today update events')
 		
@@ -501,7 +503,6 @@ class processTNS():
 		body = ""
 		html = ""
 		tns_objs = []
-		radius = 5 # arcminutes
 		
 		########################################################
 		# Get All Email
@@ -574,7 +575,7 @@ class processTNS():
 				dust_table_l = IrsaDust.get_query_table(sc)
 				ebvall += [dust_table_l['ext SandF mean'][0]]
 				try:
-					ned_region_table = Ned.query_region(sc, radius=radius*u.arcmin, equinox='J2000.0')
+					ned_region_table = Ned.query_region(sc, radius=self.nedradius*u.arcmin, equinox='J2000.0')
 				except:
 					ned_region_table = None
 				nedtables += [ned_region_table]
@@ -733,6 +734,7 @@ if __name__ == "__main__":
 	tnsproc.clobber = options.clobber
 	tnsproc.noupdatestatus = options.noupdatestatus
 	tnsproc.redoned = options.redoned
+	tnsproc.nedradius = options.nedradius
 	
 	#try:
 	if options.update:
