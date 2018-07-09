@@ -475,8 +475,8 @@
 				<div class="box box-primary">
 					<div class="box-header">
 						<h3 class="box-title">Spectrum</h3>
-					</div>
 					{% if all_transient_spectra.count > 1 %}
+					</div>
 					&ensp;&nbsp;<div class="btn-group">
 						<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
 							Select from {{ all_transient_spectra.count }} Spectra<span class="caret"></span>
@@ -486,8 +486,8 @@
 								<li><a spec_plot-id="{{ spec.id }}" class="specPlotChange" href="#">{{ spec }} - {{ spec.instrument.name }}</a></li>
 							{% endfor %}
 						</ul>
-					{% endif %}
 					</div>
+					{% endif %}
 					<div class="box-body" id="specplot"></div>
 				</div>
 			</div>
