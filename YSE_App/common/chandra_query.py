@@ -41,16 +41,23 @@ class chandraImages():
 				url += ","+i
 		url += "&grating=NONE"
 
-		r=requests.get(url)
-		if r.status_code!=200:
+		#r=requests.get(url)
+		#if r.status_code!=200:
+		#	print('status message:',r.text)
+		#	raise RuntimeError('ERROR: could not get url %s, status code %d' % (url,r.status_code))
+		#f=open(self.tmpfile,'w+')
+		#f.write(r.text)
+		#f.close()
+
+		try:
+			votable=parse(url)
+		except:
+			r=requests.get(url)
 			print('status message:',r.text)
 			raise RuntimeError('ERROR: could not get url %s, status code %d' % (url,r.status_code))
-		f=open(self.tmpfile,'w+')
-		f.write(r.text)
-		f.close()
-
-		votable=parse(self.tmpfile)
-		os.remove(self.tmpfile)
+			
+		#self.tmpfile)
+		#os.remove(self.tmpfile)
 		tbdata=votable.get_first_table()
 		data=tbdata.array
 
