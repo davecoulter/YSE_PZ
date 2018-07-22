@@ -17,6 +17,7 @@ from .forms import *
 from .common import utilities
 from . import view_utils
 import datetime
+from datetime import timedelta
 import pytz
 from pytz import timezone
 from .serializers import *
@@ -237,9 +238,9 @@ def transient_detail(request, slug):
 
 		transient_followup_form = TransientFollowupForm()
 		transient_followup_form.fields["classical_resource"].queryset = \
-				view_utils.get_authorized_classical_resources(request.user).filter(end_date_valid__gt = timezone.now()-1).order_by('telescope__name')
-		transient_followup_form.fields["too_resource"].queryset = view_utils.get_authorized_too_resources(request.user).filter(end_date_valid__gt = timezone.now()-1).order_by('telescope__name')
-		transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user).filter(end_date_valid__gt = timezone.now()-1).order_by('telescope__name')
+				view_utils.get_authorized_classical_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
+		transient_followup_form.fields["too_resource"].queryset = view_utils.get_authorized_too_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
+		transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
 
 		transient_observation_task_form = TransientObservationTaskForm()
 
