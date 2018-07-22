@@ -776,7 +776,6 @@ def get_ps1_image(request,transient_id):
 	return(JsonResponse(jpegurldict))
 
 def get_hst_image(request,transient_id):
-	
 	try:
 		t = Transient.objects.get(pk=transient_id)
 	except t.DoesNotExist:
@@ -809,6 +808,42 @@ def get_hst_image(request,transient_id):
 					   "inst":[]}
 
 	return(JsonResponse(jpegurldict))
+
+def get_chandra_image(request,transient_id):
+	
+	try:
+		t = Transient.objects.get(pk=transient_id)
+	except t.DoesNotExist:
+		raise Http404("Transient id does not exist")
+
+	startTime = datetime.datetime.now()
+	from . import common
+	chr=common.chandra_query.chandraImages(t.ra,t.dec,'Object')
+	chr.search_chandra_database()
+	print("I found",chr.n_obsid,"Chandra images")
+	print("The cut out images have the following URLs:")
+
+	#fitsurllist = []
+	#for jpg,i in zip(chr.jpglist,range(len(chr.jpglist))):
+	#	print(jpg)
+	#	fitsurllist += ["https://hla.stsci.edu/cgi-bin/getdata.cgi?config=ops&amp;dataset=%s"%str(chr.obstable["obs_id"][i]).lower()]
+	print("Run time was: ",(datetime.datetime.now() - startTime).total_seconds(),"seconds")
+
+	if len(chr.jpegs):
+		jpegurldict = {"jpegurl":list(chr.jpegs.data.astype(str)),
+					   "fitsurl":list(chr.images.data.astype(str)),
+					   "obsdate":list(chr.obs_dates.data.astype(str)),
+					   "exptime":list(chr.exp_times.data.astype(str)),
+					   "totalexp":chr.total_exp}
+	else:
+		jpegurldict = {"jpegurl":[],
+					   "fitsurl":[],
+					   "obsdate":[],
+					   "exptime":[],
+					   "totalexp":0}
+
+	return(JsonResponse(jpegurldict))
+
 
 def get_legacy_image(request,transient_id):
 	

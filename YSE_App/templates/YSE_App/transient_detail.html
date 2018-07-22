@@ -475,8 +475,8 @@
 				<div class="box box-primary">
 					<div class="box-header">
 						<h3 class="box-title">Spectrum</h3>
-					{% if all_transient_spectra.count > 1 %}
 					</div>
+					{% if all_transient_spectra.count > 1 %}
 					&ensp;&nbsp;<div class="btn-group">
 						<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
 							Select from {{ all_transient_spectra.count }} Spectra<span class="caret"></span>
@@ -502,6 +502,7 @@
 					<li><a href="#photometry_tab" data-toggle="tab">Detailed Photometry</a></li>
 					<li><a href="#spectra_tab" data-toggle="tab">Spectra</a></li>		
 					<li><a href="#hst_tab" data-toggle="tab" id="hst_tab_header">HST Data</a></li>
+					<li><a href="#chandra_tab" data-toggle="tab" id="chandra_tab_header">Chandra Data</a></li>
 					<li><a href="#comments_tab" data-toggle="tab">Comments</a></li>
 				</ul>
 				<div class="tab-content">
@@ -734,6 +735,21 @@
 								</tr>
 							</thead>
 							<tbody id="hst_image_list">
+							</tbody>
+						</table>
+					</div>
+					<div class="tab-pane" id="chandra_tab">
+						<h4>Chandra Images for {{transient.name}}</h4>
+						<h4 id="totalchandraexp">total exposure time<h4>
+						<table class="table table-bordered table-striped">
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>Exp. Time</th>
+									<th>Image</th>
+								</tr>
+							</thead>
+							<tbody id="chandra_image_list">
 							</tbody>
 						</table>
 					</div>
@@ -1567,6 +1583,31 @@
 				"</tr>"
 				$(rows_full).append(htmltextfull)
 	  		}
+	  	});
+		$.get("{% url 'get_chandra_image' transient.id %}").done(function(json){
+			var rows = $("#chandra_image")
+  			var rows_full = $("#chandra_image_list")
+  			var rows_exp = $("#totalchandraexp")
+  			var rows_tab = $("#chandra_tab_header")
+  			var htmltext = "<p class=\"text-muted\">No Chandra Images available</p>"
+	  		if (json.jpegurl[0]) {
+	  			var htmltext = "<img src=\"" + json.jpegurl[0] + "\" style='width:240px' alt=\"\" /></a>"
+
+	  		} else {
+				var headertext = "No "
+				$(rows_tab).prepend(headertext)
+			}
+			$(rows).append(htmltext)
+
+	  		for(var ju in json.jpegurl){
+				var htmltextfull = "<tr>" + 
+				"<td>" + json.obsdate[ju] + "</td>" + 
+				"<td>" + json.exptime[ju] + "</td>" + 
+				"<td><a href='" + json.fitsurl[ju] + "' target='_blank'><img src='" + json.jpegurl[ju] + "' style='width:240px' alt='' /></a></td>" + 
+				"</tr>"
+				$(rows_full).append(htmltextfull)
+	  		}
+	  		$(rows_exp).prepend(json.totalexp+"s ")
 	  	});
 
 	  	$.get("{% url 'get_legacy_image' transient.id %}").done(function(json){

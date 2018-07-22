@@ -33,6 +33,7 @@ import queue
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib
+from collections import OrderedDict
 
 reg_obj = "https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -91,6 +92,10 @@ class processTNS():
 							  help='database password, if post=True (default=%default)')
 			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
 							  help='URL to POST transients to a database (default=%default)')
+			parser.add_option('--tnsapi', default=config.get('main','tnsapi'), type="string",
+							  help='TNS API URL (default=%default)')
+			parser.add_option('--tnsapikey', default=config.get('main','tnsapikey'), type="string",
+							  help='TNS API key (default=%default)')
 			parser.add_option('--hostmatchrad', default=config.get('main','hostmatchrad'), type="float",
 							  help='matching radius for hosts (arcmin) (default=%default)')
 
@@ -116,6 +121,10 @@ class processTNS():
 							  help='URL to POST transients to a database (default=%default)')
 			parser.add_option('--hostmatchrad', default=0.001, type="float",
 							  help='matching radius for hosts (arcmin) (default=%default)')
+			parser.add_option('--tnsapi', default="", type="string",
+							  help='TNS API URL (default=%default)')
+			parser.add_option('--tnsapikey', default="", type="string",
+							  help='TNS API key (default=%default)')
 
 			parser.add_option('--SMTP_LOGIN', default='', type="string",
 							  help='SMTP login (default=%default)')
@@ -127,7 +136,7 @@ class processTNS():
 			
 		return(parser)
 
-	def getTNSData(self,soup,obj,sc,ebv):
+	def getTNSData(self,jd,obj,sc,ebv):
 
 		TransientDict = {'name':obj,
 						 'slug':obj,
@@ -138,111 +147,43 @@ class processTNS():
 						 'status':self.status,
 						 'tags':[]}
 
-		if soup:
-			try:
-				# Get Internal Name, Type, Disc. Date, Disc. Mag, Redshift, Host Name, Host Redshift, NED URL
-				evt_type = soup.find('div', attrs={'class':'field-type'}).find('div').find('b').text
-				evt_type = evt_type #.replace(' ','')
-				disc_date = soup.find('div', attrs={'class':'field field-discoverydate'}).find('div').find('b').text
-				disc_mag = soup.find('div', attrs={'class':'field field-discoverymag'}).find('div').find('b').text
-				try: source_group = soup.find('div', attrs={'class':'field field-source_group_name'}).find('div').find('b').text
-				except AttributeError: source_group = "Unknown"
-				try: disc_filter = soup.find('td', attrs={'cell':'cell-filter_name'}).text
-				except AttributeError: disc_filter = "Unknown"
-				if '-' in disc_filter:
-					disc_instrument = disc_filter.split('-')[1]
-				else: disc_instrument = 'Unknown'
-
-				z = soup.find('div', attrs={'class':'field-redshift'}).find('div').find('b').text
-			
-				hn_div = soup.find('div', attrs={'class':'field-hostname'})
-				if hn_div is not None:
-					host_name = hn_div.find('div').find('b').text
-
-				z_div = soup.find('div', attrs={'class':'field-host_redshift'})
-				if z_div is not None:
-					host_redshift = z_div.find('div').find('b').text
-
-				TransientDict['disc_date'] = disc_date.replace(' ','T')
-				TransientDict['obs_group'] = source_group
-				if z and z != '---': TransientDict['redshift'] = float(z)
-				if evt_type != '---':
-					TransientDict['best_spec_class'] = evt_type
-					TransientDict['TNS_spec_class'] = evt_type
-			except Exception as e:
-				print('Error : %s'%e)
+		if jd:
+			TransientDict['disc_date'] = jd['discoverydate']
+			TransientDict['obs_group'] = jd['source_group']['group_name']
+			z = jd['redshift']
+			if z: TransientDict['redshift'] = float(z)
+			evt_type = jd['object_type']['name']
+			if evt_type:
+				TransientDict['best_spec_class'] = evt_type
+				TransientDict['TNS_spec_class'] = evt_type
+		
 		return TransientDict
 		
-	def getTNSPhotometry(self,soup):
-
-		# lets pull the photometry
-		nondetectmaglim = None
-		nondetectdate = None
-		nondetectfilt = None
-		tmag,tmagerr,tflux,tfluxerr,tfilt,tinst,tobsdate,obsgroups =\
-			[],[],[],[],[],[],[],[]
-
-		tables = soup.find_all('table',attrs={'class':'photometry-results-table'})
-		for table in tables:
-			data = []
-			table_body = table.find('tbody')
-			header = table.find('thead')
-			headcols = header.find_all('th')
-			header = np.array([ele.text.strip() for ele in headcols])
-			rows = table_body.find_all('tr')
-
-			for row in rows:
-				cols = row.find_all('td')
-				data.append([ele.text.strip() for ele in cols])
-
-				for datarow in data:
-					datarow = np.array(datarow)
-					if 'mag' in datarow[header == photkeydict['unit']][0].lower():
-						tflux.append(''); tfluxerr.append('')
-						if photkeydict['magflux'] in header: tmag.append(datarow[header == photkeydict['magflux']][0])
-						else: tmag.append('')
-						if photkeydict['magfluxerr'] in header: tmagerr.append(datarow[header == photkeydict['magfluxerr']][0])
-						else: tmagerr.append('')
-					elif 'flux' in datarow[header == photkeydict['unit']][0].lower():
-						tmag.append(''); tmagerr.append('')
-						if photkeydict['magflux'] in header: tflux.append(datarow[header == photkeydict['magflux']][0])
-						else: tflux = np.append(tflux,'')
-						if photkeydict['magfluxerr'] in header: tfluxerr.append(datarow[header == photkeydict['magfluxerr']][0])
-						else: tfluxerr.append('')
-
-					tfilt.append(datarow[header == photkeydict['filter']][0])
-					tinst.append(datarow[header == photkeydict['inst']][0].split('_')[1])
-					tobsdate.append(datarow[header == photkeydict['obsdate']][0])
-					obsgroups.append(datarow[header == photkeydict['obsphotgroup']][0])
-					if 'last' in datarow[header == photkeydict['remarks']][0].lower() and \
-					   'non' in datarow[header == photkeydict['remarks']][0].lower() and \
-					   'detection' in datarow[header == photkeydict['remarks']][0].lower():
-						nondetectmaglim = datarow[header == photkeydict['maglim']][0]
-						nondetectdate = datarow[header == photkeydict['obsdate']][0]
-						nondetectfilt = datarow[header == photkeydict['filter']][0]
-
-		# set the discovery flag
-		disc_flag = np.array([0]*len(tmag))
-		iMagsExist = np.array(tmag) != ''
-
-		if len(tmag) and len(np.array(tmag)[np.atleast_1d(iMagsExist)]) == 1: disc_flag[tmag != ''] = 1
-		elif len(tmag) and len(np.array(tmag)[np.atleast_1d(iMagsExist)]) > 1:
-			mjd = np.array([0]*len(tmag))
-			for d in range(len(mjd)): mjd[d] = date_to_mjd(tobsdate[d])
-			iMinMJD = np.where(mjd == np.min(mjd))[0]
-			if len(iMinMJD) > 1: iMinMJD = [iMinMJD[0]]
-			for im,iim in zip(np.array(tmag)[iMagsExist],range(len(np.array(tmag)[iMagsExist]))):
-				if len(iMinMJD) and iim == iMinMJD[0]:
-					disc_flag[iim] = 1
-		elif not len(tmag):
-			return {},nondetectdate,nondetectmaglim,nondetectfilt
+	def getTNSPhotometry(self,jd):
 
 		PhotUploadAll = {"mjdmatchmin":0.01,
 						 "clobber":self.clobber}
-		# add the photometry
-		tmag,tmagerr,tflux,tfluxerr,tfilt,tinst,tobsdate,obsgroups = \
-			np.array(tmag),np.array(tmagerr),np.array(tflux),np.array(tfluxerr),\
-			np.array(tfilt),np.array(tinst),np.array(tobsdate),np.array(obsgroups)
+
+		tmag,tmagerr,tfilt,tinst,tobsdate,obsgroups =\
+			np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+
+		for p in jd['photometry']:
+			if 'mag' in p['flux_unit']['name'].lower():
+				tmag = np.append(tmag,p['flux'])
+				tmagerr = np.append(tmagerr,p['fluxerr'])
+				if not p['flux']:
+					nondetectmaglim = p['limflux']
+					nondetectdate = p['obsdate']
+					nondetectfilt = p['filters']['name']
+			else:
+				tmag = np.append(tmag,-99)
+				tmagerr = np.append(tmagerr,-99)
+			
+			tobsdate = np.append(tobsdate,p['obsdate'])
+			obsgroups = np.append(obsgroup,p['observer'])
+			tinst = np.append(tinst,p['instrument']['name'])
+			tfilt = np.append(tfilt,p['filters']['name'])
+			
 		photometrycount = 0
 		for ins in np.unique(tinst):
 
@@ -582,19 +523,23 @@ class processTNS():
 			print('E(B-V)/NED time: %.1f seconds'%(time.time()-ebvtstart))
 
 		tstart = time.time()
-		#htmllist = []
-		tns_urllist = []
+		TNSData = []
+		json_data = []
 		for j in range(len(objs)):
-			tns_urllist += [("https://wis-tns.weizmann.ac.il/object/%s"%objs[j],)]
-		htmlqueue = run_parallel_in_threads(fetch, tns_urllist)
+			TNSGetSingle = [("objname",objs[j]),
+							("photometry","1"),
+							("spectra","1")]
 
+			response=get(self.tnsapi, TNSGetSingle, self.tnsapikey)
+			json_data += [format_to_json(response.text)]
+		print(time.time()-tstart)
+		
 		print('getting TNS content takes %.1f seconds'%(time.time()-tstart))
 
-		for j in range(len(objs)):
+		for j,jd in zip(range(len(objs)),json_data):
 			tallstart = time.time()
 
-			url, html = htmlqueue.get_nowait()
-			obj = url.split('/')[-1]
+			obj = objs[j]
 
 			iobj = np.where(obj == np.array(objs))[0]
 			if len(iobj) > 1: iobj = int(iobj[0])
@@ -608,18 +553,20 @@ class processTNS():
 			########################################################
 			# For Item in Email, Get NED
 			########################################################
-			if html:
-				soup = BeautifulSoup(html, "lxml")
-			else: soup = None
-				
-			transientdict = self.getTNSData(soup,obj,sc,ebv)
+			if type(jd['data']['reply']['name']) == str:
+				jd = jd['data']['reply']
+			else:
+				jd = None
+
+			transientdict = self.getTNSData(jd,obj,sc,ebv)
 			try:
-				if soup:
+				if jd:
 					photdict,nondetectdate,nondetectmaglim,nondetectfilt = \
-						self.getTNSPhotometry(soup)
-					specdict = self.getTNSSpectra(soup,html,sc)
+						self.getTNSPhotometry(jd)
+					import pdb; pdb.set_trace()
+					specdict = self.getTNSSpectra(jd,sc)
 				if doNED:
-					hostdict,hostcoords = self.getNEDData(soup,sc,nedtable)
+					hostdict,hostcoords = self.getNEDData(jd,sc,nedtable)
 					transientdict['host'] = hostdict
 					transientdict['candidate_hosts'] = hostcoords
 
@@ -701,6 +648,27 @@ def sendemail(from_addr, to_addr,
 		except:
 			print("Send fail")
 
+def format_to_json(source):
+	# change data to json format and return
+	parsed=json.loads(source,object_pairs_hook=OrderedDict)
+	#result=json.dumps(parsed,indent=4)
+	return parsed #result
+
+def get(url,json_list,api_key):
+	try:
+		# url for get obj
+		get_url=url+'/object'
+		# change json_list to json format
+		json_file=OrderedDict(json_list)
+		# construct the list of (key,value) pairs
+		get_data=[('api_key',(None, api_key)),
+                  ('data',(None,json.dumps(json_file)))]
+		# get obj using request module
+		response=requests.post(get_url, files=get_data)
+		return response
+	except Exception as e:
+		return [None,'Error message : \n'+str(e)]
+
 if __name__ == "__main__":
 	# execute only if run as a script
 
@@ -735,6 +703,8 @@ if __name__ == "__main__":
 	tnsproc.noupdatestatus = options.noupdatestatus
 	tnsproc.redoned = options.redoned
 	tnsproc.nedradius = options.nedradius
+	tnsproc.tnsapi = options.tnsapi
+	tnsproc.tnsapikey = options.tnsapikey
 	
 	#try:
 	if options.update:
