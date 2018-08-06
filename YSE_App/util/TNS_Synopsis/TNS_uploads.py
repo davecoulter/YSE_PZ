@@ -506,7 +506,7 @@ class processTNS():
 			for obj in re.findall(reg_obj,body): objs.append(obj)
 			for ra in re.findall(reg_ra,body): ras.append(ra)
 			for dec in re.findall(reg_dec,body): decs.append(dec)
-
+			
 			# Mark messages as "Seen"
 			result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')
 		

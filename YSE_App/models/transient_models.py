@@ -127,9 +127,11 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 
 		is_k2_C16_validated, C16_msg = IsK2Pixel(instance.ra, instance.dec, "16")
 		is_k2_C17_validated, C17_msg = IsK2Pixel(instance.ra, instance.dec, "17")
+		is_k2_C19_validated, C19_msg = IsK2Pixel(instance.ra, instance.dec, "19")
 
 		print("K2 C16 Val: %s; K2 Val Msg: %s" % (is_k2_C16_validated, C16_msg))
 		print("K2 C17 Val: %s; K2 Val Msg: %s" % (is_k2_C17_validated, C17_msg))
+		print("K2 C19 Val: %s; K2 Val Msg: %s" % (is_k2_C19_validated, C19_msg))
 
 		if is_k2_C16_validated:
 			k2c16tag = TransientTag.objects.get(name='K2 C16')
@@ -143,11 +145,17 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 			instance.k2_msg = C17_msg
 			instance.tags.add(k2c17tag)
 
+		elif is_k2_C19_validated:
+			k2c19tag = TransientTag.objects.get(name='K2 C19')
+			instance.k2_validated = True
+			instance.k2_msg = C19_msg
+			instance.tags.add(k2c19tag)
+
 		instance.save()
-		#if is_k2_C17_validated:
-			# coord_string = GetSexigesimalString(instance.ra, instance.dec)
-			# coord_string = instance.CoordString()
-			# SendTransientAlert(instance.id, instance.name, coord_string[0], coord_string[1])
+		if is_k2_C19_validated:
+			coord_string = GetSexigesimalString(instance.ra, instance.dec)
+			coord_string = instance.CoordString()
+			SendTransientAlert(instance.id, instance.name, coord_string[0], coord_string[1])
 
 # Alternate Host names?
 class AlternateTransientNames(BaseModel):
