@@ -38,18 +38,6 @@ from collections import OrderedDict
 reg_obj = "https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
 reg_dec = "DEC[\=\*a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)\<\/em\>\,"
-
-photkeydict = {'magflux':'Mag. / Flux',
-			   'magfluxerr':'Err',
-			   'obsdate':'Obs-date',
-			   'maglim':'Lim. Mag./Flux',
-			   'unit':'Units',
-			   'filter':'Filter',
-			   'inst':'Tel / Inst',
-			   'remarks':'Remarks',
-			   'obsgroup':'Assoc. Groups',
-			   'obsphotgroup':'Observer/s',
-			   'specfile':'Spectrum ascii file'}
 	
 class processTNS():
 	def __init__(self):
@@ -72,6 +60,8 @@ class processTNS():
 						  help='if set, don\'t promote ignore -> new when uploading')
 		parser.add_option('--update', default=False, action="store_true",
 						  help='if set, scrape TNS pages to update events already in YSE_PZ')
+		parser.add_option('--updatefromZTF', default=False, action="store_true",
+						  help='if set, update photometry from ZTF')
 		parser.add_option('--redoned', default=False, action="store_true",
 						  help='if set, repeat NED search to find host matches (slow-ish)')
 		parser.add_option('--nedradius', default=5, type='float',
@@ -98,7 +88,9 @@ class processTNS():
 							  help='TNS API key (default=%default)')
 			parser.add_option('--hostmatchrad', default=config.get('main','hostmatchrad'), type="float",
 							  help='matching radius for hosts (arcmin) (default=%default)')
-
+			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
+							  help='ZTF URL (default=%default)')
+			
 			parser.add_option('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type="string",
 							  help='SMTP login (default=%default)')
 			parser.add_option('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type="string",
@@ -125,6 +117,8 @@ class processTNS():
 							  help='TNS API URL (default=%default)')
 			parser.add_option('--tnsapikey', default="", type="string",
 							  help='TNS API key (default=%default)')
+			parser.add_option('--ztfurl', default="", type="string",
+							  help='ZTF URL (default=%default)')
 
 			parser.add_option('--SMTP_LOGIN', default='', type="string",
 							  help='SMTP login (default=%default)')
@@ -150,23 +144,61 @@ class processTNS():
 		if jd:
 			TransientDict['disc_date'] = jd['discoverydate']
 			TransientDict['obs_group'] = jd['source_group']['group_name']
+			if not TransientDict['obs_group']:
+				TransientDict['obs_group'] = 'Unknown'
 			z = jd['redshift']
 			if z: TransientDict['redshift'] = float(z)
 			evt_type = jd['object_type']['name']
 			if evt_type:
 				TransientDict['best_spec_class'] = evt_type
 				TransientDict['TNS_spec_class'] = evt_type
-		
+
 		return TransientDict
+
+	def getZTFPhotometry(self,sc):
+		ztfurl = '%s/?format=json&sort_value=jd&sort_order=desc&cone=%.7f%%2C%.7f%%2C0.0014'%(
+			self.ztfurl,sc.ra.deg,sc.dec.deg)
+		client = coreapi.Client()
+		schema = client.get(ztfurl)
+		if 'results' in schema.keys():
+			PhotUploadAll = {"mjdmatchmin":0.01,
+							 "clobber":self.clobber}
+			photometrydict = {'instrument':'ZTF-Cam',
+							  'obs_group':'ZTF',
+							  'photdata':{}}
+
+			for i in range(len(schema['results'])):
+				phot = schema['results'][i]['candidate']
+
+				PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
+								  'band':'%s-ZTF'%phot['filter'],
+								  'groups':[]}
+				PhotUploadDict['mag'] = phot['magap']
+				PhotUploadDict['mag_err'] = phot['sigmagap']
+				PhotUploadDict['flux'] = None
+				PhotUploadDict['flux_err'] = None
+				PhotUploadDict['data_quality'] = 0
+				PhotUploadDict['forced'] = None
+				PhotUploadDict['flux_zero_point'] = None
+				PhotUploadDict['discovery_point'] = 0
+				
+				photometrydict['photdata']['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
+			PhotUploadAll['ZTF'] = photometrydict
+			return PhotUploadAll
+			
+		else: return None
+
 		
-	def getTNSPhotometry(self,jd):
+	def getTNSPhotometry(self,jd,PhotUploadAll=None):
 
-		PhotUploadAll = {"mjdmatchmin":0.01,
-						 "clobber":self.clobber}
+		if not PhotUploadAll:
+			PhotUploadAll = {"mjdmatchmin":0.01,
+							 "clobber":self.clobber}
 
-		tmag,tmagerr,tfilt,tinst,tobsdate,obsgroups =\
-			np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+		tmag,tmagerr,tfilt,tinst,tobsdate,obsgroups,mjd =\
+			np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 
+		nondetectmaglim,nondetectdate,nondetectfilt = "","",""
 		for p in jd['photometry']:
 			if 'mag' in p['flux_unit']['name'].lower():
 				tmag = np.append(tmag,p['flux'])
@@ -180,10 +212,14 @@ class processTNS():
 				tmagerr = np.append(tmagerr,-99)
 			
 			tobsdate = np.append(tobsdate,p['obsdate'])
-			obsgroups = np.append(obsgroup,p['observer'])
+			mjd = np.append(mjd,date_to_mjd(p['obsdate']))
+			obsgroups = np.append(obsgroups,p['observer'])
 			tinst = np.append(tinst,p['instrument']['name'])
 			tfilt = np.append(tfilt,p['filters']['name'])
-			
+		disc_flag = np.zeros(len(tmag))
+		iMag = tmag != -99
+		disc_flag[iMag][(mjd[iMag] == np.min(mjd[iMag]))] = 1
+		
 		photometrycount = 0
 		for ins in np.unique(tinst):
 
@@ -193,13 +229,11 @@ class processTNS():
 			
 			for f,k in zip(np.unique(tfilt),range(len(np.unique(tfilt)))):
 				# put in the photometry
-				for m,me,flx,fe,od,df in zip(tmag[(f == tfilt) & (ins == tinst)],
+				for m,me,od,df in zip(tmag[(f == tfilt) & (ins == tinst)],
 											 tmagerr[(f == tfilt) & (ins == tinst)],
-											 tflux[(f == tfilt) & (ins == tinst)],
-											 tfluxerr[(f == tfilt) & (ins == tinst)],
 											 tobsdate[(f == tfilt) & (ins == tinst)],
-											 np.atleast_1d(disc_flag[(f == tfilt) & (ins == tinst)])):
-					if not m and not me and not flx and not fe: continue
+											 disc_flag[(f == tfilt) & (ins == tinst)]):
+					if not m and not me: continue #and not flx and not fe: continue
 					PhotUploadDict = {'obs_date':od.replace(' ','T'),
 									  'band':f,
 									  'groups':[]}
@@ -207,10 +241,8 @@ class processTNS():
 					else: PhotUploadDict['mag'] = None
 					if me: PhotUploadDict['mag_err'] = me
 					else: PhotUploadDict['mag_err'] = None
-					if flx: PhotUploadDict['flux'] = flx
-					else: PhotUploadDict['flux'] = None
-					if fe: PhotUploadDict['flux_err'] = fe
-					else: PhotUploadDict['flux_err'] = None
+					PhotUploadDict['flux'] = None
+					PhotUploadDict['flux_err'] = None
 					if df: PhotUploadDict['discovery_point'] = 1
 					else: PhotUploadDict['discovery_point'] = 0
 					PhotUploadDict['data_quality'] = 0
@@ -224,7 +256,7 @@ class processTNS():
 		if nondetectdate: nondetectdate = nondetectdate.replace(' ','T')
 		return PhotUploadAll,nondetectdate,nondetectmaglim,nondetectfilt
 
-	def getTNSSpectra(self,soup,html,sc):
+	def getTNSSpectra(self,jd,sc):
 		specinst,specobsdate,specobsgroup,specfiles = \
 			np.array([]),np.array([]),np.array([]),np.array([])
 
@@ -233,111 +265,91 @@ class processTNS():
 					'redshift_err','redshift_quality','spectrum_notes',
 					'obs_group','groups','spec_phase','snid','data_quality']
 		requiredkeyslist = ['ra','dec','instrument','obs_date','obs_group','snid']
+
+		for i in range(len(jd['spectra'])):
+			spec = jd['spectra'][i]
+			specinst = np.append(specinst,spec['instrument']['name'])
+			specobsdate = np.append(specobsdate,spec['obsdate'])
+			if 'source_group_name' in spec.keys():
+				specobsgroup = np.append(specobsgroup,spec['source_group_name'])
+			elif 'source_group' in spec.keys():
+				specobsgroup = np.append(specobsgroup,spec['source_group']['name'])
+			else:
+				specobsgroup = np.append(specobsgroup,'Unknown')
+			specfiles = np.append(specfiles,spec['asciifile'])
+			
+		for s,si,so,sog in zip(specfiles,specinst,specobsdate,specobsgroup):
+			Spectrum = {}
+			SpecData = {}
+			os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
+			dlfile = wget.download(unquote(s))
+			fout = open('spec_tns_upload.txt','w')
+			print('# wavelength flux',file=fout)
+			print('# instrument %s'%si,file=fout)
+			print('# obs_date %s'%so.replace(' ','T'),file=fout)
+			print('# obs_group %s'%sog,file=fout)
+			print('# ra %s'%sc.ra.deg,file=fout)
+			print('# dec %s'%sc.dec.deg,file=fout)
+			fin = open(dlfile,'r')
+			for line in fin:
+				print(line.replace('\n',''),file=fout)
+			fout.close()
+			fin = open('spec_tns_upload.txt')
+			count = 0
+			for line in fin:
+				line = line.replace('\n','')
+				if not count: header = np.array(line.replace('# ','').split())
+				for key in keyslist:
+					if line.lower().startswith('# %s '%key) and key not in Spectrum.keys():
+						Spectrum[key] = line.split()[-1].replace("'","").replace('"','')
+				count += 1
+			fin.close()
+			if ':' in Spectrum['ra']:
+				scspec = SkyCoord(Spectrum['ra'],Spectrum['dec'],FK5,unit=(u.hourangle,u.deg))
+				Spectrum['ra'] = scspec.ra.deg
+				Spectrum['dec'] = scspec.dec.deg
+			if 'wavelength' not in header or 'flux' not in header:
+				raise RuntimeError("""Error : incorrect file format.
+				The header should be # wavelength flux fluxerr, with fluxerr optional.""")
+
+			try:
+				spc = {}
+				spc['wavelength'] = np.loadtxt('spec_tns_upload.txt',unpack=True,usecols=[np.where(header == 'wavelength')[0][0]])
+				spc['flux'] = np.loadtxt('spec_tns_upload.txt',unpack=True,usecols=[np.where(header == 'flux')[0][0]])
+			except:
+				raise RuntimeError("""Error : incorrect file format.
+				The header should be # wavelength flux fluxerr, with fluxerr optional.""")
+
+			if 'fluxerr' in header:
+				spc['fluxerr'] = np.loadtxt(self.options.inputfile,unpack=True,usecols=[np.where(header == 'fluxerr')[0][0]])
+			for key in keyslist:
+				if key not in Spectrum.keys():
+					print('Warning: %s not in spectrum header'%key)
 		
-		tables = soup.find_all('table',attrs={'class':'class-results-table'})
-		for table in tables:
-			data = []
-			table_body = table.find('tbody')
-			header = table.find('thead')
-			headcols = header.find_all('th')
-			header = np.array([ele.text.strip() for ele in headcols])
-			#header.append([ele for ele in headcols if ele])
-			rows = table_body.find_all('tr')
-			for row in rows:
-				cols = row.find_all('td')
-				data.append([ele.text.strip() for ele in cols])
-
-			for datarow in data:
-				datarow = np.array(datarow)
-				if photkeydict['specfile'] not in header: continue
-				if photkeydict['inst'] in header:
-					print(datarow[header == photkeydict['inst']])
-					specinst = np.append(specinst,datarow[header == photkeydict['inst']][0].split('/')[1].replace(' ',''))
-					if 'Obs-date (UT)' in header:
-						specobsdate = np.append(specobsdate,datarow[header == 'Obs-date (UT)'][0])
-					if photkeydict['obsgroup'] in header:
-						specobsgroup = np.append(specobsgroup,datarow[header == photkeydict['obsgroup']][0])
-					if photkeydict['specfile'] in header:
-						specfile = datarow[header == photkeydict['specfile']][0].encode('utf-8')
-						reg_specfile = bytes('<a href=".*%s"'%quote(specfile),'utf-8')
-						#reg_specfile = b'<a href=".*%s"'%quote(specfile)
-						asciifile = re.findall(reg_specfile,html)
-						finalspec = asciifile[0].decode('utf-8').replace('<a href="','').replace('"','')
-						specfiles = np.append(specfiles,finalspec)
-					if len(specfiles):
-						for s,si,so,sog in zip(specfiles,specinst,specobsdate,specobsgroup):
-							Spectrum = {}
-							SpecData = {}
-							os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
-							dlfile = wget.download(unquote(s))
-							fout = open('spec_tns_upload.txt','w')
-							print('# wavelength flux',file=fout)
-							print('# instrument %s'%si,file=fout)
-							print('# obs_date %s'%so.replace(' ','T'),file=fout)
-							print('# obs_group %s'%sog,file=fout)
-							print('# ra %s'%sc.ra.deg,file=fout)
-							print('# dec %s'%sc.dec.deg,file=fout)
-							fin = open(dlfile,'r')
-							for line in fin:
-								print(line.replace('\n',''),file=fout)
-							fout.close()
-							fin = open('spec_tns_upload.txt')
-							count = 0
-							for line in fin:
-								line = line.replace('\n','')
-								if not count: header = np.array(line.replace('# ','').split())
-								for key in keyslist:
-									if line.lower().startswith('# %s '%key) and key not in Spectrum.keys():
-										Spectrum[key] = line.split()[-1].replace("'","").replace('"','')
-								count += 1
-							fin.close()
-							if ':' in Spectrum['ra']:
-								scspec = SkyCoord(Spectrum['ra'],Spectrum['dec'],FK5,unit=(u.hourangle,u.deg))
-								Spectrum['ra'] = scspec.ra.deg
-								Spectrum['dec'] = scspec.dec.deg
-							if 'wavelength' not in header or 'flux' not in header:
-								raise RuntimeError("""Error : incorrect file format.
-								The header should be # wavelength flux fluxerr, with fluxerr optional.""")
-
-							try:
-								spc = {}
-								spc['wavelength'] = np.loadtxt('spec_tns_upload.txt',unpack=True,usecols=[np.where(header == 'wavelength')[0][0]])
-								spc['flux'] = np.loadtxt('spec_tns_upload.txt',unpack=True,usecols=[np.where(header == 'flux')[0][0]])
-							except:
-								raise RuntimeError("""Error : incorrect file format.
-								The header should be # wavelength flux fluxerr, with fluxerr optional.""")
-
-							if 'fluxerr' in header:
-								spc['fluxerr'] = np.loadtxt(self.options.inputfile,unpack=True,usecols=[np.where(header == 'fluxerr')[0][0]])
-							for key in keyslist:
-								if key not in Spectrum.keys():
-									print('Warning: %s not in spectrum header'%key)
-		
-							if 'fluxerr' in spc.keys():
-								for w,f,df in zip(spc['wavelength'],spc['flux'],spc['fluxerr']):
-									if f == f:
-										SpecDict = {'wavelength':w,
-													'flux':f,
-													'flux_err':df}
-										SpecData[w] = SpecDict
-							else:
-								for w,f in zip(spc['wavelength'],spc['flux']):
-									if f == f:
-										SpecDict = {'wavelength':w,
-													'flux':f,
-													'flux_err':None}
-										SpecData[w] = SpecDict
+			if 'fluxerr' in spc.keys():
+				for w,f,df in zip(spc['wavelength'],spc['flux'],spc['fluxerr']):
+					if f == f:
+						SpecDict = {'wavelength':w,
+									'flux':f,
+									'flux_err':df}
+						SpecData[w] = SpecDict
+			else:
+				for w,f in zip(spc['wavelength'],spc['flux']):
+					if f == f:
+						SpecDict = {'wavelength':w,
+									'flux':f,
+									'flux_err':None}
+						SpecData[w] = SpecDict
 							
-							os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
-							Spectrum['specdata'] = SpecData
-							Spectrum['instrument'] = si
-							Spectrum['obs_date'] = so
-							Spectrum['obs_group'] = sog
-							SpecDictAll[s] = Spectrum
+			os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
+			Spectrum['specdata'] = SpecData
+			Spectrum['instrument'] = si
+			Spectrum['obs_date'] = so
+			Spectrum['obs_group'] = sog
+			SpecDictAll[s] = Spectrum
 		return SpecDictAll
 
-	def getNEDData(self,soup,sc,ned_table):
-		ned_url = soup.find('div', attrs={'class':'additional-links clearfix'}).find('a')['href']
+	def getNEDData(self,jd,sc,ned_table):
 
 		gal_candidates = 0
 		radius = 5
@@ -560,10 +572,12 @@ class processTNS():
 
 			transientdict = self.getTNSData(jd,obj,sc,ebv)
 			try:
+				photdict = self.getZTFPhotometry(sc)
+			except: photdict = None
+			try:
 				if jd:
 					photdict,nondetectdate,nondetectmaglim,nondetectfilt = \
-						self.getTNSPhotometry(jd)
-					import pdb; pdb.set_trace()
+						self.getTNSPhotometry(jd,PhotUploadAll=photdict)
 					specdict = self.getTNSSpectra(jd,sc)
 				if doNED:
 					hostdict,hostcoords = self.getNEDData(jd,sc,nedtable)
@@ -594,7 +608,11 @@ class processTNS():
 		print('YSE_PZ says: %s'%json.loads(r.text)['message'])				
 		print("Process done.")
 
-	
+
+def jd_to_date(jd):
+	time = Time(jd,scale='utc',format='jd')
+	return time.isot
+		
 def date_to_mjd(obs_date):
 	time = Time(obs_date,scale='utc')
 	return time.mjd
@@ -705,6 +723,7 @@ if __name__ == "__main__":
 	tnsproc.nedradius = options.nedradius
 	tnsproc.tnsapi = options.tnsapi
 	tnsproc.tnsapikey = options.tnsapikey
+	tnsproc.ztfurl = options.ztfurl
 	
 	#try:
 	if options.update:

@@ -513,7 +513,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 		model = sncosmo.Model(source='salt2')
 		if transient.redshift:
 			model.set(z=transient.redshift); fitparams = ['t0', 'x0', 'x1', 'c']
-		elif transient.host.redshift:
+		elif transient.host and transient.host.redshift:
 			model.set(z=transient.host.redshift); fitparams = ['t0', 'x0', 'x1', 'c']
 		else: fitparams = ['z', 't0', 'x0', 'x1', 'c']
 			
