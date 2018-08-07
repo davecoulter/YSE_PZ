@@ -132,13 +132,18 @@ class processTNS():
 
 	def getTNSData(self,jd,obj,sc,ebv):
 
+		if obj.startswith('2016'):
+			status = 'Ignore'
+		else:
+			status = self.status
+		
 		TransientDict = {'name':obj,
 						 'slug':obj,
 						 'ra':sc.ra.deg,
 						 'dec':sc.dec.deg,
 						 'obs_group':'Unknown',
 						 'mw_ebv':ebv,
-						 'status':self.status,
+						 'status':status,
 						 'tags':[]}
 
 		if jd:
@@ -727,6 +732,7 @@ if __name__ == "__main__":
 	
 	#try:
 	if options.update:
+		tnsproc.noupdatestatus = True
 		nsn = tnsproc.UpdateFromTNS()
 	else:
 		nsn = tnsproc.ProcessTNSEmails()
