@@ -320,6 +320,7 @@ class TelescopeViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 class TransientFilter(django_filters.FilterSet):
 	created_date_gte = django_filters.DateTimeFilter(name="created_date", lookup_expr='gte')
 	modified_date_gte = django_filters.DateTimeFilter(name="modified_date", lookup_expr='gte')
+	status_in = django_filters.BaseInFilter(name="status__name")#, lookup_expr='in')
 
 	class Meta:
 		model = Transient

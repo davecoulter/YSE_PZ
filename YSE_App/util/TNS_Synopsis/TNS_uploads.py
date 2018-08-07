@@ -66,7 +66,7 @@ class processTNS():
 						  help='if set, repeat NED search to find host matches (slow-ish)')
 		parser.add_option('--nedradius', default=5, type='float',
 						  help='NED search radius, in arcmin')
-		parser.add_option('--ndays', default=5, type='int',
+		parser.add_option('--ndays', default=None, type='int',
 						  help='number of days before today update events')
 		
 		if config:
@@ -422,9 +422,12 @@ class processTNS():
 
 	def UpdateFromTNS(self):
 
-		date_format = '%Y-%m-%d'
-		#datemax = datetime.now().strftime(date_format)
-		datemin = (datetime.now() - timedelta(days=options.ndays)).strftime(date_format)
+		if options.ndays:
+			date_format = '%Y-%m-%d'
+			datemin = (datetime.now() - timedelta(days=options.ndays)).strftime(date_format)
+			argstring = 'created_date_gte=%s'%datemin
+		else:
+			argstring = 'status_in=Following,Watch,FollowupRequested'
 		offsetcount = 0
 		
 		auth = coreapi.auth.BasicAuthentication(
@@ -432,10 +435,10 @@ class processTNS():
 			password=self.dbpassword,
 		)
 		client = coreapi.Client(auth=auth)
-		transienturl = '%stransients?limit=1000&format=json&created_date_gte=%s&offset=%i'%(self.dburl,datemin,offsetcount)
+		transienturl = '%stransients?limit=1000&format=json&%s&offset=%i'%(self.dburl,argstring,offsetcount)
 		print(transienturl)
 		schema = client.get(transienturl)
-		
+
 		objs,ras,decs = [],[],[]
 
 		for transient in schema['results']:
