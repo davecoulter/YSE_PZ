@@ -448,7 +448,7 @@ class processTNS():
 		
 		while len(schema['results']) == 1000:
 			offsetcount += 1000
-			transienturl = '%stransients?limit=1000&format=json&created_date_gte=%s&offset=%i'%(self.dburl,datemin,offsetcount)
+			transienturl = '%stransients?limit=1000&format=json&%s&offset=%i'%(self.dburl,argstring,offsetcount)
 			print(transienturl)
 			schema = client.get(transienturl)
 			for transient in schema['results']:
