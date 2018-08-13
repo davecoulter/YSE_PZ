@@ -733,13 +733,13 @@ if __name__ == "__main__":
 	tnsproc.tnsapikey = options.tnsapikey
 	tnsproc.ztfurl = options.ztfurl
 	
-	#try:
-	if options.update:
-		tnsproc.noupdatestatus = True
-		nsn = tnsproc.UpdateFromTNS()
-	else:
-		nsn = tnsproc.ProcessTNSEmails()
-	if not 'hi': #except Exception as e:
+	try:
+		if options.update:
+			tnsproc.noupdatestatus = True
+			nsn = tnsproc.UpdateFromTNS()
+		else:
+			nsn = tnsproc.ProcessTNSEmails()
+	except Exception as e:
 		nsn = 0
 		from django.conf import settings as djangoSettings
 		smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
