@@ -408,7 +408,7 @@ class processTNS():
 
 		# put in the hosts
 		hostcoords = ''; hosturl = ''; ned_mag = ''
-		galaxy_z_times_seps = np.array(galaxy_seps)*np.array(galaxy_zs)
+		galaxy_z_times_seps = np.array(galaxy_seps)*np.array(np.abs(galaxy_zs))
 		hostdict = {}
 		for z,name,ra,dec,sep,mag,gzs in zip(galaxy_zs,galaxy_names,galaxy_ras,
 											 galaxy_decs,galaxy_seps,galaxy_mags,
