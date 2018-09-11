@@ -443,8 +443,11 @@ def lightcurveplot(request, transient_id, salt2=False):
 	colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
 				 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
 	count = 0
-	bandunq,idx = np.unique(bandstr,return_index=True)
-	for bs,b,bc in zip(bandunq,band[idx],bandcolor[idx]):
+	allband = np.append(band,upperlimband)
+	allbandstr = np.append(bandstr,upperlimbandstr)
+	allbandcolor = np.append(bandcolor,upperlimbandcolor)
+	bandunq,idx = np.unique(allbandstr,return_index=True)
+	for bs,b,bc in zip(bandunq,allband[idx],allbandcolor[idx]):
 		if bc != 'None': color = bc
 		else:
 			coloridx = count % len(np.unique(colorlist))
