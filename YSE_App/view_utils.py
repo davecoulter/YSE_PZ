@@ -32,6 +32,7 @@ import calendar
 from astropy.table import Table
 import sncosmo
 from .common.bandpassdict import bandpassdict
+from .common.utilities import date_to_mjd
 
 def get_recent_phot_for_host(user, host_id=None):
 	allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
@@ -189,7 +190,7 @@ class finder(TemplateView):
 		if not os.path.exists(os.path.dirname(outputFinderFileName)):
 			os.makedirs(os.path.dirname(outputFinderFileName))
 		#if os.path.exists(outputOffsetFileName) and\
-		#   os.path.exists(outputFinderFileName):
+		#	os.path.exists(outputFinderFileName):
 		#	return HttpResponseRedirect(reverse('transient_detail',
 		#										args=(transient.id,)))
 
@@ -259,7 +260,7 @@ class finder(TemplateView):
 		if not os.path.exists(os.path.dirname(outputFinderFileName)):
 			os.makedirs(os.path.dirname(outputFinderFileName))
 		#if os.path.exists(outputOffsetFileName) and\
-		#   os.path.exists(outputFinderFileName):
+		#	os.path.exists(outputFinderFileName):
 		#	return HttpResponseRedirect(reverse('transient_detail',
 		#										args=(transient.id,)))
 
@@ -379,12 +380,12 @@ def lightcurveplot(request, transient_id, salt2=False):
 
 	ax=figure()
 
-	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr = \
+	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
-		np.array([])
-	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr = \
-		np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+		np.array([]),np.array([])
+	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor = \
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
 	for p in photdata:
 		if p.flux and np.abs(p.flux) > 1e10: continue
@@ -401,6 +402,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
 			else: magerr = np.append(magerr,0)
 			bandstr = np.append(bandstr,str(p.band))
+			bandcolor = np.append(bandcolor,str(p.band.disp_color))
 			band = np.append(band,p.band)
 			if salt2:
 				if str(p.band) in bandpassdict.keys():
@@ -419,6 +421,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 			upperlimmag = np.append(upperlimmag,[-2.5*np.log10(p.flux + 3*p.flux_err) + p.flux_zero_point])
 			upperlimbandstr = np.append(upperlimbandstr,str(p.band))
 			upperlimband = np.append(upperlimband,p.band)
+			upperlimbandcolor = np.append(upperlimbandcolor,p.band.disp_color)
 			if salt2:
 				if str(p.band) in bandpassdict.keys():
 					salt2mjd = np.append(salt2mjd,[p.date_to_mjd()])
@@ -428,31 +431,41 @@ def lightcurveplot(request, transient_id, salt2=False):
 					if 'bessell' in bandpassdict[str(p.band)]: zpsys = np.append(zpsys,'Vega')
 					else: zpsys = np.append(zpsys,'AB')
 
+	if transient.non_detect_limit and transient.non_detect_band:
+		upperlimmjd = np.append(upperlimmjd,[date_to_mjd(transient.non_detect_date)])
+		upperlimdate = np.append(upperlimdate,[transient.non_detect_date.strftime('%m/%d/%Y')])
+		upperlimmag = np.append(upperlimmag,transient.non_detect_limit)
+		upperlimbandstr = np.append(upperlimbandstr,str(transient.non_detect_band))
+		upperlimband = np.append(upperlimband,transient.non_detect_band)
+		upperlimbandcolor = np.append(upperlimbandcolor,transient.non_detect_band.disp_color)
+		
 	ax.title.text = "%s"%transient.name
 	colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
 				 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
 	count = 0
-	
 	bandunq,idx = np.unique(bandstr,return_index=True)
-	for bs,b in zip(bandunq,band[idx]):
-		coloridx = count % len(np.unique(colorlist))
+	for bs,b,bc in zip(bandunq,band[idx],bandcolor[idx]):
+		if bc != 'None': color = bc
+		else:
+			coloridx = count % len(np.unique(colorlist))
+			color = colorlist[coloridx]
+			count += 1
 		ax.circle(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
-				  color=colorlist[coloridx],size=7,legend='%s - %s'%(
+				  color=color,size=7,legend='%s - %s'%(
 					  b.instrument.telescope.name,b.name))
 
 		err_xs,err_ys = [],[]
 		for x,y,yerr in zip(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),magerr[bandstr == bs].tolist()):
 			err_xs.append((x, x))
 			err_ys.append((y - yerr, y + yerr))
-		ax.multi_line(err_xs, err_ys, color=colorlist[coloridx], legend='%s - %s'%(
+		ax.multi_line(err_xs, err_ys, color=color, legend='%s - %s'%(
 					  b.instrument.telescope.name,b.name))
 
 		if len(upperlimbandstr) and len(upperlimmjd[upperlimbandstr == bs]):
 			ax.inverted_triangle(upperlimmjd[upperlimbandstr == bs].tolist(),upperlimmag[upperlimbandstr == bs].tolist(),
-								 color=colorlist[coloridx],size=7,legend='%s - %s'%(
+								 color=color,size=7,legend='%s - %s'%(
 									 b.instrument.telescope.name,b.name))
-		
-		count += 1
+#			import pdb; pdb.set_trace()
 
 	today = Time(datetime.datetime.today()).mjd
 	ax.line(today,20,line_width=3,line_color='black',legend='today (%i)'%today)
@@ -469,22 +482,22 @@ def lightcurveplot(request, transient_id, salt2=False):
 	
 	ax.xaxis.axis_label = 'MJD'
 	ax.yaxis.axis_label = 'Mag'
-	
+
 	if limmjd:
 		ax.x_range = Range1d(limmjd,np.max(mjd)+10)
-		ax.y_range = Range1d(np.max(mag[mjd > limmjd])+0.25,np.min(mag[mjd > limmjd])-0.5)
+		ax.y_range = Range1d(np.max(np.append(mag[mjd > limmjd],upperlimmag[upperlimmjd > limmjd]))+0.25,
+							 np.min(mag[mjd > limmjd])-0.5)
 		ax.extra_x_ranges = {"dateax": Range1d(limmjd,np.max(mjd)+10)}
 		ax.add_layout(LinearAxis(x_range_name="dateax"), 'above')
 		
 	else:
 		ax.x_range=Range1d(np.min(mjd)-10,np.max(mjd)+10)
-		ax.y_range=Range1d(np.max(mag)+0.25,np.min(mag)-0.5)
+		ax.y_range=Range1d(np.max(np.append(mag,upperlimmag))+0.25,np.min(mag)-0.5)
 		ax.extra_x_ranges = {"dateax": Range1d(np.min(mjd)-10,np.max(mjd)+10)}
 		ax.add_layout(LinearAxis(x_range_name="dateax"), 'above')
 		#ax.legend()
 	ax.plot_height = 400
 	ax.plot_width = 500
-	
 
 	majorticks = []; overridedict = {}
 	mjdrange = range(int(np.min(mjd)-100),int(np.max(mjd)+100))
@@ -523,18 +536,21 @@ def lightcurveplot(request, transient_id, salt2=False):
 		result, fitted_model = sncosmo.fit_lc(
 			data, model, fitparams,
 			bounds={'t0':(salt2mjd[flux == np.max(flux)]-10, salt2mjd[flux == np.max(flux)]+10),
-					'z':(0.0,0.7),'x1':(-3,3),'c':(-0.3,0.3)})  # bounds on parameters (if any)
+					'z':(0.0,0.7),'x1':(-3,3),'c':(-0.3,0.3)})	# bounds on parameters (if any)
 		
 		count = 0
 		plotmjd = np.arange(result['parameters'][1]-20,result['parameters'][1]+50,0.5)
-		for bs,b in zip(bandunq,band[idx]):
-			coloridx = count % len(np.unique(colorlist))
-
+		for bs,b,bc in zip(bandunq,band[idx],bandcolor[idx]):
+			if bc != 'None':
+				color = bc
+			else:
+				coloridx = count % len(np.unique(colorlist))
+				color = colorlist[coloridx]
+				count += 1
+				
 			if bs in bandpassdict.keys() and bandpassdict[bs] in salt2band:
 				salt2flux = fitted_model.bandflux(bandpassdict[bs], plotmjd, zp=27.5,zpsys=zpsys[bandpassdict[bs] == salt2band][0])
-				ax.line(plotmjd,-2.5*np.log10(salt2flux)+27.5,color=colorlist[coloridx])
-				
-			count += 1
+				ax.line(plotmjd,-2.5*np.log10(salt2flux)+27.5,color=color)
 
 		lcphase = today-result['parameters'][1]
 		if lcphase > 0: lcphase = '+%.1f'%(lcphase)
@@ -548,7 +564,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 					   text="\uD835\uDE3B  = %.3f"%(result.parameters[0]))
 		latex3 = Label(x=10,y=250,x_units='screen',y_units='screen',
 					   render_mode='css', text_font_size='10pt',
-					   text="\uD835\uDC61\u2080  = %i"%(result['parameters'][1]))
+					   text="\uD835\uDC61\u2080	 = %i"%(result['parameters'][1]))
 		latex4 = Label(x=10,y=235,x_units='screen',y_units='screen',
 					   render_mode='css', text_font_size='10pt',
 					   text="\uD835\uDC5A\u2088 = %.2f"%(10.635-2.5*np.log10(result['parameters'][2])))

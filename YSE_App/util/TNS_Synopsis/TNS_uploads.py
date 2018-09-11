@@ -203,7 +203,7 @@ class processTNS():
 		tmag,tmagerr,tfilt,tinst,tobsdate,obsgroups,mjd =\
 			np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 
-		nondetectmaglim,nondetectdate,nondetectfilt = "","",""
+		nondetectmaglim,nondetectdate,nondetectfilt,nondetectins = "","","",""
 		for p in jd['photometry']:
 			if 'mag' in p['flux_unit']['name'].lower():
 				tmag = np.append(tmag,p['flux'])
@@ -212,6 +212,7 @@ class processTNS():
 					nondetectmaglim = p['limflux']
 					nondetectdate = p['obsdate']
 					nondetectfilt = p['filters']['name']
+					nondetectins = p['instrument']['name']
 			else:
 				tmag = np.append(tmag,-99)
 				tmagerr = np.append(tmagerr,-99)
@@ -259,7 +260,7 @@ class processTNS():
 			photometrycount += 1
 
 		if nondetectdate: nondetectdate = nondetectdate.replace(' ','T')
-		return PhotUploadAll,nondetectdate,nondetectmaglim,nondetectfilt
+		return PhotUploadAll,nondetectdate,nondetectmaglim,nondetectfilt,nondetectins
 
 	def getTNSSpectra(self,jd,sc):
 		specinst,specobsdate,specobsgroup,specfiles = \
@@ -584,7 +585,7 @@ class processTNS():
 			except: photdict = None
 			try:
 				if jd:
-					photdict,nondetectdate,nondetectmaglim,nondetectfilt = \
+					photdict,nondetectdate,nondetectmaglim,nondetectfilt,nondetectins = \
 						self.getTNSPhotometry(jd,PhotUploadAll=photdict)
 					specdict = self.getTNSSpectra(jd,sc)
 				if doNED:
@@ -597,6 +598,7 @@ class processTNS():
 				if nondetectdate: transientdict['non_detect_date'] = nondetectdate
 				if nondetectmaglim: transientdict['non_detect_limit'] = nondetectmaglim
 				if nondetectfilt: transientdict['non_detect_band'] =  nondetectfilt
+				if nondetectfilt: transientdict['non_detect_instrument'] =  nondetectins
 				
 				TransientUploadDict[obj] = transientdict
 			except:

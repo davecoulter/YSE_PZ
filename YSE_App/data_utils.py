@@ -56,13 +56,17 @@ def add_transient(request):
 				if transientkey == 'transientphotometry' or \
 				   transientkey == 'transientspectra' or \
 				   transientkey == 'host' or \
-				   transientkey == 'tags': continue
+				   transientkey == 'tags' or \
+				   transientkey == 'non_detect_instrument': continue
 
 				if not isinstance(Transient._meta.get_field(transientkey), ForeignKey):
 					transientdict[transientkey] = transient[transientkey]
 				else:
 					fkmodel = Transient._meta.get_field(transientkey).remote_field.model
-					fk = fkmodel.objects.filter(name=transient[transientkey])
+					if transientkey == 'non_detect_band' and 'non_detect_instrument' in transient.keys():
+						fk = fkmodel.objects.filter(name=transient[transientkey]).filter(instrument__name=transient['non_detect_instrument'])
+					else:
+						fk = fkmodel.objects.filter(name=transient[transientkey])
 					if not len(fk):
 						fk = fkmodel.objects.filter(name='Unknown')
 						print("Sending email to: %s" % user.username)

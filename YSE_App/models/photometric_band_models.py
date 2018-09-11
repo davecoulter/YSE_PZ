@@ -14,6 +14,8 @@ class PhotometricBand(BaseModel):
 	# Optional
 	lambda_eff = models.CharField(max_length=64, null=True, blank=True)
 	throughput_file = models.CharField(max_length=512, null=True, blank=True)
+
+	disp_color = models.CharField(max_length=32,null=True,blank=True)
 	
 	def __str__(self):
 		return 'Band: %s - %s' % (self.instrument.name, self.name)
