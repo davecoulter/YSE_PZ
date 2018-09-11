@@ -541,6 +541,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 		
 		count = 0
 		plotmjd = np.arange(result['parameters'][1]-20,result['parameters'][1]+50,0.5)
+		bandunq,idx = np.unique(bandstr,return_index=True)
 		for bs,b,bc in zip(bandunq,band[idx],bandcolor[idx]):
 			if bc != 'None' and bc:
 				color = bc
