@@ -448,7 +448,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 	allbandcolor = np.append(bandcolor,upperlimbandcolor)
 	bandunq,idx = np.unique(allbandstr,return_index=True)
 	for bs,b,bc in zip(bandunq,allband[idx],allbandcolor[idx]):
-		if bc != 'None': color = bc
+		if bc != 'None' and bc: color = bc
 		else:
 			coloridx = count % len(np.unique(colorlist))
 			color = colorlist[coloridx]
@@ -456,6 +456,10 @@ def lightcurveplot(request, transient_id, salt2=False):
 		ax.circle(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
 				  color=color,size=7,legend='%s - %s'%(
 					  b.instrument.telescope.name,b.name))
+		if len(upperlimbandstr) and len(upperlimmjd[upperlimbandstr == bs]):
+			ax.inverted_triangle(upperlimmjd[upperlimbandstr == bs].tolist(),upperlimmag[upperlimbandstr == bs].tolist(),
+								 color=color,size=7,legend='%s - %s'%(
+									 b.instrument.telescope.name,b.name))
 
 		err_xs,err_ys = [],[]
 		for x,y,yerr in zip(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),magerr[bandstr == bs].tolist()):
@@ -463,12 +467,6 @@ def lightcurveplot(request, transient_id, salt2=False):
 			err_ys.append((y - yerr, y + yerr))
 		ax.multi_line(err_xs, err_ys, color=color, legend='%s - %s'%(
 					  b.instrument.telescope.name,b.name))
-
-		if len(upperlimbandstr) and len(upperlimmjd[upperlimbandstr == bs]):
-			ax.inverted_triangle(upperlimmjd[upperlimbandstr == bs].tolist(),upperlimmag[upperlimbandstr == bs].tolist(),
-								 color=color,size=7,legend='%s - %s'%(
-									 b.instrument.telescope.name,b.name))
-#			import pdb; pdb.set_trace()
 
 	today = Time(datetime.datetime.today()).mjd
 	ax.line(today,20,line_width=3,line_color='black',legend='today (%i)'%today)
@@ -544,7 +542,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 		count = 0
 		plotmjd = np.arange(result['parameters'][1]-20,result['parameters'][1]+50,0.5)
 		for bs,b,bc in zip(bandunq,band[idx],bandcolor[idx]):
-			if bc != 'None':
+			if bc != 'None' and bc:
 				color = bc
 			else:
 				coloridx = count % len(np.unique(colorlist))
