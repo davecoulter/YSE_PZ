@@ -131,6 +131,7 @@ def dashboard(request):
 	else: anchor = ''
 	context = {
 		'transient_categories':transient_categories,
+		'all_transient_statuses':TransientStatus.objects.all(),
 		'anchor':anchor,
 	}
 

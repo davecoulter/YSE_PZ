@@ -27,6 +27,17 @@ class TransientTable(tables.Table):
 							 verbose_name='Disc. Mag',orderable=True)
 	recent_mag = tables.Column(accessor='recent_mag',
 							   verbose_name='Recent Mag',orderable=True)
+	status_string = tables.TemplateColumn("""<div class="btn-group">
+<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+											<span id="{{ record.id }}_status_name" class="dropbtn">{{ record.status }}</span>
+										</button>
+										<ul class="dropdown-menu">
+											{% for status in all_transient_statuses %}
+    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+											{% endfor %}
+										</ul>
+</div>""",
+										  verbose_name='Status',orderable=True,order_by='status')
 
 	
 	def __init__(self,*args, **kwargs):
@@ -62,7 +73,7 @@ class TransientTable(tables.Table):
 	class Meta:
 		model = Transient
 		fields = ('name_string','ra_string','dec_string','disc_date_string','disc_mag','recent_mag',
-				  'obs_group','best_spec_class','redshift','host.redshift','status')
+				  'obs_group','best_spec_class','redshift','host.redshift','status_string')
 		
 		template_name='YSE_App/django-tables2/bootstrap.html'
 		attrs = {
