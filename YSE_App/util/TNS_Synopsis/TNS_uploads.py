@@ -599,6 +599,9 @@ class processTNS():
 				if nondetectmaglim: transientdict['non_detect_limit'] = nondetectmaglim
 				if nondetectfilt: transientdict['non_detect_band'] =  nondetectfilt
 				if nondetectfilt: transientdict['non_detect_instrument'] =  nondetectins
+				# dumb hack
+				if nondetectins == 'ZTF-Cam': transientdict['non_detect_band'] += '-ZTF'
+
 				
 				TransientUploadDict[obj] = transientdict
 			except:
