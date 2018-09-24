@@ -25,6 +25,7 @@ class PhotometricBandSerializer(serializers.HyperlinkedModelSerializer):
 		instance.lambda_eff = validated_data.get('lambda_eff', instance.lambda_eff)
 		instance.throughput_file = validated_data.get('throughput_file', instance.throughput_file)
 		instance.disp_color = validated_data.get('disp_color', instance.disp_color)
+		instance.disp_symbol = validated_data.get('disp_color', instance.disp_symbol)
 
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 		

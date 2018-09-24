@@ -380,10 +380,10 @@ def lightcurveplot(request, transient_id, salt2=False):
 
 	ax=figure()
 
-	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor = \
+	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
-		np.array([]),np.array([])
+		np.array([]),np.array([]),np.array([])
 	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
@@ -403,6 +403,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 			else: magerr = np.append(magerr,0)
 			bandstr = np.append(bandstr,str(p.band))
 			bandcolor = np.append(bandcolor,str(p.band.disp_color))
+			bandsym = np.append(bandsym,str(p.band.disp_symbol))
 			band = np.append(band,p.band)
 			if salt2:
 				if str(p.band) in bandpassdict.keys():
@@ -440,22 +441,33 @@ def lightcurveplot(request, transient_id, salt2=False):
 		upperlimbandcolor = np.append(upperlimbandcolor,transient.non_detect_band.disp_color)
 		
 	ax.title.text = "%s"%transient.name
-	colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
-				 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
+	#colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
+	#			 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
+	colorlist = ['#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9']
 	count = 0
 	allband = np.append(band,upperlimband)
 	allbandstr = np.append(bandstr,upperlimbandstr)
 	allbandcolor = np.append(bandcolor,upperlimbandcolor)
+	allbandsym = np.append(bandsym,[None]*len(upperlimbandcolor))
 	bandunq,idx = np.unique(allbandstr,return_index=True)
-	for bs,b,bc in zip(bandunq,allband[idx],allbandcolor[idx]):
+	for bs,b,bc,bsym in zip(bandunq,allband[idx],allbandcolor[idx],allbandsym[idx]):
 		if bc != 'None' and bc: color = bc
 		else:
 			coloridx = count % len(np.unique(colorlist))
 			color = colorlist[coloridx]
 			count += 1
-		ax.circle(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
-				  color=color,size=7,legend='%s - %s'%(
-					  b.instrument.telescope.name,b.name))
+
+		if bsym and bsym != 'inverted_triangle':
+			try:
+				plotmethod = getattr(ax, bsym)
+			except:
+				plotmethod = getattr(ax, 'circle')
+		else:
+			plotmethod = getattr(ax, 'circle')
+			
+		plotmethod(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
+				   color=color,size=7,legend='%s - %s'%(
+					   b.instrument.telescope.name,b.name))
 		if len(upperlimbandstr) and len(upperlimmjd[upperlimbandstr == bs]):
 			ax.inverted_triangle(upperlimmjd[upperlimbandstr == bs].tolist(),upperlimmag[upperlimbandstr == bs].tolist(),
 								 color=color,size=7,legend='%s - %s'%(
