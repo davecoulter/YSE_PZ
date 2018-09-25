@@ -205,6 +205,11 @@ class processTNS():
 
 		nondetectmaglim,nondetectdate,nondetectfilt,nondetectins = "","","",""
 		for p in jd['photometry']:
+			if p['instrument']['name'] == 'CFH12k':
+				p['filters']['name'] = '%s-PTF'%p['filters']['name']
+			elif p['instrument']['name'] == 'ZTF-Cam':
+				p['filters']['name'] = '%s-ZTF'%p['filters']['name']
+				
 			if 'mag' in p['flux_unit']['name'].lower():
 				tmag = np.append(tmag,p['flux'])
 				tmagerr = np.append(tmagerr,p['fluxerr'])
@@ -222,6 +227,7 @@ class processTNS():
 			obsgroups = np.append(obsgroups,p['observer'])
 			tinst = np.append(tinst,p['instrument']['name'])
 			tfilt = np.append(tfilt,p['filters']['name'])
+
 		disc_flag = np.zeros(len(tmag))
 		iMag = tmag != -99
 		disc_flag[iMag][(mjd[iMag] == np.min(mjd[iMag]))] = 1
@@ -599,9 +605,6 @@ class processTNS():
 				if nondetectmaglim: transientdict['non_detect_limit'] = nondetectmaglim
 				if nondetectfilt: transientdict['non_detect_band'] =  nondetectfilt
 				if nondetectfilt: transientdict['non_detect_instrument'] =  nondetectins
-				# dumb hack
-				if nondetectins == 'ZTF-Cam': transientdict['non_detect_band'] += '-ZTF'
-
 				
 				TransientUploadDict[obj] = transientdict
 			except:
