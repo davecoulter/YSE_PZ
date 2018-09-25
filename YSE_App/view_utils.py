@@ -34,6 +34,14 @@ import sncosmo
 from .common.bandpassdict import bandpassdict
 from .common.utilities import date_to_mjd
 
+py2bokeh_symboldict = {"^":"triangle",
+					   "+":"cross",
+					   "s":"square",
+					   "*":"asterisk",
+					   "D":"diamond",
+					   "d":"diamond",
+					   "o":"circle"}
+
 def get_recent_phot_for_host(user, host_id=None):
 	allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
 
@@ -403,7 +411,10 @@ def lightcurveplot(request, transient_id, salt2=False):
 			else: magerr = np.append(magerr,0)
 			bandstr = np.append(bandstr,str(p.band))
 			bandcolor = np.append(bandcolor,str(p.band.disp_color))
-			bandsym = np.append(bandsym,str(p.band.disp_symbol))
+			if p.band.disp_symbol in py2bokeh_symboldict.keys():
+				bandsym = np.append(bandsym,str(py2bokeh_symboldict[p.band.disp_symbol]))
+			else:
+				bandsym = np.append(bandsym,str(p.band.disp_symbol))
 			band = np.append(band,p.band)
 			if salt2:
 				if str(p.band) in bandpassdict.keys():
