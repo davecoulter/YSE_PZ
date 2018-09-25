@@ -65,6 +65,8 @@ def add_transient(request):
 					fkmodel = Transient._meta.get_field(transientkey).remote_field.model
 					if transientkey == 'non_detect_band' and 'non_detect_instrument' in transient.keys():
 						fk = fkmodel.objects.filter(name=transient[transientkey]).filter(instrument__name=transient['non_detect_instrument'])
+						if not len(fk):
+							fk = fkmodel.objects.filter(name=transient[transientkey])
 					else:
 						fk = fkmodel.objects.filter(name=transient[transientkey])
 					if not len(fk):
