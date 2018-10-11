@@ -30,6 +30,8 @@ import time
 from .table_utils import TransientTable,FollowupTable,TransientFilter,FollowupFilter
 import django_tables2 as tables
 from django_tables2 import RequestConfig
+from .basicauth import *
+from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 
@@ -358,7 +360,8 @@ def transient_edit(request, transient_id=None):
 
 
 from wsgiref.util import FileWrapper
-@login_required
+@csrf_exempt
+@login_or_basic_auth_required
 def download_data(request, slug):
 
 	transient = Transient.objects.filter(slug=slug)
