@@ -427,7 +427,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 					if 'bessell' in bandpassdict[str(p.band)]: zpsys = np.append(zpsys,'Vega')
 					else: zpsys = np.append(zpsys,'AB')
 				
-		elif p.flux and p.flux_zero_point:
+		elif p.flux and p.flux_zero_point and p.flux + 3*p.flux_err > 0:
 			upperlimmjd = np.append(upperlimmjd,[p.date_to_mjd()])
 			upperlimdate = np.append(upperlimdate,[p.obs_date.strftime('%m/%d/%Y')])
 			upperlimmag = np.append(upperlimmag,[-2.5*np.log10(p.flux + 3*p.flux_err) + p.flux_zero_point])
@@ -601,7 +601,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 					   text="\uD835\uDC50  = %.2f"%(result['parameters'][4]))
 		for latex in [latex1,latex2,latex3,latex4,latex5,latex6]:
 			ax.add_layout(latex)
-		
+
 	g = file_html(ax,CDN,"my plot")
 	return HttpResponse(g.replace('width: 90%','width: 100%'))
 
