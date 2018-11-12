@@ -541,10 +541,7 @@ class processTNS():
 		ebvtstart = time.time()
 		if doNED:
 			for sc in scall:
-				try:
-					dust_table_l = IrsaDust.get_query_table(sc)
-				except:
-					import pdb; pdb.set_trace()
+				dust_table_l = IrsaDust.get_query_table(sc)
 				ebvall += [dust_table_l['ext SandF mean'][0]]
 				try:
 					ned_region_table = Ned.query_region(sc, radius=self.nedradius*u.arcmin, equinox='J2000.0')
