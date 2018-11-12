@@ -748,7 +748,7 @@ if __name__ == "__main__":
 			nsn = tnsproc.UpdateFromTNS()
 		else:
 			nsn = tnsproc.ProcessTNSEmails()
-	 except Exception as e:
+	except Exception as e:
 		nsn = 0
 		from django.conf import settings as djangoSettings
 		smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
