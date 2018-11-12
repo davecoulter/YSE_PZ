@@ -6,6 +6,7 @@ from email.mime.multipart import MIMEMultipart
 import smtplib
 from astropy.coordinates import SkyCoord
 import astropy.units as u
+import numpy as np
 
 class TNSFakeEmails:
 	def __init__(self):
@@ -78,9 +79,17 @@ if __name__ == "__main__":
 	for s,r,d in zip(options.snid.split(','),options.ra.split(','),options.dec.split(',')):
 		if ':' not in r:
 			sc = SkyCoord(r,d,unit=u.deg)
-			scstring = sc.to_string('hmsdms')
-			r = scstring.split()[0].replace('h',':').replace('m',':').replace('s','')
-			d = scstring.split()[1].replace('d',':').replace('m',':').replace('s','')
+			ra = sc.ra.hms
+			dec = sc.dec.dms
+
+			ra_string = "%02d:%02d:%05.2f" % (ra[0],ra[1],ra[2])
+			if dec[0] >= 0:
+				dec_string = "+%02d:%02d:%05.2f" % (dec[0],np.abs(dec[1]),np.abs(dec[2]))
+			else:
+				dec_string = "%03d:%02d:%05.2f" % (dec[0],np.abs(dec[1]),np.abs(dec[2]))
+
+			r = ra_string
+			d = dec_string
 		if '+' not in d and '-' not in d: d = '+%s'%d
 		linetmpl = "<a href=\"https://wis-tns.weizmann.ac.il/object/%s\"><em class=\"placeholder\">%s</em></a> RA=<em class=\"placeholder\">%s</em>, DEC=<em class=\"placeholder\">%s</em>, Discovery date=<em class=\"placeholder\">None</em>, Discovery mag=<em class=\"placeholder\">None</em> <em class=\"placeholder\">None</em>, Filter: <em class=\"placeholder\">None</em>, Reporter: <em class=\"placeholder\">None</em>, Source group: <em class=\"placeholder\">None</em><br/>"%(s,s,r,d)
 		emailtext += linetmpl

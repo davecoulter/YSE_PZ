@@ -531,6 +531,7 @@ class processTNS():
 	def GetAndUploadAllData(self,objs,ras,decs,doNED=True):
 		TransientUploadDict = {}
 
+		assert len(ras) == len(decs)
 		if type(ras[0]) == float:
 			scall = SkyCoord(ras,decs,FK5,unit=u.deg)
 		else:
@@ -540,7 +541,10 @@ class processTNS():
 		ebvtstart = time.time()
 		if doNED:
 			for sc in scall:
-				dust_table_l = IrsaDust.get_query_table(sc)
+				try:
+					dust_table_l = IrsaDust.get_query_table(sc)
+				except:
+					import pdb; pdb.set_trace()
 				ebvall += [dust_table_l['ext SandF mean'][0]]
 				try:
 					ned_region_table = Ned.query_region(sc, radius=self.nedradius*u.arcmin, equinox='J2000.0')
@@ -747,7 +751,7 @@ if __name__ == "__main__":
 			nsn = tnsproc.UpdateFromTNS()
 		else:
 			nsn = tnsproc.ProcessTNSEmails()
-	except Exception as e:
+	 except Exception as e:
 		nsn = 0
 		from django.conf import settings as djangoSettings
 		smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
