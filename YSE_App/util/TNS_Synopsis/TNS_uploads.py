@@ -397,7 +397,7 @@ class processTNS():
 					galaxies_with_z.append(galaxies[l])
 					galaxy_names.append(galaxies[l]["Object Name"])
 					galaxy_zs.append(galaxies[l]["Redshift"])
-					galaxy_seps.append(galaxies[l]["Distance (arcmin)"])
+					galaxy_seps.append(galaxies[l]["Separation"])
 					galaxy_ras.append(galaxies[l]["RA(deg)"])
 					galaxy_decs.append(galaxies[l]["DEC(deg)"])
 					galaxy_mags.append(galaxies[l]["Magnitude and Filter"])
@@ -524,7 +524,7 @@ class processTNS():
 			
 			# Mark messages as "Seen"
 			result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')
-		
+
 		nsn = self.GetAndUploadAllData(objs,ras,decs)
 		return nsn
 
@@ -532,10 +532,11 @@ class processTNS():
 		TransientUploadDict = {}
 
 		assert len(ras) == len(decs)
+
 		if type(ras[0]) == float:
 			scall = SkyCoord(ras,decs,FK5,unit=u.deg)
 		else:
-			scall = SkyCoord(ras,decs,FK5,unit=(u.hourangle,u.deg))
+			scall = SkyCoord(ras,decs,frame="fk5",unit=(u.hourangle,u.deg))
 
 		ebvall,nedtables = [],[]
 		ebvtstart = time.time()
