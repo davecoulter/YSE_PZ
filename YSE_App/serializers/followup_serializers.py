@@ -22,7 +22,7 @@ class TransientFollowupSerializer(serializers.HyperlinkedModelSerializer):
 
 	def update(self, instance, validated_data):
 		instance.transient_id = validated_data.get('transient', instance.transient)
-		instance.status_id = validated_data.get('status', instance.obs_group)
+		instance.status_id = validated_data.get('status', instance.status)
 		instance.too_resource_id = validated_data.get('too_resource', instance.too_resource)
 		instance.classical_resource_id = validated_data.get('classical_resource', instance.classical_resource)
 		instance.queued_resource_id = validated_data.get('queued_resource', instance.queued_resource)
@@ -62,7 +62,7 @@ class HostFollowupSerializer(serializers.HyperlinkedModelSerializer):
 
 	def update(self, instance, validated_data):
 		instance.host_id = validated_data.get('transient', instance.transient)
-		instance.status_id = validated_data.get('status', instance.obs_group)
+		instance.status_id = validated_data.get('status', instance.status)
 		instance.too_resource_id = validated_data.get('too_resource', instance.too_resource)
 		instance.classical_resource_id = validated_data.get('classical_resource', instance.classical_resource)
 		instance.queued_resource_id = validated_data.get('queued_resource', instance.queued_resource)

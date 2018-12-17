@@ -111,6 +111,19 @@ class FollowupTable(tables.Table):
 	action = tables.TemplateColumn("<a target=\"_blank\" href=\"{% url 'admin:YSE_App_transientfollowup_change' record.id %}\">Edit</a>",
 								   verbose_name='Action',orderable=False)
 
+	status_string = tables.TemplateColumn("""<div class="btn-group">
+<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+											<span id="{{ record.id }}_status_name" class="dropbtn">{{ record.status }}</span>
+										</button>
+										<ul class="dropdown-menu">
+											{% for status in all_followup_statuses %}
+    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+											{% endfor %}
+										</ul>
+</div>""",
+										  verbose_name='Followup Status',orderable=True,order_by='status')
+
+	
 	
 	#disc_mag = tables.Column(accessor='disc_mag',
 	#						 verbose_name='Disc. Mag',orderable=True)
@@ -119,7 +132,7 @@ class FollowupTable(tables.Table):
 		super().__init__(*args, **kwargs)
 
 		self.base_columns['transient.status'].verbose_name = 'Transient Status'
-		self.base_columns['status'].verbose_name = 'Followup Status'
+		#self.base_columns['status'].verbose_name = 'Followup Status'
 
 	def order_recent_mag(self, queryset, is_descending):
 

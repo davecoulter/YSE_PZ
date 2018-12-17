@@ -13,19 +13,19 @@ register = template.Library()
 @register.filter(name='galcoords')
 def galcoords(coordstring):
 
-	sc = SkyCoord('%s %s'%(coordstring[0],coordstring[1]),FK5,unit=(u.hourangle,u.deg))
+	sc = SkyCoord('%s %s'%(coordstring[0],coordstring[1]),frame="fk5",unit=(u.hourangle,u.deg))
 	return '%.7f  %.7f'%(sc.galactic.l.value,sc.galactic.b.value)
 
 @register.filter(name='galcoordsl')
 def galcoordsl(coordstring):
 
-	sc = SkyCoord('%s %s'%(coordstring[0],coordstring[1]),FK5,unit=(u.hourangle,u.deg))
+	sc = SkyCoord('%s %s'%(coordstring[0],coordstring[1]),frame="fk5",unit=(u.hourangle,u.deg))
 	return '%.7f'%sc.galactic.l.value
 
 @register.filter(name='galcoordsb')
 def galcoordsb(coordstring):
 
-	sc = SkyCoord('%s %s'%(coordstring[0],coordstring[1]),FK5,unit=(u.hourangle,u.deg))
+	sc = SkyCoord('%s %s'%(coordstring[0],coordstring[1]),frame="fk5",unit=(u.hourangle,u.deg))
 	return '%.7f'%sc.galactic.b.value
 
 
