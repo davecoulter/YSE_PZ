@@ -147,7 +147,7 @@ class FollowupTable(tables.Table):
 		
 	class Meta:
 		model = TransientFollowup
-		fields = ('name_string','ra_string','dec_string','recent_mag','transient.status','observation_window','status','action')
+		fields = ('name_string','ra_string','dec_string','recent_mag','transient.status','observation_window','action')
 		template_name='YSE_App/django-tables2/bootstrap.html'
 		attrs = {
 			'th' : {
