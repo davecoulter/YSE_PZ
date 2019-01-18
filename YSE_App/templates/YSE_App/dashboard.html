@@ -50,11 +50,114 @@
 {% endblock %}
 
 {% block scripts %}
-{% if anchor %}
 <script type='text/javascript'>
+{% if anchor %}
 $(document).ready(function(){
     window.location = '#{{ anchor }}'
 });
-</script>
 {% endif %}
+    $(function() {
+      function transientStatusChangeErr() {
+        alert("Transient Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
+      }
+
+      $('.transientStatusChange').on('click', function(event){
+        var status_id = $(this).attr('data-status_id')
+        var transient_id = $(this).attr('transient_id')
+        var url_target = "{% url 'transient-detail' -1 %}".replace('-1', transient_id);
+        var status_target = "{% url 'transientstatus-list' %}" + status_id + "/"
+
+        var base_url = window.location.protocol + "//" + window.location.hostname
+        var port = window.location.port
+        var api_url = base_url + url_target
+        var status_url = base_url + status_target
+
+        if (port != "") {
+          api_url = base_url + ":" + port + url_target
+          status_url = base_url + ":" + port + status_target
+        }
+
+        var putData = { "status": status_url }
+
+        $.ajax({
+          type: "PATCH",
+          url: api_url,
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+          data: putData,
+          success: function(data, textStatus, jqXHR) {
+            if (jqXHR.status == 200 && textStatus == "success") {
+
+              var tokens = data.status.split("/")
+              var status_name = tokens[tokens.length-2]
+              var button_id = "#"+transient_id+"_status_name"
+              $(button_id).text(status_name)
+              
+              {#alert(textStatus)#}
+            } else {
+              transientStatusChangeErr()
+            }
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
+            transientStatusChangeErr()
+            {#alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));#}
+          }
+        });
+        event.preventDefault();
+      });
+
+      // This function gets cookie with a given name
+      function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+
+      var csrftoken = getCookie('csrftoken');
+
+      /*
+      The functions below will create a header with csrftoken
+      */
+
+      function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+      }
+
+      function sameOrigin(url) {
+        // test that a given url is a same-origin URL
+        // url could be relative or scheme relative or absolute
+        var host = document.location.host; // host + port
+        var protocol = document.location.protocol;
+        var sr_origin = '//' + host;
+        var origin = protocol + sr_origin;
+        // Allow absolute or scheme relative URLs to same origin
+        return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+        (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+          // or any other URL that isn't scheme relative or absolute i.e relative.
+          !(/^(\/\/|http:|https:).*/.test(url));
+        }
+
+        $.ajaxSetup({
+          beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
+            // Send the token to same-origin, relative URLs only.
+            // Send the token only if the method warrants CSRF protection
+            // Using the CSRFToken value acquired earlier
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+          }
+        }
+      });
+
+    });
+</script>
 {% endblock %}

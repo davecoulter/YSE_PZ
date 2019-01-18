@@ -17,6 +17,7 @@ from .forms import *
 from .common import utilities
 from . import view_utils
 import datetime
+from datetime import timedelta
 import pytz
 from pytz import timezone
 from .serializers import *
@@ -29,6 +30,8 @@ import time
 from .table_utils import TransientTable,FollowupTable,TransientFilter,FollowupFilter
 import django_tables2 as tables
 from django_tables2 import RequestConfig
+from .basicauth import *
+from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 
@@ -130,10 +133,80 @@ def dashboard(request):
 	else: anchor = ''
 	context = {
 		'transient_categories':transient_categories,
+		'all_transient_statuses':TransientStatus.objects.all(),
 		'anchor':anchor,
 	}
 
 	return render(request, 'YSE_App/dashboard.html', context)
+
+@login_required
+def personaldashboard(request):
+	new_transients = None
+	inprocess_transients = None
+	new_k2_transients = None
+	new_notk2_transients = None
+	watch_transients = None
+	following_transients = None
+	followup_requested_transients = None
+	finishedfollowing_transients = None
+	
+	k2_transients = Transient.objects.filter(k2_validated=1).order_by('-disc_date')
+	k2transientfilter = TransientFilter(request.GET, queryset=k2_transients,prefix='k2')
+	k2_table = TransientTable(k2transientfilter.qs,prefix='k2')
+	RequestConfig(request, paginate={'per_page': 10}).configure(k2_table)
+	
+	status_new = TransientStatus.objects.filter(name='New').order_by('-modified_date')
+	if len(status_new) == 1:
+		new_transients = Transient.objects.filter(status=status_new[0]).order_by('-disc_date')
+	newtransientfilter = TransientFilter(request.GET, queryset=new_transients,prefix='new')
+	new_table = TransientTable(newtransientfilter.qs,prefix='new')
+	RequestConfig(request, paginate={'per_page': 10}).configure(new_table)
+		
+	status_watch = TransientStatus.objects.filter(name='Watch').order_by('-modified_date')
+	if len(status_watch) == 1:
+		watch_transients = Transient.objects.filter(status=status_watch[0]).order_by('-disc_date')
+	watchtransientfilter = TransientFilter(request.GET, queryset=watch_transients,prefix='watch')
+	watch_table = TransientTable(watchtransientfilter.qs,prefix='watch')
+	RequestConfig(request, paginate={'per_page': 10}).configure(watch_table)
+	
+	status_followrequest = TransientStatus.objects.filter(name='FollowupRequested').order_by('-modified_date')
+	if len(status_followrequest) == 1:
+		followup_requested_transients = Transient.objects.filter(status=status_followrequest[0]).order_by('-disc_date')
+	followrequesttransientfilter = TransientFilter(request.GET, queryset=followup_requested_transients,prefix='followrequest')
+	follow_request_table = TransientTable(followrequesttransientfilter.qs,prefix='followrequest')
+	RequestConfig(request, paginate={'per_page': 10}).configure(follow_request_table)
+		
+	status_following = TransientStatus.objects.filter(name='Following').order_by('-modified_date')
+	if len(status_following) == 1:
+		following_transients = Transient.objects.filter(status=status_following[0]).order_by('-disc_date')
+	followingtransientfilter = TransientFilter(request.GET, queryset=following_transients,prefix='following')
+	following_table = TransientTable(followingtransientfilter.qs,prefix='following')
+	RequestConfig(request, paginate={'per_page': 10}).configure(following_table)
+
+	status_finishedfollowing = TransientStatus.objects.filter(name='FollowupFinished').order_by('-modified_date')
+	if len(status_finishedfollowing) == 1:
+		finishedfollowing_transients = Transient.objects.filter(status=status_finishedfollowing[0]).order_by('-disc_date')
+	finishedfollowingtransientfilter = TransientFilter(request.GET, queryset=finishedfollowing_transients,prefix='finishedfollowing')
+	finished_following_table = TransientTable(finishedfollowingtransientfilter.qs,prefix='finishedfollowing')
+	RequestConfig(request, paginate={'per_page': 10}).configure(finished_following_table)
+		
+	transient_categories = [(k2_table,'Validated K2 Transients','k2',k2transientfilter),
+							(new_table,'New Transients','new',newtransientfilter),
+							(follow_request_table,'Followup Requested','followrequest',followrequesttransientfilter),
+							(following_table,'Following','following',followingtransientfilter),
+							(watch_table,'Watch','watch',watchtransientfilter),
+							(finished_following_table,'Finished Following','finishedfollowing',finishedfollowingtransientfilter)]
+
+	if request.META['QUERY_STRING']:
+		anchor = request.META['QUERY_STRING'].split('-')[0]
+	else: anchor = ''
+	context = {
+		'transient_categories':transient_categories,
+		'all_transient_statuses':TransientStatus.objects.all(),
+		'anchor':anchor,
+	}
+
+	return render(request, 'YSE_App/personaldashboard.html', context)
 
 @login_required
 def followup(request):
@@ -158,7 +231,8 @@ def followup(request):
 	else: anchor = ''
 	context = {
 		'followup_tables':table_list,
-		'anchor':anchor
+		'anchor':anchor,
+		'all_followup_statuses':FollowupStatus.objects.all(),
 	}
 	return render(request, 'YSE_App/transient_followup.html', context)
 
@@ -228,16 +302,18 @@ def transient_detail(request, slug):
 
 	obs = None
 	if len(transient) == 1:
-
+		from django.utils import timezone
+		
 		transient_obj = transient.first() # This should throw an exception if more than one or none are returned
 		transient_id = transient[0].id
 
 		alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 
 		transient_followup_form = TransientFollowupForm()
-		transient_followup_form.fields["classical_resource"].queryset = view_utils.get_authorized_classical_resources(request.user)
-		transient_followup_form.fields["too_resource"].queryset = view_utils.get_authorized_too_resources(request.user)
-		transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user)
+		transient_followup_form.fields["classical_resource"].queryset = \
+				view_utils.get_authorized_classical_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
+		transient_followup_form.fields["too_resource"].queryset = view_utils.get_authorized_too_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
+		transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
 
 		transient_observation_task_form = TransientObservationTaskForm()
 
@@ -354,9 +430,18 @@ def transient_edit(request, transient_id=None):
 
 
 from wsgiref.util import FileWrapper
-@login_required
+@csrf_exempt
+@login_or_basic_auth_required
 def download_data(request, slug):
 
+	if 'HTTP_AUTHORIZATION' in request.META.keys():
+		auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+		credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+		username, password = credentials.split(':', 1)
+		user = auth.authenticate(username=username, password=password)
+	else:
+		user = request.user
+		
 	transient = Transient.objects.filter(slug=slug)
 	data = {transient[0].name:{'transient':{},'host':{},'photometry':{},'spectra':{}}}
 	data[transient[0].name]['transient'] = json.loads(serializers.serialize("json", transient, use_natural_foreign_keys=True))
@@ -367,23 +452,23 @@ def download_data(request, slug):
 
 
 	# Get photometry by user & transient
-	authorized_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser_ByTransient(request.user, transient[0].id)
+	authorized_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient[0].id)
 	if len(authorized_phot):
 		data[transient[0].name]['photometry'] = json.loads(serializers.serialize("json", authorized_phot,use_natural_foreign_keys=True))
 
 		# Get data points
 		for p,pd in zip(authorized_phot,range(len(data[transient[0].name]['photometry']))):
-			photdata = PhotometryService.GetAuthorizedTransientPhotData_ByPhotometry(request.user, p.id, includeBadData=True)
+			photdata = PhotometryService.GetAuthorizedTransientPhotData_ByPhotometry(user, p.id, includeBadData=True)
 			data[transient[0].name]['photometry'][pd]['data'] = json.loads(serializers.serialize("json", photdata, use_natural_foreign_keys=True))
 
 
 	# Get spectra by user & transient
-	authorized_spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient[0].id, includeBadData=True)
+	authorized_spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(user, transient[0].id, includeBadData=True)
 	if len(authorized_spectra):
 		data[transient[0].name]['spectra'] = json.loads(serializers.serialize("json", authorized_spectra, use_natural_foreign_keys=True))
 
 		for s,sd in zip(authorized_spectra,range(len(data[transient[0].name]['spectra']))):
-			specdata = SpectraService.GetAuthorizedHostSpecData_BySpectrum(request.user, s.id, includeBadData=True)
+			specdata = SpectraService.GetAuthorizedHostSpecData_BySpectrum(user, s.id, includeBadData=True)
 			if specdata:
 				data[transient[0].name]['spectra'][sd]['data'] = json.loads(serializers.serialize("json", specdata, use_natural_foreign_keys=True))
 

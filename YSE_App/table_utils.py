@@ -27,6 +27,17 @@ class TransientTable(tables.Table):
 							 verbose_name='Disc. Mag',orderable=True)
 	recent_mag = tables.Column(accessor='recent_mag',
 							   verbose_name='Recent Mag',orderable=True)
+	status_string = tables.TemplateColumn("""<div class="btn-group">
+<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+											<span id="{{ record.id }}_status_name" class="dropbtn">{{ record.status }}</span>
+										</button>
+										<ul class="dropdown-menu">
+											{% for status in all_transient_statuses %}
+    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+											{% endfor %}
+										</ul>
+</div>""",
+										  verbose_name='Status',orderable=True,order_by='status')
 
 	
 	def __init__(self,*args, **kwargs):
@@ -62,7 +73,7 @@ class TransientTable(tables.Table):
 	class Meta:
 		model = Transient
 		fields = ('name_string','ra_string','dec_string','disc_date_string','disc_mag','recent_mag',
-				  'obs_group','best_spec_class','redshift','host.redshift','status')
+				  'obs_group','best_spec_class','redshift','host.redshift','status_string')
 		
 		template_name='YSE_App/django-tables2/bootstrap.html'
 		attrs = {
@@ -100,6 +111,19 @@ class FollowupTable(tables.Table):
 	action = tables.TemplateColumn("<a target=\"_blank\" href=\"{% url 'admin:YSE_App_transientfollowup_change' record.id %}\">Edit</a>",
 								   verbose_name='Action',orderable=False)
 
+	status_string = tables.TemplateColumn("""<div class="btn-group">
+<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+											<span id="{{ record.id }}_status_name" class="dropbtn">{{ record.status }}</span>
+										</button>
+										<ul class="dropdown-menu">
+											{% for status in all_followup_statuses %}
+    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+											{% endfor %}
+										</ul>
+</div>""",
+										  verbose_name='Followup Status',orderable=True,order_by='status')
+
+	
 	
 	#disc_mag = tables.Column(accessor='disc_mag',
 	#						 verbose_name='Disc. Mag',orderable=True)
@@ -108,7 +132,7 @@ class FollowupTable(tables.Table):
 		super().__init__(*args, **kwargs)
 
 		self.base_columns['transient.status'].verbose_name = 'Transient Status'
-		self.base_columns['status'].verbose_name = 'Followup Status'
+		#self.base_columns['status'].verbose_name = 'Followup Status'
 
 	def order_recent_mag(self, queryset, is_descending):
 
@@ -123,7 +147,7 @@ class FollowupTable(tables.Table):
 		
 	class Meta:
 		model = TransientFollowup
-		fields = ('name_string','ra_string','dec_string','recent_mag','transient.status','observation_window','status','action')
+		fields = ('name_string','ra_string','dec_string','recent_mag','transient.status','observation_window','action')
 		template_name='YSE_App/django-tables2/bootstrap.html'
 		attrs = {
 			'th' : {

@@ -672,7 +672,7 @@ class processTNS():
 					# Get TNS page
 					int_name=""
 					evt_type=""
-					z=""
+					evt_z=""
 					host_name=""
 					host_redshift = ""
 					ned_url = ""
@@ -787,7 +787,7 @@ class processTNS():
 					except:
 						print('Error : couldn\'t get photometry!!!')
 						
-					z = soup.find('div', attrs={'class':'field-redshift'}).find('div').find('b').text
+					evt_z = soup.find('div', attrs={'class':'field-redshift'}).find('div').find('b').text
 
 					hn_div = soup.find('div', attrs={'class':'field-hostname'})
 					if hn_div is not None:
@@ -880,7 +880,7 @@ class processTNS():
 											ra = ras[j].decode("utf-8"),
 											dec = decs[j].decode("utf-8"),
 											ebv = ebv,
-											z = z,
+											z = evt_z,
 											tns_host = host_name, 
 											tns_host_z = host_redshift,
 											ned_nearest_host = galaxy_names, 
@@ -904,8 +904,11 @@ class processTNS():
 						
 						# put in the hosts
 						hostcoords = ''; hosturl = ''; ned_mag = ''
-						for z,name,ra,dec,sep,mag in zip(galaxy_zs,galaxy_names,galaxy_ras,galaxy_decs,galaxy_seps,galaxy_mags):
-							if sep == np.min(galaxy_seps):
+						galaxy_z_times_seps = np.array(galaxy_seps)*np.array(galaxy_zs)
+						for z,name,ra,dec,sep,mag,gzs in zip(galaxy_zs,galaxy_names,galaxy_ras,
+															 galaxy_decs,galaxy_seps,galaxy_mags,
+															 galaxy_z_times_seps):
+							if gzs == np.min(galaxy_z_times_seps):
 								hostdict = {'name':name,'ra':ra,'dec':dec,'redshift':z}
 								hosturl = db.get_host_from_DB(name,ra,dec,self.hostmatchrad)
 								if not hosturl:
@@ -936,7 +939,6 @@ class processTNS():
 						newobjdict = {'name':objs[j].decode("utf-8"),
 									  'ra':sc.ra.deg,
 									  'dec':sc.dec.deg,
-									  #'status':statusid,
 									  'obs_group':obsgroupid,
 									  'host':hosturl,
 									  'candidate_hosts':hostcoords,
@@ -948,7 +950,7 @@ class processTNS():
 									  'groups':[]}
 						if nondetectdate: newobjdict['non_detect_date'] = nondetectdate.replace(' ','T')
 						if nondetectmaglim: newobjdict['non_detect_limit'] = nondetectmaglim
-						if z and z != '---': newobjdict['redshift'] = float(z)
+						if evt_z and evt_z != '---': newobjdict['redshift'] = float(evt_z)
 						if nondetectfilt:
 							nondetectid = db.get_ID_from_DB('photometricbands',nondetectfilt)
 							if nondetectid:

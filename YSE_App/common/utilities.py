@@ -6,6 +6,10 @@ from astroplan import Observer
 from astropy.time import Time
 import requests
 
+def date_to_mjd(date):
+	time = Time(date,scale='utc')
+	return time.mjd
+
 def getSeparation(ra1_decimal,dec1_decimal,
                   ra2_decimal,dec2_decimal):
         c1 = SkyCoord(ra1_decimal,dec1_decimal,unit=(u.deg, u.deg))

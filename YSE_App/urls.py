@@ -30,6 +30,7 @@ urlpatterns = [
     url(r'^transient_detail/(?P<slug>[a-zA-Z0-9_-]+)/$', views.transient_detail, name='transient_detail'),
 
 	url(r'^get_transient/(?P<slug>[a-zA-Z0-9_-]+)/$', data_utils.get_transient, name='get_transient'),
+	url(r'^add_transient/', data_utils.add_transient, name='add_transient'),
 	url(r'^add_transient_phot/', data_utils.add_transient_phot, name='add_transient_phot'),
 	url(r'^add_transient_spec/', data_utils.add_transient_spec, name='add_transient_spec'),
 	url(r'^get_host/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<sep>\d+\.?\d*)/$', data_utils.get_host, name='get_host'),
@@ -40,6 +41,7 @@ urlpatterns = [
     url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)/(?P<telescope_id>[a-zA-Z0-9]+)", 
 		view_utils.airmassplot, name='airmassplot'),
     url(r'^lightcurveplot/(?P<transient_id>[0-9]+)/$', view_utils.lightcurveplot, name='lightcurveplot'),
+    url(r'^salt2plot/(?P<transient_id>[0-9]+)/(?P<salt2fit>[0-1]+)/$', view_utils.salt2plot, name='salt2plot'),
     url(r'^spectrumplot/(?P<transient_id>[0-9]+)/$', view_utils.spectrumplot, name='spectrumplot'),
     url(r'^spectrumplotsingle/(?P<transient_id>[a-zA-Z0-9_-]+)/(?P<spec_id>[a-zA-Z0-9_-]+)/$', view_utils.spectrumplotsingle, name='spectrumplotsingle'),
 	url(r'^finderchart/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderchart, name='finderchart'),
@@ -68,6 +70,8 @@ urlpatterns = [
 		view_utils.get_ps1_image, name='get_ps1_image'),
 	url(r'^get_hst_image/(?P<transient_id>[0-9]+)',
 		view_utils.get_hst_image, name='get_hst_image'),
+	url(r'^get_chandra_image/(?P<transient_id>[0-9]+)',
+		view_utils.get_chandra_image, name='get_chandra_image'),
 	url(r'^get_legacy_image/(?P<transient_id>[0-9]+)',
 		view_utils.get_legacy_image, name='get_legacy_image'),
 

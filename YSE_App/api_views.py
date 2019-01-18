@@ -11,6 +11,9 @@ from .models import *
 from .serializers import *
 from .data import PhotometryService, SpectraService, ObservingResourceService
 
+from django_filters.rest_framework import DjangoFilterBackend,filters
+import django_filters
+
 ### `Additional Info` ViewSets ###
 class TransientWebResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = TransientWebResource.objects.all()
@@ -313,11 +316,24 @@ class TelescopeViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	serializer_class = TelescopeSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+### `Transient` Filter Set ###
+class TransientFilter(django_filters.FilterSet):
+	created_date_gte = django_filters.DateTimeFilter(name="created_date", lookup_expr='gte')
+	modified_date_gte = django_filters.DateTimeFilter(name="modified_date", lookup_expr='gte')
+	status_in = django_filters.BaseInFilter(name="status__name")#, lookup_expr='in')
+
+	class Meta:
+		model = Transient
+		fields = ('created_date','modified_date')
+
 ### `Transient` ViewSets ###
 class TransientViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = Transient.objects.all()
 	serializer_class = TransientSerializer
 	permission_classes = (permissions.IsAuthenticated,)
+	filter_backends = (DjangoFilterBackend,)
+	filter_class = TransientFilter
+	#filter_fields = ('status','created_date','modified_date','mw_ebv','status__name')
 
 class AlternateTransientNamesViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = AlternateTransientNames.objects.all()
