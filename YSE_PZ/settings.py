@@ -35,7 +35,7 @@ DEBUG = bool(config.get('site_settings', 'IS_DEBUG'))
 ALLOWED_HOSTS = ['*']
 
 
-# Application definition
+# Application definitionEXPLORER_SQL_BLACKLIST
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -112,6 +112,9 @@ DATABASES = {
 
 EXPLORER_CONNECTIONS = { 'Explorer': 'explorer' }
 EXPLORER_DEFAULT_CONNECTION = 'explorer'
+# Allow all users to access and modify SQL Explorer queries.
+EXPLORER_PERMISSION_VIEW = lambda u: u
+EXPLORER_PERMISSION_CHANGE = lambda u: u
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
