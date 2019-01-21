@@ -30,11 +30,11 @@
   <!-- Default box -->
   {% for transient_cat in transient_categories %}
 
-<div class="box" id="{{transient_cat.2}}">
+<div class="box" id="{{transient_cat.4}}">
   <div class="box-header with-border">
     <h3 class="box-title">
-      <input type="hidden" id="query" value="{{ transient_cat.4 }}"/>
-      <form id="remove_dashboard_query" action="{% url 'remove_dashboard_query' -1 %}" method="post" style="margin: 0; padding: 0;">
+      <form id="remove_dashboard_query_{{ transient_cat.4 }}" action="{% url 'remove_dashboard_query' -1 %}" method="post" style="margin: 0; padding: 0;">
+        <input type="hidden" id="query_{{ transient_cat.4 }}" value="{{ transient_cat.4 }}"/>
         {{ transient_cat.1 }}
         {% csrf_token %}
         {% for hidden_field in form.hidden_fields %}
@@ -92,11 +92,6 @@ $(document).ready(function(){
       $('#add_dashboard_query').on('submit', function(event){
         event.preventDefault();
         add_dashboard_query();
-      });
-
-      $('#remove_dashboard_query').on('submit', function(event){
-        event.preventDefault();
-        remove_dashboard_query();
       });
 
       function transientStatusChangeErr() {
@@ -221,10 +216,17 @@ $(document).ready(function(){
         });
       };
 
+      
+      {% for transient_cat in transient_categories %}
+      $('#remove_dashboard_query_{{ transient_cat.4 }}').on('submit', function(event){
+        event.preventDefault();
+        remove_dashboard_query();
+      });
+
       function remove_dashboard_query() {
         // Grab the form, and associate it with the current transient detail page
-        var data = $('#remove_dashboard_query').serialize()
-        var query_id = $('#query').val()
+        var data = $('#remove_dashboard_query_{{ transient_cat.4 }}').serialize()
+        var query_id = $('#query_{{ transient_cat.4 }}').val()
         //data = (data + "&query=" + query)
 
         $.ajax({
@@ -243,6 +245,7 @@ $(document).ready(function(){
           }
         });
       };
+      {% endfor %}
 
     });
 </script>

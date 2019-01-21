@@ -159,7 +159,7 @@ def personaldashboard(request):
 		table = TransientTable(transientfilter.qs,prefix=q.query.title.replace(' ',''))
 		RequestConfig(request, paginate={'per_page': 10}).configure(table)
 		tables += [(table,q.query.title,q.query.title.replace(' ',''),transientfilter,q.id)]
-
+		
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-')[0]
 	else: anchor = ''
