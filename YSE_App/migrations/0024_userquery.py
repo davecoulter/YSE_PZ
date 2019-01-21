@@ -8,7 +8,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('explorer', '0008_auto_20180911_2051'),
+        ('explorer', '0007_querylog_connection'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('YSE_App', '0023_photometricband_disp_symbol'),
     ]
