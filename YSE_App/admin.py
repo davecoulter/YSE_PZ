@@ -1,8 +1,24 @@
 from django.contrib import admin
+from django import forms
 
 # Register your models here.
 from YSE_App.models import *
 
+class QueryModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.__unicode__
+
+class QueryModelForm(forms.ModelForm):
+	query = QueryModelChoiceField(Query.objects.all())
+	
+	class Meta:
+		model = UserQuery
+		fields = ('created_by','modified_by','user')
+		
+@admin.register(UserQuery)
+class UserQueryAdmin(admin.ModelAdmin):
+	form = QueryModelForm
+	
 admin.site.register(TransientStatus)
 admin.site.register(FollowupStatus)
 admin.site.register(TaskStatus)
@@ -26,6 +42,7 @@ admin.site.register(ConfigElement)
 admin.site.register(PhotometricBand)
 admin.site.register(PrincipalInvestigator)
 admin.site.register(Profile)
+#admin.site.register(UserQuery)
 admin.site.register(Host)
 admin.site.register(Transient)
 admin.site.register(TransientFollowup)

@@ -16,14 +16,12 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import TemplateView
 import random
-import time
 from bokeh.plotting import figure
 from bokeh.resources import CDN
 from bokeh.embed import file_html
 from bokeh.models import Range1d,Span,LinearAxis,Label,Title
 from bokeh.core.properties import FontSizeSpec
 from .data import PhotometryService, SpectraService, ObservingResourceService
-import time
 from .serializers import *
 from rest_framework.request import Request
 from django.contrib.auth.decorators import login_required, permission_required
@@ -33,6 +31,7 @@ from astropy.table import Table
 import sncosmo
 from .common.bandpassdict import bandpassdict
 from .common.utilities import date_to_mjd
+import time
 
 py2bokeh_symboldict = {"^":"triangle",
 					   "+":"cross",
@@ -378,6 +377,7 @@ def salt2plot(request, transient_id, salt2fit):
 	return response
 	
 def lightcurveplot(request, transient_id, salt2=False):
+	import time
 	tstart = time.time()
 
 	transient = Transient.objects.get(pk=transient_id)

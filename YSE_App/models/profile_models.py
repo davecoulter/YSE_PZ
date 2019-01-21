@@ -1,6 +1,7 @@
 from django.db import models
 from YSE_App.models.base import *
 from YSE_App.models.enum_models import *
+from explorer.models import *
 
 class Profile(BaseModel):
 	### Entity relationships ###
@@ -19,3 +20,11 @@ class Profile(BaseModel):
 		return "User: %s; Phone: +%s %s-%s-%s; Provider: %s" % (self.user.username, 
 			self.phone_country_code, self.phone_area, self.phone_first_three,
 			self.phone_last_four, self.phone_provider_str)
+
+class UserQuery(BaseModel):
+
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	query = models.ForeignKey(Query, null=True, blank=True, on_delete=models.SET_NULL)
+
+	def __str__(self):
+		return '%s %s: %s'%(self.user.first_name,self.user.last_name,self.query.title)

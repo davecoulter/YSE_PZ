@@ -1,0 +1,249 @@
+{% extends 'YSE_App/base.html' %}
+{% load static from staticfiles %}
+{% load dashboard_extras %}
+{% load widget_tweaks %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
+
+{% block content_header %}
+    <h1>
+        {{ user.first_name }}'s Personal YSE_PZ Dashboard
+    </h1>
+    <ol class="breadcrumb">
+        <li><i class="fa fa-dashboard"></i> Home</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+
+{% if not transient_categories %}
+  <div class="row">
+    <div class="col-xs-12">
+      <div class="col-xs-6">
+        <input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
+          {% include "YSE_App/form_snippets/dashboard_query_form.html" with form=add_dashboard_query_form %}
+        </div>
+    </div>
+  </div>
+{% endif %}
+
+  <!-- Default box -->
+  {% for transient_cat in transient_categories %}
+
+<div class="box" id="{{transient_cat.2}}">
+  <div class="box-header with-border">
+    <h3 class="box-title">
+      <input type="hidden" id="query" value="{{ transient_cat.4 }}"/>
+      <form id="remove_dashboard_query" action="{% url 'remove_dashboard_query' -1 %}" method="post" style="margin: 0; padding: 0;">
+        {{ transient_cat.1 }}
+        {% csrf_token %}
+        {% for hidden_field in form.hidden_fields %}
+         {{ hidden_field }}
+        {% endfor %}
+          &nbsp;<button type="submit" class="fa fa-trash-o fa-border"></button>
+      </form>
+    </h3>
+  </div>
+    <div align='right'>
+      {% if transient_cat.3 %}
+      <form action="" method="get" class="form form-inline">
+        {% bootstrap_form transient_cat.3.form layout='inline' %}
+        {% with "#"|add:transient_cat.2 as link %}
+        {% bootstrap_button 'filter' %}&ensp;&nbsp;
+        {% endwith %}
+      </form>
+      {% endif %}
+    </div>
+    <div class="box-body">
+
+      {% render_table transient_cat.0 %}
+
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer">
+    </div>
+    {% endfor %}
+    <!-- /.box-footer-->
+  </div>
+  <!-- /.box -->
+
+{% if transient_categories %}
+  <div class="row">
+    <div class="col-xs-12">
+      <div class="col-xs-6">
+        <input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
+          {% include "YSE_App/form_snippets/dashboard_query_form.html" with form=add_dashboard_query_form %}
+        </div>
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script type='text/javascript'>
+{% if anchor %}
+$(document).ready(function(){
+    window.location = '#{{ anchor }}'
+});
+{% endif %}
+    $(function() {
+      // Submit post on submit
+      $('#add_dashboard_query').on('submit', function(event){
+        event.preventDefault();
+        add_dashboard_query();
+      });
+
+      $('#remove_dashboard_query').on('submit', function(event){
+        event.preventDefault();
+        remove_dashboard_query();
+      });
+
+      function transientStatusChangeErr() {
+        alert("Transient Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
+      }
+
+      $('.transientStatusChange').on('click', function(event){
+        var status_id = $(this).attr('data-status_id')
+        var transient_id = $(this).attr('transient_id')
+        var url_target = "{% url 'transient-detail' -1 %}".replace('-1', transient_id);
+        var status_target = "{% url 'transientstatus-list' %}" + status_id + "/"
+
+        var base_url = window.location.protocol + "//" + window.location.hostname
+        var port = window.location.port
+        var api_url = base_url + url_target
+        var status_url = base_url + status_target
+
+        if (port != "") {
+          api_url = base_url + ":" + port + url_target
+          status_url = base_url + ":" + port + status_target
+        }
+
+        var putData = { "status": status_url }
+
+        $.ajax({
+          type: "PATCH",
+          url: api_url,
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+          data: putData,
+          success: function(data, textStatus, jqXHR) {
+            if (jqXHR.status == 200 && textStatus == "success") {
+
+              var tokens = data.status.split("/")
+              var status_name = tokens[tokens.length-2]
+              var button_id = "#"+transient_id+"_status_name"
+              $(button_id).text(status_name)
+              
+              {#alert(textStatus)#}
+            } else {
+              transientStatusChangeErr()
+            }
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
+            transientStatusChangeErr()
+            {#alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));#}
+          }
+        });
+        event.preventDefault();
+      });
+
+      // This function gets cookie with a given name
+      function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+
+      var csrftoken = getCookie('csrftoken');
+
+      /*
+      The functions below will create a header with csrftoken
+      */
+
+      function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+      }
+
+      function sameOrigin(url) {
+        // test that a given url is a same-origin URL
+        // url could be relative or scheme relative or absolute
+        var host = document.location.host; // host + port
+        var protocol = document.location.protocol;
+        var sr_origin = '//' + host;
+        var origin = protocol + sr_origin;
+        // Allow absolute or scheme relative URLs to same origin
+        return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+        (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+          // or any other URL that isn't scheme relative or absolute i.e relative.
+          !(/^(\/\/|http:|https:).*/.test(url));
+        }
+
+        $.ajaxSetup({
+          beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
+            // Send the token to same-origin, relative URLs only.
+            // Send the token only if the method warrants CSRF protection
+            // Using the CSRFToken value acquired earlier
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+          }
+        }
+      });
+
+      function add_dashboard_query() {
+        // Grab the form, and associate it with the current transient detail page
+        var data = $('#add_dashboard_query').serialize()
+
+        $.ajax({
+          url : "{% url 'add_dashboard_query' %}", // the endpoint
+          type : "POST", // http method
+          data : data, // data sent with the post request
+
+          // handle a successful response
+          success : function(json) {
+            window.location.reload()
+          },
+
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+            alert(xhr.status + ": " + xhr.responseText);
+          }
+        });
+      };
+
+      function remove_dashboard_query() {
+        // Grab the form, and associate it with the current transient detail page
+        var data = $('#remove_dashboard_query').serialize()
+        var query_id = $('#query').val()
+        //data = (data + "&query=" + query)
+
+        $.ajax({
+          url : "{% url 'remove_dashboard_query' -1 %}".replace('-1', query_id), // the endpoint
+          type : "POST", // http method
+          data : data, // data sent with the post request
+
+          // handle a successful response
+          success : function(json) {
+            window.location.reload()
+          },
+
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+            alert(xhr.status + ": " + xhr.responseText);
+          }
+        });
+      };
+
+    });
+</script>
+{% endblock %}

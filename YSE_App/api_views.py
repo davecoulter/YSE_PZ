@@ -241,6 +241,12 @@ class ProfileViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	serializer_class = ProfileSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+### `UserQuery` ViewSets ###
+class UserQueryViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = UserQuery.objects.all()
+	serializer_class = UserQuerySerializer
+	permission_classes = (permissions.IsAuthenticated,)
+	
 ### `Spectra` ViewSets ###
 class TransientSpectrumViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	serializer_class = TransientSpectrumSerializer

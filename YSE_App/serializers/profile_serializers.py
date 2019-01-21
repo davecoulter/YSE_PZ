@@ -29,3 +29,28 @@ class ProfileSerializer(serializers.HyperlinkedModelSerializer):
 		instance.save()
 
 		return instance
+
+class UserQuerySerializer(serializers.HyperlinkedModelSerializer):
+	user = serializers.HyperlinkedRelatedField(queryset=User.objects.all(), view_name='user-detail')
+	
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+
+	class Meta:
+		model = UserQuery
+		fields = "__all__"
+		
+	def create(self, validated_data):
+		return UserQuery.objects.create(**validated_data)
+
+	def update(self, instance, validated_data):
+
+		instance.profile = validated_data.get('profile', instance.profile)
+		instance.name = validated_data.get('name', instance.name)
+		instance.query = validated_data.get('query', instance.query)
+
+		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
+
+		instance.save()
+
+		return instance

@@ -5,6 +5,7 @@ from django.views import generic
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.urls import reverse_lazy
 import requests
 import sys
 from datetime import datetime
@@ -15,13 +16,13 @@ from .models import *
 from .common import utilities
 import json
 
-from django.views.generic import FormView
+from django.views.generic import FormView, DeleteView
 from .forms import *
 from django.http import JsonResponse
 from django.forms.models import model_to_dict
 from .common import alert
 import numpy as np
-	
+
 class AddTransientFollowupFormView(FormView):
 	form_class = TransientFollowupForm
 	template_name = 'YSE_App/form_snippets/transient_followup_form.html'
@@ -214,5 +215,52 @@ class AddTransientCommentFormView(FormView):
 				'data': data_dict
 			}
 			return JsonResponse(data)
+		else:
+			return response
+		
+class AddDashboardQueryFormView(FormView):
+	form_class = AddDashboardQueryForm
+	template_name = 'YSE_App/form_snippets/dashboard_query_form.html'
+	success_url = '/form-success/'
+	
+	def form_invalid(self, form):
+		response = super(AddDashboardQueryFormView, self).form_invalid(form)
+		if self.request.is_ajax():
+			return JsonResponse(form.errors, status=400)
+		else:
+			return response
+
+	def form_valid(self, form):
+		response = super(AddDashboardQueryFormView, self).form_valid(form)
+		if self.request.is_ajax():
+
+			instance = form.save(commit=False)
+			instance.created_by = self.request.user
+			instance.modified_by = self.request.user
+			instance.user = self.request.user
+
+
+			instance.save() #update_fields=['created_by','modified_by']
+
+			print(form.cleaned_data)
+
+			data = {
+				'message': "Successfully submitted form data.",
+			}
+			return JsonResponse(data)
+		else:
+			return response
+
+class RemoveDashboardQueryFormView(DeleteView):
+	model = UserQuery
+	form_class = RemoveDashboardQueryForm
+	template_name = 'YSE_App/personaldashboard.html'
+	success_url = reverse_lazy('personaldashboard')
+	
+	def form_invalid(self, form):
+		response = super(RemoveDashboardQueryFormView, self).form_invalid(form)
+
+		if self.request.is_ajax():
+			return JsonResponse(form.errors, status=400)
 		else:
 			return response

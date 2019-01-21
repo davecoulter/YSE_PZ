@@ -19,6 +19,7 @@ urlpatterns = [
 	# ex: /yse/
     url(r'^$', views.index, name='index'),
     url(r'^dashboard/$', views.dashboard, name='dashboard'),
+    url(r'^personaldashboard/$', views.personaldashboard, name='personaldashboard'),
     url(r'^calendar/$', views.calendar, name='calendar'),
     url(r'^followup/$', views.followup, name='followup'),
 	url(r'^transient_tags/$', views.transient_tags, name='transient_tags'),
@@ -50,6 +51,8 @@ urlpatterns = [
 	url(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
     url(r'^add_transient_observation_task/', AddTransientObservationTaskFormView.as_view(), name='add_transient_observation_task'),
     url(r'^add_transient_comment/', AddTransientCommentFormView.as_view(), name='add_transient_comment'),
+	url(r'^add_dashboard_query/', AddDashboardQueryFormView.as_view(), name='add_dashboard_query'),
+	url(r'^remove_dashboard_query/(?P<pk>[0-9_-]+)/', RemoveDashboardQueryFormView.as_view(), name='remove_dashboard_query'),
 	url(r'^rise_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',
 		view_utils.rise_time, name='rise_time'),
 	url(r'^set_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',

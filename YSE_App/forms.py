@@ -69,3 +69,23 @@ class TransientObservationTaskForm(ModelForm):
 			'actual_obs_date',
 			'description',
 			'followup']
+
+class QueryModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.__unicode__
+		
+class AddDashboardQueryForm(ModelForm):
+	query = QueryModelChoiceField(Query.objects.all())
+
+	class Meta:
+		model = UserQuery
+		fields = [
+			'query']
+
+class RemoveDashboardQueryForm(ModelForm):
+	query = QueryModelChoiceField(Query.objects.all())
+
+	class Meta:
+		model = UserQuery
+		fields = [
+			'id']
