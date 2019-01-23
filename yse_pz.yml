@@ -1,5 +1,6 @@
 name: yse_pz
 dependencies:
+- python=3.6
 - asn1crypto==0.24.0
 - astroplan==0.4
 - astropy==3.0
