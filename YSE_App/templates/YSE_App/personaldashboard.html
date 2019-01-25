@@ -220,10 +220,10 @@ $(document).ready(function(){
       {% for transient_cat in transient_categories %}
       $('#remove_dashboard_query_{{ transient_cat.4 }}').on('submit', function(event){
         event.preventDefault();
-        remove_dashboard_query();
+        remove_dashboard_query_{{ transient_cat.4 }}();
       });
 
-      function remove_dashboard_query() {
+      function remove_dashboard_query_{{ transient_cat.4 }}() {
         // Grab the form, and associate it with the current transient detail page
         var data = $('#remove_dashboard_query_{{ transient_cat.4 }}').serialize()
         var query_id = $('#query_{{ transient_cat.4 }}').val()
