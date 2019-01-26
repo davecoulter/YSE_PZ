@@ -7,6 +7,7 @@ from YSE_App.models.host_models import *
 from YSE_App.models.tag_models import *
 from YSE_App.common.utilities import GetSexigesimalString
 from YSE_App.common.alert import IsK2Pixel, SendTransientAlert
+from YSE_App.common.thacher_transient_search import thacher_transient_search
 from YSE_App import models as yse_models
 from django.dispatch import receiver
 from pytz import timezone
@@ -151,6 +152,14 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 			instance.k2_msg = C19_msg
 			instance.tags.add(k2c19tag)
 
+
+		print('Checking Thacher')
+		if thacher_transient_search(instance.ra,instance.dec):
+			try:
+				thachertag = TransientTag.objects.get(name='Thacher')
+				instance.tags.add(thachertag)
+			except: pass
+			
 		instance.save()
 		#if is_k2_C19_validated:
 		#	coord_string = GetSexigesimalString(instance.ra, instance.dec)
