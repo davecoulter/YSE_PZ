@@ -459,9 +459,9 @@ def download_photometry(request, slug):
 	data = {transient[0].name:{'transient':{},'host':{},'photometry':{},'spectra':{}}}
 	data[transient[0].name]['transient'] = json.loads(serializers.serialize("json", transient, use_natural_foreign_keys=True))
 	for k in data[transient[0].name]['transient'][0]['fields'].keys():
-		if k not in ['created_by','modified_by','CANDIDATE_HOSTS']:
+		if k not in ['created_by','modified_by','candidate_hosts']:
 			content += "# %s: %s\n"%(k.upper(),data[transient[0].name]['transient'][0]['fields'][k])
-
+			
 	content += "\n"
 	content += "VARLIST:  MJD        FLT  FLUXCAL   FLUXCALERR    MAG     MAGERR     TELESCOPE     INSTRUMENT\n"
 	linefmt =  "OBS:      %.3f  %s  %.3f  %.3f  %.3f  %.3f  %s  %s\n"
