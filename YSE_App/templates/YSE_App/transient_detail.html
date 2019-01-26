@@ -252,6 +252,9 @@
 						<button style="margin-bottom:5px;" type="button" class="plotSALT2" id="salt2plot">
 							Show SALT2 Fit</span>
 						</button>
+						<button style="margin-bottom:5px;" type="button" class="photdownload" onclick="window.open('{% url 'download_photometry' transient.slug %}')">
+							Download Photometry</span>
+						</button>
 					</div>
 						<div class="box-body" id="lcplot"></div>
 					</div>

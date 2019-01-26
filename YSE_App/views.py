@@ -440,3 +440,89 @@ def download_data(request, slug):
 	response = JsonResponse(data)
 	response['Content-Disposition'] = 'attachment; filename=%s' % '%s_data.json'%slug
 	return response
+
+@csrf_exempt
+@login_or_basic_auth_required
+def download_photometry(request, slug):
+
+	if 'HTTP_AUTHORIZATION' in request.META.keys():
+		auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+		credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+		username, password = credentials.split(':', 1)
+		user = auth.authenticate(username=username, password=password)
+	else:
+		user = request.user
+
+	content = ""
+		
+	transient = Transient.objects.filter(slug=slug)
+	data = {transient[0].name:{'transient':{},'host':{},'photometry':{},'spectra':{}}}
+	data[transient[0].name]['transient'] = json.loads(serializers.serialize("json", transient, use_natural_foreign_keys=True))
+	for k in data[transient[0].name]['transient'][0]['fields'].keys():
+		if k not in ['created_by','modified_by']:
+			content += "# %s: %s\n"%(k.upper(),data[transient[0].name]['transient'][0]['fields'][k])
+
+	content += "\n"
+	content += "VARLIST:  MJD        FLT  FLUXCAL   FLUXCALERR    MAG     MAGERR     TELESCOPE     INSTRUMENT\n"
+	linefmt =  "OBS:      %.3f  %s  %.3f  %.3f  %.3f  %.3f  %s  %s\n"
+
+	
+	# Get photometry by user & transient
+	authorized_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient[0].id)
+	if len(authorized_phot):
+		data[transient[0].name]['photometry'] = json.loads(serializers.serialize("json", authorized_phot,use_natural_foreign_keys=True))
+		
+		# Get data points
+		for p,pd in zip(authorized_phot,range(len(data[transient[0].name]['photometry']))):
+
+			telescope = data[transient[0].name]['photometry'][pd]['fields']['instrument'].split(' - ')[0]
+			instrument = data[transient[0].name]['photometry'][pd]['fields']['instrument'].split(' - ')[1]
+			
+			photdata = PhotometryService.GetAuthorizedTransientPhotData_ByPhotometry(user, p.id, includeBadData=True)
+			data[transient[0].name]['photometry'][pd]['data'] = json.loads(serializers.serialize("json", photdata, use_natural_foreign_keys=True))
+
+			for d in data[transient[0].name]['photometry'][pd]['data']:
+				mjd = date_to_mjd(d['fields']['obs_date'])
+				if d['fields']['flux'] and d['fields']['flux_zero_point'] and not d['fields']['mag']:
+					if d['fields']['flux_err']: flux_err = d['fields']['flux_err']
+					else: flux_err = 0
+					
+					flux = d['fields']['flux']*10**(0.4*(d['fields']['flux_zero_point']-27.5))
+					flux_err = flux_err*10**(0.4*(d['fields']['flux_zero_point']-27.5))
+					mag = -2.5*np.log10(flux)+27.5
+					mag_err = 2.5/np.log(10)*flux_err/flux
+					
+					content += linefmt%(
+						mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,mag,mag_err,telescope,instrument)
+					
+				elif not d['fields']['flux'] and d['fields']['mag']:
+					if d['fields']['mag_err']: mag_err = d['fields']['mag_err']
+					else: mag_err = 0
+					
+					flux = 10**(-0.4*(d['fields']['mag']-27.5))
+					flux_err = 0.4*np.log(10)*flux*mag_err
+					
+					content += linefmt%(
+						mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,telescope,instrument)
+					
+				elif d['fields']['flux'] and d['fields']['flux_zero_point'] and d['fields']['mag']:
+					if d['fields']['flux_err']: flux_err = d['fields']['flux_err']
+					else: flux_err = 0
+					if d['fields']['mag_err']: mag_err = d['fields']['mag_err']
+					else: mag_err = 0
+					
+					flux = d['fields']['flux']*10**(0.4*(d['fields']['flux_zero_point']-27.5))
+					flux_err = flux_err*10**(0.4*(d['fields']['flux_zero_point']-27.5))
+
+					content += linefmt%(
+						mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,telescope,instrument)
+					
+				else:
+					continue
+
+	content += "# END: \n"
+				
+	response = HttpResponse(content, content_type='text/plain')
+	response['Content-Disposition'] = 'attachment; filename=%s' % '%s_data.snana.txt'%slug
+
+	return response
