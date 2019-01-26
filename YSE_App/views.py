@@ -459,7 +459,7 @@ def download_photometry(request, slug):
 	data = {transient[0].name:{'transient':{},'host':{},'photometry':{},'spectra':{}}}
 	data[transient[0].name]['transient'] = json.loads(serializers.serialize("json", transient, use_natural_foreign_keys=True))
 	for k in data[transient[0].name]['transient'][0]['fields'].keys():
-		if k not in ['created_by','modified_by']:
+		if k not in ['created_by','modified_by','CANDIDATE_HOSTS']:
 			content += "# %s: %s\n"%(k.upper(),data[transient[0].name]['transient'][0]['fields'][k])
 
 	content += "\n"
