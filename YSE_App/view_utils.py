@@ -621,7 +621,7 @@ def spectrumplot(request, transient_id):
 
 	#figure is a function in the bokeh module
 	ax=figure()
-
+	#HELLO
 	wave,flux = [],[]
 	for s in spec:
 		wave += [s.wavelength]
