@@ -619,6 +619,7 @@ def spectrumplot(request, transient_id):
 	if not len(spec):
 		return django.http.HttpResponse('')
 
+	#figure is a function in the bokeh module
 	ax=figure()
 
 	wave,flux = [],[]
