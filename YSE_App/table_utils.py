@@ -6,6 +6,7 @@ from django_tables2 import RequestConfig
 from django.db.models import F, Q
 from django.db.models.functions import Length, Substr
 from django.db.models import Count, Value, Max, Min
+from django.db.models.functions import Greatest, Coalesce
 from django_tables2 import A
 from django.db import models
 from .data import PhotometryService
@@ -23,12 +24,29 @@ class TransientTable(tables.Table):
 							   verbose_name='DEC',orderable=True,order_by='dec')
 	disc_date_string = tables.Column(accessor='disc_date_string',
 									 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
-	disc_mag = tables.Column(accessor='disc_mag',
-							 verbose_name='Disc. Mag',orderable=True)
 	recent_mag = tables.Column(accessor='recent_mag',
-							   verbose_name='Recent Mag',orderable=True)
+							   verbose_name='Last Mag',orderable=True)
+	recent_magdate = tables.Column(accessor='recent_magdate',
+							   verbose_name='Last Obs. Date',orderable=True)
+	best_redshift = tables.Column(accessor='z_or_hostz',
+								  verbose_name='Redshift',orderable=True,order_by='host__redshift')
+
+	#mw_ebv = tables.Column(accessor='mw_ebv',
+	#						   verbose_name='MW E(B-V)',orderable=True)
+	mw_ebv = tables.TemplateColumn("""{% if record.mw_ebv %}
+{% if record.mw_ebv >= 0.2 %}
+&nbsp;<b class="text-red">{{ record.mw_ebv }}</b>
+{% else %}
+{{ record.mw_ebv }}
+{% endif %}
+{% else %}
+-
+{% endif %}""",
+								   verbose_name='MW E(B-V)',orderable=True,order_by='mw_ebv')
+
+	
 	status_string = tables.TemplateColumn("""<div class="btn-group">
-<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+<button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
 											<span id="{{ record.id }}_status_name" class="dropbtn">{{ record.status }}</span>
 										</button>
 										<ul class="dropdown-menu">
@@ -43,22 +61,28 @@ class TransientTable(tables.Table):
 	def __init__(self,*args, **kwargs):
 		super().__init__(*args, **kwargs)
 
-		self.base_columns['host.redshift'].verbose_name = 'Host Redshift'
 		self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
 
-	def order_disc_mag(self, queryset, is_descending):
+	def order_best_redshift(self, queryset, is_descending):
+
+		queryset = queryset.annotate(
+			best_redshift=Coalesce('redshift', 'host__redshift'),
+		).order_by(('-' if is_descending else '') + 'best_redshift')
+		return (queryset, True)
+
+	
+	def order_recent_mag(self, queryset, is_descending):
 
 		all_phot = TransientPhotometry.objects.values('transient').filter(transient__in = queryset)
 		phot_ids = all_phot.values('id')
 		
 		phot_data_query = Q(transientphotometry__id__in=phot_ids)
-		disc_query = Q(transientphotometry__transientphotdata__discovery_point = 1)
 		queryset = queryset.annotate(
-			disc_mag=Min('transientphotometry__transientphotdata__mag',filter=phot_data_query & disc_query), #,filter=phot_data_query
-		).order_by(('-' if is_descending else '') + 'disc_mag')
+			recent_mag=Max('transientphotometry__transientphotdata__mag',filter=phot_data_query), #,filter=phot_data_query
+		).order_by(('-' if is_descending else '') + 'recent_mag')
 		return (queryset, True)
 
-	def order_recent_mag(self, queryset, is_descending):
+	def order_recent_magdate(self, queryset, is_descending):
 
 		all_phot = TransientPhotometry.objects.values('transient').filter(transient__in = queryset)
 		phot_ids = all_phot.values('id')
@@ -68,12 +92,12 @@ class TransientTable(tables.Table):
 			recent_magdate=Max('transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
 		).order_by(('-' if is_descending else '') + 'recent_magdate')
 		return (queryset, True)
-
+	
 	
 	class Meta:
 		model = Transient
-		fields = ('name_string','ra_string','dec_string','disc_date_string','disc_mag','recent_mag',
-				  'obs_group','best_spec_class','redshift','host.redshift','status_string')
+		fields = ('name_string','ra_string','dec_string','disc_date_string','recent_mag','recent_magdate','mw_ebv',
+				  'obs_group','best_spec_class','best_redshift','status_string')
 		
 		template_name='YSE_App/django-tables2/bootstrap.html'
 		attrs = {

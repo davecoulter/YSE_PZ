@@ -434,7 +434,7 @@ class processTNS():
 			datemin = (datetime.now() - timedelta(days=options.ndays)).strftime(date_format)
 			argstring = 'created_date_gte=%s'%datemin
 		else:
-			argstring = 'status_in=Following,Watch,FollowupRequested'
+			argstring = 'status_in=New,Following,Watch,FollowupRequested'
 		offsetcount = 0
 		
 		auth = coreapi.auth.BasicAuthentication(

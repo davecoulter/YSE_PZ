@@ -80,12 +80,6 @@ def dashboard(request):
 	following_transients = None
 	followup_requested_transients = None
 	finishedfollowing_transients = None
-
-	
-	k2_transients = Transient.objects.filter(k2_validated=1).order_by('-disc_date')
-	k2transientfilter = TransientFilter(request.GET, queryset=k2_transients,prefix='k2')
-	k2_table = TransientTable(k2transientfilter.qs,prefix='k2')
-	RequestConfig(request, paginate={'per_page': 10}).configure(k2_table)
 	
 	status_new = TransientStatus.objects.filter(name='New').order_by('-modified_date')
 	if len(status_new) == 1:
@@ -122,8 +116,7 @@ def dashboard(request):
 	finished_following_table = TransientTable(finishedfollowingtransientfilter.qs,prefix='finishedfollowing')
 	RequestConfig(request, paginate={'per_page': 10}).configure(finished_following_table)
 		
-	transient_categories = [(k2_table,'Validated K2 Transients','k2',k2transientfilter),
-							(new_table,'New Transients','new',newtransientfilter),
+	transient_categories = [(new_table,'New Transients','new',newtransientfilter),
 							(follow_request_table,'Followup Requested','followrequest',followrequesttransientfilter),
 							(following_table,'Following','following',followingtransientfilter),
 							(watch_table,'Watch','watch',watchtransientfilter),
