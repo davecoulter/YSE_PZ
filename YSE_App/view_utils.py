@@ -300,7 +300,7 @@ class finder(TemplateView):
 			ax.imshow(image)
 
 		response=django.http.HttpResponse(content_type='image/png')
-		canvas.print_png(response)
+		canvas.print_jpg(response)
 
 		return response
 	
@@ -368,7 +368,7 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
 	ax.set_xlim([xlow,xhi])
 
 	response=django.http.HttpResponse(content_type='image/png')
-	canvas.print_png(response)
+	canvas.print_jpg(response)
 	return response
 
 def salt2plot(request, transient_id, salt2fit):
