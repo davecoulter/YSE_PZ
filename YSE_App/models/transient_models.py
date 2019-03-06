@@ -8,6 +8,8 @@ from YSE_App.models.tag_models import *
 from YSE_App.common.utilities import GetSexigesimalString
 from YSE_App.common.alert import IsK2Pixel, SendTransientAlert
 from YSE_App.common.thacher_transient_search import thacher_transient_search
+from YSE_App.common.tess_obs import tess_obs
+from YSE_App.common.utilities import date_to_mjd
 from YSE_App import models as yse_models
 from django.dispatch import receiver
 from pytz import timezone
@@ -122,7 +124,7 @@ class Transient(BaseModel):
 	def z_or_hostz(self):
 		if self.redshift:
 			return self.redshift
-		elif self.host.redshift:
+		elif self.host and self.host.redshift:
 			return self.host.redshift
 		else: return None
 
@@ -143,6 +145,7 @@ class Transient(BaseModel):
 	
 @receiver(models.signals.post_save, sender=Transient)
 def execute_after_save(sender, instance, created, *args, **kwargs):
+
 	if created:
 		print("Transient Created: %s" % instance.name)
 		print("Internal Survey: %s" % instance.internal_survey)
@@ -173,6 +176,19 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 			instance.k2_msg = C19_msg
 			instance.tags.add(k2c19tag)
 
+		print('Checking TESS')
+		if instance.disc_date:
+			if tess_obs(instance.ra,instance.dec,date_to_mjd(instance.disc_date)+2400000.5):
+				try:
+					tesstag = TransientTag.objects.get(name='TESS')
+					instance.tags.add(tesstag)
+				except: pass
+		else:
+			if tess_obs(instance.ra,instance.dec,date_to_mjd(instance.modified_date)+2400000.5):
+				try:
+					tesstag = TransientTag.objects.get(name='TESS')
+					instance.tags.add(tesstag)
+				except: pass
 
 		print('Checking Thacher')
 		if thacher_transient_search(instance.ra,instance.dec):

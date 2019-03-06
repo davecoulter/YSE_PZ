@@ -68,7 +68,7 @@ class processTNS():
 						  help='NED search radius, in arcmin')
 		parser.add_option('--ndays', default=None, type='int',
 						  help='number of days before today update events')
-		
+
 		if config:
 			parser.add_option('--login', default=config.get('main','login'), type="string",
 							  help='gmail login (default=%default)')
@@ -452,7 +452,7 @@ class processTNS():
 			objs.append(transient['name'])
 			ras.append(transient['ra'])
 			decs.append(transient['dec'])
-		
+
 		while len(schema['results']) == 1000:
 			offsetcount += 1000
 			transienturl = '%stransients?limit=1000&format=json&%s&offset=%i'%(self.dburl,argstring,offsetcount)
@@ -534,7 +534,7 @@ class processTNS():
 		assert len(ras) == len(decs)
 
 		if type(ras[0]) == float:
-			scall = SkyCoord(ras,decs,FK5,unit=u.deg)
+			scall = SkyCoord(ras,decs,frame="fk5",unit=u.deg)
 		else:
 			scall = SkyCoord(ras,decs,frame="fk5",unit=(u.hourangle,u.deg))
 
@@ -743,13 +743,13 @@ if __name__ == "__main__":
 	tnsproc.tnsapikey = options.tnsapikey
 	tnsproc.ztfurl = options.ztfurl
 	
-	try:
+	if 'hi': #try:
 		if options.update:
 			tnsproc.noupdatestatus = True
 			nsn = tnsproc.UpdateFromTNS()
 		else:
 			nsn = tnsproc.ProcessTNSEmails()
-	except Exception as e:
+	else: #except Exception as e:
 		nsn = 0
 		from django.conf import settings as djangoSettings
 		smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
