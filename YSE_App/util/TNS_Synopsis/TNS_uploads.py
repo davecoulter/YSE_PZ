@@ -398,16 +398,16 @@ class processTNS():
 					galaxy_names.append(galaxies[l]["Object Name"])
 					galaxy_zs.append(galaxies[l]["Redshift"])
 					galaxy_seps.append(galaxies[l]["Separation"])
-					galaxy_ras.append(galaxies[l]["RA(deg)"])
-					galaxy_decs.append(galaxies[l]["DEC(deg)"])
+					galaxy_ras.append(galaxies[l]["RA"])
+					galaxy_decs.append(galaxies[l]["DEC"])
 					galaxy_mags.append(galaxies[l]["Magnitude and Filter"])
 								
 			print("Galaxies with z: %s" % len(galaxies_with_z))
 			# Get Dust in LoS for each galaxy with z
 			if len(galaxies_with_z) > 0:
 				for l in range(len(galaxies_with_z)):
-					co_l = coordinates.SkyCoord(ra=galaxies_with_z[l]["RA(deg)"], 
-												dec=galaxies_with_z[l]["DEC(deg)"], 
+					co_l = coordinates.SkyCoord(ra=galaxies_with_z[l]["RA"], 
+												dec=galaxies_with_z[l]["DEC"], 
 												unit=(u.deg, u.deg), frame='fk4', equinox='J2000.0')
 
 			else:
@@ -596,21 +596,23 @@ class processTNS():
 					photdict,nondetectdate,nondetectmaglim,nondetectfilt,nondetectins = \
 						self.getTNSPhotometry(jd,PhotUploadAll=photdict)
 					specdict = self.getTNSSpectra(jd,sc)
+					transientdict['transientphotometry'] = photdict
+					transientdict['transientspectra'] = specdict
+
+					if nondetectdate: transientdict['non_detect_date'] = nondetectdate
+					if nondetectmaglim: transientdict['non_detect_limit'] = nondetectmaglim
+					if nondetectfilt: transientdict['non_detect_band'] =  nondetectfilt
+					if nondetectfilt: transientdict['non_detect_instrument'] =  nondetectins
+			except: pass
+
+			try:
 				if doNED:
 					hostdict,hostcoords = self.getNEDData(jd,sc,nedtable)
 					transientdict['host'] = hostdict
 					transientdict['candidate_hosts'] = hostcoords
-
-				transientdict['transientphotometry'] = photdict
-				transientdict['transientspectra'] = specdict
-				if nondetectdate: transientdict['non_detect_date'] = nondetectdate
-				if nondetectmaglim: transientdict['non_detect_limit'] = nondetectmaglim
-				if nondetectfilt: transientdict['non_detect_band'] =  nondetectfilt
-				if nondetectfilt: transientdict['non_detect_instrument'] =  nondetectins
-				
-				TransientUploadDict[obj] = transientdict
-			except:
-				TransientUploadDict[obj] = transientdict
+			except: pass
+	
+			TransientUploadDict[obj] = transientdict
 
 		TransientUploadDict['noupdatestatus'] = self.noupdatestatus
 		self.UploadTransients(TransientUploadDict)
@@ -743,13 +745,13 @@ if __name__ == "__main__":
 	tnsproc.tnsapikey = options.tnsapikey
 	tnsproc.ztfurl = options.ztfurl
 	
-	if 'hi': #try:
+	try:
 		if options.update:
 			tnsproc.noupdatestatus = True
 			nsn = tnsproc.UpdateFromTNS()
 		else:
 			nsn = tnsproc.ProcessTNSEmails()
-	else: #except Exception as e:
+	except Exception as e:
 		nsn = 0
 		from django.conf import settings as djangoSettings
 		smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
