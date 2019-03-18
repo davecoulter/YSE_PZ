@@ -255,6 +255,9 @@ class GW2YSE:
 			datadict['gwcandidate']['transient'] = field+'C'+str(candID).zfill(4)
 			
 			for triplet,filt,dpclass in zip(triplets.split(','),filts,types):
+				triplet_webaddress = triplet.replace('/web/','/')
+				triplet = triplet_webaddress.split('/')
+				triplet = "https://ziggy.ucolick.org/gw/" + "/".join(triplet[3:])
 				imgdict = {}
 				imgdict['dophot_class'] = hex2int(dpclass)
 				imgdict['image_filter'] = filtdict['%s %s'%(os.environ['PIPE_INSTRUMENT'],filt)]
