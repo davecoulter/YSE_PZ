@@ -499,7 +499,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 	ax.legend.location = 'bottom_left'
 	ax.legend.label_height = 1
 	ax.legend.glyph_height = 5
-
+	
 	ax.legend.label_text_font_size = "4pt"#FontSizeSpec("10")
 	ax.legend.click_policy="hide"
 

@@ -34,6 +34,7 @@ class Transient(BaseModel):
 	internal_survey = models.ForeignKey(InternalSurvey, null=True, blank=True, on_delete=models.SET_NULL)
 	tags = models.ManyToManyField(TransientTag, blank=True)
 
+
 	### Properties ###
 	# Required
 	name = models.CharField(max_length=64)

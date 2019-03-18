@@ -363,3 +363,14 @@ class TransientTagViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = TransientTag.objects.all()
 	serializer_class = TransientTagSerializer
 	permission_classes = (permissions.IsAuthenticated,)
+
+### `GW` ViewSets ###
+class GWCandidateViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = GWCandidate.objects.all()
+	serializer_class = GWCandidateSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
+class GWCandidateImageViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = GWCandidateImage.objects.all()
+	serializer_class = GWCandidateImageSerializer
+	permission_classes = (permissions.IsAuthenticated,)

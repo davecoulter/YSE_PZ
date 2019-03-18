@@ -17,3 +17,4 @@ from YSE_App.models.telescope_models import *
 from YSE_App.models.telescope_resource_models import *
 from YSE_App.models.transient_models import *
 from YSE_App.models.tag_models import *
+from YSE_App.models.gw_models import *

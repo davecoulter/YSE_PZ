@@ -10,7 +10,6 @@ def tess_obs(ra, dec, discovery_jd):
 
 	url = 'https://mast.stsci.edu/tesscut'
 	url += '/api/v0.1/sector?ra={ra}&dec={dec}'
-
 	r = requests.get(url.format(ra=str(ra), dec=str(dec)))
 	if r.status_code!=200:
 		print('status message:',r.text)

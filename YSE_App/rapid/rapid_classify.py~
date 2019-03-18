@@ -1,0 +1,112 @@
+from astrorapid.classify import Classify
+from django_cron import CronJobBase, Schedule
+from YSE_App.models import *
+from django.db.models import Q
+from YSE_App.view_utils import get_all_phot_for_transient
+from YSE_App.common.utilities import date_to_mjd
+import numpy as np
+
+classdict = {'SNIa-norm':'SN Ia', 'SNIbc':'SN Ibc', 'SNII':'SN II',
+			 'SNIa-91bg':'SN Ia-91bg-like', 'SNIa-x':'SN Iax', 'point-Ia':'point-Ia',
+			 'Kilonova':'Kilonova', 'SLSN-I':'SLSN-I', 'PISN':'PISN',
+			 'ILOT':'ILOT', 'CART':'CART', 'TDE':'TDE'}
+
+class rapid_classify_cron(CronJobBase):
+	RUN_EVERY_MINS = 0.1
+
+	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+	code = 'YSE_App.rapid.rapid_classify.rapid_classify_cron'	 # a unique code
+
+	def do(self,debug=False):
+		
+		# run this under Admin
+		user = User.objects.get(username='Admin')
+
+		# get New, Watch, FollowupRequested, Following
+		transients_to_classify = \
+			Transient.objects.filter(Q(status__name = 'New') |
+									 Q(status__name = 'Watch') |
+									 Q(status__name = 'FollowupRequested') |
+									 Q(status__name = 'Following'))
+
+		light_curve_list_z,light_curve_list_noz,transient_list = [],[],[]
+		for t in transients_to_classify.filter(Q(name = '2019np') | Q(name = '2019gf')):
+			ra, dec, objid, redshift = t.ra, t.dec, t.name,t.z_or_hostz()
+			transient_list += [t]
+			if not t.mw_ebv is None:
+				mwebv = t.mw_ebv
+			else:
+				mwebv = 0.0
+				
+			photdata = get_all_phot_for_transient(user, t.id)
+			gobs = photdata.filter(band__name = 'g-ZTF')
+			robs = photdata.filter(band__name = 'r-ZTF')
+			mjd, passband, flux, fluxerr, mag, magerr, zeropoint, photflag = \
+				np.array([]),np.array([]),[],[],[],[],[],[]
+
+			first_detection_set = False
+			for obs,filt in zip([gobs.order_by('obs_date'),robs.order_by('obs_date')],['g','r']):
+				for p in obs:
+					if p.data_quality: continue
+					if len(np.where((filt == passband) & (np.abs(mjd - date_to_mjd(p.obs_date)) < 0.001))[0]): continue
+					mag += [p.mag]
+					magerr += [p.mag_err]
+					flux_obs = 10**(-0.4*(p.mag-27.5))
+					fluxerr_obs = 0.4*np.log(10)*p.mag_err
+
+
+					mjd = np.append(mjd,[date_to_mjd(p.obs_date)])
+					
+					flux += [flux_obs]
+					fluxerr += [fluxerr_obs]
+					zeropoint += [27.5]
+					passband = np.append(passband,[filt])
+					
+					#import pdb; pdb.set_trace()
+					# 4096 is detection
+					# 6144 is first detection
+					if flux_obs/fluxerr_obs > 5 and not first_detection_set:
+						photflag += [6144]
+						first_detection_set = True
+					elif flux_obs/fluxerr_obs > 5:
+						photflag += [4096]
+					else: photflag += [0]
+				
+			try:
+				if redshift:
+					light_curve_info = (mjd, flux, fluxerr, passband,
+										zeropoint, photflag, ra, dec, objid, redshift, mwebv)
+					light_curve_list_z += [light_curve_info,]
+				else:
+					light_curve_info = (mjd, flux, fluxerr, passband, zeropoint, photflag, ra, dec, objid, None, mwebv)			
+					light_curve_list_noz += [light_curve_info,]
+			except:
+				import pdb; pdb.set_trace()
+		
+
+		if len(light_curve_list_noz):
+			classification_noz = Classify(light_curve_list_noz, known_redshift=False, bcut=False, zcut=None)
+			predictions_noz = classification_noz.get_predictions()
+		if len(light_curve_list_z):
+			classification_z = Classify(light_curve_list_z, known_redshift=True, bcut=False, zcut=None)
+			predictions_z = classification_z.get_predictions()
+
+			
+		if debug:
+			import matplotlib
+			matplotlib.use('MacOSX')
+			import matplotlib.pyplot as plt
+			plt.ion()
+			classification_z.plot_light_curves_and_classifications()
+
+		for t,i in zip(transient_list,range(len(transient_list))):
+			print(classification_z.class_names[np.where(predictions_z[0][i][-1,:] == np.max(predictions_z[0][i][-1,:]))[0][0]])
+			transient_class = classification_z.class_names[np.where(predictions_z[0][i][-1,:] == np.max(predictions_z[0][i][-1,:]))[0][0]]
+			
+			photo_class = TransientClass.objects.filter(name = classdict[transient_class])
+			if len(photo_class):
+				t.photo_class = photo_class[0]
+				t.save()
+			else:
+				raise RuntimeError('class %s not in DB'%classdict[transient_class])
+		import pdb; pdb.set_trace()

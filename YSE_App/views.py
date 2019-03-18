@@ -287,6 +287,13 @@ def transient_detail(request, slug):
 		all_transient_tags = TransientTag.objects.all()
 		assigned_transient_tags = transient_obj.tags.all()
 
+		# GW Candidate?
+		gwcand,gwimages = None,None
+		for att in assigned_transient_tags:
+			if att.name == 'GW Candidate':
+				gwcand = GWCandidate.objects.filter(name = transient_obj.name)[0]
+				gwimages = GWCandidateImage.objects.filter(gw_candidate__name = gwcand.name)
+
 		# Get associated Observations
 		followups = TransientFollowup.objects.filter(transient__pk=transient_id)
 		if followups:
@@ -350,6 +357,8 @@ def transient_detail(request, slug):
 			'assigned_transient_tags': assigned_transient_tags,
 			'all_colors': all_colors,
 			'all_transient_spectra': spectra,
+			'gw_candidate':gwcand,
+			'gw_images':gwimages
 		}
 
 		if lastphotdata and firstphotdata:
