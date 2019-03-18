@@ -185,7 +185,8 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 					instance.tags.add(tesstag)
 				except: pass
 		else:
-			if tess_obs(instance.ra,instance.dec,date_to_mjd(instance.modified_date)+2400000.5):
+			TESSFlag = tess_obs(instance.ra,instance.dec,date_to_mjd(instance.modified_date)+2400000.5):
+			if TESSFlag:
 				try:
 					tesstag = TransientTag.objects.get(name='TESS')
 					instance.tags.add(tesstag)
