@@ -34,11 +34,37 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib
 from collections import OrderedDict
+import mastcasjobs
 
 reg_obj = "https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
 reg_dec = "DEC[\=\*a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)\<\/em\>\,"
+
+def get_ps_score(RA, DEC):
+	'''Get ps1 star/galaxy score from MAST. Provide RA and DEC in degrees.
+	Returns an empty string if no match is found witing 3 arcsec.
+	'''
+	# get the WSID and password if not already defined
+	# get your WSID by going to https://mastweb.stsci.edu/ps1casjobs/changedetails.aspx after you login to Casjobs.
+
+	os.environ['CASJOBS_WSID'] = str(1862226089)
+	os.environ['CASJOBS_PW'] = 'tr4nsientsP!z'
+	query = """select top 1 p.ps_score
+	from pointsource_magnitudes_view as p
+	inner join fGetNearbyObjEq(%.5f, %.5f, 0.05) nb on p.objid=nb.objid
+	""" %(RA, DEC)
+
+	print(query)
+
+	jobs = mastcasjobs.MastCasJobs(context="HLSP_PS1_PSC")
+	results = jobs.quick(query, task_name="python cross-match")
+
+	output = results.split('\n')[1]
+	if not output:
+		output = None
 	
+	return output
+
 class processTNS():
 	def __init__(self):
 		self.verbose = None
@@ -136,7 +162,12 @@ class processTNS():
 			status = 'Ignore'
 		else:
 			status = self.status
-		
+
+		try:
+			ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
+		except:
+			ps_prob = None
+			
 		TransientDict = {'name':obj,
 						 'slug':obj,
 						 'ra':sc.ra.deg,
@@ -144,6 +175,7 @@ class processTNS():
 						 'obs_group':'Unknown',
 						 'mw_ebv':ebv,
 						 'status':status,
+						 'point_source_probability':ps_prob,
 						 'tags':[]}
 
 		if jd:
@@ -602,7 +634,7 @@ class processTNS():
 					if nondetectdate: transientdict['non_detect_date'] = nondetectdate
 					if nondetectmaglim: transientdict['non_detect_limit'] = nondetectmaglim
 					if nondetectfilt: transientdict['non_detect_band'] =  nondetectfilt
-					if nondetectfilt: transientdict['non_detect_instrument'] =  nondetectins
+					if nondetectfilt: transientdict['non_detect_instrument'] =	nondetectins
 			except: pass
 
 			try:
@@ -652,16 +684,16 @@ def fetch(url):
 	return url, None
 	
 def run_parallel_in_threads(target, args_list):
-    result = queue.Queue()
-    # wrapper to collect return value in a Queue
-    def task_wrapper(*args):
-        result.put(target(*args))
-    threads = [threading.Thread(target=task_wrapper, args=args) for args in args_list]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
-    return result
+	result = queue.Queue()
+	# wrapper to collect return value in a Queue
+	def task_wrapper(*args):
+		result.put(target(*args))
+	threads = [threading.Thread(target=task_wrapper, args=args) for args in args_list]
+	for t in threads:
+		t.start()
+	for t in threads:
+		t.join()
+	return result
 
 
 def sendemail(from_addr, to_addr,
@@ -700,7 +732,7 @@ def get(url,json_list,api_key):
 		json_file=OrderedDict(json_list)
 		# construct the list of (key,value) pairs
 		get_data=[('api_key',(None, api_key)),
-                  ('data',(None,json.dumps(json_file)))]
+				  ('data',(None,json.dumps(json_file)))]
 		# get obj using request module
 		response=requests.post(get_url, files=get_data)
 		return response

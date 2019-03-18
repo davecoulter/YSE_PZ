@@ -56,6 +56,7 @@ class Transient(BaseModel):
 	k2_validated = models.NullBooleanField(null=True, blank=True)
 	k2_msg = models.TextField(null=True, blank=True)
 	TNS_spec_class = models.CharField(max_length=64, null=True, blank=True) # To hold the TNS classiciation in case we don't have a matching enum
+	point_source_probability = models.FloatField(null=True, blank=True)
 
 	slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
 	
@@ -179,13 +180,14 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 
 		print('Checking TESS')
 		if instance.disc_date:
-			if tess_obs(instance.ra,instance.dec,date_to_mjd(instance.disc_date)+2400000.5):
+			TESSFlag = tess_obs(instance.ra,instance.dec,date_to_mjd(instance.disc_date)+2400000.5)
+			if TESSFlag:
 				try:
 					tesstag = TransientTag.objects.get(name='TESS')
 					instance.tags.add(tesstag)
 				except: pass
 		else:
-			TESSFlag = tess_obs(instance.ra,instance.dec,date_to_mjd(instance.modified_date)+2400000.5):
+			TESSFlag = tess_obs(instance.ra,instance.dec,date_to_mjd(instance.modified_date)+2400000.5)
 			if TESSFlag:
 				try:
 					tesstag = TransientTag.objects.get(name='TESS')

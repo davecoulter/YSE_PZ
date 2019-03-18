@@ -162,6 +162,23 @@
 												</p>
 											</div>
 										</div>
+										{% if transient.point_source_probability %}
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>MW E(B-V)</strong>
+												<p class="text-muted">
+													{% if transient.mw_ebv %}
+														{{ transient.mw_ebv }}
+														{% if transient.mw_ebv >= 0.2 %}
+															&nbsp;<b class="text-red">(warning!)</b>
+														{% endif %}
+													{% else %}
+														Unknown
+													{% endif %}
+												</p>
+											</div>
+										</div>
+										{% endif %}
 										<div class="col-xs-4">
 											<div class="form-group">
 												<strong>Phot. Class</strong>
