@@ -20,9 +20,7 @@ def tess_obs(ra, dec, discovery_jd):
 	reg = '\"sector\"\: \"([0-9]+)\"'
 	sectors = re.findall(reg, r.text)
 
-	if len(sectors) == 0:
-		return(False)
-	else:
+	if len(sectors)>0:
 		for sector in sectors:
 			if (discovery_jd > tess_date[int(sector)-1]-before_leeway and
 				discovery_jd < tess_date[int(sector)]+after_leeway):
