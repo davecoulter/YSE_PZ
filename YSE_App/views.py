@@ -115,12 +115,23 @@ def dashboard(request):
 	finishedfollowingtransientfilter = TransientFilter(request.GET, queryset=finishedfollowing_transients,prefix='finishedfollowing')
 	finished_following_table = TransientTable(finishedfollowingtransientfilter.qs,prefix='finishedfollowing')
 	RequestConfig(request, paginate={'per_page': 10}).configure(finished_following_table)
-		
+
+	status_needs_template = TransientStatus.objects.filter(name='NeedsTemplate').order_by('-modified_date')
+	if len(status_needs_template) == 1:
+		needs_template_transients = Transient.objects.filter(status=status_needs_template[0]).order_by('-disc_date')
+	else:
+		needs_template_transients = Transient.objects.filter(status=None).order_by('-disc_date')
+	needs_templatetransientfilter = TransientFilter(request.GET, queryset=needs_template_transients,prefix='needstemplate')
+	needs_template_table = TransientTable(needs_templatetransientfilter.qs,prefix='needstemplate')
+	RequestConfig(request, paginate={'per_page': 10}).configure(needs_template_table)
+
+	
 	transient_categories = [(new_table,'New Transients','new',newtransientfilter),
 							(follow_request_table,'Followup Requested','followrequest',followrequesttransientfilter),
 							(following_table,'Following','following',followingtransientfilter),
 							(watch_table,'Watch','watch',watchtransientfilter),
-							(finished_following_table,'Finished Following','finishedfollowing',finishedfollowingtransientfilter)]
+							(finished_following_table,'Finished Following','finishedfollowing',finishedfollowingtransientfilter),
+							(needs_template_table,'Needs Template','needstemplate',needs_templatetransientfilter)]
 
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-')[0]
