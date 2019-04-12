@@ -8,6 +8,8 @@ from YSE_App.models.tag_models import *
 from YSE_App.common.utilities import GetSexigesimalString
 from YSE_App.common.alert import IsK2Pixel, SendTransientAlert
 from YSE_App.common.thacher_transient_search import thacher_transient_search
+from YSE_App.common.tess_obs import tess_obs
+from YSE_App.common.utilities import date_to_mjd
 from YSE_App import models as yse_models
 from django.dispatch import receiver
 from pytz import timezone
@@ -32,6 +34,7 @@ class Transient(BaseModel):
 	internal_survey = models.ForeignKey(InternalSurvey, null=True, blank=True, on_delete=models.SET_NULL)
 	tags = models.ManyToManyField(TransientTag, blank=True)
 
+
 	### Properties ###
 	# Required
 	name = models.CharField(max_length=64)
@@ -53,6 +56,7 @@ class Transient(BaseModel):
 	k2_validated = models.NullBooleanField(null=True, blank=True)
 	k2_msg = models.TextField(null=True, blank=True)
 	TNS_spec_class = models.CharField(max_length=64, null=True, blank=True) # To hold the TNS classiciation in case we don't have a matching enum
+	point_source_probability = models.FloatField(null=True, blank=True)
 
 	slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
 	
@@ -101,9 +105,30 @@ class Transient(BaseModel):
 		recent_mag = yse_models.TransientPhotData.objects.exclude(data_quality__isnull=False).filter(phot_data_query).order_by('-obs_date')
 
 		if len(recent_mag):
-			return '%.2f, %s'%(recent_mag[0].mag,recent_mag[0].obs_date.strftime(date_format))
+			return '%.2f'%(recent_mag[0].mag)
 		else:
 			return None
+
+	def recent_magdate(self):
+		date_format = '%m/%d/%Y'
+
+		transient_query = Q(transient=self.id)
+		all_phot = yse_models.TransientPhotometry.objects.filter(transient_query)
+		phot_ids = all_phot.values('id')
+		phot_data_query = Q(photometry__id__in=phot_ids)
+		recent_mag = yse_models.TransientPhotData.objects.exclude(data_quality__isnull=False).filter(phot_data_query).order_by('-obs_date')
+
+		if len(recent_mag):
+			return '%s'%(recent_mag[0].obs_date.strftime(date_format))
+		else:
+			return None
+
+	def z_or_hostz(self):
+		if self.redshift:
+			return self.redshift
+		elif self.host and self.host.redshift:
+			return self.host.redshift
+		else: return None
 
 	def name_table_sort(self):
 		if len(self.name) > 4:
@@ -122,6 +147,7 @@ class Transient(BaseModel):
 	
 @receiver(models.signals.post_save, sender=Transient)
 def execute_after_save(sender, instance, created, *args, **kwargs):
+
 	if created:
 		print("Transient Created: %s" % instance.name)
 		print("Internal Survey: %s" % instance.internal_survey)
@@ -152,6 +178,21 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 			instance.k2_msg = C19_msg
 			instance.tags.add(k2c19tag)
 
+		print('Checking TESS')
+		if instance.disc_date:
+			TESSFlag = tess_obs(instance.ra,instance.dec,date_to_mjd(instance.disc_date)+2400000.5)
+			if TESSFlag:
+				try:
+					tesstag = TransientTag.objects.get(name='TESS')
+					instance.tags.add(tesstag)
+				except: pass
+		else:
+			TESSFlag = tess_obs(instance.ra,instance.dec,date_to_mjd(instance.modified_date)+2400000.5)
+			if TESSFlag:
+				try:
+					tesstag = TransientTag.objects.get(name='TESS')
+					instance.tags.add(tesstag)
+				except: pass
 
 		print('Checking Thacher')
 		if thacher_transient_search(instance.ra,instance.dec):

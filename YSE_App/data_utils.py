@@ -23,6 +23,8 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.db.models import ForeignKey
 from .common.alert import sendemail
+from .common.utilities import getRADecBox
+from django.db.models import Q
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -57,6 +59,7 @@ def add_transient(request):
 				   transientkey == 'transientspectra' or \
 				   transientkey == 'host' or \
 				   transientkey == 'tags' or \
+				   transientkey == 'gw' or \
 				   transientkey == 'non_detect_instrument': continue
 
 				if not isinstance(Transient._meta.get_field(transientkey), ForeignKey):
@@ -106,7 +109,7 @@ def add_transient(request):
 			if 'host' in transientkeys:
 				# host galaxy
 				add_transient_host_util(transient['host'],dbtransient,user)
-
+				
 		except Exception as e:
 			print('Transient %s failed!'%transient['name'])
 			print("Sending email to: %s" % user.username)
@@ -120,6 +123,198 @@ def add_transient(request):
 	return_dict = {"message":"success"}
 
 	return JsonResponse(return_dict)
+
+@csrf_exempt
+@login_or_basic_auth_required
+def add_gw_candidate(request):
+	transient_data = JSONParser().parse(request)
+	
+	auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+	credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+	username, password = credentials.split(':', 1)
+	user = auth.authenticate(username=username, password=password)
+
+	# ready to send error emails
+	smtpserver = "%s:%s" % (djangoSettings.SMTP_HOST, djangoSettings.SMTP_PORT)
+	from_addr = "%s@gmail.com" % djangoSettings.SMTP_LOGIN
+	subject = "TNS Transient Upload Failure"
+	txt_msg = "Alert : YSE_PZ Failed to upload transient %s "
+	
+	for transientlistkey in transient_data.keys():
+		if transientlistkey == 'noupdatestatus': continue
+
+		transient = transient_data[transientlistkey]
+
+		transientkeys = transient.keys()
+		if 'name' not in transientkeys:
+			return_dict = {"message":"Error : Transient name not provided for transient %s!"%transientlistkey}
+			return JsonResponse(return_dict)
+		print('updating transient %s'%transient['name'])
+		try:
+			transientdict = {'created_by_id':user.id,'modified_by_id':user.id}
+			for transientkey in transientkeys:
+				if transientkey == 'transientphotometry' or \
+				   transientkey == 'transientspectra' or \
+				   transientkey == 'host' or \
+				   transientkey == 'tags' or \
+				   transientkey == 'gwcandidate' or \
+				   transientkey == 'gwcandidateimage' or \
+				   transientkey == 'non_detect_instrument': continue
+
+				if not isinstance(Transient._meta.get_field(transientkey), ForeignKey):
+					transientdict[transientkey] = transient[transientkey]
+				else:
+					fkmodel = Transient._meta.get_field(transientkey).remote_field.model
+					if transientkey == 'non_detect_band' and 'non_detect_instrument' in transient.keys():
+						fk = fkmodel.objects.filter(name=transient[transientkey]).filter(instrument__name=transient['non_detect_instrument'])
+						if not len(fk):
+							fk = fkmodel.objects.filter(name=transient[transientkey])
+					else:
+						fk = fkmodel.objects.filter(name=transient[transientkey])
+					if not len(fk):
+						fk = fkmodel.objects.filter(name='Unknown')
+						print("Sending email to: %s" % user.username)
+						html_msg = "Alert : YSE_PZ Failed to upload transient %s "
+						html_msg += "\nError : %s value doesn\'t exist in transient.%s FK relationship"
+						sendemail(from_addr, user.email, subject,
+								  html_msg%(transient['name'],transient[transientkey],transientkey),
+								  djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+
+					transientdict[transientkey] = fk[0]
+
+			dbtransient = Transient.objects.filter(name=transient['name'])
+			if not len(dbtransient):
+				# ra/dec box query
+				sc = SkyCoord(transient['ra'],transient['dec'],frame="fk5",unit=u.deg)
+				ramin,ramax,decmin,decmax = getRADecBox(sc.ra.deg,sc.dec.deg,size=5/3600.)
+				dbtransient = Transient.objects.filter(Q(ra__gte = ramin) & Q(ra__lte = ramax) & Q(dec__gte = decmin) & Q(dec__lte = decmax))
+				if len(dbtransient) > 1: dbtransient = dbtransient[0]
+				elif len(dbtransient): dbtransient = dbtransient[0]
+				else:
+					dbtransient = Transient.objects.create(**transientdict)
+			else:
+				if 'noupdatestatus' in transient_data.keys() and not transient_data['noupdatestatus']:
+					if dbtransient[0].status.name == 'Ignore': dbtransient[0].status = TransientStatus.objects.filter(name='New')[0]
+					else: transientdict['status'] = dbtransient[0].status
+				else: transientdict['status'] = dbtransient[0].status
+				dbtransient.update(**transientdict)
+				dbtransient = dbtransient[0]
+			if 'tags' in transientkeys:
+				for tag in transient['tags']:
+					dbtransient.tags.add(tags=transient['tags'])
+				dbtransient.save()
+			
+			if 'transientphotometry' in transientkeys:
+				# do photometry
+				add_transient_phot_util(transient['transientphotometry'],dbtransient,user)
+			
+			if 'transientspectra' in transientkeys:
+				# spectrum
+				add_transient_spec_util(transient['transientspectra'],dbtransient,user)
+		
+			if 'host' in transientkeys:
+				# host galaxy
+				add_transient_host_util(transient['host'],dbtransient,user)
+
+			if 'gwcandidate' in transientkeys:
+				# GW candidate info
+				add_gw_candidate_util(transient['gwcandidate'],dbtransient,user)
+				gwtag = TransientTag.objects.get(name='GW Candidate')
+				dbtransient.tags.add(gwtag)
+				dbtransient.save()
+				
+		except Exception as e:
+			print('Transient %s failed!'%transient['name'])
+			print("Sending email to: %s" % user.username)
+			html_msg = "Alert : YSE_PZ Failed to upload transient %s with error %s"
+			sendemail(from_addr, user.email, subject, html_msg%(transient['name'],e),
+                      djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+			# sending SMS is too scary for now
+			#sendsms(from_addr, phone_email, subject, txt_msg%transient['name'],
+            #        djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+			
+	return_dict = {"message":"success"}
+
+	return JsonResponse(return_dict)
+
+
+def add_gw_candidate_util(gwdict,transient,user):
+	
+	if 'name' not in gwdict.keys():
+		return_dict = {"message":"no GW name"}
+		return JsonResponse(return_dict)
+
+	dbgwdict = {'created_by_id':user.id,'modified_by_id':user.id}
+	for gwkey in gwdict.keys():
+		if gwkey == 'gwcandidateimage': continue
+		if not isinstance(GWCandidate._meta.get_field(gwkey), ForeignKey):
+				dbgwdict[gwkey] = gwdict[gwkey]
+		else:
+			fkmodel = GWCandidate._meta.get_field(gwkey).remote_field.model
+			fk = fkmodel.objects.filter(name=gwdict[gwkey])
+			if not len(fk):
+				# ready to send error emails
+				smtpserver = "%s:%s" % (djangoSettings.SMTP_HOST, djangoSettings.SMTP_PORT)
+				from_addr = "%s@gmail.com" % djangoSettings.SMTP_LOGIN
+				subject = "TNS Transient Upload Failure"
+				html_msg = "Alert : YSE_PZ Failed to upload transient %s "
+				txt_msg = "Alert : YSE_PZ Failed to upload transient %s "
+				html_msg += "\nError : %s value doesn\'t exist in GWCandidate.%s FK relationship"
+				print("Sending email to: %s" % user.username)
+				sendemail(from_addr, user.email, subject,
+						  html_msg%(gwdict['name'],gwdict[gwkey],gwkey),
+						  djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+				
+			gwdict[gwkey] = fk[0]
+
+	dbgwdict['transient'] = transient
+	dbgw = GWCandidate.objects.filter(name=dbgwdict['name'])
+	if not len(dbgw):
+		dbgw = GWCandidate.objects.create(**dbgwdict)
+	else: #if clobber:
+		dbgw.update(**dbgwdict)
+		dbgw = dbgw[0]
+
+	for gwtopkey in gwdict['gwcandidateimage'].keys():
+		dbgwimagedict = {'created_by_id':user.id,'modified_by_id':user.id}
+		for gwkey in gwdict['gwcandidateimage'][gwtopkey].keys():
+			if not isinstance(GWCandidateImage._meta.get_field(gwkey), ForeignKey):
+				dbgwimagedict[gwkey] = gwdict['gwcandidateimage'][gwtopkey][gwkey]
+			else:
+				fkmodel = GWCandidateImage._meta.get_field(gwkey).remote_field.model
+				if gwkey == 'image_filter':
+					fk = fkmodel.objects.filter(name=gwdict['gwcandidateimage'][gwtopkey][gwkey].split(' - ')[1]).filter(instrument__name=gwdict['gwcandidateimage'][gwtopkey][gwkey].split(' - ')[0])
+					if not len(fk):
+						fk = fkmodel.objects.filter(name=gwdict['gwcandidateimage'][gwtopkey][gwkey])
+				else:
+					fk = fkmodel.objects.filter(name=gwdict['gwcandidateimage'][gwtopkey][gwkey])
+
+				if not len(fk):
+					# ready to send error emails
+					smtpserver = "%s:%s" % (djangoSettings.SMTP_HOST, djangoSettings.SMTP_PORT)
+					from_addr = "%s@gmail.com" % djangoSettings.SMTP_LOGIN
+					subject = "TNS Transient Upload Failure"
+					html_msg = "Alert : YSE_PZ Failed to upload transient %s "
+					txt_msg = "Alert : YSE_PZ Failed to upload transient %s "
+					html_msg += "\nError : %s value doesn\'t exist in transient.%s FK relationship"
+					print("Sending email to: %s" % user.username)
+					sendemail(from_addr, user.email, subject,
+							  html_msg%(gwdict['name'],gwdict['gwcandidateimage'][gwtopkey],gwdict['gwcandidateimage'][gwtopkey][gwkey]),
+							  djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+
+				dbgwimagedict[gwkey] = fk[0]
+					
+		dbgwimagedict['gw_candidate'] = dbgw
+		dbgwimage = GWCandidateImage.objects.filter(gw_candidate=dbgw).filter(image_filename=dbgwimagedict['image_filename'])
+		if not len(dbgwimage):
+			dbgwimage = GWCandidateImage.objects.create(**dbgwimagedict)
+		else: #if clobber:
+			dbgwimage.update(**dbgwimagedict)
+			dbgwimage = dbgwimage[0]
+			
+	return_dict = {"message":"GW success"}
+	return JsonResponse(return_dict)		
+
 
 def add_transient_host_util(hostdict,transient,user):
 	

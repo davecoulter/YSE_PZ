@@ -66,3 +66,6 @@ uritemplate==3.0.0
 urllib3==1.22
 webencodings==0.5.1
 wget==3.2
+astrorapid
+git+git://github.com/dfm/casjobs@master
+git+git://github.com/rlwastro/mastcasjobs@master

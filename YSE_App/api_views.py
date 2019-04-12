@@ -327,7 +327,11 @@ class TransientFilter(django_filters.FilterSet):
 	created_date_gte = django_filters.DateTimeFilter(name="created_date", lookup_expr='gte')
 	modified_date_gte = django_filters.DateTimeFilter(name="modified_date", lookup_expr='gte')
 	status_in = django_filters.BaseInFilter(name="status__name")#, lookup_expr='in')
-
+	ra_gte = django_filters.Filter(name="ra", lookup_expr='gte')
+	ra_lte = django_filters.Filter(name="ra", lookup_expr='lte')
+	dec_gte = django_filters.Filter(name="dec", lookup_expr='gte')
+	dec_lte = django_filters.Filter(name="dec", lookup_expr='lte')
+	
 	class Meta:
 		model = Transient
 		fields = ('created_date','modified_date')
@@ -362,4 +366,15 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
 class TransientTagViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = TransientTag.objects.all()
 	serializer_class = TransientTagSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
+### `GW` ViewSets ###
+class GWCandidateViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = GWCandidate.objects.all()
+	serializer_class = GWCandidateSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
+class GWCandidateImageViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = GWCandidateImage.objects.all()
+	serializer_class = GWCandidateImageSerializer
 	permission_classes = (permissions.IsAuthenticated,)

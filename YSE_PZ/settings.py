@@ -51,7 +51,12 @@ INSTALLED_APPS = [
 	'django_tables2',
     'explorer',
 	'bootstrap3',
-	'django_filters'
+	'django_filters',
+	'django_cron'
+]
+
+CRON_CLASSES = [
+    'YSE_App.rapid.rapid_classify.rapid_classify_cron',
 ]
 
 MIDDLEWARE = [
@@ -87,7 +92,6 @@ AUTHENTICATION_BACKENDS = (
 )
 
 WSGI_APPLICATION = 'YSE_PZ.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases

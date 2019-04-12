@@ -26,495 +26,469 @@
 {% block content %}
 
 	<div class="row">
-		<div class="col-xs-6">
-			<div class="box box-primary">
-				<div class="box-header">
-					<h3 class="box-title">Transient Detail</h3>
-					<a target="_blank" href="{% url 'admin:YSE_App_transient_change' transient.id %}">(Edit)</a>
-				</div>
-				<div class="box-body">
-					<div class="col-xs-4">
-						<div style="margin-top:10px;" class="form-group">
-							<strong>R.A./Dec (2000)</strong>
-							<p class="text-muted">
-								{{ transient.CoordString.0 }}&nbsp;&nbsp;&nbsp;{{ transient.CoordString.1 }}<br>
-								<small>{{ transient.RADecimalString }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ transient.DecDecimalString }}</small>
-							</p>
-						</div>
-					</div>
-					<div class="col-xs-3">
-						<div style="margin-top:10px;" class="form-group">
-							<strong>Disc. Date (UTC)</strong>
-							<p class="text-muted">
-								{% if first_magdate %}
-									{{ first_magdate }}
-								{% else %}
-									Unknown
-								{% endif %}
-							</p>
-							<br>
-						</div>
-					</div>
-					<div class="col-xs-5">
-						<div class="box box-default box-solid">
-							<div class="box-header with-border">
-								<strong style="float:left;margin-right:10px;">Status:</strong>
-								<p style="float:left" id="transient_status_name" >{{ transient.status }}</p>
-							</div>
-							<div class="box-body">
-								<div class="btn-group-horizontal">
-									<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_follow.id }}" class="transientStatusChange btn btn-primary">{{ transient_status_follow.name }}</button>
-									<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_watch.id }}" class="transientStatusChange btn btn-warning">{{ transient_status_watch.name }}</button>
-									<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_ignore.id }}" class="transientStatusChange btn btn-danger">{{ transient_status_ignore.name }}</button>
-									<div class="btn-group">
-										<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-											<span class="caret"></span>
-										</button>
-										<ul class="dropdown-menu">
-											{% for status in all_transient_statuses %}
-												<li><a data-status_id="{{ status.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
-											{% endfor %}
-										</ul>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="col-xs-4">
-						<div class="form-group">
-							<strong>Redshift</strong>
-							<p class="text-muted">
-								{% if transient.redshift %}
-									{{ transient.redshift }} 
-										{% if transient.redshift_err %}
-											+/- {{ transient.redshift_err }}
-										{% endif %}
-								{% else %}
-									Unknown
-								{% endif %}
-							</p>
-						</div>
-					</div>
-					<div class="col-xs-4">
-						<div class="form-group">
-							<strong>Best Spec. Class</strong>
-							<p class="text-muted">
-								{% if transient.best_spec_class %}
-									{{ transient.best_spec_class }}
-								{% else %}
-									Unknown
-								{% endif %}
-							</p>
-						</div>
-					</div>
-					<div class="col-xs-4">
-						<div class="form-group">
-							<strong>TNS Spec. Class</strong>
-							<p class="text-muted">
-								{% if transient.TNS_spec_class %}
-									{{ transient.TNS_spec_class }}
-								{% else %}
-									None
-								{% endif %}
-							</p>
-							<br>
-						</div>
-					</div>
-					<div class="col-xs-4">
-						<div class="form-group">
-							<strong>Galactic <i>l/b</i></strong>
-							<p class="text-muted">
-								{{ transient.CoordString|galcoordsl }}&nbsp;&nbsp;&nbsp;&nbsp;{{ transient.CoordString|galcoordsb }} 
-							</p>
-							<br>
-						</div>
-					</div>
-					<div class="col-xs-4">
-						<div class="form-group">
-							<strong>MW E(B-V)</strong>
-							<p class="text-muted">
-								{% if transient.mw_ebv %}
-									{{ transient.mw_ebv }}
-									{% if transient.mw_ebv >= 0.2 %}
-										&nbsp;<b class="text-red">(warning!)</b>
-									{% endif %}
-								{% else %}
-									Unknown
-								{% endif %}
-							</p>
-						</div>
-					</div>
-					<div class="col-xs-4">
-						<div class="form-group">
-							<strong>Discovery Group</strong>
-							<p class="text-muted">
-								{{ transient.obs_group.name }}
-							</p>
-							<br>
-						</div>
-					</div>
-					<!--<div class="col-xs-4">
-						<div class="form-group">
-							<strong>Alternative Names</strong>
-							<p class="text-muted">
-								{% if alt_names %}
-									{% for alt_name in alt_names %}
-										{{ alt_name }}<br>
-									{% endfor %}
-								{% else %}
-									None
-								{% endif %}
-							</p>
-							<br>
-						</div>
-					</div>-->
-					<!--<div class="col-xs-4">
-						<div class="form-group">
-							<strong>Internal Survey</strong>
-							<p class="text-muted">
-								{% if transient.internal_survey %}
-									{{ transient.internal_survey }}
-								{% else %}
-									None
-								{% endif %}
-							</p>
-						</div>
-					</div>-->
-					<!--<div class="col-xs-4">
-						<div class="form-group">
-							<strong>ANTARES Class.</strong>
-							<p class="text-muted">
-								{% if transient.antares_classification %}
-									{{ transient.antares_classification }}
-								{% else %}
-									Unknown
-								{% endif %}
-							</p>
-						</div>
-					</div>-->
-					<div class="col-xs-4">
-						<div class="form-group">
-							<strong>Is in K2 Field?</strong>
-							<p><a target="_blank" href="http://api.keplerscience.org/is-k2-observing?ra={{ transient.ra }}&dec={{ transient.dec }}&campaign=19">Go to K2 API</a></p>
-							<br>
-						</div>
-					</div>
-
-					<div class="col-xs-12">
-						<hr>
-						<h4>Photometric Summary</h4>
-						<table class="table table-bordered table-striped">
-							<thead>
-								<tr>
-									<th></th>
-									<th>Date</th>
-									<th>Mag</th>
-									<th>Mag Lim</th>
-									<th>Filter</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr>
-									<td>Disc Mag</td>
-									<td>{{ first_magdate }}</td>
-									<td>{{ first_mag }}</td>
-									<td></td>
-									<td>{{ first_filter }}</td>
-								</tr>
-								<tr>
-									<td>Last Non-detection</td>
-									<td>{{ transient.non_detect_date }}</td>
-									<td></td>
-									<td>{{ transient.non_detect_limit }}</td>
-									<td>{{ transient.non_detect_band }}</td>
-								</tr>
-								<tr>
-									<td>Recent Mag</td>
-									<td>{{ recent_magdate }}</td>
-									<td>{{ recent_mag }}</td>
-									<td></td>
-									<td>{{ recent_filter }}</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</div>
-				<div>
-					<input class="btn btn-block btn-primary" type="button" value="Download All Data" onclick="window.open('{% url 'download_data' transient.slug %}')">
-				</div> 
-			</div>
-				<div class="col-xs-13">
-					<div class="box box-primary">
-						<div class="box-header">
-							<h3 class="box-title">Photometry</h3>
-						</div>
-						&ensp;&nbsp;<div class="btn-group">
-						<button style="margin-bottom:5px;" type="button" class="plotSALT2" id="salt2plot">
-							Show SALT2 Fit</span>
-						</button>
-						<button style="margin-bottom:5px;" type="button" class="photdownload" onclick="window.open('{% url 'download_photometry' transient.slug %}')">
-							Download Photometry</span>
-						</button>
-					</div>
-						<div class="box-body" id="lcplot"></div>
-					</div>
-				</div>
-			</div>
-		<div class="col-xs-6">
-			<div class="box box-primary">
-				<div class="box-header">
-					<h3 class="box-title">Host Detail &amp; External Resources</h3>
-					{% if transient.host %}
-						<a target="_blank" href="{% url 'admin:YSE_App_host_change' transient.host.id %}">(Edit)</a>
-					{% endif %}
-				</div>
-				<div class="box-body">
-					<div class="col-xs-4">
-						<div class="form-group">
-							<strong>Host Name</strong>
-							<p class="text-muted">
-								{% if transient.host %}
-									{% if transient.host.name %}
-										{{ transient.host.name }}
-									{% endif %}
-								{% else %}
-									Unknown
-								{% endif %}
-							</p>
-						</div>
-					</div>
-					<div class="col-xs-4">
-						<div class="form-group">
-							<strong>R.A./Dec (2000)</strong>
-							<p class="text-muted">
-								{% if transient.host %}
-									{{ transient.host.CoordString.0 }}&nbsp;&nbsp;&nbsp;{{ transient.host.CoordString.1 }}<br>
-								<small>{{ transient.host.RADecimalString }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ transient.host.DecDecimalString }}</small>
-								{% else %}
-									Unknown
-								{% endif %}
-							</p>
-						</div>
-					</div>
-					<div class="col-xs-4">
-						<div class="form-group">
-							<strong>Redshift</strong>
-							<p class="text-muted">
-								{% if transient.host %}
-									{% if transient.host.redshift %}
-										{{ transient.host.redshift }} 
-
-										{% if transient.host.redshift_err %}
-											+/- {{ transient.host.redshift_err }}
-										{% endif %}
-									{% endif %}
-								{% else %}
-									Unknown
-								{% endif %}
-							</p>
-						</div>
-					</div>
-					<!--<div class="box-body">-->
-						<div class="col-xs-12">
-							<div class="form-group">
-								<strong>Transient sep from likely host</strong>
-								<p class="text-muted">
-									{% if transient.host %}
-										{{ transient.Separation }} arcsec<br>
-									{% else %}
-										Unknown
-									{% endif %}
-								</p>
-							</div>
-						</div>
-					
-
-					<!-- Start 2 column -->
-					<div class="col-xs-12">
-						<hr>
-					</div>
-					<div class="col-xs-6">
-						<div class="form-group">
-							<div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
-								<ol class="carousel-indicators">
-									<li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
-									<li data-target="#carousel-example-generic" data-slide-to="1" class=""></li>
-									<li data-target="#carousel-example-generic" data-slide-to="2" class=""></li>
-									<li data-target="#carousel-example-generic" data-slide-to="3" class=""></li>
-								</ol>
-								<div class="carousel-inner">
-									<div class="item active">
-										<strong>SDSS Footprint</strong>
-										<div>
-											<a href="http://skyserver.sdss3.org/public/en/tools/chart/navi.aspx?opt=G&amp;ra={{ transient.ra }}&amp;dec={{ transient.dec }}&amp;scale=0.1981" target="_blank" title="Link to SDSS Navigate Tool" class="sdss-image-link">
-												<img src="http://skyservice.pha.jhu.edu/DR14/ImgCutout/getjpeg.aspx?ra={{ transient.ra }}&dec={{ transient.dec }}&scale=0.5&width=200&height=200&opt=G&query=&Grid=on " style='width:240px' border="0">
-											</a>
-										</div>
-									</div>
-									<div class="item">
-										<strong>DSS Footprint (Aladin)</strong>
-										<div id="aladin-lite-div" style="width:240px;height:240px;"></div>
-									</div>
-									<div class="item">
-										<strong>Pan-STARRS Footprint</strong>
-										<div id="ps1_image">
-										</div>
-									</div>
-									<div class="item">
-										<strong>Legacy Survey Image</strong>
-										<div id="legacy_image">
-										</div>
-									</div>
-								</div>
-								<a class="left carousel-control" href="#carousel-example-generic" data-slide="prev">
-									<span class="fa fa-angle-left"></span>
-								</a>
-								<a class="right carousel-control" href="#carousel-example-generic" data-slide="next">
-									<span class="fa fa-angle-right"></span>
-								</a>
-
-							</div>
-						</div>
-					</div>
-					<div class="col-xs-6">
-						<div class="col-xs-12">
-							<div class="form-group">
-								<strong>External Links</strong>
-							</div>
-						</div>
-						<div class="col-xs-6">
-							<div class="form-group">
-								<a class="btn btn-block btn-primary" href="https://wis-tns.weizmann.ac.il/object/{{ transient.name }}" target="_blank">TNS</a>
-							</div>
-						</div>
-						<div class="col-xs-6">
-							<div class="form-group">
-								<a class="btn btn-block btn-primary" href="http://nedwww.ipac.caltech.edu/cgi-bin/nph-objsearch?ra={{ transient.ra }}&dec={{ transient.dec }}d&radius=10.0&search_type=Near+Position+Search" target="_blank">NED</a>
-							</div>
-						</div>
-						<div class="col-xs-6">
-							<div class="form-group">
-								<a class="btn btn-block btn-primary" href="http://simbad.u-strasbg.fr/simbad/sim-coo?protocol=html&amp;NbIdent=1&amp;Radius=1&amp;Radius.unit=arcmin&amp;CooFrame=FK5&amp;CooEpoch=2000&amp;CooEqui=2000&amp;Coord={{ transient.ra }}+{{ transient.dec }}" target="_blank">SIMBAD</a>
-							</div>
-						</div>
-						<div class="col-xs-6">
-							<div class="form-group">
-								<a class="btn btn-block btn-primary" href="http://vizier.u-strasbg.fr/viz-bin/VizieR?-source=&-out.add=_r&-out.add=_RAJ%2C_DEJ&-sort=_r&-to=&-out.max=20&-meta.ucd=2&-meta.foot=1&-c={{ transient.ra }}+{{ transient.dec }}&-c.rs=10" target="_blank">VizieR</a>
-							</div>
-						</div>
-						<div class="col-xs-6">
-							<div class="form-group">
-								<a class="btn btn-block btn-primary" href="http://irsa.ipac.caltech.edu/applications/wise/#id=Hydra_wise_wise_1&RequestClass=ServerRequest&DoSearch=true&intersect=CENTER&subsize=0.16666666800000002&mcenter=all&schema=allsky-4band&dpLevel=3a&band=1,2,3,4&UserTargetWorldPt={{ transient.ra }};{{ transient.dec }};EQ_J2000&SimpleTargetPanel.field.resolvedBy=nedthensimbad&preliminary_data=no&coaddId=&projectId=wise&searchName=wise_1&shortDesc=Position&isBookmarkAble=true&isDrillDownRoot=true&isSearchResult=true" target="_blank">WISE</a>
-							</div>
-						</div>
-						<div class="col-xs-6">
-							<div class="form-group">
-								<a class="btn btn-block btn-primary" href="http://archive.stsci.edu/cgi-bin/dss_search?h=5.0&w=5.0&f=fits&v=poss2ukstu_red&r={{ transient.ra }}d&d=+{{ transient.dec }}2d&e=J2000&c=none" target="_blank">DSS</a>
-							</div>
-						</div>
-						<div class="col-xs-6">
-							<div class="form-group">
-								<a class="btn btn-block btn-primary" href="http://adsabs.harvard.edu/cgi-bin/nph-abs_connect?db_key=AST&db_key=PRE&qform=AST&arxiv_sel=astro-ph&arxiv_sel=cond-mat&arxiv_sel=cs&arxiv_sel=gr-qc&arxiv_sel=hep-ex&arxiv_sel=hep-lat&arxiv_sel=hep-ph&arxiv_sel=hep-th&arxiv_sel=math&arxiv_sel=math-ph&arxiv_sel=nlin&arxiv_sel=nucl-ex&arxiv_sel=nucl-th&arxiv_sel=physics&arxiv_sel=quant-ph&arxiv_sel=q-bio&sim_query=YES&ned_query=YES&adsobj_query=YES&obj_req=YES&aut_logic=OR&obj_logic=OR&author=&object={{ transient.ra }}%20+{{ transient.dec }}%3A0.002778%0D%0A{{ transient.name }}&start_mon=&start_year=&end_mon=&end_year=&ttl_logic=OR&title=&txt_logic=OR&text=&nr_to_return=200&start_nr=1&jou_pick=ALL&ref_stems=&data_and=ALL&group_and=ALL&start_entry_day=&start_entry_mon=&start_entry_year=&end_entry_day=&end_entry_mon=&end_entry_year=&min_score=&sort=SCORE&data_type=SHORT&aut_syn=YES&ttl_syn=YES&txt_syn=YES&aut_wt=1.0&obj_wt=1.0&ttl_wt=0.3&txt_wt=3.0&aut_wgt=YES&obj_wgt=YES&ttl_wgt=YES&txt_wgt=YES&ttl_sco=YES&txt_sco=YES&version=1">ADS</a>
-							</div>
-						</div>
-						<div class="col-xs-6">
-							<div class="form-group">
-								<a class="btn btn-block btn-primary" href="https://asas-sn.osu.edu/" target="_blank">ASAS-SN</a>
-							</div>
-						</div>
-						<div class="col-xs-6">
-							<div class="form-group">
-								<a class="btn btn-block btn-primary" href="https://mars.lco.global/?sort_value=jd&sort_order=desc&cone={{transient.ra}}%2C{{transient.dec}}%2C0.0014" target="_blank">ZTF Cone Search</a>
-							</div>
-						</div>
-					</div>
-
-					<div class="col-xs-12">
-						<div class="col-xs-6">
-
-							<div class="box box-default box-solid">
-								<div class="box-header with-border">
-									<strong>Available Tags</strong>
-								</div>
-								<div id="external-events" class="box-body">
-									{% for tag in all_transient_tags %}
-										<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
-									{% endfor %}
-								</div>
-							</div>
-
-							<div class="box box-default box-solid">
-								<div class="box-header with-border">
-									<strong>Create Tag</strong>
-								</div>
-								<div class="box-body">
-									<div class="btn-group" style="width: 100%; margin-bottom: 10px;">
-										<ul class="fc-color-picker" id="color-chooser">
-											{% for c in all_colors %}
-												<li><a data-color_id="{{ c.id }}" class="text-{{c.color}}" href="#"><i class="fa fa-square"></i></a></li>
-											{% endfor %}
-										</ul>
-									</div>
-									<div class="input-group">
-										<input id="new-event" type="text" class="form-control" placeholder="Event Title">
-										<div class="input-group-btn">
-											<button id="add-new-event" type="button" class="btn btn-primary btn-flat">Add</button>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="col-xs-6">
-							<div id="associated-events" class="box box-default box-solid">
-								<div class="box-header with-border">
-									<strong>Associated Tags</strong>
-								</div>
-								<div class="box-body" id="associated-events-list">
-									{% for tag in assigned_transient_tags %}
-										<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
-									{% endfor %}
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-			<div class="col-xs-13">
-				<div class="box box-primary">
-					<div class="box-header">
-						<h3 class="box-title">Spectrum</h3>
-					</div>
-					{% if all_transient_spectra.count > 1 %}
-					&ensp;&nbsp;<div class="btn-group">
-						<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-							Select from {{ all_transient_spectra.count }} Spectra<span class="caret"></span>
-						</button>
-						<ul class="dropdown-menu">
-							{% for spec in all_transient_spectra %}
-								<li><a spec_plot-id="{{ spec.id }}" class="specPlotChange" href="#">{{ spec }} - {{ spec.instrument.name }}</a></li>
-							{% endfor %}
-						</ul>
-					</div>
-					{% endif %}
-					<div class="box-body" id="specplot"></div>
-				</div>
-			</div>
-		</div>
-
-	<div class="row">
 		<div class="col-xs-12">
 			<div class="nav-tabs-custom">
 				<ul class="nav nav-tabs">
-					<li class="active"><a href="#followup_tab" data-toggle="tab">Follow-up</a></li>
+					<li class="active"><a href="#summary_tab" data-toggle="tab">Summary</a></li>
+					<li><a href="#followup_tab" data-toggle="tab">Follow-up</a></li>
 					<li><a href="#resources_tab" data-toggle="tab">Resources</a></li>
 					<li><a href="#photometry_tab" data-toggle="tab">Detailed Photometry</a></li>
 					<li><a href="#spectra_tab" data-toggle="tab">Spectra</a></li>		
 					<li><a href="#hst_tab" data-toggle="tab" id="hst_tab_header">HST Data</a></li>
 					<li><a href="#chandra_tab" data-toggle="tab" id="chandra_tab_header">Chandra Data</a></li>
+					{% if gw_candidate %}
+						<li><a href="#gw_tab" data-toggle="tab" id="gw_tab_header">GW Info</a></li>
+					{% endif %}
 					<li><a href="#comments_tab" data-toggle="tab">Comments</a></li>
 				</ul>
 				<div class="tab-content">
-					<div class="active tab-pane" id="followup_tab">
+					<div class="active tab-pane" id="summary_tab">
+						<div class="row">
+							<div class="col-xs-6">
+								<div class="box box-primary">
+									<div class="box-header">
+										<h3 class="box-title">Transient Detail</h3>
+										<a target="_blank" href="{% url 'admin:YSE_App_transient_change' transient.id %}">(Edit)</a>
+									</div>
+									<div class="box-body">
+										<div class="col-xs-4">
+											<div style="margin-top:10px;" class="form-group">
+												<strong>R.A./Dec (2000)</strong>
+												<p class="text-muted">
+													{{ transient.CoordString.0 }}&nbsp;&nbsp;&nbsp;{{ transient.CoordString.1 }}<br>
+													<small>{{ transient.RADecimalString }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ transient.DecDecimalString }}</small>
+												</p>
+											</div>
+										</div>
+										<div class="col-xs-3">
+											<div style="margin-top:10px;" class="form-group">
+												<strong>Disc. Date (UTC)</strong>
+												<p class="text-muted">
+													{% if first_magdate %}
+														{{ first_magdate }}
+													{% else %}
+														Unknown
+													{% endif %}
+												</p>
+												<br>
+											</div>
+										</div>
+										<div class="col-xs-5">
+											<div class="box box-default box-solid">
+												<div class="box-header with-border">
+													<strong style="float:left;margin-right:10px;">Status:</strong>
+													<p style="float:left" id="transient_status_name" >{{ transient.status }}</p>
+												</div>
+												<div class="box-body">
+													<div class="btn-group-horizontal">
+														<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_follow.id }}" class="transientStatusChange btn btn-primary">{{ transient_status_follow.name }}</button>
+														<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_watch.id }}" class="transientStatusChange btn btn-warning">{{ transient_status_watch.name }}</button>
+														<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_ignore.id }}" class="transientStatusChange btn btn-danger">{{ transient_status_ignore.name }}</button>
+														<div class="btn-group">
+															<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+																<span class="caret"></span>
+															</button>
+															<ul class="dropdown-menu">
+																{% for status in all_transient_statuses %}
+																	<li><a data-status_id="{{ status.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+																{% endfor %}
+															</ul>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Redshift</strong>
+												<p class="text-muted">
+													{% if transient.redshift %}
+														{{ transient.redshift }} 
+															{% if transient.redshift_err %}
+																+/- {{ transient.redshift_err }}
+															{% endif %}
+													{% else %}
+														Unknown
+													{% endif %}
+												</p>
+											</div>
+										</div>
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Best Spec. Class</strong>
+												<p class="text-muted">
+													{% if transient.best_spec_class %}
+														{{ transient.best_spec_class }}
+													{% else %}
+														Unknown
+													{% endif %}
+												</p>
+											</div>
+										</div>
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>TNS Spec. Class</strong>
+												<p class="text-muted">
+													{% if transient.TNS_spec_class %}
+														{{ transient.TNS_spec_class }}
+													{% else %}
+														None
+													{% endif %}
+												</p>
+												<br>
+											</div>
+										</div>
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Galactic <i>l/b</i></strong>
+												<p class="text-muted">
+													{{ transient.CoordString|galcoordsl }}&nbsp;&nbsp;&nbsp;&nbsp;{{ transient.CoordString|galcoordsb }} 
+												</p>
+												<br>
+											</div>
+										</div>
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>MW E(B-V)</strong>
+												<p class="text-muted">
+													{% if transient.mw_ebv %}
+														{{ transient.mw_ebv }}
+														{% if transient.mw_ebv >= 0.2 %}
+															&nbsp;<b class="text-red">(warning!)</b>
+														{% endif %}
+													{% else %}
+														Unknown
+													{% endif %}
+												</p>
+											</div>
+										</div>
+										{% if transient.point_source_probability %}
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>MW E(B-V)</strong>
+												<p class="text-muted">
+													{% if transient.mw_ebv %}
+														{{ transient.mw_ebv }}
+														{% if transient.mw_ebv >= 0.2 %}
+															&nbsp;<b class="text-red">(warning!)</b>
+														{% endif %}
+													{% else %}
+														Unknown
+													{% endif %}
+												</p>
+											</div>
+										</div>
+										{% endif %}
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Phot. Class</strong>
+												<p class="text-muted">
+													{{ transient.photo_class }}
+												</p>
+												<br>
+											</div>
+										</div>
+										
+										<div class="col-xs-12">
+											<hr>
+											<h4>Photometric Summary</h4>
+											<table class="table table-bordered table-striped">
+												<thead>
+													<tr>
+														<th></th>
+														<th>Date</th>
+														<th>Mag</th>
+														<th>Mag Lim</th>
+														<th>Filter</th>
+													</tr>
+												</thead>
+												<tbody>
+													<tr>
+														<td>Disc Mag</td>
+														<td>{{ first_magdate }}</td>
+														<td>{{ first_mag }}</td>
+														<td></td>
+														<td>{{ first_filter }}</td>
+													</tr>
+													<tr>
+														<td>Last Non-detection</td>
+														<td>{{ transient.non_detect_date }}</td>
+														<td></td>
+														<td>{{ transient.non_detect_limit }}</td>
+														<td>{{ transient.non_detect_band }}</td>
+													</tr>
+													<tr>
+														<td>Recent Mag</td>
+														<td>{{ recent_magdate }}</td>
+														<td>{{ recent_mag }}</td>
+														<td></td>
+														<td>{{ recent_filter }}</td>
+													</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+									<div>
+										<input class="btn btn-block btn-primary" type="button" value="Download All Data" onclick="window.open('{% url 'download_data' transient.slug %}')">
+									</div> 
+								</div>
+									<div class="col-xs-13">
+										<div class="box box-primary">
+											<div class="box-header">
+												<h3 class="box-title">Photometry</h3>
+											</div>
+											&ensp;&nbsp;<div class="btn-group">
+											<button style="margin-bottom:5px;" type="button" class="plotSALT2" id="salt2plot">
+												Show SALT2 Fit</span>
+											</button>
+											<button style="margin-bottom:5px;" type="button" class="photdownload" onclick="window.open('{% url 'download_photometry' transient.slug %}')">
+												Download Photometry</span>
+											</button>
+										</div>
+											<div class="box-body" id="lcplot"></div>
+										</div>
+									</div>
+								</div>
+							<div class="col-xs-6">
+								<div class="box box-primary">
+									<div class="box-header">
+										<h3 class="box-title">Host Detail &amp; External Resources</h3>
+										{% if transient.host %}
+											<a target="_blank" href="{% url 'admin:YSE_App_host_change' transient.host.id %}">(Edit)</a>
+										{% endif %}
+									</div>
+									<div class="box-body">
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Host Name</strong>
+												<p class="text-muted">
+													{% if transient.host %}
+														{% if transient.host.name %}
+															{{ transient.host.name }}
+														{% endif %}
+													{% else %}
+														Unknown
+													{% endif %}
+												</p>
+											</div>
+										</div>
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>R.A./Dec (2000)</strong>
+												<p class="text-muted">
+													{% if transient.host %}
+														{{ transient.host.CoordString.0 }}&nbsp;&nbsp;&nbsp;{{ transient.host.CoordString.1 }}<br>
+													<small>{{ transient.host.RADecimalString }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ transient.host.DecDecimalString }}</small>
+													{% else %}
+														Unknown
+													{% endif %}
+												</p>
+											</div>
+										</div>
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Redshift</strong>
+												<p class="text-muted">
+													{% if transient.host %}
+														{% if transient.host.redshift %}
+															{{ transient.host.redshift }} 
+
+															{% if transient.host.redshift_err %}
+																+/- {{ transient.host.redshift_err }}
+															{% endif %}
+														{% endif %}
+													{% else %}
+														Unknown
+													{% endif %}
+												</p>
+											</div>
+										</div>
+										<!--<div class="box-body">-->
+											<div class="col-xs-12">
+												<div class="form-group">
+													<strong>Transient sep from likely host</strong>
+													<p class="text-muted">
+														{% if transient.host %}
+															{{ transient.Separation }} arcsec<br>
+														{% else %}
+															Unknown
+														{% endif %}
+													</p>
+												</div>
+											</div>
+										
+
+										<!-- Start 2 column -->
+										<div class="col-xs-12">
+											<hr>
+										</div>
+										<div class="col-xs-6">
+											<div class="form-group">
+												<div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
+													<ol class="carousel-indicators">
+														<li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
+														<li data-target="#carousel-example-generic" data-slide-to="1" class=""></li>
+														<li data-target="#carousel-example-generic" data-slide-to="2" class=""></li>
+														<li data-target="#carousel-example-generic" data-slide-to="3" class=""></li>
+													</ol>
+													<div class="carousel-inner">
+														<div class="item active">
+															<strong>SDSS Footprint</strong>
+															<div>
+																<a href="http://skyserver.sdss3.org/public/en/tools/chart/navi.aspx?opt=G&amp;ra={{ transient.ra }}&amp;dec={{ transient.dec }}&amp;scale=0.1981" target="_blank" title="Link to SDSS Navigate Tool" class="sdss-image-link">
+																	<img src="http://skyservice.pha.jhu.edu/DR14/ImgCutout/getjpeg.aspx?ra={{ transient.ra }}&dec={{ transient.dec }}&scale=0.5&width=200&height=200&opt=G&query=&Grid=on " style='width:240px' border="0">
+																</a>
+															</div>
+														</div>
+														<div class="item">
+															<strong>DSS Footprint (Aladin)</strong>
+															<div id="aladin-lite-div" style="width:240px;height:240px;"></div>
+														</div>
+														<div class="item">
+															<strong>Pan-STARRS Footprint</strong>
+															<div id="ps1_image">
+															</div>
+														</div>
+														<div class="item">
+															<strong>Legacy Survey Image</strong>
+															<div id="legacy_image">
+															</div>
+														</div>
+													</div>
+													<a class="left carousel-control" href="#carousel-example-generic" data-slide="prev">
+														<span class="fa fa-angle-left"></span>
+													</a>
+													<a class="right carousel-control" href="#carousel-example-generic" data-slide="next">
+														<span class="fa fa-angle-right"></span>
+													</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="col-xs-6">
+											<div class="col-xs-12">
+												<div class="form-group">
+													<strong>External Links</strong>
+												</div>
+											</div>
+											<div class="col-xs-6">
+												<div class="form-group">
+													<a class="btn btn-block btn-primary" href="https://wis-tns.weizmann.ac.il/object/{{ transient.name }}" target="_blank">TNS</a>
+												</div>
+											</div>
+											<div class="col-xs-6">
+												<div class="form-group">
+													<a class="btn btn-block btn-primary" href="http://nedwww.ipac.caltech.edu/cgi-bin/nph-objsearch?ra={{ transient.ra }}&dec={{ transient.dec }}d&radius=10.0&search_type=Near+Position+Search" target="_blank">NED</a>
+												</div>
+											</div>
+											<div class="col-xs-6">
+												<div class="form-group">
+													<a class="btn btn-block btn-primary" href="http://simbad.u-strasbg.fr/simbad/sim-coo?protocol=html&amp;NbIdent=1&amp;Radius=1&amp;Radius.unit=arcmin&amp;CooFrame=FK5&amp;CooEpoch=2000&amp;CooEqui=2000&amp;Coord={{ transient.ra }}+{{ transient.dec }}" target="_blank">SIMBAD</a>
+												</div>
+											</div>
+											<div class="col-xs-6">
+												<div class="form-group">
+													<a class="btn btn-block btn-primary" href="http://vizier.u-strasbg.fr/viz-bin/VizieR?-source=&-out.add=_r&-out.add=_RAJ%2C_DEJ&-sort=_r&-to=&-out.max=20&-meta.ucd=2&-meta.foot=1&-c={{ transient.ra }}+{{ transient.dec }}&-c.rs=10" target="_blank">VizieR</a>
+												</div>
+											</div>
+											<div class="col-xs-6">
+												<div class="form-group">
+													<a class="btn btn-block btn-primary" href="http://irsa.ipac.caltech.edu/applications/wise/#id=Hydra_wise_wise_1&RequestClass=ServerRequest&DoSearch=true&intersect=CENTER&subsize=0.16666666800000002&mcenter=all&schema=allsky-4band&dpLevel=3a&band=1,2,3,4&UserTargetWorldPt={{ transient.ra }};{{ transient.dec }};EQ_J2000&SimpleTargetPanel.field.resolvedBy=nedthensimbad&preliminary_data=no&coaddId=&projectId=wise&searchName=wise_1&shortDesc=Position&isBookmarkAble=true&isDrillDownRoot=true&isSearchResult=true" target="_blank">WISE</a>
+												</div>
+											</div>
+											<div class="col-xs-6">
+												<div class="form-group">
+													<a class="btn btn-block btn-primary" href="http://archive.stsci.edu/cgi-bin/dss_search?h=5.0&w=5.0&f=fits&v=poss2ukstu_red&r={{ transient.ra }}d&d=+{{ transient.dec }}2d&e=J2000&c=none" target="_blank">DSS</a>
+												</div>
+											</div>
+											<div class="col-xs-6">
+												<div class="form-group">
+													<a class="btn btn-block btn-primary" href="http://adsabs.harvard.edu/cgi-bin/nph-abs_connect?db_key=AST&db_key=PRE&qform=AST&arxiv_sel=astro-ph&arxiv_sel=cond-mat&arxiv_sel=cs&arxiv_sel=gr-qc&arxiv_sel=hep-ex&arxiv_sel=hep-lat&arxiv_sel=hep-ph&arxiv_sel=hep-th&arxiv_sel=math&arxiv_sel=math-ph&arxiv_sel=nlin&arxiv_sel=nucl-ex&arxiv_sel=nucl-th&arxiv_sel=physics&arxiv_sel=quant-ph&arxiv_sel=q-bio&sim_query=YES&ned_query=YES&adsobj_query=YES&obj_req=YES&aut_logic=OR&obj_logic=OR&author=&object={{ transient.ra }}%20+{{ transient.dec }}%3A0.002778%0D%0A{{ transient.name }}&start_mon=&start_year=&end_mon=&end_year=&ttl_logic=OR&title=&txt_logic=OR&text=&nr_to_return=200&start_nr=1&jou_pick=ALL&ref_stems=&data_and=ALL&group_and=ALL&start_entry_day=&start_entry_mon=&start_entry_year=&end_entry_day=&end_entry_mon=&end_entry_year=&min_score=&sort=SCORE&data_type=SHORT&aut_syn=YES&ttl_syn=YES&txt_syn=YES&aut_wt=1.0&obj_wt=1.0&ttl_wt=0.3&txt_wt=3.0&aut_wgt=YES&obj_wgt=YES&ttl_wgt=YES&txt_wgt=YES&ttl_sco=YES&txt_sco=YES&version=1">ADS</a>
+												</div>
+											</div>
+											<div class="col-xs-6">
+												<div class="form-group">
+													<a class="btn btn-block btn-primary" href="https://asas-sn.osu.edu/" target="_blank">ASAS-SN</a>
+												</div>
+											</div>
+											<div class="col-xs-6">
+												<div class="form-group">
+													<a class="btn btn-block btn-primary" href="https://mars.lco.global/?sort_value=jd&sort_order=desc&cone={{transient.ra}}%2C{{transient.dec}}%2C0.0014" target="_blank">ZTF Cone Search</a>
+												</div>
+											</div>
+										</div>
+</div>
+								<!--<div class="col-xs-13">-->
+									<div class="box box-primary">
+										<div class="box-header">
+											<h3 class="box-title">Spectrum</h3>
+										</div>
+										{% if all_transient_spectra.count > 1 %}
+										&ensp;&nbsp;<div class="btn-group">
+											<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+												Select from {{ all_transient_spectra.count }} Spectra<span class="caret"></span>
+											</button>
+											<ul class="dropdown-menu">
+												{% for spec in all_transient_spectra %}
+													<li><a spec_plot-id="{{ spec.id }}" class="specPlotChange" href="#">{{ spec }} - {{ spec.instrument.name }}</a></li>
+												{% endfor %}
+											</ul>
+										</div>
+										{% endif %}
+										<div class="box-body" id="specplot"></div>
+									</div>
+								</div>
+								<div class="col-xs-12">
+									<div class="col-xs-6">
+										<div class="box box-default box-solid">
+													<div class="box-header with-border">
+														<strong>Available Tags</strong>
+													</div>
+													<div id="external-events" class="box-body">
+														{% for tag in all_transient_tags %}
+															<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
+														{% endfor %}
+													</div>
+												</div>
+
+												<div class="box box-default box-solid">
+													<div class="box-header with-border">
+														<strong>Create Tag</strong>
+													</div>
+													<div class="box-body">
+														<div class="btn-group" style="width: 100%; margin-bottom: 10px;">
+															<ul class="fc-color-picker" id="color-chooser">
+																{% for c in all_colors %}
+																	<li><a data-color_id="{{ c.id }}" class="text-{{c.color}}" href="#"><i class="fa fa-square"></i></a></li>
+																{% endfor %}
+															</ul>
+														</div>
+														<div class="input-group">
+															<input id="new-event" type="text" class="form-control" placeholder="Event Title">
+															<div class="input-group-btn">
+																<button id="add-new-event" type="button" class="btn btn-primary btn-flat">Add</button>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-xs-6">
+												<div id="associated-events" class="box box-default box-solid">
+													<div class="box-header with-border">
+														<strong>Associated Tags</strong>
+													</div>
+													<div class="box-body" id="associated-events-list">
+														{% for tag in assigned_transient_tags %}
+															<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
+														{% endfor %}
+													</div>
+												</div>
+											</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="tab-pane" id="followup_tab">
 						<div class="row">
 							<div class="col-xs-6">
 								<input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
@@ -758,6 +732,32 @@
 								</tr>
 							</thead>
 							<tbody id="chandra_image_list">
+							</tbody>
+						</table>
+					</div>
+					<div class="tab-pane" id="gw_tab">
+						<h4>GW Candidate Info</h4>
+						<h4><a href="{{ gw_candidate.websniff_url }}" target="_blank">Websniff URL</a><h4>
+						<table class="table table-bordered table-striped">
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>Telescope</th>
+									<th>Filter</th>
+									<th>DOPHOT Class</th>
+									<th>Image</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for gw_image in gw_images %}
+								<tr>
+									<td>{{ gw_image.obs_date }}</td>
+									<td>{{ gw_image.image_filter.instrument }}</td>
+									<td>{{ gw_image.image_filter }}</td>
+									<td>{{ gw_image.dophot_class }}</td>
+									<td><img src="{{ gw_image.image_filename }}" style='width:500px' border="0"></td>
+								</tr>
+								{% endfor %}
 							</tbody>
 						</table>
 					</div>

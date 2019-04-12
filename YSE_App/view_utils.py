@@ -300,7 +300,7 @@ class finder(TemplateView):
 			ax.imshow(image)
 
 		response=django.http.HttpResponse(content_type='image/png')
-		canvas.print_png(response)
+		canvas.print_jpg(response)
 
 		return response
 	
@@ -368,7 +368,7 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
 	ax.set_xlim([xlow,xhi])
 
 	response=django.http.HttpResponse(content_type='image/png')
-	canvas.print_png(response)
+	canvas.print_jpg(response)
 	return response
 
 def salt2plot(request, transient_id, salt2fit):
@@ -499,7 +499,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 	ax.legend.location = 'bottom_left'
 	ax.legend.label_height = 1
 	ax.legend.glyph_height = 5
-
+	
 	ax.legend.label_text_font_size = "4pt"#FontSizeSpec("10")
 	ax.legend.click_policy="hide"
 

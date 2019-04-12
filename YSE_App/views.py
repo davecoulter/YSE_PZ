@@ -80,12 +80,6 @@ def dashboard(request):
 	following_transients = None
 	followup_requested_transients = None
 	finishedfollowing_transients = None
-
-	
-	k2_transients = Transient.objects.filter(k2_validated=1).order_by('-disc_date')
-	k2transientfilter = TransientFilter(request.GET, queryset=k2_transients,prefix='k2')
-	k2_table = TransientTable(k2transientfilter.qs,prefix='k2')
-	RequestConfig(request, paginate={'per_page': 10}).configure(k2_table)
 	
 	status_new = TransientStatus.objects.filter(name='New').order_by('-modified_date')
 	if len(status_new) == 1:
@@ -121,13 +115,23 @@ def dashboard(request):
 	finishedfollowingtransientfilter = TransientFilter(request.GET, queryset=finishedfollowing_transients,prefix='finishedfollowing')
 	finished_following_table = TransientTable(finishedfollowingtransientfilter.qs,prefix='finishedfollowing')
 	RequestConfig(request, paginate={'per_page': 10}).configure(finished_following_table)
-		
-	transient_categories = [(k2_table,'Validated K2 Transients','k2',k2transientfilter),
-							(new_table,'New Transients','new',newtransientfilter),
+
+	status_needs_template = TransientStatus.objects.filter(name='NeedsTemplate').order_by('-modified_date')
+	if len(status_needs_template) == 1:
+		needs_template_transients = Transient.objects.filter(status=status_needs_template[0]).order_by('-disc_date')
+	else:
+		needs_template_transients = Transient.objects.filter(status=None).order_by('-disc_date')
+	needs_templatetransientfilter = TransientFilter(request.GET, queryset=needs_template_transients,prefix='needstemplate')
+	needs_template_table = TransientTable(needs_templatetransientfilter.qs,prefix='needstemplate')
+	RequestConfig(request, paginate={'per_page': 10}).configure(needs_template_table)
+
+	
+	transient_categories = [(new_table,'New Transients','new',newtransientfilter),
 							(follow_request_table,'Followup Requested','followrequest',followrequesttransientfilter),
 							(following_table,'Following','following',followingtransientfilter),
 							(watch_table,'Watch','watch',watchtransientfilter),
-							(finished_following_table,'Finished Following','finishedfollowing',finishedfollowingtransientfilter)]
+							(finished_following_table,'Finished Following','finishedfollowing',finishedfollowingtransientfilter),
+							(needs_template_table,'Needs Template','needstemplate',needs_templatetransientfilter)]
 
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-')[0]
@@ -294,6 +298,13 @@ def transient_detail(request, slug):
 		all_transient_tags = TransientTag.objects.all()
 		assigned_transient_tags = transient_obj.tags.all()
 
+		# GW Candidate?
+		gwcand,gwimages = None,None
+		for att in assigned_transient_tags:
+			if att.name == 'GW Candidate':
+				gwcand = GWCandidate.objects.filter(name = transient_obj.name)[0]
+				gwimages = GWCandidateImage.objects.filter(gw_candidate__name = gwcand.name)
+
 		# Get associated Observations
 		followups = TransientFollowup.objects.filter(transient__pk=transient_id)
 		if followups:
@@ -357,6 +368,8 @@ def transient_detail(request, slug):
 			'assigned_transient_tags': assigned_transient_tags,
 			'all_colors': all_colors,
 			'all_transient_spectra': spectra,
+			'gw_candidate':gwcand,
+			'gw_images':gwimages
 		}
 
 		if lastphotdata and firstphotdata:

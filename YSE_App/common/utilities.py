@@ -11,11 +11,11 @@ def date_to_mjd(date):
 	return time.mjd
 
 def getSeparation(ra1_decimal,dec1_decimal,
-                  ra2_decimal,dec2_decimal):
-        c1 = SkyCoord(ra1_decimal,dec1_decimal,unit=(u.deg, u.deg))
-        c2 = SkyCoord(ra2_decimal,dec2_decimal,unit=(u.deg, u.deg))
-        return(c1.separation(c2).arcsec)
-        
+				  ra2_decimal,dec2_decimal):
+		c1 = SkyCoord(ra1_decimal,dec1_decimal,unit=(u.deg, u.deg))
+		c2 = SkyCoord(ra2_decimal,dec2_decimal,unit=(u.deg, u.deg))
+		return(c1.separation(c2).arcsec)
+		
 def GetSexigesimalString(ra_decimal, dec_decimal):
 	c = SkyCoord(ra_decimal,dec_decimal,unit=(u.deg, u.deg))
 	ra = c.ra.hms
@@ -72,3 +72,32 @@ def telescope_can_observe(ra,dec,date,tel):
 
 	return(can_obs)
 
+def getRADecBox(ra,dec,size=None):
+	RAboxsize = DECboxsize = size
+
+	# get the maximum 1.0/cos(DEC) term: used for RA cut
+	minDec = dec-0.5*DECboxsize
+	if minDec<=-90.0:minDec=-89.9
+	maxDec = dec+0.5*DECboxsize
+	if maxDec>=90.0:maxDec=89.9
+
+	invcosdec = max(1.0/np.cos(dec*np.pi/180.0),
+					1.0/np.cos(minDec  *np.pi/180.0),
+					1.0/np.cos(maxDec  *np.pi/180.0))
+
+	ramin = ra-0.5*RAboxsize*invcosdec
+	ramax = ra+0.5*RAboxsize*invcosdec
+	decmin = dec-0.5*DECboxsize
+	decmax = dec+0.5*DECboxsize
+
+	if ra<0.0: ra+=360.0
+	if ra>=360.0: ra-=360.0
+
+	if ramin!=None:
+		if (ra-ramin)<-180:
+			ramin-=360.0
+			ramax-=360.0
+		elif (ra-ramin)>180:
+			ramin+=360.0
+			ramax+=360.0
+	return(ramin,ramax,decmin,decmax)
