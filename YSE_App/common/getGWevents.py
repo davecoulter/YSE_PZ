@@ -37,13 +37,13 @@ filtdict = {"THACHER z":'Thacher - Imager - z',
 			"SWOPEDIRECT B":"Direct/4Kx4K - B'"}
 
 def mjd_to_date(mjd):
-    t = Time(mjd, format='mjd')
-    return t.fits.replace('(UTC)','').replace('T',' ')
+	t = Time(mjd, format='mjd')
+	return t.fits.replace('(UTC)','').replace('T',' ')
 	
 def hex2int(val):
-    if type(val) is str:#types.StringType:
-        val = int(eval(val))
-    return(val)
+	if type(val) is str:   #types.StringType:
+		val = int(eval(val))
+	return(val)
 
 class GW2YSE:
 	def __init__(self):
