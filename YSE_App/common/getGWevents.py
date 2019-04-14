@@ -209,9 +209,9 @@ class GW2YSE:
 			for i,filt in enumerate(filts):
 				for row in difflc:
 					# Ignore wrong filter or negative sources or 0 error
-					if (row['dflux']==0.0
-						or row['flux']<0
-						or '.'+filt+'.' in row['cmpfile']):
+					if (float(row['dflux'])==0.0
+						or float(row['flux'])<0
+						or '.'+filt+'.' not in row['cmpfile']):
 						continue
 					else:
 						if sn[i] is '---':
@@ -220,7 +220,6 @@ class GW2YSE:
 						elif float(sn[i])<float(row['flux'])/float(row['dflux']):
 							sn[i] = str(float(row['flux'])/float(row['dflux']))
 							types[i] = str(row['type'])
-
 
 			# There is no unique field name column, so we have to parse this from
 			# one of the other columns.	 I'm using the FITSNAME here because we
