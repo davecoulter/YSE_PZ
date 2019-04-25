@@ -153,9 +153,8 @@ def personaldashboard(request):
 		if 'yse_app_transient' not in q.query.sql.lower(): continue
 		if 'name' not in q.query.sql.lower(): continue
 		if not q.query.sql.lower().startswith('select'): continue
-
 		cursor = connections['explorer'].cursor()
-		cursor.execute(q.query.sql, ())
+		cursor.execute(q.query.sql.replace('%','%%'), ())
 		transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
 		cursor.close()
 
@@ -163,6 +162,7 @@ def personaldashboard(request):
 		table = TransientTable(transientfilter.qs,prefix=q.query.title.replace(' ',''))
 		RequestConfig(request, paginate={'per_page': 10}).configure(table)
 		tables += [(table,q.query.title,q.query.title.replace(' ',''),transientfilter,q.id)]
+
 		
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-')[0]
@@ -302,8 +302,9 @@ def transient_detail(request, slug):
 		gwcand,gwimages = None,None
 		for att in assigned_transient_tags:
 			if att.name == 'GW Candidate':
-				gwcand = GWCandidate.objects.filter(name = transient_obj.name)[0]
-				gwimages = GWCandidateImage.objects.filter(gw_candidate__name = gwcand.name)
+				gwcand = GWCandidate.objects.filter(name = transient_obj.name)
+				if len(gwcand):
+					gwimages = GWCandidateImage.objects.filter(gw_candidate__name = gwcand[0].name)
 
 		# Get associated Observations
 		followups = TransientFollowup.objects.filter(transient__pk=transient_id)
