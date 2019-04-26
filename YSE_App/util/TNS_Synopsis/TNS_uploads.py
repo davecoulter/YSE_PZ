@@ -581,7 +581,7 @@ class processTNS():
         if doNED:
             for sc in scall:
                 try:
-                    ebvall += [sfd(sc)*0.86]
+                    ebvall += [float('%.3f'%sfd(sc)*0.86)]
                 except:
                     dust_table_l = IrsaDust.get_query_table(sc)
                     ebvall += [dust_table_l['ext SandF mean'][0]]
@@ -591,7 +591,7 @@ class processTNS():
                     ned_region_table = None
                 nedtables += [ned_region_table]
             print('E(B-V)/NED time: %.1f seconds'%(time.time()-ebvtstart))
-		import pdb; pdb.set_trace()
+
         tstart = time.time()
         TNSData = []
         json_data = []
