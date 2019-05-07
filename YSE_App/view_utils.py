@@ -472,9 +472,9 @@ def lightcurveplot(request, transient_id, salt2=False):
 			try:
 				plotmethod = getattr(ax, bsym)
 			except:
-				plotmethod = getattr(ax, 'circle')
+				plotmethod = getattr(ax, 'triangle')
 		else:
-			plotmethod = getattr(ax, 'circle')
+			plotmethod = getattr(ax, 'triangle')
 			
 		plotmethod(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
 				   color=color,size=7,legend='%s - %s'%(
