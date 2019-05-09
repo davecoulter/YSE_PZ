@@ -12,6 +12,7 @@ from django.template.defaulttags import register
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models.functions import Lower
 from django.db import connection,connections
+from django.shortcuts import redirect
 
 from .models import *
 from .forms import *
@@ -286,6 +287,8 @@ def transient_detail(request, slug):
 
 		transient_observation_task_form = TransientObservationTaskForm()
 
+		spectrum_upload_form = SpectrumUploadForm()
+		
 		# Status update properties
 		all_transient_statuses = TransientStatus.objects.all()
 		transient_status_follow = TransientStatus.objects.get(name="Following")
@@ -370,7 +373,8 @@ def transient_detail(request, slug):
 			'all_colors': all_colors,
 			'all_transient_spectra': spectra,
 			'gw_candidate':gwcand,
-			'gw_images':gwimages
+			'gw_images':gwimages,
+			'spectrum_upload_form':spectrum_upload_form
 		}
 
 		if lastphotdata and firstphotdata:
@@ -540,3 +544,59 @@ def download_photometry(request, slug):
 	response['Content-Disposition'] = 'attachment; filename=%s' % '%s_data.snana.txt'%slug
 
 	return response
+
+@csrf_exempt
+@login_or_basic_auth_required
+def upload_spectrum(request):
+	if request.method == 'POST':
+		form = SpectrumUploadForm(request.POST, request.FILES)
+		if form.is_valid():
+			#form.save()
+			transient = Transient.objects.filter(id=form.data['transient'])[0]
+			tspec = TransientSpectrum.objects.filter(transient=transient).\
+				filter(instrument=form.data['instrument']).\
+				filter(obs_group=form.data['obs_group']).\
+				filter(obs_date=form.data['obs_date'])
+
+			specdict = {'transient':transient,'ra':form.data['ra'],
+						'dec':form.data['dec'],'obs_date':form.data['obs_date'],
+						'obs_group':ObservationGroup.objects.filter(id=form.data['obs_group'])[0],
+						'instrument':Instrument.objects.filter(id=form.data['instrument'])[0],
+						'created_by':request.user,'modified_by':request.user}
+			if not len(tspec):
+				tspec = TransientSpectrum.objects.create(**specdict)
+			else:
+				tspec.update(**specdict)
+				tspec = tspec[0]
+			tspec.save()
+
+			existingspec = TransientSpecData.objects.filter(spectrum=tspec)
+			if len(existingspec):
+				for e in existingspec: e.delete()
+
+			for line in request.FILES['filename']:
+				line = line.decode('utf-8').replace('\n','')
+				if line.startswith('#'): continue
+				if len(line.split()) == 3:
+					wavelength,flux,flux_err = line.split()
+					wavelength,flux,flux_err = float(wavelength),float(flux),float(flux_err)
+					td = TransientSpecData.objects.create(
+						spectrum=tspec,wavelength=wavelength,flux=flux,flux_err=flux_err,
+						created_by=request.user,modified_by=request.user)
+					td.save()
+				elif len(line.split()) == 2:
+					wavelength,flux = line.split()
+					wavelength,flux = float(wavelength),float(flux)
+					td = TransientSpecData.objects.create(
+						spectrum=tspec,wavelength=wavelength,flux=flux,
+						created_by=request.user,modified_by=request.user)
+					td.save()
+				else:
+					raise RuntimeError('bad input')
+			
+			return redirect('transient_detail', slug=transient.slug) #HttpResponseRedirect(reverse_lazy('transient_detail',transient.slug))
+	else:
+		form = SpectrumUploadForm()
+	return render(request, 'YSE_App/form_snippets/spectrum_upload_form.html', {
+		'form': form
+	})

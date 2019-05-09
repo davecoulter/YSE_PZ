@@ -417,7 +417,7 @@
 												</div>
 											</div>
 										</div>
-</div>
+									</div>
 								<!--<div class="col-xs-13">-->
 									<div class="box box-primary">
 										<div class="box-header">
@@ -436,6 +436,16 @@
 										</div>
 										{% endif %}
 										<div class="box-body" id="specplot"></div>
+										<p></p>
+										<div class="row">
+											<div class="col-xs-12">
+												<input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
+												<input type="hidden" id="transient_ra" value="{{ transient.ra }}"/>
+												<input type="hidden" id="transient_dec" value="{{ transient.dec }}"/>
+												{% include "YSE_App/form_snippets/spectrum_upload_form.html" with form=spectrum_upload_form %}
+											</div>
+										</div>
+										<p></p>
 									</div>
 								</div>
 								<div class="col-xs-12">
@@ -806,7 +816,10 @@
 	<script type="text/javascript" src="https://mpld3.github.io/js/d3.v3.min.js"></script>
 	<script type="text/javascript" src="https://mpld3.github.io/js/mpld3.v0.3.1.dev1.js"></script>
 	<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-0.12.13.min.js"></script>
-	
+	<script src="{% static 'YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js' %}"></script>
+	<script type="text/javascript" src="http://tarruda.github.com/bootstrap-datetimepicker/assets/js/bootstrap-datetimepicker.min.js"></script>
+    <script type="text/javascript" src="http://tarruda.github.com/bootstrap-datetimepicker/assets/js/bootstrap-datetimepicker.pt-BR.js"></script>
+
 	<script>
 
 		$(function() {
@@ -992,6 +1005,28 @@
 				} 
 			});
 
+			//$('#spec_obs_date').datetimepicker({
+        	//	format: 'dd/MM/yyyy hh:mm:ss',
+		    //    language: 'pt-BR'
+      		//});
+
+			//$('#spec_obs_date').datetimepicker({
+				//timePicker24Hour: true,
+				//timePicker: true, 
+				//timePickerIncrement: 1, 
+			//	format: 'yyyy-mm-dd HH:mm', 
+			//});
+
+			//$('#obs_date').timepicker({
+				//timePicker24Hour: true,
+				//timePicker: true, 
+				//timePickerIncrement: 1, 
+			//	format: 'MM/DD/YYYY', 
+			//	locale: {
+			//		format: 'MM/DD/YYYY'
+			//	} 
+			//});
+
 			$('#obs_task_desired_picker').daterangepicker({ 
 				timePicker24Hour: true,
 				timePicker: true, 
@@ -1016,6 +1051,11 @@
 			// Clear initial value
 			$('#obs_task_actual_picker').val('');
 
+			// Initialize date	
+			//date_picker = $('#spec_obs_date').data('datetimepicker')
+			//date_picker.setDate(null)
+			//$('#obs_date').val(date_picker.getDate())
+
 			// Initialize daterange
 			fdr_picker = $('#follow_date_range').data('daterangepicker')
 			$('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
@@ -1035,6 +1075,9 @@
 			$('#follow_date_range').on('apply.daterangepicker', function(ev, picker) {
 				$('#valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
 				$('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+			});
+			$('#spec_obs_date').on('apply.datetimepicker', function(ev, picker) {
+				$('#obs_date').getDate()
 			});
 
 			// Submit comment on submit

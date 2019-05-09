@@ -1,0 +1,54 @@
+{% load widget_tweaks %}
+
+{% block content %}
+
+	<div class="box box-primary box-solid collapsed-box">
+		<div class="box-header with-border">
+			<button id="upload_spectrum_btn" type="button" class="btn btn-box-tool" data-widget="collapse" style="height: 30px;"><h3 class="box-title">Upload Spectrum</h3></button>
+			<div class="box-tools pull-right">
+				<button id="upload_spectrum_btn" type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i></button>
+			</div>
+		</div>
+		<div class="box-body">
+			<form action="{% url 'upload_spectrum' %}" id="upload_spectrum" method="post" enctype="multipart/form-data">
+				{% csrf_token %}
+				{% for hidden_field in form.hidden_fields %}
+					{{ hidden_field }}
+				{% endfor %}
+				<input type='hidden' name='ra' value={{transient.ra}} required_id="id_ra"/>
+				<input type='hidden' name='dec' value={{transient.dec}} required_id="id_dec"/>
+				<input type='hidden' name='transient' value={{transient.id}} required_id="id_transient"/>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label for="{{ form.filename.id_for_label }}">Filename</label>
+						<input type="file" name="filename" required_id="{{ form.filename.id_for_label }}" />
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Instrument</label>
+						{% render_field form.instrument class+="form-control select2" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Obs. Group</label>
+						{% render_field form.obs_group class+="form-control select2" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label for="{{ form.obs_date.id_for_label }}">Date Obs.</label>
+						<input type="datetime-local" class="form-control pull-right" id="obs_date" name="obs_date" required_id="id_obs_date">
+					</div>
+				</div>
+				<div class="col-xs-12">
+					<div class="form-group">
+						<br>
+						<button type="submit" class="btn btn-block btn-primary btn-lg">Submit</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+{% endblock %}

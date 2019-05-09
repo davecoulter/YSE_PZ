@@ -22,7 +22,7 @@ class Transient(BaseModel):
 	# Required
 	status = models.ForeignKey(TransientStatus, models.SET(get_sentinel_transientstatus))
 	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
-
+	
 	# Optional
 	non_detect_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 	best_spec_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
@@ -34,7 +34,7 @@ class Transient(BaseModel):
 	internal_survey = models.ForeignKey(InternalSurvey, null=True, blank=True, on_delete=models.SET_NULL)
 	tags = models.ManyToManyField(TransientTag, blank=True)
 
-
+	
 	### Properties ###
 	# Required
 	name = models.CharField(max_length=64)

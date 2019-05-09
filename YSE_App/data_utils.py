@@ -502,7 +502,7 @@ def add_transient_spec_util(specdict,transient,user):
 				if group not in transientspec.groups.all():
 					transientspec.groups.add(group)
 					transientspec.save()
-				
+
 		# add the spec data
 		existingspec = TransientSpecData.objects.filter(spectrum=transientspec)
 		# loop through new, comp against existing

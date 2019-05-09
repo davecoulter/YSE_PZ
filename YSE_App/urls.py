@@ -38,6 +38,8 @@ urlpatterns = [
 	url(r'^get_host/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<sep>\d+\.?\d*)/$', data_utils.get_host, name='get_host'),
 	url(r'^download_data/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_data, name='download_data'),
 	url(r'^download_photometry/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_photometry, name='download_photometry'),
+	#url(r'^upload_spectrum/', UploadSpectrumFormView.as_view(), name='upload_spectrum'),
+	url(r'^upload_spectrum/', views.upload_spectrum, name='upload_spectrum'),
 	
     url(r'^login/$', views.auth_login, name='auth_login'),
     url(r'^logout/$', views.auth_logout, name='auth_logout'),

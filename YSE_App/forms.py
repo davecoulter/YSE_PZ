@@ -89,3 +89,12 @@ class RemoveDashboardQueryForm(ModelForm):
 		model = UserQuery
 		fields = [
 			'id']
+
+class SpectrumUploadForm(ModelForm):
+	filename = forms.FileField()
+	obs_date = forms.DateTimeField(input_formats=['%Y-%m-%dT%H:%M'])
+	
+	class Meta:
+		model = TransientSpectrum
+		fields = ('transient','instrument','ra',
+				  'dec','obs_group')
