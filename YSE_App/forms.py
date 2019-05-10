@@ -93,8 +93,28 @@ class RemoveDashboardQueryForm(ModelForm):
 class SpectrumUploadForm(ModelForm):
 	filename = forms.FileField()
 	obs_date = forms.DateTimeField(input_formats=['%Y-%m-%dT%H:%M'])
-	
+	obs_group = forms.ModelChoiceField(
+		ObservationGroup.objects.filter(Q(name='SSS') | Q(name='Foundation') |
+										Q(name='TESS') | Q(name='YSE') |
+										Q(name='UCSC') |
+										Q(name='Other')))
+	spec_instruments = [
+		'SED-Machine','P200-TSPEC',
+		'LFC','DBSP','lay - MIKE','lay - LDSS-3',
+		'aade - MagE','aade - Boller & Chivens',
+		'WFC3','STIS','IRS','B&C-Asi-1.22m',
+		'aade - IMACS','lay - LDSS-2','AFOSC',
+		'uPont - Mod-spec','uPont - B&C-duPont',
+		'uPont - WFCCD','V-grism','UV-grism',
+		'T2 - X-Shooter','.2m - EFOSC-2.2','TT - Sofi',
+		'TT - EFOSC2-NTT','TT - EMMI','.6m - EFOSC2-3.6',
+		'OSIRIS','FLOYDS-N','FLOYDS-S','NIRC2',
+		'NIRSPEC','NIRES','KCWI','ESI',
+		'DEIMOS','OSIRIS','MOSFIRE','LRIS',
+		'HIRES','GMOS','Goodman','KAST']
+	instrument = forms.ModelChoiceField(Instrument.objects.filter(Q(name__in=spec_instruments)))
+	#import pdb; pdb.set_trace()
 	class Meta:
 		model = TransientSpectrum
-		fields = ('transient','instrument','ra',
-				  'dec','obs_group')
+		fields = ('transient','ra',
+				  'dec')#,'obs_group','instrument')

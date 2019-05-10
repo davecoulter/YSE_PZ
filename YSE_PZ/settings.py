@@ -181,3 +181,5 @@ USE_TZ = True
 PROJECT_DIR=os.path.dirname(__file__)
 STATIC_ROOT= os.path.join(PROJECT_DIR,'static/')
 STATIC_URL = config.get('site_settings', 'STATIC')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
