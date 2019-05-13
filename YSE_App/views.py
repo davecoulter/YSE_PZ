@@ -342,8 +342,8 @@ def download_target_list(request, telescope, obs_date):
 	
 	content = "!Data {name %20} ra_h ra_m ra_s dec_d dec_m dec_s equinox {comment *}\n"
 	for f in follow_requests:
-		content += "%s  %s %s 2000 mag = %.2f best_time = %s\n"%(
-			f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),f.transient.CoordString()[1].replace(':',' '),float(f.transient.recent_mag()),best_time)
+		content += "%s  %s %s 2000 mag = %.2f\n"%(
+			f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),f.transient.CoordString()[1].replace(':',' '),float(f.transient.recent_mag()))
 				
 	response = HttpResponse(content, content_type='text/plain')
 	response['Content-Disposition'] = 'attachment; filename=%s' % '%s_%s.txt'%(telescope,obs_date)
