@@ -29,7 +29,7 @@ from .data import PhotometryService, SpectraService, ObservingResourceService
 import json
 import time
 
-from .table_utils import TransientTable,FollowupTable,TransientFilter,FollowupFilter
+from .table_utils import TransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter
 import django_tables2 as tables
 from django_tables2 import RequestConfig
 from .basicauth import *
@@ -263,6 +263,93 @@ def calendar(request):
 		'user_colors': user_colors
 	}
 	return render(request, 'YSE_App/calendar.html', context)
+
+@login_required
+def observing_calendar(request):
+	all_dates = ClassicalObservingDate.objects.all()
+	colors = ['#dd4b39', 
+				'#f39c12', 
+				'#00c0ef', 
+				'#0073b7', 
+				'#f012be', 
+				'#3c8dbc',
+				'#00a65a',
+				'#d2d6de',
+				'#001f3f']
+
+	telescope_colors = {}
+	for i, c in enumerate(ClassicalResource.objects.all()):
+		telescope_colors[c.telescope.name] = colors[i % len(colors)]
+
+	context = {
+		'all_dates': all_dates,
+		'telescope_colors': telescope_colors
+	}
+	return render(request, 'YSE_App/observing_calendar.html', context)
+
+def observing_night(request, telescope, obs_date):
+
+	# get follow requests for telescope/date
+	classical_obs_date = ClassicalObservingDate.objects.filter(obs_date__startswith = obs_date).filter(resource__telescope__name = telescope.replace('_',' '))
+	follow_requests = TransientFollowup.objects.filter(classical_resource = classical_obs_date[0].resource).filter(valid_start__lte = classical_obs_date[0].obs_date).filter(valid_stop__gte = classical_obs_date[0].obs_date)
+
+	followuptransientfilter = FollowupFilter(request.GET, queryset=follow_requests,prefix=telescope)
+		
+	followup_table = ObsNightFollowupTable(followuptransientfilter.qs,prefix=telescope,classical_obs_date=classical_obs_date)
+	RequestConfig(request, paginate={'per_page': 20}).configure(followup_table)
+	table = (telescope.replace('_',' '),followup_table,telescope,follow_requests,followuptransientfilter)
+
+	location = EarthLocation.from_geodetic(
+		classical_obs_date[0].resource.telescope.longitude*u.deg,classical_obs_date[0].resource.telescope.latitude*u.deg,
+		classical_obs_date[0].resource.telescope.elevation*u.m)
+	time = Time(str(classical_obs_date[0].obs_date).split('+')[0], format='iso')
+	tel = Observer(location=location, timezone="UTC")
+
+	sunset = tel.sun_set_time(time,which="previous").isot.split('T')[-1][:-7]
+	night_start_12 = tel.twilight_evening_nautical(time,which="previous").isot.split('T')[-1][:-7]
+	night_start_18 = tel.twilight_evening_astronomical(time,which="previous").isot.split('T')[-1][:-7]
+	night_end_18 = tel.twilight_morning_astronomical(time,which="previous").isot.split('T')[-1][:-7]
+	night_end_12 = tel.twilight_morning_nautical(time,which="previous").isot.split('T')[-1][:-7]
+	sunrise = tel.sun_rise_time(time,which="previous").isot.split('T')[-1][:-7]
+	
+	if request.META['QUERY_STRING']:
+		anchor = request.META['QUERY_STRING'].split('-ex')[0]
+	else: anchor = ''
+	context = {
+		'followup_table':table,
+		'anchor':anchor,
+		'all_followup_statuses':FollowupStatus.objects.all(),
+		'follow_requests': follow_requests,
+		'telescope':telescope.replace('_',' '),
+		'obs_date':obs_date,
+		'classical_obs_date':classical_obs_date[0],
+		'sunriseset':(sunset,night_start_12,night_start_18,night_end_18,night_end_12,sunrise)
+	}
+	return render(request, 'YSE_App/observing_night.html', context)
+
+def download_target_list(request, telescope, obs_date):
+
+	# get follow requests for telescope/date
+	classical_obs_date = ClassicalObservingDate.objects.filter(obs_date__startswith = obs_date).filter(resource__telescope__name = telescope.replace('_',' '))
+	follow_requests = TransientFollowup.objects.filter(classical_resource = classical_obs_date[0].resource).filter(valid_start__lte = classical_obs_date[0].obs_date).filter(valid_stop__gte = classical_obs_date[0].obs_date)
+
+	location = EarthLocation.from_geodetic(
+		classical_obs_date[0].resource.telescope.longitude*u.deg,classical_obs_date[0].resource.telescope.latitude*u.deg,
+		classical_obs_date[0].resource.telescope.elevation*u.m)
+	time = Time(str(classical_obs_date[0].obs_date).split('+')[0], format='iso')
+	tel = Observer(location=location, timezone="UTC")
+
+	
+	content = "!Data {name %20} ra_h ra_m ra_s dec_d dec_m dec_s equinox {comment *}\n"
+	for f in follow_requests:
+		content += "%s  %s %s 2000 mag = %.2f best_time = %s\n"%(
+			f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),f.transient.CoordString()[1].replace(':',' '),float(f.transient.recent_mag()),best_time)
+				
+	response = HttpResponse(content, content_type='text/plain')
+	response['Content-Disposition'] = 'attachment; filename=%s' % '%s_%s.txt'%(telescope,obs_date)
+
+	return response
+
 
 @login_required
 def transient_detail(request, slug):

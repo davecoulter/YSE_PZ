@@ -34,13 +34,14 @@ def replace_space(object):
 	return(object.name.replace(' ','_'))
 
 @register.filter(name='rise_time')
-def rise_time(obsnight,coords):
+def rise_time(obsnight,coords,tel=None):
 
 	import time
 	tstart = time.time()
 	
 	tme = Time(str(obsnight.obs_date).split()[0])
 	sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
+
 
 	location = EarthLocation.from_geodetic(
 		obsnight.resource.telescope.longitude*u.deg,obsnight.resource.telescope.latitude*u.deg,

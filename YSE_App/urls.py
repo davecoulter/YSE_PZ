@@ -30,6 +30,9 @@ urlpatterns = [
     url(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
     url(r'^transient_detail/(?P<slug>[a-zA-Z0-9_-]+)/$', views.transient_detail, name='transient_detail'),
 
+    url(r'^observing_calendar/$', views.observing_calendar, name='observing_calendar'),
+    url(r'^observing_night/(?P<telescope>[a-zA-Z0-9_-]+)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.observing_night, name='observing_night'),
+
 	url(r'^get_transient/(?P<slug>[a-zA-Z0-9_-]+)/$', data_utils.get_transient, name='get_transient'),
 	url(r'^add_transient/', data_utils.add_transient, name='add_transient'),
 	url(r'^add_gw_candidate/', data_utils.add_gw_candidate, name='add_gw_candidate'),
@@ -38,7 +41,7 @@ urlpatterns = [
 	url(r'^get_host/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<sep>\d+\.?\d*)/$', data_utils.get_host, name='get_host'),
 	url(r'^download_data/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_data, name='download_data'),
 	url(r'^download_photometry/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_photometry, name='download_photometry'),
-	#url(r'^upload_spectrum/', UploadSpectrumFormView.as_view(), name='upload_spectrum'),
+	url(r'^download_target_list/(?P<telescope>[a-zA-Z0-9_-]+)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.download_target_list, name='download_target_list'),
 	url(r'^upload_spectrum/', views.upload_spectrum, name='upload_spectrum'),
 	
     url(r'^login/$', views.auth_login, name='auth_login'),
