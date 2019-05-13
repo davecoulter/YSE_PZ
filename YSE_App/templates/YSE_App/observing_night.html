@@ -25,7 +25,7 @@
     <table id="telescope_tbl" class="table table-bordered">
       <thead>
         <tr>
-          <th>Sunset</th>
+          <th>Sunset (UT)</th>
           <th>12 Deg. Twilight</th>  
           <th>18 Deg. Twilight</th>
           <th>18 Deg. Twilight</th>
@@ -56,6 +56,11 @@
        <input class="btn btn-block btn-primary" type="button" value="Download Target List" onclick="window.open('{% url 'download_target_list' classical_obs_date.resource.telescope|replace_space obs_date %}')">
     </div>
   </div>
+    <!--<div class="col-xs-3">
+    <div class="box-header with-border">
+       <input class="btn btn-block btn-primary" type="button" value="Download Target List and Finder Charts" onclick="window.open('{% url 'download_target_list' classical_obs_date.resource.telescope|replace_space obs_date %}')">
+    </div>
+  </div>-->
       <div align='right'>
       {% if followup_table.4 %}
       <form action="" method="get" class="form form-inline">
