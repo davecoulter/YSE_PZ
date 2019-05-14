@@ -5,8 +5,8 @@ def tess_obs(ra, dec, discovery_jd):
 	before_leeway = 20	 # Days of leeway before date
 	after_leeway = 100	 # Days of leeway after date
 	tess_date = [2458324.5,2458352.5,2458381.5,2458409.5,2458437.5,2458463.5,
-				 2458490.5,2458151.5,2458177.5,2458203.5,2458230.5,2458259.5,
-				 2458288.5,2458317.5]
+				 2458490.5,2458516.5,2458542.5,2458568.5,2458595.5,2458624.5,
+				 2458653.5,2458682.5]
 
 	url = 'https://mast.stsci.edu/tesscut'
 	url += '/api/v0.1/sector?ra={ra}&dec={dec}'
