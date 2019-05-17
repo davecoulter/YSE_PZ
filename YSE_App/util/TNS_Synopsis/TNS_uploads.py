@@ -267,8 +267,9 @@ class processTNS():
             tfilt = np.append(tfilt,p['filters']['name'])
 
         disc_flag = np.zeros(len(tmag))
-        iMag = tmag != -99
-        disc_flag[iMag][(mjd[iMag] == np.min(mjd[iMag]))] = 1
+        iMag = np.where((tmag != -99) & (tmag != None))[0]
+		indx = np.where((mjd[iMag] == np.min(mjd[iMag])))[0]
+        disc_flag[iMag[indx]] = 1
 
         photometrycount = 0
         for ins in np.unique(tinst):
@@ -302,7 +303,7 @@ class processTNS():
                     photometrydict['photdata']['%s_%i'%(od.replace(' ','T'),k)] = PhotUploadDict
             PhotUploadAll[photometrycount] = photometrydict
             photometrycount += 1
-
+			
         if nondetectdate: nondetectdate = nondetectdate.replace(' ','T')
         return PhotUploadAll,nondetectdate,nondetectmaglim,nondetectfilt,nondetectins
 
