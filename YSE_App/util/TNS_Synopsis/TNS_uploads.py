@@ -34,7 +34,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib
 from collections import OrderedDict
-import mastcasjobs
+import mastrequests
 
 reg_obj = "https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -45,7 +45,7 @@ try:
 	sfd = SFDQuery()
 except:
 	pass
-	
+
 def get_ps_score(RA, DEC):
     '''Get ps1 star/galaxy score from MAST. Provide RA and DEC in degrees.
     Returns an empty string if no match is found witing 3 arcsec.
@@ -60,14 +60,14 @@ def get_ps_score(RA, DEC):
     inner join fGetNearbyObjEq(%.5f, %.5f, 0.05) nb on p.objid=nb.objid
     """ %(RA, DEC)
 
-    print(query)
-
-    jobs = mastcasjobs.MastCasJobs(context="HLSP_PS1_PSC")
+    jobs = mastrequests.MastCasJobs(context="HLSP_PS1_PSC")
     results = jobs.quick(query, task_name="python cross-match")
 
     output = results.split('\n')[1]
     if not output:
         output = None
+    else:
+        output = round(float(output), 3)
 
     return output
 
@@ -231,6 +231,56 @@ class processTNS():
 
         else: return None
 
+    def get_PS_DR2_data(self, sc):
+        """
+        Returns a dictionary of photometric data
+        {'instrument': 'GPC1', 'obs_group': 'Pan-STARRS1', 'photdata': photdata}
+        photdata = {{"2019-05-09T04:35:52.002_1": {'obs_data': '2019-05-09T04:35:52.002',
+                                                   'band': 'g', 'groups': [], 'mag': float,
+                                                   'mag_err': float, 'flux': None, 'flux_err': None,
+                                                   'forced': None, 'discovery_point': 0,
+                                                   'flux_zero_point': None, } }}
+        """
+
+        #radius is in arcmin
+        radius = 3./60
+        ra, dec = sc.ra.deg, sc.dec.deg
+        query_obj_id = """select m.objid, m.gMeanPSFMag, m.rMeanPSFMag, m.iMeanPSFMag, m.zMeanPSFMag, m.yMeanPSFMag
+        from fGetNearestObjEq(%.5f,%.5f,%.5f) nb
+        inner join MeanObject m on m.objid=nb.objid
+        """ %(ra,dec,radius)
+
+        jobs = mastrequests.MastCasJobs(context="PanSTARRS_DR2")
+        results = jobs.quick(query_obj_id, task_name="PS1_DR2 objid search")
+        results = results.split('\n')
+        if results[1]:
+            objid = results[1].split(',')[0]
+            query = "select objID, detectID, filter=f.filterType, obsTime, ra, dec, psfFlux, psfFluxErr, "
+            query += "infoFlag, infoFlag2, infoFlag3 "
+            query += "from (select * from Detection where objID=%s) d " %objid
+            query += "join Filter f on d.filterID=f.filterID order by d.filterID, obsTime"
+            results = jobs.quick(query, task_name="PS1 DR2 detections")
+
+            photdata = {}
+            for row in ascii.read(results):
+                tobj = Time(row[3], format='mjd')
+                obstime = datetime.strftime(tobj.to_datetime(), "%Y-%m-%dT%H:%M:%S.%f")[:-3]
+                photdata[obstime] = {}
+                photdata[obstime]['obs_date'] = obstime
+                photdata[obstime]['band'] = row[2]
+                photdata[obstime]['mag'] = -2.5*np.log10(row[6]) + 8.90
+                photdata[obstime]['mag_err'] = 2.5/np.log(10)* (row[7]/row[6])
+                photdata[obstime]['forced'] = None
+                photdata[obstime]['flux_zero_point'] = None
+                #photdata[obstime]['data_quality'] = 0
+                photdata[obstime]['flux'] = None
+                photdata[obstime]['flux_err'] = None
+                photdata[obstime]['discovery_point'] = 0
+                photdata[obstime]['groups'] = []
+            transientphot = {'instrument': 'GPC1', 'obs_group': 'Pan-STARRS1', 'photdata': photdata}
+            return transientphot
+        else:
+            return None
 
     def getTNSPhotometry(self,jd,PhotUploadAll=None):
 
@@ -303,7 +353,7 @@ class processTNS():
                     photometrydict['photdata']['%s_%i'%(od.replace(' ','T'),k)] = PhotUploadDict
             PhotUploadAll[photometrycount] = photometrydict
             photometrycount += 1
-			
+
         if nondetectdate: nondetectdate = nondetectdate.replace(' ','T')
         return PhotUploadAll,nondetectdate,nondetectmaglim,nondetectfilt,nondetectins
 
@@ -535,7 +585,10 @@ class processTNS():
             return 0
 
         objs,ras,decs = [],[],[]
+        print('length of msg_ids %s' %len(msg_ids))
         for i in range(len(msg_ids)):
+            if i%10 == 0:
+              print("Processing emails %d/%d" %(i, len(msg_ids)))
             ########################################################
             # Iterate Over Email
             ########################################################
@@ -653,6 +706,10 @@ class processTNS():
                     transientdict['host'] = hostdict
                     transientdict['candidate_hosts'] = hostcoords
             except: pass
+
+            phot_ps1dr2 = self.get_PS_DR2_data(sc)
+            if phot_ps1dr2 is not None:
+                transientdict['transientphotometry']['PS1DR2'] = phot_ps1dr2
 
             TransientUploadDict[obj] = transientdict
 
