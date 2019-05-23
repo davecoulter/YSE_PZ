@@ -41,10 +41,10 @@ reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
 reg_dec = "DEC[\=\*a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)\<\/em\>\,"
 
 try:
-	from dustmaps.sfd import SFDQuery
-	sfd = SFDQuery()
+  from dustmaps.sfd import SFDQuery
+  sfd = SFDQuery()
 except:
-	pass
+  pass
 
 def get_ps_score(RA, DEC):
     '''Get ps1 star/galaxy score from MAST. Provide RA and DEC in degrees.
@@ -318,7 +318,7 @@ class processTNS():
 
         disc_flag = np.zeros(len(tmag))
         iMag = np.where((tmag != -99) & (tmag != None))[0]
-		indx = np.where((mjd[iMag] == np.min(mjd[iMag])))[0]
+        indx = np.where((mjd[iMag] == np.min(mjd[iMag])))[0]
         disc_flag[iMag[indx]] = 1
 
         photometrycount = 0
