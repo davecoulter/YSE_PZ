@@ -35,6 +35,7 @@ from email.mime.multipart import MIMEMultipart
 import smtplib
 from collections import OrderedDict
 import mastrequests
+from astropy.io import ascii
 
 reg_obj = "https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"

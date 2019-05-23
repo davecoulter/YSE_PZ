@@ -69,7 +69,7 @@ class MastCasJobs(CasJobs):
         self.base_url = base_url
         self.request_type = request_type
 
-    def quick(self, q, context=None, task_name="quickie", system=False):
+    def quick(self, q, context=None, task_name="quickie"):
         """
         Run a quick job. Like CasJobs method but adds astropy option.
         ## Arguments
@@ -85,7 +85,7 @@ class MastCasJobs(CasJobs):
         """
         if not context:
             context = self.context
-        results = super().quick(q, context=context, task_name=task_name, system=False)
+        results = super().quick(q, context=context, task_name=task_name)
 
         return results
 
