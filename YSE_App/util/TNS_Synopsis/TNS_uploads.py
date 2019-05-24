@@ -69,6 +69,7 @@ def get_ps_score(RA, DEC):
         output = None
     else:
         output = round(float(output), 3)
+        print('PS_SCORE: %.3f' %output)
 
     return output
 
@@ -273,7 +274,7 @@ class processTNS():
                 photdata[obstime]['mag_err'] = 2.5/np.log(10)* (row[7]/row[6])
                 photdata[obstime]['forced'] = None
                 photdata[obstime]['flux_zero_point'] = None
-                #photdata[obstime]['data_quality'] = 0
+                photdata[obstime]['data_quality'] = 0
                 photdata[obstime]['flux'] = None
                 photdata[obstime]['flux_err'] = None
                 photdata[obstime]['discovery_point'] = 0
