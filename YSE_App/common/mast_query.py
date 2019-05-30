@@ -1,91 +1,99 @@
-import requests,math,sys
-import numpy as np
+import sys
 from astroquery.mast import Observations
-from astropy.time import Time
-from io import BytesIO
-from scipy import misc
-from PIL import Image
+from astropy.coordinates import SkyCoord
+from astropy import units as u
 from datetime import datetime
+from astropy.time import Time
 
 # Uses references to astroquery.mast fields: https://mast.stsci.edu/api/v0/_c_a_o_mfields.html
+instrument_defaults = {
+        'radius': 1 * u.arcsec,
+        'jpg': 'https://hla.stsci.edu/cgi-bin/fitscut.cgi?red={id}'+\
+            '&amp;RA={ra}&amp;DEC={dec}&amp;size=256&amp;format=jpg'+\
+            '&amp;config=ops&amp;asinh=1&amp;autoscale=90',
+        'mask': {'instrument_name': ['WFPC2/WFC','PC/WFC','ACS/WFC','ACS/HRC',
+                                     'ACS/SBC','WFC3/UVIS','WFC3/IR'],
+                 't_exptime': 40,
+                 'obs_collection': ['HST'],
+                 'filters': ['F220W','F250W','F330W','F344N','F435W','F475W',
+                      'F550M','F555W','F606W','F625W','F658N','F660N','F660N',
+                      'F775W','F814W','F850LP','F892N','F098M','F105W','F110W',
+                      'F125W','F126N','F127M','F128N','F130N','F132N','F139M',
+                      'F140W','F153M','F160W','F164N','F167N','F200LP','F218W',
+                      'F225W','F275W','F280N','F300X','F336W','F343N','F350LP',
+                      'F373N','F390M','F390W','F395N','F410M','F438W','F467M',
+                      'F469N','F475X','F487N','F502N','F547M','F600LP','F621M',
+                      'F625W','F631N','F645N','F656N','F657N','F658N','F665N',
+                      'F673N','F680N','F689M','F763M','F845M','F953N','F122M',
+                      'F160BW','F185W','F218W','F255W','F300W','F375N','F380W',
+                      'F390N','F437N','F439W','F450W','F569W','F588N','F622W',
+                      'F631N','F673N','F675W','F702W','F785LP','F791W','F953N',
+                      'F1042M','F502N']
+                }
+}
 
 class hstImages():
-	def __init__(self,ra,dec,obj):
-		# Transient information/search criteria
-		self.ra=ra
-		self.dec=dec
-		self.object=obj
-		self.radius=0.0001
+    def __init__(self,ra,dec,obj):
+        # Transient information/search criteria
+        if (':' in str(ra) and ':' in str(dec)):
+            self.coord = SkyCoord(ra, dec, unit = (u.hour, u.deg))
+        else:
+            self.coord = SkyCoord(ra, dec, unit = (u.deg, u.deg))
+        self.ra=self.coord.ra.degree
+        self.dec=self.coord.dec.degree
+        self.obstable = None
+        self.object=obj
+        self.radius=0.0001
 
-		## Selection criteria
-		self.minexp=80
-		self.allowed_detector=['WFPC2/WFC','PC/WFC','ACS/WFC','ACS/HRC','ACS/SBC','WFC3/UVIS','WFC3/IR']
-		self.badfilter=['DETECTION']
-		self.collection=['HLA','HST']
+        ## Selection criteria
+        self.options = instrument_defaults
 
-		# Information pulled from MAST
-		self.obstable=None
-		self.Nimages=0
+        self.Nimages = 0
+        self.jpglist = []
 
-		# Storing statistics for each image
-		self.filtlist=[]
-		self.detlist=[]
-		self.jdlist=[]
-		self.obsid=[]
-		self.jpglist=[]
-		self.jpgsize=100
+    def getObstable(self):
+        options = self.options
+        table=Observations.query_region(self.coord,
+            radius=self.options['radius'])
 
-	def getObstable(self):
-		self.obstable=Observations.query_region(str(self.ra)+" "+str(self.dec),radius=str(self.radius)+" deg")
-		detmasks=[self.obstable['instrument_name'] == name for name in self.allowed_detector]
-		filmasks=[self.obstable['filters'] != bad for bad in self.badfilter]
-		expmasks=[self.obstable['t_exptime'] >= self.minexp]
-		colmasks=[self.obstable['obs_collection'] == coll for coll in self.collection]
-		good=[all(l) for l in list(zip(\
-			[any(l) for l in list(map(list,zip(*detmasks)))],\
-			[any(l) for l in list(map(list,zip(*colmasks)))],\
-			[any(l) for l in list(map(list,zip(*expmasks)))],\
-			[any(l) for l in list(map(list,zip(*filmasks)))]))]
+        # HST-specific masks
+        filmask = [table['filters'] == good
+              for good in options['mask']['filters']]
+        filmask = [any(l) for l in list(map(list,zip(*filmask)))]
+        expmask = table['t_exptime'] > options['mask']['t_exptime']
+        obsmask = [table['obs_collection'] == good
+            for good in options['mask']['obs_collection']]
+        obsmask = [any(l) for l in list(map(list,zip(*obsmask)))]
+        detmask = [table['instrument_name'] == good
+            for good in options['mask']['instrument_name']]
+        detmask = [any(l) for l in list(map(list,zip(*detmask)))]
 
-		self.obstable=self.obstable[good]
+        # Construct and apply mask
+        mask = [all(l) for l in zip(filmask,expmask,obsmask,detmask)]
+        self.obstable = table[mask]
+        self.Nimages=len(self.obstable)
 
-		self.Nimages=len(self.obstable)
-		self.filtlist=self.obstable['filters']
-		self.detlist=self.obstable['instrument_name']
-		self.obsid=self.obstable['obs_id']
-		self.jdlist=self.obstable['t_min']+2400000.5
+    def getJPGurl(self):
+        if len(self.obstable) == 0:
+            print('There are no HST images!!!')
+            return(0)
 
-	def getJPGurl(self):
-		if (self.Nimages == 0):
-			print("There are no HST images!!!")
-			return(0)
-
-		prefix="https://hla.stsci.edu/cgi-bin/fitscut.cgi?red="
-		suffix=";size=256&amp;format=jpg&amp;config=ops&amp;asinh=1&amp;autoscale=90"
-		rastring=";RA="+str(self.ra)+"&amp"
-		decstring=";DEC="+str(self.dec)+"&amp"
-		for obsid in self.obsid:
-			idstring=obsid+"&amp"
-			url=prefix+idstring+rastring+decstring+suffix
-			self.jpglist.append(url)
-			#date=Time(jd,format='jd').datetime.strftime("%Y%m%d")
-
+        url = self.options['jpg']
+        for obsid in self.obstable['obs_id']:
+            url = self.options['jpg'].format(id=obsid,ra=self.coord.ra.degree,
+                dec=self.coord.dec.degree)
+            self.jpglist.append(url)
 
 ## TEST TEST TEST
 if __name__=='__main__':
-	startTime = datetime.now()
-	if (len(sys.argv) < 3):
-		print("Must define RA and DEC in command line!!!")
-		sys.exit(1)
+    startTime = datetime.now()
+    if (len(sys.argv) < 3):
+        print("Must define RA and DEC in command line!!!")
+        sys.exit(1)
 
-	ra=float(sys.argv[1])
-	dec=float(sys.argv[2])
-	hst=hstImages(ra,dec,'Object')
-	hst.getObstable()
-	hst.getJPGurl()
-	print("I found",hst.Nimages,"HST images of",hst.object,"located at coordinates",hst.ra,hst.dec)
-	print("The cut out images have the following URLs:")
-	for jpg in hst.jpglist:
-		print(jpg)
-	print("Run time was: ",(datetime.now() - startTime).total_seconds(),"seconds")
-	
+    ra=sys.argv[1]
+    dec=sys.argv[2]
+    hst=hstImages(ra,dec,'Object')
+    hst.getObstable()
+    hst.getJPGurl()
+    print("I found",hst.Nimages,"HST images of",hst.object,"located at coordinates",hst.ra,hst.dec)
