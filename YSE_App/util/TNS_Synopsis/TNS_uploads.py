@@ -35,16 +35,17 @@ from email.mime.multipart import MIMEMultipart
 import smtplib
 from collections import OrderedDict
 import mastrequests
+from astropy.io import ascii
 
 reg_obj = "https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
 reg_dec = "DEC[\=\*a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)\<\/em\>\,"
 
 try:
-	from dustmaps.sfd import SFDQuery
-	sfd = SFDQuery()
+  from dustmaps.sfd import SFDQuery
+  sfd = SFDQuery()
 except:
-	pass
+  pass
 
 def get_ps_score(RA, DEC):
     '''Get ps1 star/galaxy score from MAST. Provide RA and DEC in degrees.
@@ -68,6 +69,7 @@ def get_ps_score(RA, DEC):
         output = None
     else:
         output = round(float(output), 3)
+        print('PS_SCORE: %.3f' %output)
 
     return output
 
@@ -272,7 +274,7 @@ class processTNS():
                 photdata[obstime]['mag_err'] = 2.5/np.log(10)* (row[7]/row[6])
                 photdata[obstime]['forced'] = None
                 photdata[obstime]['flux_zero_point'] = None
-                #photdata[obstime]['data_quality'] = 0
+                photdata[obstime]['data_quality'] = 0
                 photdata[obstime]['flux'] = None
                 photdata[obstime]['flux_err'] = None
                 photdata[obstime]['discovery_point'] = 0
@@ -318,7 +320,7 @@ class processTNS():
 
         disc_flag = np.zeros(len(tmag))
         iMag = np.where((tmag != -99) & (tmag != None))[0]
-		indx = np.where((mjd[iMag] == np.min(mjd[iMag])))[0]
+        indx = np.where((mjd[iMag] == np.min(mjd[iMag])))[0]
         disc_flag[iMag[indx]] = 1
 
         photometrycount = 0
