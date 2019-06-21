@@ -700,7 +700,32 @@
 						</div>
 					</div>
 					<div class="tab-pane" id="photometry_tab">
+						<div>
+										<input class="btn btn-block btn-primary" type="button" value="Download All Data" onclick="window.open('{% url 'download_data' transient.slug %}')">
+									</div>
 						<h4>Photometry for {{transient.name}}</h4>
+						<table class="table table-bordered table-striped">
+												<thead>
+													<tr>
+														<th>Date</th>
+														<th>Mag</th>
+														<th>Mag Error</th>
+														<th>Filter</th>
+														<th>Instrument</th>
+													</tr>
+												</thead>
+												<tbody>
+												{%for allphot in allphotdata%}
+													<tr>
+														<td>{{allphot.obs_date|date:"M d, Y H:i:s"}}</td>
+														<td>{{allphot.mag}}</td>
+														<td>{{allphot.mag_err}}</td>
+														<td>{{allphot.band.name}}</td>
+														<td>{{allphot.band.instrument.name}}</td>
+													<tr/>
+												{%endfor%}
+												</tbody>
+											</table>
 					</div>
 					<div class="tab-pane" id="spectra_tab">
 						<h4>Spectra for {{transient.name}}</h4>
