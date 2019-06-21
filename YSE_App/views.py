@@ -422,6 +422,9 @@ def transient_detail(request, slug):
 
 		lastphotdata = view_utils.get_recent_phot_for_transient(request.user, transient_id=transient_id)
 		firstphotdata = view_utils.get_disc_mag_for_transient(request.user, transient_id=transient_id)
+		allphotdata = view_utils.get_all_phot_for_transient(request.user, transient_id)
+		#import pdb
+		#pdb.set_trace()
 
 		# obsnights,tellist = view_utils.getObsNights(transient[0])
 		# too_resources = ToOResource.objects.all()
@@ -471,6 +474,7 @@ def transient_detail(request, slug):
 			context['first_mag'] = firstphotdata.mag
 			context['first_filter'] = firstphotdata.band
 			context['first_magdate'] = firstphotdata.obs_date
+			context['allphotdata']=allphotdata
 
 		return render(request,
 			'YSE_App/transient_detail.html',
