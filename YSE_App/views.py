@@ -350,6 +350,38 @@ def download_target_list(request, telescope, obs_date):
 
 	return response
 
+def download_targets_and_finders(request, telescope, obs_date):
+
+	# get follow requests for telescope/date
+	classical_obs_date = ClassicalObservingDate.objects.filter(obs_date__startswith = obs_date).filter(resource__telescope__name = telescope.replace('_',' '))
+	follow_requests = TransientFollowup.objects.filter(classical_resource = classical_obs_date[0].resource).filter(valid_start__lte = classical_obs_date[0].obs_date).filter(valid_stop__gte = classical_obs_date[0].obs_date)
+
+	location = EarthLocation.from_geodetic(
+		classical_obs_date[0].resource.telescope.longitude*u.deg,classical_obs_date[0].resource.telescope.latitude*u.deg,
+		classical_obs_date[0].resource.telescope.elevation*u.m)
+	time = Time(str(classical_obs_date[0].obs_date).split('+')[0], format='iso')
+	tel = Observer(location=location, timezone="UTC")
+
+	
+	content = "!Data {name %20} ra_h ra_m ra_s dec_d dec_m dec_s equinox {comment *}\n"
+	content_offsets = "\n"
+	findernamelist = []
+	for f in follow_requests:
+		content += "%s  %s %s 2000 mag = %.2f\n"%(
+			f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),f.transient.CoordString()[1].replace(':',' '),float(f.transient.recent_mag()))
+		offdictlist, findername = view_utils.finder().finderchart_noview()
+		findernamelist += [findername]
+		for offdict in offdictlist:
+			content_offsets += "%s  %s %s 2000 mag = %.2f raoffset=%.2f decoffset=%.2f\n"%(
+				offdict['id'].ljust(20),offdict['ra'],offdict['dec'],
+				float(offdict['mag']),float(offdict['ra_off']),float(offdict['dec_off']))
+		
+			
+	response = HttpResponse(content, content_type='text/plain')
+	response['Content-Disposition'] = 'attachment; filename=%s' % '%s_%s.txt'%(telescope,obs_date)
+
+	return response
+
 
 @login_required
 def transient_detail(request, slug):
@@ -558,6 +590,7 @@ def download_photometry(request, slug):
 	else:
 		user = request.user
 
+		
 	content = ""
 		
 	transient = Transient.objects.filter(slug=slug)

@@ -711,6 +711,20 @@
 					</div>
 					<div class="tab-pane" id="photometry_tab">
 						<h4>Photometry for {{transient.name}}</h4>
+
+						<div class="col-xs-13">
+							<div class="box box-primary">
+								&ensp;&nbsp;<div class="btn-group">
+								<button style="margin-bottom:5px;" type="button" class="plotSALT2" id="salt2plot">
+									Show SALT2 Fit</span>
+								</button>
+								<button style="margin-bottom:5px;" type="button" class="photdownload" onclick="window.open('{% url 'download_photometry' transient.slug %}')">
+									Download Photometry</span>
+								</button>
+							</div>
+								<div class="box-body" id="biglcplot"></div>
+							</div>
+						</div>
 					</div>
 					<div class="tab-pane" id="spectra_tab">
 						<h4>Spectra for {{transient.name}}</h4>
@@ -817,7 +831,6 @@
 	<script type="text/javascript" src="https://mpld3.github.io/js/mpld3.v0.3.1.dev1.js"></script>
 	<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-0.12.13.min.js"></script>
 	<script src="{% static 'YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js' %}"></script>
-
 	<script>
 
 		$(function() {
@@ -1668,10 +1681,16 @@
 		});
 
 		$.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
-	  		var rows = $("#lcplot");
-	  		$(rows).prepend(htmlresponse);
+	  		
+	  		$("#lcplot").html(htmlresponse);
 	  	});
-	  
+
+	  	$.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
+	  		
+	  		$("#biglcplot").html(htmlresponse.replace("width: 500px; height: 400px;","width: 1000px; height: 800px;"));
+	  	});
+
+
 		$.get("{% url 'spectrumplot' transient.id %}").done(function(htmlresponse){
 			var rows = $("#specplot");
 	  		$(rows).html(htmlresponse);
