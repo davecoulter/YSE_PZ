@@ -9,7 +9,6 @@ class TransientSpectrumSerializer(serializers.HyperlinkedModelSerializer):
 	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail', lookup_field="id")
 	obs_group = serializers.HyperlinkedRelatedField(queryset=ObservationGroup.objects.all(), view_name='observationgroup-detail')
 	followup = serializers.HyperlinkedRelatedField(queryset=TransientFollowup.objects.all(), allow_null=True, required=False, view_name='transientfollowup-detail')
-	spec_phase = serializers.HyperlinkedRelatedField(queryset=Phase.objects.all(), allow_null=True, required=False, view_name='phase-detail')
 	unit = serializers.HyperlinkedRelatedField(queryset=Unit.objects.all(), allow_null=True, required=False, view_name='unit-detail')
 	data_quality = serializers.HyperlinkedRelatedField(queryset=DataQuality.objects.all(), allow_null=True, required=False, view_name='dataquality-detail')
 
@@ -56,12 +55,12 @@ class TransientSpectrumSerializer(serializers.HyperlinkedModelSerializer):
 		instance.instrument_id = validated_data.get('instrument', instance.instrument)
 		instance.obs_group_id = validated_data.get('obs_group', instance.obs_group)
 		instance.followup_id = validated_data.get('followup', instance.followup)
-		instance.spec_phase_id = validated_data.get('spec_phase', instance.spec_phase)
 		instance.unit_id = validated_data.get('unit', instance.unit)
 		instance.data_quality_id = validated_data.get('data_quality', instance.data_quality)
 
 		instance.ra = validated_data.get('ra', instance.ra)
 		instance.dec = validated_data.get('dec', instance.dec)
+		instance.spec_phase = validated_data.get('spec_phase', instance.spec_phase)
 		instance.obs_date = validated_data.get('obs_date', instance.obs_date)
 		instance.redshift = validated_data.get('redshift', instance.redshift)
 		instance.redshift_err = validated_data.get('redshift_err', instance.redshift_err)

@@ -117,4 +117,4 @@ class SpectrumUploadForm(ModelForm):
 	class Meta:
 		model = TransientSpectrum
 		fields = ('transient','ra',
-				  'dec')#,'obs_group','instrument')
+				  'dec','spec_phase')#,'obs_group','instrument')

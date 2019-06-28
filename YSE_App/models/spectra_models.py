@@ -41,7 +41,7 @@ class TransientSpectrum(Spectrum):
 	transient = models.ForeignKey(Transient, on_delete=models.CASCADE)
 	# Optional
 	followup = models.ForeignKey(TransientFollowup, null=True, blank=True, on_delete=models.SET_NULL) # Can by null if data is from external source
-	spec_phase = models.ForeignKey(Phase, null=True, blank=True, on_delete=models.SET_NULL)
+	spec_phase = models.FloatField(null=True, blank=True)
 
 	### Properties ###
 	# Optional

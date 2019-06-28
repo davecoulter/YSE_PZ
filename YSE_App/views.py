@@ -620,7 +620,7 @@ def download_photometry(request, slug):
 			telescope = data[transient[0].name]['photometry'][pd]['fields']['instrument'].split(' - ')[0]
 			instrument = data[transient[0].name]['photometry'][pd]['fields']['instrument'].split(' - ')[1]
 			
-			photdata = PhotometryService.GetAuthorizedTransientPhotData_ByPhotometry(user, p.id, includeBadData=True)
+			photdata = PhotometryService.GetAuthorizedTransientPhotData_ByPhotometry(user, p.id, includeBadData=True).order_by('obs_date')
 			data[transient[0].name]['photometry'][pd]['data'] = json.loads(serializers.serialize("json", photdata, use_natural_foreign_keys=True))
 
 			for d in data[transient[0].name]['photometry'][pd]['data']:
@@ -687,6 +687,9 @@ def upload_spectrum(request):
 						'obs_group':ObservationGroup.objects.filter(id=form.data['obs_group'])[0],
 						'instrument':Instrument.objects.filter(id=form.data['instrument'])[0],
 						'created_by':request.user,'modified_by':request.user}
+			
+			if form.data['spec_phase']:
+				specdict['spec_phase'] = form.data['spec_phase']
 			if not len(tspec):
 				tspec = TransientSpectrum.objects.create(**specdict)
 			else:

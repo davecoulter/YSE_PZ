@@ -299,11 +299,80 @@ class finder(TemplateView):
 			canvas=FigureCanvas(fig)
 			ax.imshow(image)
 
+
 		response=django.http.HttpResponse(content_type='image/png')
 		canvas.print_jpg(response)
 
 		return response
+
+	def finderchart_noview(self, transient_id, clobber=False):
+		import os
+		from .util import mkFinderChart
+
+		from django.contrib.staticfiles.templatetags.staticfiles import static
+		from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+		from matplotlib.figure import Figure
 	
+		transient = Transient.objects.get(pk=transient_id)
+		basedir = "%sYSE_App/images/findercharts"%(djangoSettings.STATIC_ROOT)
+		if not os.path.exists(basedir):
+			os.makedirs(basedir)
+		
+		outputOffsetFileName = '%s/%s/%s.offsetstars.txt'%(
+			basedir,transient.name,transient.name)
+		outputFinderFileName = '%s/%s/%s.finder.png'%(
+			basedir,transient.name,transient.name)
+		if not os.path.exists(os.path.dirname(outputFinderFileName)):
+			os.makedirs(os.path.dirname(outputFinderFileName))
+		#if os.path.exists(outputOffsetFileName) and\
+		#	os.path.exists(outputFinderFileName):
+		#	return HttpResponseRedirect(reverse('transient_detail',
+		#										args=(transient.id,)))
+
+		find = mkFinderChart.finder()
+		parser = find.add_options(usage='')
+		options,  args = parser.parse_args()
+		options.ra = str(transient.ra)
+		options.dec = str(transient.dec)
+		options.snid = transient.name
+		options.outputOffsetFileName = outputOffsetFileName
+		options.outputFinderFileName = outputFinderFileName
+		find.options = options
+		import pylab as plt
+
+		fig=Figure()
+		if not os.path.exists(options.outputFinderFileName) or \
+		   not os.path.exists(options.outputOffsetFileName) or \
+		   clobber:
+			ax = fig.add_axes([0.2,0.3,0.6,0.6])
+			canvas=FigureCanvas(fig)
+			ax,offdictlist = find.mkChart(options.ra,options.dec,
+										  options.outputFinderFileName,
+										  ax=ax,saveImg=False,
+										  clobber=clobber)
+			fig.savefig(options.outputFinderFileName,dpi=1000)
+		else:
+			image = mpimg.imread(options.outputFinderFileName)
+			ax = fig.add_axes([0,0,1,1])
+			ax.set_xticks([]); ax.set_yticks([])
+			canvas=FigureCanvas(fig)
+			ax.imshow(image)
+
+			offid,ra_str,dec_str,ra_off,dec_off,mag = \
+				np.loadtxt(outputOffsetFileName,dtype='str',unpack=True)
+			offdictlist = []
+			for i in range(len(offid))[1:]:
+				offdict = {'id':offid[i],
+						   'ra':ra_str[i],
+						   'dec':dec_str[i],
+						   'ra_off':'%.3f'%float(ra_off[i]),
+						   'dec_off':'%.3f'%float(dec_off[i]),
+						   'mag':'%.3f'%float(mag[i])}
+				offdictlist += [offdict]
+
+		return offdict, outputFinderFileName
+
+
 ## We should refactor this so that it takes:
 # - transient
 # - observatory (or maybe array of observatory)
