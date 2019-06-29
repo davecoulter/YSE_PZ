@@ -2,6 +2,9 @@ from django.db import models
 from django.forms import ModelForm
 from django import forms
 from YSE_App.models import *
+from YSE_App import view_utils
+from django.utils import timezone
+from datetime import timedelta
 
 class TransientForm(ModelForm):
 	class Meta:
@@ -31,6 +34,17 @@ class TransientForm(ModelForm):
 			'postage_stamp_file']
 
 class TransientFollowupForm(ModelForm):
+	status = forms.ModelChoiceField(
+		FollowupStatus.objects.all(),
+		initial=FollowupStatus.objects.filter(name='Requested')[0])
+	qs = ClassicalResource.objects.filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
+	classical_resource = forms.ModelChoiceField(
+		queryset=qs,
+		initial=qs[0],
+		required=False)
+	valid_start = forms.DateTimeField(initial=qs[0].begin_date_valid)
+	valid_stop = forms.DateTimeField(initial=qs[0].end_date_valid)
+	
 	class Meta:
 		model = TransientFollowup
 		fields = [

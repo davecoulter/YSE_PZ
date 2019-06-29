@@ -700,8 +700,8 @@ def spectrumplot(request, transient_id):
 	ax.title.text = "%s, %s, %s, Phase: %s"%(transient.name,spectrum.obs_date.strftime('%m/%d/%Y'),spectrum.instrument,spectrum.spec_phase)
 	ax.xaxis.axis_label = r'Wavelength (Angstrom)'
 	ax.yaxis.axis_label = 'Flux'
-	g = file_html(ax,CDN,"my plot")
-
+	g = file_html(ax,CDN,"spectrum plot")
+	time.sleep(5)
 	return HttpResponse(g.replace('width: 90%','width: 100%'))
 
 def spectrumplotsingle(request, transient_id, spec_id):

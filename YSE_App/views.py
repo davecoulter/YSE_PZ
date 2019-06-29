@@ -399,8 +399,8 @@ def transient_detail(request, slug):
 		alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 
 		transient_followup_form = TransientFollowupForm()
-		transient_followup_form.fields["classical_resource"].queryset = \
-				view_utils.get_authorized_classical_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
+		#transient_followup_form.fields["classical_resource"].queryset = \
+		#		view_utils.get_authorized_classical_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
 		transient_followup_form.fields["too_resource"].queryset = view_utils.get_authorized_too_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
 		transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
 
@@ -496,7 +496,9 @@ def transient_detail(request, slug):
 			'all_transient_spectra': spectra,
 			'gw_candidate':gwcand,
 			'gw_images':gwimages,
-			'spectrum_upload_form':spectrum_upload_form
+			'spectrum_upload_form':spectrum_upload_form,
+			'followup_initial_dates':(transient_followup_form.fields["valid_start"].initial.strftime('%m/%d/%Y HH:MM'),
+									  transient_followup_form.fields["valid_stop"].initial.strftime('%m/%d/%Y HH:MM'))							  
 		}
 
 		if lastphotdata and firstphotdata:

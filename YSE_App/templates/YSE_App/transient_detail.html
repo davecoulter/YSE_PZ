@@ -1023,6 +1023,8 @@
 				timePicker24Hour: true,
 				timePicker: true, 
 				timePickerIncrement: 1, 
+				startDate: '{{followup_initial_dates.0}}',
+				endDate:'{{followup_initial_dates.1}}',
 				format: 'MM/DD/YYYY HH:mm', 
 				locale: {
 					format: 'MM/DD/YYYY HH:mm'
@@ -1105,13 +1107,13 @@
 			});
 
 			// Submit comment on submit
-				$('#add_transient_comment').on('submit', function(event){
-						event.preventDefault();
-						add_transient_comment();
+			$('#add_transient_comment').on('submit', function(event){
+				event.preventDefault();
+				add_transient_comment();
 			});
 
-				function add_transient_comment(){
-						var data = $('#add_transient_comment').serialize()
+			function add_transient_comment(){
+				var data = $('#add_transient_comment').serialize()
 				var transient_id = $('#transient_pk').val()
 				data = (data + "&transient=" + transient_id)
 				$.ajax({
@@ -1121,13 +1123,13 @@
 
 					// handle a successful response
 					success : function(json) {
-										if (json.data['comment']){
-												// Construct HTML to append container
-												var commentHTML = "<b>"+json.data['created_by'] + ": </b>" + json.data['comment'] + " (" + json.data['modified_date'] + " UT)<br>"
+						if (json.data['comment']){
+							// Construct HTML to append container
+							var commentHTML = "<b>"+json.data['created_by'] + ": </b>" + json.data['comment'] + " (" + json.data['modified_date'] + " UT)<br>"
 
-												$("#add_comment_container").append(commentHTML)
-												}
-										// Close & reset form box
+							$("#add_comment_container").append(commentHTML)
+							}
+							// Close & reset form box
 						$('#add_transient_comment')[0].reset();
 
 					},
@@ -1411,8 +1413,8 @@
 					// handle a non-successful response
 					error : function(xhr,errmsg,err) {
 						alert(xhr.status + ": " + xhr.responseText);
-					}
-				});
+						}
+					});
 			}
 
 			function add_transient_followup() {
@@ -1609,7 +1611,7 @@
 				(url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
 					// or any other URL that isn't scheme relative or absolute i.e relative.
 					!(/^(\/\/|http:|https:).*/.test(url));
-				}
+				
 
 				$.ajaxSetup({
 					beforeSend: function(xhr, settings) {
@@ -1618,10 +1620,11 @@
 						// Send the token only if the method warrants CSRF protection
 						// Using the CSRFToken value acquired earlier
 						xhr.setRequestHeader("X-CSRFToken", csrftoken);
+						}
 					}
-				}
-			});
-		});
+				});
+			};
+		//});
 
 	  $( document ).ready(function(){
 	  	$.get("{% url 'get_ps1_image' transient.id %}").done(function(json){
@@ -1693,21 +1696,20 @@
 			$(rows).append(htmltext)
 		});
 
+		$.get("{% url 'spectrumplot' transient.id %}").done(function(htmlresponse){
+			var rows = $("#specplot");
+	  		$(rows).html(htmlresponse);
+	  	});
+
 		$.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
 	  		
 	  		$("#lcplot").html(htmlresponse);
 	  	});
 
-	  	$.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
-	  		
-	  		$("#biglcplot").html(htmlresponse.replace("width: 500px; height: 400px;","width: 1000px; height: 800px;"));
-	  	});
-
-
-		$.get("{% url 'spectrumplot' transient.id %}").done(function(htmlresponse){
-			var rows = $("#specplot");
-	  		$(rows).html(htmlresponse);
-	  	});
+	  	//$.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
+	  	//	
+	  	//	$("#biglcplot").html(htmlresponse.replace("width: 500px; height: 400px;","width: 1000px; height: 800px;"));
+	  	//});
 
 	  {% for obsnight in observing_nights %}
           $.get("{% url 'rise_time' transient.id obsnight.id %}").done(function(json){
@@ -1749,6 +1751,7 @@
           {% endif %}
 	  {% endfor %}
 	  });
+});
 				
 	</script>
 {% endblock %}
