@@ -37,7 +37,7 @@ class TransientFollowupForm(ModelForm):
 	status = forms.ModelChoiceField(
 		FollowupStatus.objects.all(),
 		initial=FollowupStatus.objects.filter(name='Requested')[0])
-	qs = ClassicalResource.objects.filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
+	qs = ClassicalResource.objects.filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('end_date_valid')
 	if len(qs):
 		classical_resource = forms.ModelChoiceField(
 			queryset=qs,
