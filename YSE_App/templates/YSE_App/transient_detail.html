@@ -1023,8 +1023,10 @@
 				timePicker24Hour: true,
 				timePicker: true, 
 				timePickerIncrement: 1, 
+				{% if followup_initial_dates %}
 				startDate: '{{followup_initial_dates.0}}',
 				endDate:'{{followup_initial_dates.1}}',
+				{% endif %}
 				format: 'MM/DD/YYYY HH:mm', 
 				locale: {
 					format: 'MM/DD/YYYY HH:mm'
