@@ -38,13 +38,20 @@ class TransientFollowupForm(ModelForm):
 		FollowupStatus.objects.all(),
 		initial=FollowupStatus.objects.filter(name='Requested')[0])
 	qs = ClassicalResource.objects.filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
-	classical_resource = forms.ModelChoiceField(
-		queryset=qs,
-		initial=qs[0],
-		required=False)
-	valid_start = forms.DateTimeField(initial=qs[0].begin_date_valid)
-	valid_stop = forms.DateTimeField(initial=qs[0].end_date_valid)
-	
+	if len(qs):
+		classical_resource = forms.ModelChoiceField(
+			queryset=qs,
+			initial=qs[0],
+			required=False)
+		valid_start = forms.DateTimeField(initial=qs[0].begin_date_valid)
+		valid_stop = forms.DateTimeField(initial=qs[0].end_date_valid)
+	else:
+		classical_resource = forms.ModelChoiceField(
+			queryset=qs,
+			required=False)
+		valid_start = forms.DateTimeField()
+		valid_stop = forms.DateTimeField()
+		
 	class Meta:
 		model = TransientFollowup
 		fields = [
