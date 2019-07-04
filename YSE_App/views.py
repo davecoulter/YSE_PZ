@@ -496,11 +496,14 @@ def transient_detail(request, slug):
 			'all_transient_spectra': spectra,
 			'gw_candidate':gwcand,
 			'gw_images':gwimages,
-			'spectrum_upload_form':spectrum_upload_form,
-			'followup_initial_dates':(transient_followup_form.fields["valid_start"].initial.strftime('%m/%d/%Y HH:MM'),
-									  transient_followup_form.fields["valid_stop"].initial.strftime('%m/%d/%Y HH:MM'))							  
+			'spectrum_upload_form':spectrum_upload_form,				  
 		}
 
+		if transient_followup_form.fields["valid_start"].initial:
+			context['followup_initial_dates'] = \
+				(transient_followup_form.fields["valid_start"].initial.strftime('%m/%d/%Y HH:MM'),
+				 transient_followup_form.fields["valid_stop"].initial.strftime('%m/%d/%Y HH:MM'))			
+		
 		if lastphotdata and firstphotdata:
 			context['recent_mag'] = lastphotdata.mag
 			context['recent_filter'] = lastphotdata.band
