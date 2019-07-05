@@ -1613,7 +1613,7 @@
 				(url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
 					// or any other URL that isn't scheme relative or absolute i.e relative.
 					!(/^(\/\/|http:|https:).*/.test(url));
-				
+				}
 
 				$.ajaxSetup({
 					beforeSend: function(xhr, settings) {
@@ -1625,7 +1625,7 @@
 						}
 					}
 				});
-			};
+			});
 		//});
 
 	  $( document ).ready(function(){
@@ -1753,7 +1753,7 @@
           {% endif %}
 	  {% endfor %}
 	  });
-});
+//});
 				
 	</script>
 {% endblock %}
