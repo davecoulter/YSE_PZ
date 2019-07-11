@@ -673,10 +673,9 @@ class processTNS():
 			iobj = np.where(obj == np.array(objs))[0]
 			if len(iobj) > 1: iobj = int(iobj[0])
 			else: iobj = int(iobj)
-			try:
-				if doNED: sc,ebv,nedtable = scall[iobj],ebvall[iobj],nedtables[iobj]
-				else: sc = scall[iobj]; ebv = None; nedtable = None
-			except: import pdb; pdb.set_trace()
+
+			if doNED: sc,ebv,nedtable = scall[iobj],ebvall[iobj],nedtables[iobj]
+			else: sc = scall[iobj]; ebv = None; nedtable = None
 				
 			print("Object: %s\nRA: %s\nDEC: %s" % (obj,ras[iobj],decs[iobj]))
 
