@@ -712,10 +712,13 @@ class processTNS():
 					transientdict['candidate_hosts'] = hostcoords
 			except: pass
 
-			phot_ps1dr2 = self.get_PS_DR2_data(sc)
-			if phot_ps1dr2 is not None:
-				transientdict['transientphotometry']['PS1DR2'] = phot_ps1dr2
-
+			#try:
+			#	phot_ps1dr2 = self.get_PS_DR2_data(sc)
+			#	if phot_ps1dr2 is not None:
+			#		transientdict['transientphotometry']['PS1DR2'] = phot_ps1dr2
+			#except:
+			#	pass
+	
 			TransientUploadDict[obj] = transientdict
 
 		TransientUploadDict['noupdatestatus'] = self.noupdatestatus
@@ -849,13 +852,13 @@ if __name__ == "__main__":
 	tnsproc.tnsapikey = options.tnsapikey
 	tnsproc.ztfurl = options.ztfurl
 
-	try:
+	if 'hi': #try:
 		if options.update:
 			tnsproc.noupdatestatus = True
 			nsn = tnsproc.UpdateFromTNS()
 		else:
 			nsn = tnsproc.ProcessTNSEmails()
-	except Exception as e:
+	else: #except Exception as e:
 		nsn = 0
 		from django.conf import settings as djangoSettings
 		smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
