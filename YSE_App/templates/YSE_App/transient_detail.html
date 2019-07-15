@@ -165,13 +165,10 @@
 										{% if transient.point_source_probability %}
 										<div class="col-xs-4">
 											<div class="form-group">
-												<strong>MW E(B-V)</strong>
+												<strong>Point Source Prob.</strong>
 												<p class="text-muted">
-													{% if transient.mw_ebv %}
-														{{ transient.mw_ebv }}
-														{% if transient.mw_ebv >= 0.2 %}
-															&nbsp;<b class="text-red">(warning!)</b>
-														{% endif %}
+													{% if transient.point_source_probability %}
+														{{ transient.point_source_probability }}
 													{% else %}
 														Unknown
 													{% endif %}
