@@ -5,11 +5,13 @@ def tess_obs(ra, dec, discovery_jd):
 	before_leeway = 20	 # Days of leeway before date
 	after_leeway = 100	 # Days of leeway after date
 	tess_date = [2458324.5,2458352.5,2458381.5,2458409.5,2458437.5,2458463.5,
-				 2458490.5,2458516.5,2458542.5,2458568.5,2458595.5,2458624.5,
-				 2458653.5,2458682.5]
+		     2458490.5,2458516.5,2458542.5,2458568.5,2458595.5,2458624.5,
+		     2458653.5,2458682.5,2458710.5,2458737.5,2458763.5,2458789.5,
+		     2458814.5,2458841.5,2458869.5,2458897.5,2458926.5,2458955.5,
+		     2458982.5,2459008.5,2459034.5]
 
-	url = 'https://mast.stsci.edu/tesscut'
-	url += '/api/v0.1/sector?ra={ra}&dec={dec}'
+	url = 'https://heasarc.gsfc.nasa.gov/cgi-bin/tess/webtess/'
+	url += 'wtv.py?Entry={ra}%2C{dec}'
 	r = requests.get(url.format(ra=str(ra), dec=str(dec)))
 	if r.status_code!=200:
 		print('status message:',r.text)
@@ -17,8 +19,11 @@ def tess_obs(ra, dec, discovery_jd):
 		raise RuntimeError(error.format(url=url, code=r.status_code))
 		return(None)
 
-	reg = '\"sector\"\: \"([0-9]+)\"'
-	sectors = re.findall(reg, r.text)
+	reg = r"observed in camera \w+.\nSector \w+"
+	info = re.findall(reg, r.content.decode())
+	sectors=[]
+	for k in info:
+	    sector.append(int(re.split(r'\s', k)[5])-1)
 
 	if len(sectors)>0:
 		for sector in sectors:
