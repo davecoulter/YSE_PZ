@@ -23,7 +23,7 @@ def tess_obs(ra, dec, discovery_jd):
 	info = re.findall(reg, r.content.decode())
 	sectors=[]
 	for k in info:
-	    sector.append(int(re.split(r'\s', k)[5])-1)
+	    sectors.append(int(re.split(r'\s', k)[5])-1)
 
 	if len(sectors)>0:
 		for sector in sectors:
