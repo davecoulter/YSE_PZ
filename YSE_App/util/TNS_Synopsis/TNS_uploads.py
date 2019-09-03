@@ -732,7 +732,8 @@ class processTNS():
 		r = requests.post(url = url, data = json.dumps(TransientUploadDict),
 						  auth=HTTPBasicAuth(self.dblogin,self.dbpassword))
 
-		print('YSE_PZ says: %s'%json.loads(r.text)['message'])
+		try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
+		except: print(r.text)
 		print("Process done.")
 
 
