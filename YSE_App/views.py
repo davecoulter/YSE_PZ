@@ -29,11 +29,12 @@ from .data import PhotometryService, SpectraService, ObservingResourceService
 import json
 import time
 
-from .table_utils import TransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter
+from .table_utils import TransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter
 import django_tables2 as tables
 from django_tables2 import RequestConfig
 from .basicauth import *
 from django.views.decorators.csrf import csrf_exempt
+from django.template import RequestContext
 
 # Create your views here.
 
@@ -86,7 +87,7 @@ def dashboard(request):
 	if len(status_new) == 1:
 		new_transients = Transient.objects.filter(status=status_new[0]).order_by('-disc_date')
 	newtransientfilter = TransientFilter(request.GET, queryset=new_transients,prefix='new')
-	new_table = TransientTable(newtransientfilter.qs,prefix='new')
+	new_table = NewTransientTable(newtransientfilter.qs,prefix='new')
 	RequestConfig(request, paginate={'per_page': 10}).configure(new_table)
 		
 	status_watch = TransientStatus.objects.filter(name='Watch').order_by('-modified_date')
