@@ -111,6 +111,23 @@ class RemoveDashboardQueryForm(ModelForm):
 		fields = [
 			'id']
 
+class AddFollowupNoticeForm(ModelForm):
+	telescope = QueryModelChoiceField(Telescope.objects.all())
+	#import pdb; pdb.set_trace()
+	class Meta:
+		model = UserTelescopeToFollow
+		fields = ['telescope']
+	#		'id']
+
+class RemoveFollowupNoticeForm(ModelForm):
+	telescope = QueryModelChoiceField(Telescope.objects.all())
+
+	class Meta:
+		model = UserTelescopeToFollow
+		fields = [
+			'id']
+
+		
 class SpectrumUploadForm(ModelForm):
 	filename = forms.FileField()
 	obs_date = forms.DateTimeField(input_formats=['%Y-%m-%dT%H:%M'])

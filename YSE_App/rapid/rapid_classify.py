@@ -6,10 +6,10 @@ from YSE_App.view_utils import get_all_phot_for_transient
 from YSE_App.common.utilities import date_to_mjd
 import numpy as np
 
-classdict = {'SNIa':'SN Ia','SNIa-norm':'SN Ia', 'SNIbc':'SN Ibc', 'SNII':'SN II',
+classdict = {'SNIa':'SN Ia','SN Ia':'SN Ia','SNIa-norm':'SN Ia', 'SNIbc':'SN Ib/c', 'SNII':'SN II',
 			 'SNIa-91bg':'SN Ia-91bg-like', 'SNIa-x':'SN Iax', 'point-Ia':'point-Ia',
 			 'Kilonova':'Kilonova', 'SLSN-I':'SLSN-I', 'PISN':'PISN',
-			 'ILOT':'ILOT', 'CART':'CART', 'TDE':'TDE'}
+			 'ILOT':'ILOT', 'CART':'CART', 'TDE':'TDE', 'AGN':'AGN'}
 
 class rapid_classify_cron(CronJobBase):
 	RUN_EVERY_MINS = 0.1
@@ -47,9 +47,6 @@ class rapid_classify_cron(CronJobBase):
 			mjd, passband, flux, fluxerr, mag, magerr, zeropoint, photflag = \
 				np.array([]),np.array([]),[],[],[],[],[],[]
 			
-			if redshift: transient_list_z += [t]
-			else: transient_list_noz += [t]
-				
 			first_detection_set = False
 			for obs,filt in zip([gobs.order_by('obs_date'),robs.order_by('obs_date')],['g','r']):
 				for p in obs:
@@ -77,26 +74,26 @@ class rapid_classify_cron(CronJobBase):
 					elif flux_obs/fluxerr_obs > 5:
 						photflag += [4096]
 					else: photflag += [0]
-					#except: import pdb; pdb.set_trace()
 
-			try:
-				if redshift:
-					light_curve_info = (mjd, flux, fluxerr, passband,
-										zeropoint, photflag, ra, dec, objid, redshift, mwebv)
+			if redshift:
+				light_curve_info = (mjd, flux, fluxerr, passband,
+									photflag, ra, dec, objid, redshift, mwebv)
+				if len(np.unique(passband)) > 1:
 					light_curve_list_z += [light_curve_info,]
-				else:
-					light_curve_info = (mjd, flux, fluxerr, passband, zeropoint, photflag, ra, dec, objid, None, mwebv)			
+					transient_list_z += [t]
+			else:
+				light_curve_info = (mjd, flux, fluxerr, passband, photflag, ra, dec, objid, None, mwebv)			
+				if len(np.unique(passband)) > 1:
 					light_curve_list_noz += [light_curve_info,]
-			except:
-				import pdb; pdb.set_trace()
+					transient_list_noz += [t]
 
 		if len(light_curve_list_noz):
-			classification_noz = Classify(light_curve_list_noz, known_redshift=False, bcut=False, zcut=None)
-			predictions_noz = classification_noz.get_predictions()
+			classification_noz = Classify(known_redshift=False, bcut=False, zcut=None)
+			predictions_noz = classification_noz.get_predictions(light_curve_list_noz)
 		if len(light_curve_list_z):
-			classification_z = Classify(light_curve_list_z, known_redshift=True, bcut=False, zcut=None)
-			predictions_z = classification_z.get_predictions()
-			
+			classification_z = Classify(known_redshift=True, bcut=False, zcut=None)
+			predictions_z = classification_z.get_predictions(light_curve_list_z)
+
 		if debug:
 			import matplotlib
 			matplotlib.use('MacOSX')
@@ -104,30 +101,37 @@ class rapid_classify_cron(CronJobBase):
 			plt.ion()
 			classification_z.plot_light_curves_and_classifications()
 
-		for tl in [transient_list_z,transient_list_noz]:
-			for t,i in zip(tl,range(len(tl))):
-				best_predictions = predictions_z[0][i][-1,:]
+		for tl,predictions in zip([transient_list_z,transient_list_noz],[predictions_z[0],predictions_noz[0]]):
+			for i,t in enumerate(tl):
+				try:
+					best_predictions = predictions[i][-1,:]
 
-				adjusted_best_predictions = np.zeros(10)
-				idx,outclassnames,PIa = 0,[],0
-				for j in range(len(classification_z.class_names)):
-					if classification_z.class_names[j] == 'Pre-explosion': continue
-					elif classification_z.class_names[j].startswith('SNIa'): PIa += best_predictions[j]
-					else:
-						outclassnames += [classification_z.class_names[j]]
-						adjusted_best_predictions[idx] = best_predictions[j]
-						idx += 1
-				outclassnames += ['SN Ia']
-				outclassnames = np.array(outclassnames)
-				adjusted_best_predictions[9] = PIa
+					adjusted_best_predictions = np.zeros(20)
+					idx,outclassnames,PIa = 0,[],0
+					for j in range(len(classification_z.class_names)):
+						if classification_z.class_names[j] == 'Pre-explosion': continue
+						elif classification_z.class_names[j].startswith('SNIa'): PIa += best_predictions[j]
+						else:
+							outclassnames += [classification_z.class_names[j]]
+							adjusted_best_predictions[idx] = best_predictions[j]
+							idx += 1
+					outclassnames += ['SN Ia']
+					outclassnames = np.array(outclassnames)
+					adjusted_best_predictions = adjusted_best_predictions[:len(outclassnames)]
+					adjusted_best_predictions[-1] = PIa
 
-				print(t.name,outclassnames[adjusted_best_predictions == np.max(adjusted_best_predictions)][0])
-				transient_class = outclassnames[adjusted_best_predictions == np.max(adjusted_best_predictions)][0]
-				photo_class = TransientClass.objects.filter(name = classdict[transient_class])
-
+					print(t.name,outclassnames[adjusted_best_predictions == np.max(adjusted_best_predictions)][0])
+					transient_class = outclassnames[adjusted_best_predictions == np.max(adjusted_best_predictions)][0]
+					photo_class = TransientClass.objects.filter(name = classdict[transient_class])
+				except Exception as e:
+					print('Runtime Error: %s'%e)
+					raise RuntimeError(e)
+					
 				if len(photo_class):
 					t.photo_class = photo_class[0]
 					t.save()
 				else:
 					print('class %s not in DB'%classdict[transient_class])
 					raise RuntimeError('class %s not in DB'%classdict[transient_class])
+		print('successfully finished classifying with RAPID')
+

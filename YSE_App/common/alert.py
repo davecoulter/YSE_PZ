@@ -160,6 +160,36 @@ def SendTransientAlert(transient_id, transient_name, ra, dec):
 					sendsms(from_addr, phone_email, subject, txt_msg, 
 							settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
 
+def SendFollowingNotice(transient_id, transient_name, telescope, profile):
+
+	print("Sending Following Notice to %s"%profile.user.first_name)
+
+	smtpserver = "%s:%s" % (settings.SMTP_HOST, settings.SMTP_PORT)
+	from_addr = "%s@gmail.com" % settings.SMTP_LOGIN
+
+	subject = "New %s Request in YSE_PZ for %s"%(telescope,transient_name )
+
+	base_url = "https://ziggy.ucolick.org/yse/" 
+	if settings.DEBUG:
+		base_url =  "https://ziggy.ucolick.org/yse_test/"
+
+	html_msg = """\
+		<html>
+			<head></head>
+			<body>
+				<h2>%s Followup requested for <a href='%stransient_detail/%s/'>%s</a></h2>
+				<br />
+				<p>Go to <a href='%s/dashboard/'>YSE Dashboard</a></p> 
+			</body>
+		</html>
+	""" % (telescope, base_url,
+		   transient_name, transient_name, base_url)
+
+	if profile.user.email:
+		sendemail(from_addr, profile.user.email, subject, html_msg, 
+				  settings.SMTP_LOGIN, settings.SMTP_PASSWORD, smtpserver)
+	else: raise RuntimeError('email doesn\'t exist')
+
 def sendemail(from_addr, to_addr,
 			subject, message,
 			login, password, smtpserver, cc_addr=None):

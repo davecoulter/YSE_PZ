@@ -4,6 +4,8 @@ from YSE_App.models.enum_models import *
 from YSE_App.models.telescope_resource_models import *
 from YSE_App.models.transient_models import *
 from YSE_App.models.host_models import *
+from YSE_App.models.profile_models import *
+from YSE_App.common.alert import SendFollowingNotice
 
 class Followup(BaseModel):
 
@@ -44,6 +46,17 @@ class TransientFollowup(Followup):
 	def observation_window(self):
 		return "%s - %s" % (self.valid_start.strftime('%m/%d/%Y'), self.valid_stop.strftime('%m/%d/%Y'))		
 
+@receiver(models.signals.post_save, sender=TransientFollowup)
+def execute_after_save(sender, instance, created, *args, **kwargs):
+
+	if created:
+
+		usertelescopes = UserTelescopeToFollow.objects.all()
+		for u in usertelescopes:
+			if u.telescope.name == instance.classical_resource.telescope.name:
+				SendFollowingNotice(instance.id, instance.transient.name,
+									instance.classical_resource.telescope, u.profile)
+	
 class HostFollowup(Followup):
 	### Entity relationships ###
 	host = models.ForeignKey(Host, on_delete=models.CASCADE)

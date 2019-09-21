@@ -246,6 +246,13 @@ class UserQueryViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = UserQuery.objects.all()
 	serializer_class = UserQuerySerializer
 	permission_classes = (permissions.IsAuthenticated,)
+
+### `UserTelescopeToFollow` ViewSets ###
+class UserTelescopeToFollowViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = UserTelescopeToFollow.objects.all()
+	serializer_class = UserTelescopeToFollowSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
 	
 ### `Spectra` ViewSets ###
 class TransientSpectrumViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):

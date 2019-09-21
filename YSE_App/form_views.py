@@ -264,3 +264,57 @@ class RemoveDashboardQueryFormView(DeleteView):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
+
+class AddFollowupNoticeFormView(FormView):
+	form_class = AddFollowupNoticeForm
+	template_name = 'YSE_App/form_snippets/dashboard_followup_notice_form.html'
+	success_url = '/form-success/'
+	
+	def form_invalid(self, form):
+		response = super(AddFollowupNoticeFormView, self).form_invalid(form)
+		if self.request.is_ajax():
+			return JsonResponse(form.errors, status=400)
+		else:
+			return response
+
+	def form_valid(self, form):
+		response = super(AddFollowupNoticeFormView, self).form_valid(form)
+		if self.request.is_ajax():
+
+			instance = form.save(commit=False)
+			instance.created_by = self.request.user
+			instance.modified_by = self.request.user
+			try: instance.profile = Profile.objects.filter(user=self.request.user)[0]
+			except:
+				data = {
+					'message': """User %s has no profile object in the YSE_PZ database.  
+Contact D. Jones or D. Coulter."""%self.request.user,
+				}
+				return JsonResponse(data)
+
+				
+			instance.save() #update_fields=['created_by','modified_by']
+
+			print(form.cleaned_data)
+
+			data = {
+				'message': "Successfully submitted form data.",
+			}
+			return JsonResponse(data)
+		else:
+			return response
+
+class RemoveFollowupNoticeFormView(DeleteView):
+	model = UserTelescopeToFollow
+	form_class = RemoveFollowupNoticeForm
+	template_name = 'YSE_App/personaldashboard.html'
+	success_url = reverse_lazy('personaldashboard')
+	
+	def form_invalid(self, form):
+		response = super(RemoveFollowupNoticeFormView, self).form_invalid(form)
+
+		if self.request.is_ajax():
+			return JsonResponse(form.errors, status=400)
+		else:
+			return response
+		

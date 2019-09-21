@@ -169,12 +169,15 @@ def personaldashboard(request):
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-')[0]
 	else: anchor = ''
+
 	context = {
 		'user':request.user,
 		'transient_categories':tables,
 		'all_transient_statuses':TransientStatus.objects.all(),
 		'anchor':anchor,
-		'add_dashboard_query_form': AddDashboardQueryForm()
+		'add_dashboard_query_form': AddDashboardQueryForm(),
+		'add_followup_notice_form': AddFollowupNoticeForm(),
+		'followup_notices': UserTelescopeToFollow.objects.filter(profile__user=request.user)
 	}
 
 	return render(request, 'YSE_App/personaldashboard.html', context)

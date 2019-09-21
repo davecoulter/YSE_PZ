@@ -1,0 +1,29 @@
+{% load widget_tweaks %}
+
+{% block content %}
+	<div class="box box-primary box-solid">
+		<div class="box-header with-border"> <!--style="height: 30px;">-->
+			<button id="add_query_btn" type="button" class="btn btn-box-tool btn-sm" style="height: 30px;"><h3 class="box-title" style="font-size:150%;">Request New Followup Notification</h3></button>
+		</div>
+		<div class="box-body">
+			<form id="add_followup_notice" action="{% url 'add_followup_notice' %}" method="post">
+				{% csrf_token %}
+				{% for hidden_field in form.hidden_fields %}
+					{{ hidden_field }}
+				{% endfor %}
+				<div class="col-xs-6">
+					<div class="form-group">
+						<!--<label>Query</label>-->
+						{% render_field form.telescope class+="form-control select2" style+="width: 100%;" %}
+					</div>
+				</div>
+                <div class="col-xs-6">
+                    <div class="form-group">
+                        <!--<br>-->
+                            <button type="submit" class="btn btn-block btn-primary">Submit</button>
+                        </div>
+                    </div>
+			</form>
+		</div>
+	</div>
+{% endblock %}

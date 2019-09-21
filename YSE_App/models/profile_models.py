@@ -1,6 +1,7 @@
 from django.db import models
 from YSE_App.models.base import *
 from YSE_App.models.enum_models import *
+from YSE_App.models.telescope_models import *
 from explorer.models import *
 
 class Profile(BaseModel):
@@ -28,3 +29,11 @@ class UserQuery(BaseModel):
 
 	def __str__(self):
 		return '%s %s: %s'%(self.user.first_name,self.user.last_name,self.query.title)
+
+class UserTelescopeToFollow(BaseModel):
+
+	profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+	telescope = models.ForeignKey(Telescope, on_delete=models.CASCADE)
+
+	def __str__(self):
+		return '%s: %s'%(self.profile.user,self.telescope.name)
