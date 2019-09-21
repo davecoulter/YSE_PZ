@@ -165,7 +165,6 @@ def sendemail(from_addr, to_addr,
 			login, password, smtpserver, cc_addr=None):
 
 	print("Preparing email")
-
 	msg = MIMEMultipart('alternative')
 	msg['Subject'] = subject
 	msg['From'] = from_addr
