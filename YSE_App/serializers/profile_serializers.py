@@ -54,3 +54,29 @@ class UserQuerySerializer(serializers.HyperlinkedModelSerializer):
 		instance.save()
 
 		return instance
+
+class UserTelescopeToFollowSerializer(serializers.HyperlinkedModelSerializer):
+	profile = serializers.HyperlinkedRelatedField(queryset=Profile.objects.all(), view_name='user-detail')
+	telescope = serializers.HyperlinkedRelatedField(queryset=Telescope.objects.all(), view_name='user-detail')
+	
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+
+	class Meta:
+		model = UserTelescopeToFollow
+		fields = "__all__"
+		
+	def create(self, validated_data):
+		return UserTelescopeToFollow.objects.create(**validated_data)
+
+	def update(self, instance, validated_data):
+
+		instance.profile = validated_data.get('profile', instance.profile)
+		instance.telescope = validated_data.get('telescope', instance.telescope)
+
+		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
+
+		instance.save()
+
+		return instance
+	

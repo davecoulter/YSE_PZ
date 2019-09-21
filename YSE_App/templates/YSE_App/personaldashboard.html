@@ -25,6 +25,37 @@
         </div>
     </div>
   </div>
+
+  {% if followup_notices %}
+    <h3>
+        &nbsp; Followup Notifications Requested for These Telescopes:
+    </h3>
+  {% endif %}
+
+  {% for f in followup_notices %}
+    <div class="box-header with-border">
+      <h3 class="box-title">
+        <form id="remove_followup_notice_{{ f.id }}" action="{% url 'remove_followup_notice' -1 %}" method="post" style="margin: 0; padding: 0;">
+          <input type="hidden" id="followup_notice_{{ f.id }}" value="{{ f.id }}"/>
+          &nbsp; {{ f.telescope }}
+          {% csrf_token %}
+          {% for hidden_field in form.hidden_fields %}
+          {{ hidden_field }}
+          {% endfor %}
+          &nbsp;<button type="submit" class="fa fa-trash-o fa-border"></button>
+        </form>
+      </h3>
+  </div>
+      {% endfor %}
+
+    <div class="row">
+    <div class="col-xs-12">
+      <div class="col-xs-6">
+        <input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
+          {% include "YSE_App/form_snippets/dashboard_followup_notice_form.html" with form=add_followup_notice_form %}
+        </div>
+    </div>
+  </div>
 {% endif %}
 
   <!-- Default box -->
@@ -76,7 +107,39 @@
         </div>
     </div>
   </div>
+
+  {% if followup_notices %}
+    <h2>
+        &nbsp; Followup Notifications Requested for These Telescopes:
+    </h2>
+  {% endif %}
+
+  {% for f in followup_notices %}
+    <div class="box-header with-border">
+      <h3 class="box-title">
+        <form id="remove_followup_notice_{{ f.id }}" action="{% url 'remove_followup_notice' -1 %}" method="post" style="margin: 0; padding: 0;">
+          <input type="hidden" id="followup_notice_{{ f.id }}" value="{{ f.id }}"/>
+          &nbsp; {{ f.telescope }}
+          {% csrf_token %}
+          {% for hidden_field in form.hidden_fields %}
+          {{ hidden_field }}
+          {% endfor %}
+          &nbsp;<button type="submit" class="fa fa-trash-o fa-border"></button>
+        </form>
+      </h3>
+  </div>
+      {% endfor %}  
+
+    <div class="row">
+    <div class="col-xs-12">
+      <div class="col-xs-6">
+        <input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
+          {% include "YSE_App/form_snippets/dashboard_followup_notice_form.html" with form=add_followup_notice_form %}
+        </div>
+    </div>
+  </div>
 {% endif %}
+
 
 {% endblock %}
 
@@ -93,6 +156,15 @@ $(document).ready(function(){
         event.preventDefault();
         add_dashboard_query();
       });
+
+      $('#add_followup_notice').on('submit', function(event){
+        event.preventDefault();
+        add_followup_notice();
+      });
+
+      function transientStatusChangeErr() {
+        alert("Transient Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
+      }
 
       function transientStatusChangeErr() {
         alert("Transient Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
@@ -216,6 +288,27 @@ $(document).ready(function(){
         });
       };
 
+      function add_followup_notice() {
+        // Grab the form, and associate it with the current transient detail page
+        var data = $('#add_followup_notice').serialize()
+
+        $.ajax({
+          url : "{% url 'add_followup_notice' %}", // the endpoint
+          type : "POST", // http method
+          data : data, // data sent with the post request
+
+          // handle a successful response
+          success : function(json) {
+            window.location.reload()
+          },
+
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+            alert(xhr.status + ": " + xhr.responseText);
+          }
+        });
+      };
+
       
       {% for transient_cat in transient_categories %}
       $('#remove_dashboard_query_{{ transient_cat.4 }}').on('submit', function(event){
@@ -231,6 +324,36 @@ $(document).ready(function(){
 
         $.ajax({
           url : "{% url 'remove_dashboard_query' -1 %}".replace('-1', query_id), // the endpoint
+          type : "POST", // http method
+          data : data, // data sent with the post request
+
+          // handle a successful response
+          success : function(json) {
+            window.location.reload()
+          },
+
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+            alert(xhr.status + ": " + xhr.responseText);
+          }
+        });
+      };
+      {% endfor %}
+
+      {% for f in followup_notices %}
+      $('#remove_followup_notice_{{ f.id }}').on('submit', function(event){
+        event.preventDefault();
+        remove_followup_notice_{{ f.id }}();
+      });
+
+      function remove_followup_notice_{{ f.id }}() {
+        // Grab the form, and associate it with the current transient detail page
+        var data = $('#remove_followup_notice_{{ f.id }}').serialize()
+        var followup_id = $('#followup_notice_{{ f.id }}').val()
+        //data = (data + "&query=" + query)
+
+        $.ajax({
+          url : "{% url 'remove_followup_notice' -1 %}".replace('-1', followup_id), // the endpoint
           type : "POST", // http method
           data : data, // data sent with the post request
 

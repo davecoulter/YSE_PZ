@@ -16,11 +16,11 @@ coreschema==0.0.4
 cryptography==2.1.4
 cycler==0.10.0
 Django==2.0.4
-django-autoslug==1.9.3
+django-autoslug==1.9.6
 django-bootstrap3==10.0.1
 django-filter==1.1.0
 django-filters==0.2.1
-django-sql-explorer==1.1.1
+django-sql-explorer==1.1.2
 django-tables2==2.0.0a3
 django-widget-tweaks==1.4.1
 djangorestframework==3.7.3
