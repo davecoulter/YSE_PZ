@@ -74,6 +74,7 @@ class PhotData(BaseModel):
 	mag = models.FloatField(null=True, blank=True)
 	mag_err = models.FloatField(null=True, blank=True)
 	forced = models.NullBooleanField(null=True, blank=True)
+	diffim = models.NullBooleanField(null=True, blank=True)
 	# dq = models.NullBooleanField(null=True, blank=True)
 
 

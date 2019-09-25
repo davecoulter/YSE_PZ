@@ -45,6 +45,8 @@ class upload():
 						  help="instrument name")
 		parser.add_option('--forcedphot', default=0, type="int",
 						  help="set to 1 if forced photometry")
+		parser.add_option('--diffim', default=0, type="int",
+						  help="set to 1 if difference imaged")
 		parser.add_option('--fluxzpt', default=None, type="float",
 						  help="flux zero point")
 		parser.add_option('-u','--useheader', default=False, action="store_true",
@@ -140,9 +142,10 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 							  'flux':flux,
 							  'flux_err':fluxerr,
 							  'forced':self.options.forcedphot,
+							  'diffim':self.options.diffim,
 							  'band':flt,
 							  'groups':[]}
-			
+
 			if flux > 0:
 				PhotUploadDict['mag'] = mag
 				PhotUploadDict['mag_err'] = magerr
@@ -176,7 +179,7 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 		url = '%s'%db.dburl.replace('/api','/add_transient_phot')
 		r = requests.post(url = url, data = json.dumps(PhotUploadAll),
 						  auth=HTTPBasicAuth(db.dblogin,db.dbpassword))
-
+		print(self.options.clobber)
 		print('YSE_PZ says: %s'%json.loads(r.text)['message'])
 		
 	def parsePhotHeaderData(self,snid,ra,dec):
@@ -317,6 +320,8 @@ class DBOps():
 		parser.add_option('--permissionsgroup', default='', type="string",
 						  help='group that has permission to view this photometry on YSE_PZ')
 		parser.add_option('--forcedphot', default=0, type="int",
+						  help="set to 1 if forced photometry")
+		parser.add_option('--diffim', default=0, type="int",
 						  help="set to 1 if forced photometry")
 		parser.add_option('--obsgroup', default='Foundation', type="string",
 						  help='group who observed this transient')
