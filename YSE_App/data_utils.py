@@ -417,6 +417,7 @@ def add_transient_phot_util(photdict,transient,user):
 								e.mag = p['mag']
 								e.mag_err = p['mag_err']
 								e.forced = p['forced']
+								e.diffim = p['diffim']
 								e.data_quality = dq
 								e.photometry = transientphot
 								e.discovery_point = p['discovery_point']
@@ -434,6 +435,7 @@ def add_transient_phot_util(photdict,transient,user):
 				TransientPhotData.objects.create(
 					obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
 					mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
+					diffim=p['diffim'],
 					data_quality=dq,photometry=transientphot,
 					flux_zero_point=p['flux_zero_point'],
 					discovery_point=p['discovery_point'],band=band,
@@ -611,7 +613,7 @@ def add_transient_phot(request):
 		band = PhotometricBand.objects.filter(name=p['band']).filter(instrument__name=ph['instrument'])
 		if len(band): band = band[0]
 		else: band = PhotometricBand.objects.filter(name='Unknown')[0]
-		
+
 		obsExists = False
 		for e in existingphot:
 			if e.photometry.id == transientphot.id:
@@ -637,6 +639,7 @@ def add_transient_phot(request):
 							e.mag = p['mag']
 							e.mag_err = p['mag_err']
 							e.forced = p['forced']
+							e.diffim = p['diffim']
 							e.data_quality = dq
 							e.photometry = transientphot
 							e.discovery_point = p['discovery_point']
@@ -653,6 +656,7 @@ def add_transient_phot(request):
 			else: dq = None
 			TransientPhotData.objects.create(obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
 											 mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
+											 diffim=p['diffim'],
 											 data_quality=dq,photometry=transientphot,
 											 flux_zero_point=p['flux_zero_point'],
 											 discovery_point=p['discovery_point'],band=band,

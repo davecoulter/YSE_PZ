@@ -214,7 +214,8 @@ class processTNS():
 
 			for i in range(len(schema['results'])):
 				phot = schema['results'][i]['candidate']
-
+				if phot['isdiffpos'] == 'f':
+					continue
 				PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
 								  'band':'%s-ZTF'%phot['filter'],
 								  'groups':[]}
@@ -226,6 +227,7 @@ class processTNS():
 				PhotUploadDict['forced'] = None
 				PhotUploadDict['flux_zero_point'] = None
 				PhotUploadDict['discovery_point'] = 0
+				PhotUploadDict['diffim'] = 1
 
 				photometrydict['photdata']['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
 			PhotUploadAll['ZTF'] = photometrydict
@@ -279,6 +281,7 @@ class processTNS():
 				photdata[obstime]['flux_err'] = None
 				photdata[obstime]['discovery_point'] = 0
 				photdata[obstime]['groups'] = []
+				photdata[obstime]['diffim'] = None
 			transientphot = {'instrument': 'GPC1', 'obs_group': 'Pan-STARRS1', 'photdata': photdata}
 			return transientphot
 		else:
@@ -351,6 +354,7 @@ class processTNS():
 					PhotUploadDict['data_quality'] = 0
 					PhotUploadDict['forced'] = None
 					PhotUploadDict['flux_zero_point'] = None
+					PhotUploadDict['diffim'] = None
 
 					photometrydict['photdata']['%s_%i'%(od.replace(' ','T'),k)] = PhotUploadDict
 			PhotUploadAll[photometrycount] = photometrydict
