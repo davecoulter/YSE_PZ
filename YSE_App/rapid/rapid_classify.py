@@ -95,12 +95,10 @@ class rapid_classify_cron(CronJobBase):
 			predictions_z = classification_z.get_predictions(light_curve_list_z)
 
 		if debug:
-			import matplotlib
-			matplotlib.use('MacOSX')
 			import matplotlib.pyplot as plt
 			plt.ion()
-			classification_z.plot_light_curves_and_classifications()
-
+			classification_z.plot_light_curves_and_classifications(indexes_to_plot=(0,))
+			
 		for tl,predictions in zip([transient_list_z,transient_list_noz],[predictions_z[0],predictions_noz[0]]):
 			for i,t in enumerate(tl):
 				try:

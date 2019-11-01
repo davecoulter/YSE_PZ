@@ -10,6 +10,7 @@ from rest_framework.schemas import get_schema_view
 from . import views, view_utils, data_utils, table_utils
 from . import api_views
 from .form_views import *
+from . import surveypages
 
 schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
 
@@ -25,10 +26,17 @@ urlpatterns = [
 	url(r'^transient_tags/$', views.transient_tags, name='transient_tags'),
 	url(r'^get_transient_tags/$', views.get_transient_tags, name='get_transient_tags'),
 
+	# survey info
+    url(r'^survey/$', surveypages.survey, name='survey'),
+    url(r'^news/$', surveypages.news, name='news'),
+    url(r'^team/$', surveypages.team, name='team'),
+    url(r'^contact/$', surveypages.contact, name='contact'),
+
     url(r'^dashboard_example/$', views.dashboard_example, name='dashboard_example'),
     url(r'^transient_edit/$', views.transient_edit, name='transient_edit'),
     url(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
     url(r'^transient_detail/(?P<slug>[a-zA-Z0-9_-]+)/$', views.transient_detail, name='transient_detail'),
+    url(r'^transient_summary/(?P<status_name>[a-zA-Z0-9_-]+)/$', views.transient_summary, name='transient_summary'),
 
     url(r'^observing_calendar/$', views.observing_calendar, name='observing_calendar'),
     url(r'^observing_night/(?P<telescope>.*)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.observing_night, name='observing_night'),
@@ -47,9 +55,9 @@ urlpatterns = [
 	
     url(r'^login/$', views.auth_login, name='auth_login'),
     url(r'^logout/$', views.auth_logout, name='auth_logout'),
-    url(r"^airmassplot/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)/(?P<telescope_id>[a-zA-Z0-9]+)", 
+    url(r"^airmassplot/(?P<transient_id>[a-zA-Z0-9_-]+)/(?P<obs_id>[a-zA-Z0-9_-]+)/(?P<telescope_id>[a-zA-Z0-9_-]+)", 
 		view_utils.airmassplot, name='airmassplot'),
-    url(r'^lightcurveplot/(?P<transient_id>[0-9]+)/$', view_utils.lightcurveplot, name='lightcurveplot'),
+    url(r'^lightcurveplot/(?P<transient_id>[0-9_-]+)/$', view_utils.lightcurveplot, name='lightcurveplot'),
     url(r'^salt2plot/(?P<transient_id>[0-9]+)/(?P<salt2fit>[0-1]+)/$', view_utils.salt2plot, name='salt2plot'),
     url(r'^spectrumplot/(?P<transient_id>[0-9]+)/$', view_utils.spectrumplot, name='spectrumplot'),
     url(r'^spectrumplotsingle/(?P<transient_id>[a-zA-Z0-9_-]+)/(?P<spec_id>[a-zA-Z0-9_-]+)/$', view_utils.spectrumplotsingle, name='spectrumplotsingle'),
@@ -90,6 +98,7 @@ urlpatterns = [
 
     path('accounts/', include('django.contrib.auth.urls')),
 	url(r'^explorer/', include('explorer.urls')),
+	url(r'^silk/', include('silk.urls', namespace='silk')),
 ]
 
 router = DefaultRouter()

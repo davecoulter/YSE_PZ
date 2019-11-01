@@ -71,3 +71,7 @@ wget==3.2
 astrorapid
 git+git://github.com/dfm/casjobs@master
 git+git://github.com/rlwastro/mastcasjobs@master
+django_cron
+django-el-pagination
+dustmaps
+sncosmo
