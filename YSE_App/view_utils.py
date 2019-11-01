@@ -37,6 +37,8 @@ import random
 import django
 import datetime
 from astroplan.plots import plot_airmass
+from astropy.utils import iers
+iers.conf.auto_download = False
 
 import matplotlib
 import matplotlib.pyplot as plt
