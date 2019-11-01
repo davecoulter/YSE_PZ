@@ -204,7 +204,7 @@ def transient_summary(request,status_name,
 	transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
 
 	
-	status = TransientStatus.objects.filter(name=status_name).order_by('-modified_date')
+	status = TransientStatus.objects.filter(name=status_name.replace('followrequest','FollowupRequested')).order_by('-modified_date')
 	if len(status) == 1:
 		transients = Transient.objects.filter(status=status[0]).order_by('-disc_date')
 	
