@@ -506,8 +506,8 @@ def transient_detail(request, slug):
 					followups[i].resource = followups[i].too_resource
 				elif followups[i].queued_resource:
 					followups[i].resource = followups[i].queued_resource
-		else:
-			followups = None
+		#else:
+		#	followups = None
 
 		hostdata = Host.objects.filter(pk=transient_obj.host_id).select_related()
 		if hostdata:
