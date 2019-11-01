@@ -14,6 +14,9 @@ from django.db.models.functions import Lower
 from django.db import connection,connections
 from django.shortcuts import redirect
 
+from astropy.utils import iers
+iers.conf.auto_download = False
+
 from .models import *
 from .forms import *
 from .common import utilities
