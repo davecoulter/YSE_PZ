@@ -336,7 +336,7 @@ def observing_calendar(request):
 				'#001f3f']
 
 	telescope_colors = {}
-	for i, c in enumerate(ClassicalResource.objects.all()):
+	for i, c in enumerate(ClassicalResource.objects.all().select_related()):
 		telescope_colors[c.telescope.name] = colors[i % len(colors)]
 
 	context = {
@@ -369,7 +369,7 @@ def observing_night(request, telescope, obs_date):
 	night_end_18 = tel.twilight_morning_astronomical(time,which="previous").isot.split('T')[-1][:-7]
 	night_end_12 = tel.twilight_morning_nautical(time,which="previous").isot.split('T')[-1][:-7]
 	sunrise = tel.sun_rise_time(time,which="previous").isot.split('T')[-1][:-7]
-	
+	import pdb; pdb.set_trace()
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-ex')[0]
 	else: anchor = ''
