@@ -241,7 +241,7 @@
 											<button style="margin-bottom:5px;" type="button" class="photdownload" onclick="window.open('{% url 'download_photometry' transient.slug %}')">
 												Download Photometry</span>
 											</button>
-										</div>
+											</div>
 											<div class="box-body" id="lcplot"></div>
 										</div>
 									</div>
@@ -671,7 +671,7 @@
                                                 <td id="rise_time_{{ obsnight.id }}"></td>
                                                 <td id="set_time_{{ obsnight.id }}"></td>
                                                 <td id="moon_angle_{{ obsnight.id }}"></td>
-                                                <td><img src="{% url 'airmassplot' transient.id obsnight.id obsnight.resource.telescope.id %}" style='width:240px' alt="" /><br></td>
+                                                <td id="airmass_plot_table_{{obsnight.id}}_{{obsnight.resource.telescope.id}}"><button type="button" class="plotAirmass" telescope_id={{obsnight.resource.telescope.id}} resource_id="{{obsnight.resource.telescope.id}}" obsnight_id="{{obsnight.id}}">Show Plot</button></td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
@@ -698,7 +698,7 @@
                                                 <td id="tonight_rise_time_{{too_resource.id}}"></td>
                                                 <td id="tonight_set_time_{{too_resource.id}}"></td>
                                                 <td id="tonight_moon_angle_{{too_resource.id}}"></td>
-                                                <td><img src="{% url 'airmassplot' transient.id 0 too_resource.telescope.id %}" style='width:240px' alt="" /><br></td>
+                                                <td id="airmass_plot_table_0_{{too_resource.id}}"><button type="button" class="plotAirmass" telescope_id={{too_resource.telescope.id}} resource_id="{{too_resource.id}}" obsnight_id="0">Show Plot</button></td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
@@ -841,6 +841,7 @@
 	<script type="text/javascript" src="https://mpld3.github.io/js/mpld3.v0.3.1.dev1.js"></script>
 	<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-0.12.13.min.js"></script>
 	<script src="{% static 'YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js' %}"></script>
+
 	<script>
 
 		$(function() {
@@ -1147,7 +1148,7 @@
 				add_transient_followup();
 			});
 
-			function transientStatusChangeErr() {
+			function ChangeErr() {
 				alert("Transient Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
 			}
 
@@ -1236,6 +1237,26 @@
 	  					$(".plotSALT2").html("Show SALT2 Fit");
 	  				});
 				}
+			});
+
+			$('.plotAirmass').on('click', function(event){
+				//var spec_id = $(this).attr('spec_plot-id')
+				var transient_id = {{transient.id}};
+				var telescope_id = $(this).attr('telescope_id');
+				var resource_id = $(this).attr('resource_id');
+				var obsnight_id = $(this).attr('obsnight_id');
+				//<td><button id="airmass_plot">Show Plot</button></td>
+				
+                var urltext = "<img src='{% url 'airmassplot' -1 -2 -3 %}' width='240' alt='' /><br>".replace('-1',transient_id).replace('-2',obsnight_id).replace('-3',telescope_id);
+                //urltext = urltext
+                //transient.id 0 too_resource.telescope.id
+                //.replace('-1', transient_id).replace('-2',spec_id)
+                //too_resource.telescope.id
+				var lastNode = $("#airmass_plot_table_"+obsnight_id+"_"+resource_id).children().last();
+	        	lastNode.prev().remove();
+
+				var rows = $("#airmass_plot_table_"+obsnight_id+"_"+resource_id);
+	  			$(rows).html(urltext);
 			});
 
 			function ToggleObservationTaskForm(followup_id,expand)
@@ -1701,7 +1722,6 @@
 	  	});
 
 		$.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
-	  		
 	  		$("#lcplot").html(htmlresponse);
 	  	});
 

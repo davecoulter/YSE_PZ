@@ -180,9 +180,9 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 				instance.k2_validated = True
 				instance.k2_msg = C19_msg
 				instance.tags.add(k2c19tag)
-
+		tag_TESS,tag_Thacher = True,True #False,False
 		print('Checking TESS')
-		if instance.disc_date:
+		if tag_TESS and instance.disc_date:
 			TESSFlag = tess_obs(instance.ra,instance.dec,date_to_mjd(instance.disc_date)+2400000.5)
 			if TESSFlag:
 				try:
@@ -198,7 +198,7 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 				except: pass
 
 		print('Checking Thacher')
-		if thacher_transient_search(instance.ra,instance.dec):
+		if tag_Thacher and thacher_transient_search(instance.ra,instance.dec):
 			try:
 				thachertag = TransientTag.objects.get(name='Thacher')
 				instance.tags.add(thachertag)
@@ -222,6 +222,7 @@ class AlternateTransientNames(BaseModel):
 	### Properities ###
 	# Required
 	name = models.CharField(max_length=64)
+	slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
 
 	# Optional
 	description = models.TextField(null=True, blank=True)

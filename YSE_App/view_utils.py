@@ -16,6 +16,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import TemplateView
 import random
+import bokeh
 from bokeh.plotting import figure
 from bokeh.resources import CDN
 from bokeh.embed import file_html
@@ -32,6 +33,18 @@ import sncosmo
 from .common.bandpassdict import bandpassdict
 from .common.utilities import date_to_mjd
 import time
+import random
+import django
+import datetime
+from astroplan.plots import plot_airmass
+
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+from matplotlib.dates import DateFormatter
+from matplotlib import rcParams
+
 
 py2bokeh_symboldict = {"^":"triangle",
 					   "+":"cross",
@@ -95,7 +108,7 @@ def getMoonAngle(observingdate,telescope,ra,dec):
 	return('%.1f'%cs.separation(mooncoord).deg)
 
 def get_obs_nights_happening_soon(user):
-	allowed_nights = ObservingResourceService.GetAuthorizedClassicalObservingDate_ByUser(user)
+	allowed_nights = ObservingResourceService.GetAuthorizedClassicalObservingDate_ByUser(user).select_related()
 
 	allowed_nights_happening_soon = []
 	for an in allowed_nights:
@@ -382,16 +395,12 @@ class finder(TemplateView):
 # client 
 	
 def airmassplot(request, transient_id, obs_id, telescope_id):
-	import random
-	import django
-	import datetime
-	from astroplan.plots import plot_airmass
-		
-	from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-	from matplotlib.figure import Figure
-	from matplotlib.dates import DateFormatter
-	from matplotlib import rcParams
-	rcParams['figure.figsize'] = (7,7)
+	#font = {'family' : 'normal',
+	#		'weight' : 'normal',
+	#		'size'   : 2}
+	#matplotlib.rc('font', **font)
+
+	#rcParams['figure.figsize'] = (2,2)
 		
 	transient = Transient.objects.get(pk=transient_id)
 	if int(obs_id):
@@ -408,8 +417,9 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
 	location = EarthLocation.from_geodetic(telescope.longitude*u.deg, telescope.latitude*u.deg,telescope.elevation*u.m)
 	tel = Observer(location=location, name=telescope.name, timezone="UTC")
 		
-	fig=Figure()
+	fig=Figure()#dpi=288,figsize=(1,1))
 	ax=fig.add_subplot(111)
+	#ax=fig.add_axes([0.2,0.2,0.75,0.65])
 	canvas=FigureCanvas(fig)
 
 	ax.set_title("%s, %s, %s"%(telescope.tostring(),transient.name, obs_date))
@@ -450,12 +460,12 @@ def lightcurveplot(request, transient_id, salt2=False):
 	tstart = time.time()
 
 	transient = Transient.objects.get(pk=transient_id)
-	photdata = get_all_phot_for_transient(request.user, transient_id)
+	photdata = get_all_phot_for_transient(request.user, transient_id).select_related()
 
 	if not photdata:
 		return django.http.HttpResponse('')
 
-	ax=figure()
+	ax=figure(plot_width=240,plot_height=240,sizing_mode='stretch_both')
 
 	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
@@ -464,16 +474,21 @@ def lightcurveplot(request, transient_id, salt2=False):
 	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
+	#import pdb; pdb.set_trace()
+	
 	for p in photdata:
+		#dbflux,dbfluxerr,dbobsdate,dbmag,dbmagerr,dbdata_quality,dbdiscovery_point = \
+		#	p.flux,p.flux_err,p.obs_date,p.mag,p.mag_err,p.data_quality,p.discovery_point
+		dbmjd = date_to_mjd(p.obs_date)
 		if p.flux and np.abs(p.flux) > 1e10: continue
 		if p.data_quality:
 			continue			
-			
+		
 		if p.mag:
 			if p.discovery_point:
-				limmjd = p.date_to_mjd()-30
+				limmjd = dbmjd-30
 				
-			mjd = np.append(mjd,[p.date_to_mjd()])
+			mjd = np.append(mjd,[dbmjd])
 			date = np.append(date,[p.obs_date.strftime('%m/%d/%Y')])
 			mag = np.append(mag,[p.mag])
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
@@ -489,7 +504,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 				if str(p.band) in bandpassdict.keys():
 					if p.mag_err: mag_err = p.mag_err
 					else: mag_err = 0.02
-					salt2mjd = np.append(salt2mjd,[p.date_to_mjd()])
+					salt2mjd = np.append(salt2mjd,[dbmjd])
 					flux = np.append(flux,10**(-0.4*(p.mag-27.5)))
 					fluxerr = np.append(fluxerr,p.mag*mag_err*0.4*np.log(10))
 					salt2band = np.append(salt2band,bandpassdict[str(p.band)])
@@ -497,7 +512,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 					else: zpsys = np.append(zpsys,'AB')
 				
 		elif p.flux and p.flux_zero_point and p.flux + 3*p.flux_err > 0:
-			upperlimmjd = np.append(upperlimmjd,[p.date_to_mjd()])
+			upperlimmjd = np.append(upperlimmjd,[dbmjd])
 			upperlimdate = np.append(upperlimdate,[p.obs_date.strftime('%m/%d/%Y')])
 			upperlimmag = np.append(upperlimmag,[-2.5*np.log10(p.flux + 3*p.flux_err) + p.flux_zero_point])
 			upperlimbandstr = np.append(upperlimbandstr,str(p.band))
@@ -505,7 +520,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 			upperlimbandcolor = np.append(upperlimbandcolor,p.band.disp_color)
 			if salt2:
 				if str(p.band) in bandpassdict.keys():
-					salt2mjd = np.append(salt2mjd,[p.date_to_mjd()])
+					salt2mjd = np.append(salt2mjd,[dbmjd])
 					flux = np.append(flux,p.flux)
 					fluxerr = np.append(fluxerr,p.flux_err)
 					salt2band = np.append(salt2band,bandpassdict[str(p.band)])
@@ -520,7 +535,7 @@ def lightcurveplot(request, transient_id, salt2=False):
 		upperlimband = np.append(upperlimband,transient.non_detect_band)
 		upperlimbandcolor = np.append(upperlimbandcolor,transient.non_detect_band.disp_color)
 		
-	ax.title.text = "%s"%transient.name
+	#ax.title.text = "%s"%transient.name
 	#colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
 	#			 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
 	colorlist = ['#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9']
@@ -530,6 +545,8 @@ def lightcurveplot(request, transient_id, salt2=False):
 	allbandcolor = np.append(bandcolor,upperlimbandcolor)
 	allbandsym = np.append(bandsym,[None]*len(upperlimbandcolor))
 	bandunq,idx = np.unique(allbandstr,return_index=True)
+
+	legend_it = []
 	for bs,b,bc,bsym in zip(bandunq,allband[idx],allbandcolor[idx],allbandsym[idx]):
 		if bc != 'None' and bc: color = bc
 		else:
@@ -545,32 +562,42 @@ def lightcurveplot(request, transient_id, salt2=False):
 		else:
 			plotmethod = getattr(ax, 'triangle')
 			
-		plotmethod(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
-				   color=color,size=7,legend='%s - %s'%(
-					   b.instrument.telescope.name,b.name))
+		p = plotmethod(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
+				   color=color,size=7, muted_alpha=0.2)#,legend='%s - %s'%(
+					   #b.instrument.telescope.name,b.name))
+		#legend_it.append(('%s - %s'%(b.instrument.telescope.name,b.name), [p]))
 		if len(upperlimbandstr) and len(upperlimmjd[upperlimbandstr == bs]):
-			ax.inverted_triangle(upperlimmjd[upperlimbandstr == bs].tolist(),upperlimmag[upperlimbandstr == bs].tolist(),
-								 color=color,size=7,legend='%s - %s'%(
-									 b.instrument.telescope.name,b.name))
-
+			p = ax.inverted_triangle(upperlimmjd[upperlimbandstr == bs].tolist(),upperlimmag[upperlimbandstr == bs].tolist(),
+									 color=color,size=7,muted_alpha=0.2)
+			#,legend='%s - %s'%(b.instrument.telescope.name,b.name)
+			
 		err_xs,err_ys = [],[]
 		for x,y,yerr in zip(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),magerr[bandstr == bs].tolist()):
 			err_xs.append((x, x))
 			err_ys.append((y - yerr, y + yerr))
-		ax.multi_line(err_xs, err_ys, color=color, legend='%s - %s'%(
-					  b.instrument.telescope.name,b.name))
-
+		ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)#, legend='%s - %s'%(
+		legend_it.append(('%s - %s'%(b.instrument.telescope.name,b.name), [p]))
+		#b.instrument.telescope.name,b.name))
+		#legend_it.append(('%s - %s'%(b.instrument.telescope.name,b.name), [p]))
+		
 	today = Time(datetime.datetime.today()).mjd
-	ax.line(today,20,line_width=3,line_color='black',legend='today (%i)'%today)
+	p = ax.line(today,20,line_width=3,line_color='black')#,legend='today (%i)'%today)
+	legend_it.append(('today (%i)'%today, [p]))
 	vline = Span(location=today, dimension='height', line_color='black',
 				 line_width=3)
 	ax.add_layout(vline)
-	ax.legend.location = 'bottom_left'
-	ax.legend.label_height = 1
-	ax.legend.glyph_height = 5
+	from bokeh.models import Legend
+	legend = Legend(items=legend_it, location="center")
+	legend.click_policy="mute"
+	legend.label_height = 1
+	legend.glyph_height = 20
+
+	ax.add_layout(legend, 'right')
 	
-	ax.legend.label_text_font_size = "4pt"#FontSizeSpec("10")
-	ax.legend.click_policy="hide"
+	#ax.legend.location = (0,-60) #'bottom_left'
+	
+	#ax.legend.label_text_font_size = "4pt"#FontSizeSpec("10")
+	#ax.legend.click_policy="hide"
 
 	
 	ax.xaxis.axis_label = 'MJD'
@@ -689,7 +716,7 @@ def spectrumplot(request, transient_id):
 		return django.http.HttpResponse('')
 
 	#figure is a function in the bokeh module
-	ax=figure()
+	ax=figure(plot_width=240,plot_height=240,sizing_mode='stretch_both')
 	#HELLO
 	wave,flux = [],[]
 	for s in spec:
@@ -726,7 +753,7 @@ def spectrumplotsingle(request, transient_id, spec_id):
 	if not len(spec):
 		return django.http.HttpResponse('')
 
-	ax=figure()
+	ax=figure(plot_width=240,plot_height=240,sizing_mode='stretch_both')
 
 	wave,flux = [],[]
 	for s in spec:

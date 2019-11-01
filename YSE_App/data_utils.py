@@ -8,6 +8,7 @@ from astropy.time import Time
 import astropy.units as u
 import datetime
 import json
+import time
 import numpy as np
 from django.conf import settings as djangoSettings
 from django.http import HttpResponseRedirect
@@ -41,7 +42,9 @@ def add_transient(request):
 	from_addr = "%s@gmail.com" % djangoSettings.SMTP_LOGIN
 	subject = "TNS Transient Upload Failure"
 	txt_msg = "Alert : YSE_PZ Failed to upload transient %s "
-	
+
+	transient_entries = []
+	# first bulk create new transients
 	for transientlistkey in transient_data.keys():
 		if transientlistkey == 'noupdatestatus': continue
 
@@ -52,7 +55,7 @@ def add_transient(request):
 			return_dict = {"message":"Error : Transient name not provided for transient %s!"%transientlistkey}
 			return JsonResponse(return_dict)
 		print('updating transient %s'%transient['name'])
-		try:
+		if 'hi': #try:
 			transientdict = {'created_by_id':user.id,'modified_by_id':user.id}
 			for transientkey in transientkeys:
 				if transientkey == 'transientphotometry' or \
@@ -85,7 +88,21 @@ def add_transient(request):
 
 			dbtransient = Transient.objects.filter(name=transient['name'])
 			if not len(dbtransient):
-				dbtransient = Transient.objects.create(**transientdict)
+				# check RA/dec
+				ramin,ramax,decmin,decmax = getRADecBox(transient['ra'],transient['dec'],size=0.00042)
+				dbtransient = Transient.objects.filter(
+					Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
+					Q(disc_date__year=transient['disc_date'].split('-')[0]))
+				if len(dbtransient):
+					dbtransient = dbtransient[0]
+					obs_group = ObservationGroup.objects.get(name=transient['obs_group'])
+					AlternateTransientNames.objects.create(
+						transient=dbtransient,obs_group=obs_group,name=transient['name'],
+						created_by_id=user.id,modified_by_id=user.id)
+				else:
+					dbtransient = Transient(**transientdict)
+					transient_entries += [dbtransient]
+					#dbtransient = Transient.objects.create(**transientdict)
 			else: #if clobber:
 				if 'noupdatestatus' in transient_data.keys() and not transient_data['noupdatestatus']:
 					if dbtransient[0].status.name == 'Ignore': dbtransient[0].status = TransientStatus.objects.filter(name='New')[0]
@@ -93,33 +110,78 @@ def add_transient(request):
 				else: transientdict['status'] = dbtransient[0].status
 				dbtransient.update(**transientdict)
 				dbtransient = dbtransient[0]
-			if 'tags' in transientkeys:
-				for tag in transient['tags']:
-					dbtransient.tags.add(tags=transient['tags'])
-				dbtransient.save()
-			
-			if 'transientphotometry' in transientkeys:
-				# do photometry
-				add_transient_phot_util(transient['transientphotometry'],dbtransient,user)
-			
-			if 'transientspectra' in transientkeys:
-				# spectrum
-				add_transient_spec_util(transient['transientspectra'],dbtransient,user)
-		
-			if 'host' in transientkeys:
-				# host galaxy
-				add_transient_host_util(transient['host'],dbtransient,user)
+
+			#print('saved transient in %.1f sec'%(t4-t3))
+			#if 'tags' in transientkeys:
+			#	for tag in transient['tags']:
+			#		tagobj = TransientTag.objects.get(name=tag)
+			#		dbtransient.tags.add(tagobj)
+			#	dbtransient.save()
+
+			#print('applied tags in %.1f sec'%(t5-t4))
 				
-		except Exception as e:
+		else: #except Exception as e:
 			print('Transient %s failed!'%transient['name'])
 			print("Sending email to: %s" % user.username)
 			html_msg = "Alert : YSE_PZ Failed to upload transient %s with error %s"
 			sendemail(from_addr, user.email, subject, html_msg%(transient['name'],e),
-                      djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+					  djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
 			# sending SMS is too scary for now
 			#sendsms(from_addr, phone_email, subject, txt_msg%transient['name'],
-            #        djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+			#		 djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+
+	#import pdb; pdb.set_trace()
+	Transient.objects.bulk_create(transient_entries)
+
+	# add photometry, spectra, hosts
+	phot_entries = []
+	for transientlistkey in transient_data.keys():
+		if transientlistkey == 'noupdatestatus': continue
+		transient = transient_data[transientlistkey]
+		transientkeys = transient.keys()
+
+		dbtransient = Transient.objects.filter(name=transient['name'])
+		if not len(dbtransient):
+			dbtransient = AlternateTransientNames.objects.filter(name=transient['name'])[0].transient
+		else: dbtransient = dbtransient[0]
 			
+		if 'transientphotometry' in transientkeys:
+			# do photometry
+			response,transientphot = add_transient_phot_util(
+				transient['transientphotometry'],dbtransient,user,do_photdata=False)
+			for t in transientphot:
+				phot_entries.append(t)
+
+		if 'transientspectra' in transientkeys:
+			# spectrum
+			add_transient_spec_util(transient['transientspectra'],dbtransient,user)
+		
+		if 'host' in transientkeys:
+			# host galaxy
+			add_transient_host_util(transient['host'],dbtransient,user)
+
+	TransientPhotometry.objects.bulk_create(phot_entries)
+
+	# add photdata
+	photdata_entries = []
+	for transientlistkey in transient_data.keys():
+		if transientlistkey == 'noupdatestatus': continue
+		transient = transient_data[transientlistkey]
+		transientkeys = transient.keys()
+
+		dbtransient = Transient.objects.filter(name=transient['name'])
+		if not len(dbtransient):
+			dbtransient = AlternateTransientNames.objects.filter(name=transient['name'])[0].transient
+		else: dbtransient = dbtransient[0]
+		
+		if 'transientphotometry' in transientkeys:
+			# do photometry
+			response,transientphot = add_transient_phot_util(
+				transient['transientphotometry'],dbtransient,user,do_photdata=True)
+			for t in transientphot:
+				phot_entries.append(t)
+	
+	TransientPhotometry.objects.bulk_create(photdata_entries)
 	return_dict = {"message":"success"}
 
 	return JsonResponse(return_dict)
@@ -166,7 +228,8 @@ def add_gw_candidate(request):
 				else:
 					fkmodel = Transient._meta.get_field(transientkey).remote_field.model
 					if transientkey == 'non_detect_band' and 'non_detect_instrument' in transient.keys():
-						fk = fkmodel.objects.filter(name=transient[transientkey]).filter(instrument__name=transient['non_detect_instrument'])
+						fk = fkmodel.objects.filter(
+							name=transient[transientkey]).filter(instrument__name=transient['non_detect_instrument'])
 						if not len(fk):
 							fk = fkmodel.objects.filter(name=transient[transientkey])
 					else:
@@ -228,10 +291,10 @@ def add_gw_candidate(request):
 			print("Sending email to: %s" % user.username)
 			html_msg = "Alert : YSE_PZ Failed to upload transient %s with error %s"
 			sendemail(from_addr, user.email, subject, html_msg%(transient['name'],e),
-                      djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+					  djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
 			# sending SMS is too scary for now
 			#sendsms(from_addr, phone_email, subject, txt_msg%transient['name'],
-            #        djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+			#		 djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
 			
 	return_dict = {"message":"success"}
 
@@ -357,8 +420,9 @@ def add_transient_host_util(hostdict,transient,user):
 	return_dict = {"message":"host success"}
 	return JsonResponse(return_dict)		
 
-def add_transient_phot_util(photdict,transient,user):
-	
+def add_transient_phot_util(photdict,transient,user,do_photdata=True):
+
+	transientphot_entries = []
 	for k in photdict.keys():
 		if k == 'clobber' or k == 'mjdmatchmin': continue
 		photometry = photdict[k]
@@ -375,74 +439,74 @@ def add_transient_phot_util(photdict,transient,user):
 
 		transientphot = TransientPhotometry.objects.filter(transient=transient).filter(instrument=instrument).filter(obs_group=obs_group)
 		if not len(transientphot):
-			transientphot = TransientPhotometry.objects.create(
+			transientphot = TransientPhotometry( #.objects.create
 				instrument=instrument,obs_group=obs_group,transient=transient,
 				created_by_id=user.id,modified_by_id=user.id)
+			transientphot_entries += [transientphot]
 		else: transientphot = transientphot[0]
 		existingphot = TransientPhotData.objects.filter(photometry=transientphot)
 
-		existingphot = TransientPhotData.objects.filter(photometry=transientphot)
-		
-		for k in photometry['photdata']:
-			p = photometry['photdata'][k]
+		if do_photdata:
+			for k in photometry['photdata']:
+				p = photometry['photdata'][k]
 
-			pmjd = Time(p['obs_date'],format='isot').mjd
+				pmjd = Time(p['obs_date'],format='isot').mjd
 
-			band = PhotometricBand.objects.filter(name=p['band']).filter(instrument__name=photometry['instrument'])
-			if len(band): band = band[0]
-			else: band = PhotometricBand.objects.filter(name='Unknown')[0]
-			
-			obsExists = False
-			for e in existingphot:
-				if e.photometry.id == transientphot.id:
-					if e.band == band:
-						try:
-							mjd = Time(e.obs_date.isoformat().split('+')[0],format='isot').mjd
-						except:
-							mjd = Time(e.obs_date,format='isot').mjd
-						if np.abs(mjd - pmjd) < photdict['mjdmatchmin']:
-							obsExists = True
-							if photdict['clobber']:
-								if p['data_quality']:
-									dq = DataQuality.objects.filter(name=p['data_quality'])
-									if not dq:
-										dq = DataQuality.objects.filter(name='Bad')
-									dq = dq[0]
-								else: dq = None
-								
-								e.obs_date = p['obs_date']
-								e.flux = p['flux']
-								e.flux_err = p['flux_err']
-								e.flux_zero_point = p['flux_zero_point']
-								e.mag = p['mag']
-								e.mag_err = p['mag_err']
-								e.forced = p['forced']
-								e.diffim = p['diffim']
-								e.data_quality = dq
-								e.photometry = transientphot
-								e.discovery_point = p['discovery_point']
-								e.band = band
-								e.modified_by_id = user.id
-								e.save()
+				band = PhotometricBand.objects.filter(name=p['band']).filter(instrument__name=photometry['instrument'])
+				if len(band): band = band[0]
+				else: band = PhotometricBand.objects.filter(name='Unknown')[0]
 
-			if not obsExists:
-				if p['data_quality']:
-					dq = DataQuality.objects.filter(name=p['data_quality'])
-					if not dq:
-						dq = DataQuality.objects.filter(name='Bad')
-					dq = dq[0]
-				else: dq = None
-				TransientPhotData.objects.create(
-					obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
-					mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
-					diffim=p['diffim'],
-					data_quality=dq,photometry=transientphot,
-					flux_zero_point=p['flux_zero_point'],
-					discovery_point=p['discovery_point'],band=band,
-					created_by_id=user.id,modified_by_id=user.id)
+				obsExists = False
+				for e in existingphot:
+					if e.photometry.id == transientphot.id:
+						if e.band == band:
+							try:
+								mjd = Time(e.obs_date.isoformat().split('+')[0],format='isot').mjd
+							except:
+								mjd = Time(e.obs_date,format='isot').mjd
+							if np.abs(mjd - pmjd) < photdict['mjdmatchmin']:
+								obsExists = True
+								if photdict['clobber']:
+									if p['data_quality']:
+										dq = DataQuality.objects.filter(name=p['data_quality'])
+										if not dq:
+											dq = DataQuality.objects.filter(name='Bad')
+										dq = dq[0]
+									else: dq = None
+
+									e.obs_date = p['obs_date']
+									e.flux = p['flux']
+									e.flux_err = p['flux_err']
+									e.flux_zero_point = p['flux_zero_point']
+									e.mag = p['mag']
+									e.mag_err = p['mag_err']
+									e.forced = p['forced']
+									e.diffim = p['diffim']
+									e.data_quality = dq
+									e.photometry = transientphot
+									e.discovery_point = p['discovery_point']
+									e.band = band
+									e.modified_by_id = user.id
+									e.save()
+
+				if not obsExists:
+					if p['data_quality']:
+						dq = DataQuality.objects.filter(name=p['data_quality'])
+						if not dq:
+							dq = DataQuality.objects.filter(name='Bad')
+						dq = dq[0]
+					else: dq = None
+					TransientPhotData.objects.create(
+						obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
+						mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
+						diffim=p['diffim'],
+						data_quality=dq,photometry=transientphot,
+						flux_zero_point=p['flux_zero_point'],
+						discovery_point=p['discovery_point'],band=band,
+						created_by_id=user.id,modified_by_id=user.id)
 
 	return_dict = {"message":"successfully added phot data"}
-	return JsonResponse(return_dict)
+	return JsonResponse(return_dict),transientphot_entries
 
 
 def add_transient_spec_util(specdict,transient,user):
@@ -511,7 +575,7 @@ def add_transient_spec_util(specdict,transient,user):
 		if len(existingspec) and specdict['clobber']:
 			for e in existingspec: e.delete()
 		elif len(existingspec):
-			return_dict = {"message":"spectrum exists.  Not clobbering"}
+			return_dict = {"message":"spectrum exists.	Not clobbering"}
 			return JsonResponse(return_dict)
 
 		specdata = spectrum['specdata']
@@ -754,7 +818,7 @@ def add_transient_spec(request):
 	if len(existingspec) and hd['clobber']:
 		for e in existingspec: e.delete()
 	elif len(existingspec):
-		return_dict = {"message":"spectrum exists.  Not clobbering"}
+		return_dict = {"message":"spectrum exists.	Not clobbering"}
 		return JsonResponse(return_dict)
 
 	for k in spec_data.keys():
@@ -811,3 +875,33 @@ def get_host(request, ra, dec, sep):
 				   "host candidates":serialized_hosts }
 
 	return JsonResponse(return_dict)
+
+def getRADecBox(ra,dec,size=None):
+	RAboxsize = DECboxsize = size
+
+	# get the maximum 1.0/cos(DEC) term: used for RA cut
+	minDec = dec-0.5*DECboxsize
+	if minDec<=-90.0:minDec=-89.9
+	maxDec = dec+0.5*DECboxsize
+	if maxDec>=90.0:maxDec=89.9
+
+	invcosdec = max(1.0/np.cos(dec*np.pi/180.0),
+					1.0/np.cos(minDec  *np.pi/180.0),
+					1.0/np.cos(maxDec  *np.pi/180.0))
+
+	ramin = ra-0.5*RAboxsize*invcosdec
+	ramax = ra+0.5*RAboxsize*invcosdec
+	decmin = dec-0.5*DECboxsize
+	decmax = dec+0.5*DECboxsize
+
+	if ra<0.0: ra+=360.0
+	if ra>=360.0: ra-=360.0
+
+	if ramin!=None:
+		if (ra-ramin)<-180:
+			ramin-=360.0
+			ramax-=360.0
+		elif (ra-ramin)>180:
+			ramin+=360.0
+			ramax+=360.0
+	return(ramin,ramax,decmin,decmax)

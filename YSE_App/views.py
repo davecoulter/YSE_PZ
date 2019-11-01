@@ -183,6 +183,60 @@ def personaldashboard(request):
 	return render(request, 'YSE_App/personaldashboard.html', context)
 
 @login_required
+def transient_summary(request,status_name,
+					  template='YSE_App/transient_summary_paginate.html',
+					  extra_context=None,
+					  page_template='YSE_App/transient_summary_individual.html'):
+
+	# Status update properties
+	all_transient_statuses = TransientStatus.objects.all()
+	transient_status_follow = TransientStatus.objects.get(name="Following")
+	transient_status_followrequest = TransientStatus.objects.get(name="FollowupRequested")
+	transient_status_watch = TransientStatus.objects.get(name="Watch")
+	transient_status_ignore = TransientStatus.objects.get(name="Ignore")
+	
+	from django.utils import timezone
+	transient_followup_form = TransientFollowupForm()
+	transient_followup_form.fields["too_resource"].queryset = view_utils.get_authorized_too_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
+	transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
+
+	
+	status = TransientStatus.objects.filter(name=status_name).order_by('-modified_date')
+	if len(status) == 1:
+		transients = Transient.objects.filter(status=status[0]).order_by('-disc_date')
+	
+	if request.META['QUERY_STRING']:
+		anchor = request.META['QUERY_STRING'].split('-')[0]
+	else: anchor = ''
+	context = {
+		'transients':transients,
+		'transient_status':status_name,
+		'all_transient_statuses': all_transient_statuses,
+		'transient_status_follow': transient_status_follow,
+		'transient_status_followrequest': transient_status_followrequest,
+		'transient_status_watch': transient_status_watch,
+		'transient_status_ignore': transient_status_ignore,
+		'transient_followup_form': transient_followup_form,
+		'anchor':anchor,
+	}
+	if transient_followup_form.fields["valid_start"].initial:
+		context['followup_initial_dates'] = \
+			(transient_followup_form.fields["valid_start"].initial.strftime('%m/%d/%Y HH:MM'),
+			 transient_followup_form.fields["valid_stop"].initial.strftime('%m/%d/%Y HH:MM'))
+	
+	#import pdb; pdb.set_trace()
+	if extra_context is not None:
+		context.update(extra_context)
+	else:
+		template = 'YSE_App/transient_summary.html'
+		context['page_template'] = page_template
+	if request.is_ajax():
+		template = 'YSE_App/transient_summary_paginate.html'
+
+	return render(request, template, context)
+
+
+@login_required
 def followup(request):
 
 	followup_transients = None
@@ -346,7 +400,7 @@ def download_target_list(request, telescope, obs_date):
 	
 	content = "!Data {name %20} ra_h ra_m ra_s dec_d dec_m dec_s equinox {comment *}\n"
 	for f in follow_requests:
-		content += "%s  %s %s 2000 mag = %.2f\n"%(
+		content += "%s	%s %s 2000 mag = %.2f\n"%(
 			f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),f.transient.CoordString()[1].replace(':',' '),float(f.transient.recent_mag()))
 				
 	response = HttpResponse(content, content_type='text/plain')
@@ -371,12 +425,12 @@ def download_targets_and_finders(request, telescope, obs_date):
 	content_offsets = "\n"
 	findernamelist = []
 	for f in follow_requests:
-		content += "%s  %s %s 2000 mag = %.2f\n"%(
+		content += "%s	%s %s 2000 mag = %.2f\n"%(
 			f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),f.transient.CoordString()[1].replace(':',' '),float(f.transient.recent_mag()))
 		offdictlist, findername = view_utils.finder().finderchart_noview()
 		findernamelist += [findername]
 		for offdict in offdictlist:
-			content_offsets += "%s  %s %s 2000 mag = %.2f raoffset=%.2f decoffset=%.2f\n"%(
+			content_offsets += "%s	%s %s 2000 mag = %.2f raoffset=%.2f decoffset=%.2f\n"%(
 				offdict['id'].ljust(20),offdict['ra'],offdict['dec'],
 				float(offdict['mag']),float(offdict['ra_off']),float(offdict['dec_off']))
 		
@@ -391,6 +445,11 @@ def download_targets_and_finders(request, telescope, obs_date):
 def transient_detail(request, slug):
 
 	transient = Transient.objects.filter(slug=slug)
+	alternate_transient = AlternateTransientNames.objects.filter(slug=slug)
+	if len(alternate_transient) and not len(transient):
+		transient = Transient.objects.filter(name=alternate_transient[0].transient.name).select_related()
+		return redirect('/transient_detail/%s/'%transient[0].slug)
+		#reverse_lazy('transient_detail')
 	logs = Log.objects.filter(transient=transient[0].id)
 
 	obs = None
@@ -420,9 +479,9 @@ def transient_detail(request, slug):
 		transient_comment_form = TransientCommentForm()
 
 		# Transient tag
-		all_colors = WebAppColor.objects.all()
-		all_transient_tags = TransientTag.objects.all()
-		assigned_transient_tags = transient_obj.tags.all()
+		all_colors = WebAppColor.objects.all().select_related()
+		all_transient_tags = TransientTag.objects.all().select_related()
+		assigned_transient_tags = transient_obj.tags.all().select_related()
 
 		# GW Candidate?
 		gwcand,gwimages = None,None
@@ -433,7 +492,7 @@ def transient_detail(request, slug):
 					gwimages = GWCandidateImage.objects.filter(gw_candidate__name = gwcand[0].name)
 
 		# Get associated Observations
-		followups = TransientFollowup.objects.filter(transient__pk=transient_id)
+		followups = TransientFollowup.objects.filter(transient__pk=transient_id).select_related()
 		if followups:
 			for i in range(len(followups)):
 				followups[i].observation_set = TransientObservationTask.objects.filter(followup=followups[i].id)
@@ -447,7 +506,7 @@ def transient_detail(request, slug):
 		else:
 			followups = None
 
-		hostdata = Host.objects.filter(pk=transient_obj.host_id)
+		hostdata = Host.objects.filter(pk=transient_obj.host_id).select_related()
 		if hostdata:
 			hostphotdata = view_utils.get_recent_phot_for_host(request.user, host_id=hostdata[0].id)
 			transient_obj.hostdata = hostdata[0]
@@ -458,7 +517,7 @@ def transient_detail(request, slug):
 
 		lastphotdata = view_utils.get_recent_phot_for_transient(request.user, transient_id=transient_id)
 		firstphotdata = view_utils.get_disc_mag_for_transient(request.user, transient_id=transient_id)
-		allphotdata = view_utils.get_all_phot_for_transient(request.user, transient_id)
+		allphotdata = view_utils.get_all_phot_for_transient(request.user, transient_id).select_related()
 		#import pdb
 		#pdb.set_trace()
 
@@ -480,10 +539,10 @@ def transient_detail(request, slug):
 		
 		context = {
 			'transient':transient_obj,
-			'followups':followups,
+			'followups':followups.select_related(),
 			# 'telescope_list': tellist,
 			'observing_nights': obsnights,
-			'too_resource_list': too_resources,
+			'too_resource_list': too_resources.select_related(),
 			'nowtime':date.strftime(date_format),
 			'transient_followup_form': transient_followup_form,
 			'transient_observation_task_form': transient_observation_task_form,
@@ -614,8 +673,8 @@ def download_photometry(request, slug):
 			content += "# %s: %s\n"%(k.upper(),data[transient[0].name]['transient'][0]['fields'][k])
 			
 	content += "\n"
-	content += "VARLIST:  MJD        FLT  FLUXCAL   FLUXCALERR    MAG     MAGERR     TELESCOPE     INSTRUMENT\n"
-	linefmt =  "OBS:      %.3f  %s  %.3f  %.3f  %.3f  %.3f  %s  %s\n"
+	content += "VARLIST:  MJD		 FLT  FLUXCAL	FLUXCALERR	  MAG	  MAGERR	 TELESCOPE	   INSTRUMENT\n"
+	linefmt =  "OBS:	  %.3f	%s	%.3f  %.3f	%.3f  %.3f	%s	%s\n"
 
 	
 	# Get photometry by user & transient
