@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>YSE</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<!--[if lte IE 8]><script src="assets/js/ie/html5shiv.js"></script><![endif]-->
+		<link rel="stylesheet" href="{% static 'YSE_App/assets/css/main.css' %}" />
+		<!--[if lte IE 8]><link rel="stylesheet" href="assets/css/ie8.css" /><![endif]-->
+		<!--[if lte IE 9]><link rel="stylesheet" href="assets/css/ie9.css" /><![endif]-->
+			<meta charset="utf-8">
+
+			<link rel="shortcut icon" type="image/png" href="{%  static 'YSE_App/favicon.ico' %}"/>
+	<!-- Bootstrap 3.3.7 -->
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/font-awesome/css/font-awesome.min.css' %}">
+	<!-- Ionicons -->
+	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/Ionicons/css/ionicons.min.css' %}">
+	<!-- DataTables -->
+	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
+	<!-- Theme style -->
+	<link rel="stylesheet" href="{% static 'YSE_App/dist/css/AdminLTE.min.css' %}">
+	<!-- AdminLTE Skins. Choose a skin from the css/skins
+			 folder instead of downloading all of them to reduce the load. -->
+	<link rel="stylesheet" href="{% static 'YSE_App/dist/css/skins/_all-skins.min.css' %}">
+	<!-- Morris chart -->
+	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/morris.js/morris.css' %}">
+	<!-- jvectormap -->
+	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/jvectormap/jquery-jvectormap.css' %}">
+	<!-- Date Picker -->
+	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css' %}">
+	<!-- Daterange picker -->
+	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.css' %}">
+	<!-- bootstrap wysihtml5 - text editor -->
+	<link rel="stylesheet" href="{% static 'YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css' %}">
+	<!-- Google Font -->
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic">
+
+	<!-- Custom Styles -->
+	{% block styles %}
+	{% endblock %}
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>YSE</title>
+	<!-- Tell the browser to be responsive to screen width -->
+
+	</head>
+	<!--<body>-->
+	<body class="hold-transition sidebar-mini">
+<!-- Site wrapper -->
+		<!--<div class="wrapper">-->
+
+			<aside class="main-sidebar">
+				<!-- sidebar: style can be found in sidebar.less -->
+				<section class="sidebar">
+					<!-- sidebar menu: : style can be found in sidebar.less -->
+					<ul class="sidebar-menu" data-widget="tree">
+						<li><a href="{% url 'survey' %}"><i class="fa fa-binoculars"></i> <span>The Survey</span></a></li>
+						<li><a href="{% url 'news' %}"><i class="fa fa-newspaper-o"></i> <span>News and Results</span></a></li>
+						<li><a href="{% url 'team' %}"><i class="fa fa-id-card"></i> <span>Our Team</span></a></li>
+						<li><a href="{% url 'contact' %}"><i class="fa fa-address-book"></i> <span>Contact Us</span></a></li>
+						<!--<li><a href="{% url 'followup' %}"><i class="fa fa-atom-o"></i> <span>For Scientists</span></a></li>-->
+						<li><a href="{% url 'dashboard' %}"><i class="fa fa-users"></i> <span>For Team Members</span></a></li>
+					</ul>
+				</section>
+			<!-- /.sidebar -->
+			</aside>
+
+	<div class="content-wrapper" style="background-color:rgba(0, 0, 0, 0.5);">
+
+		<!-- Content Header (Page header) -->
+		<section class="content-header">
+				{% block content_header %}
+				{% endblock %}
+		</section>
+
+		<!-- Main content -->
+		<section class="content">
+				{% block content %}
+				{% endblock %}
+
+		</section>
+		
+	</div>
+	<!-- /.content-wrapper -->
+
+	<footer class="main-footer" style="background-color:black; color:white">
+		<strong>Site By:</strong> David Jones, Dave Coulter
+		<div class="pull-right hidden-xs">
+			<b>Template Version</b> 2.4.0
+		</div>
+		<strong>Template Copyright &copy; 2014-2016 <a href="https://adminlte.io">Almsaeed Studio</a>.</strong> All rights
+		reserved.
+	</footer>
+
+			<!--<div class="content-wrapper" id="main">
+				<section class="content">
+					<header id="header">
+						<h1>YSE</h1>
+						<p>The Young Supernova Experiment (YSE) will survey ∼1500 deg<sup>2</sup> of equatorial sky on a 3-day cadence.</p>
+					</header>
+				</section>
+			</div>-->
+		<!--</div>-->
+<script src="{% static 'YSE_App/bower_components/jquery/dist/jquery.min.js' %}"></script>
+<!-- jQuery UI 1.11.4 -->
+<script src="{% static 'YSE_App/bower_components/jquery-ui/jquery-ui.min.js' %}"></script>
+<!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+<script>
+	$.widget.bridge('uibutton', $.ui.button);
+</script>
+<!-- Bootstrap 3.3.7 -->
+<script src="{% static 'YSE_App/bower_components/bootstrap/dist/js/bootstrap.min.js' %}"></script>
+<!-- Morris.js charts -->
+<script src="{% static 'YSE_App/bower_components/raphael/raphael.min.js' %}"></script>
+<script src="{% static 'YSE_App/bower_components/morris.js/morris.min.js' %}"></script>
+<!-- Sparkline -->
+<script src="{% static 'YSE_App/bower_components/jquery-sparkline/dist/jquery.sparkline.min.js' %}"></script>
+<!-- jvectormap -->
+<script src="{% static 'YSE_App/plugins/jvectormap/jquery-jvectormap-1.2.2.min.js' %}"></script>
+<script src="{% static 'YSE_App/plugins/jvectormap/jquery-jvectormap-world-mill-en.js' %}"></script>
+<!-- jQuery Knob Chart -->
+<script src="{% static 'YSE_App/bower_components/jquery-knob/dist/jquery.knob.min.js' %}"></script>
+<!-- daterangepicker -->
+<script src="{% static 'YSE_App/bower_components/moment/min/moment.min.js' %}"></script>
+<script src="{% static 'YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.js' %}"></script>
+<!-- DataTables -->
+<!--<script src="{% static 'YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>-->
+<script src="{% static 'YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+<!-- datepicker -->
+<script src="{% static 'YSE_App/bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js' %}"></script>
+<!-- Bootstrap WYSIHTML5 -->
+<script src="{% static 'YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js' %}"></script>
+<!-- Slimscroll -->
+<script src="{% static 'YSE_App/bower_components/jquery-slimscroll/jquery.slimscroll.min.js' %}"></script>
+<!-- FastClick -->
+<script src="{% static 'YSE_App/bower_components/fastclick/lib/fastclick.js' %}"></script>
+<!-- AdminLTE App -->
+<script src="{% static 'YSE_App/dist/js/adminlte.min.js' %}"></script>
+
+<script src="{% static 'YSE_App/bower_components/jquery/datatables/title-numeric.js' %}"></script>
+<!-- AdminLTE dashboard demo (This is only for demo purposes) -->
+{#<script src="{% static 'YSE_App/dist/js/pages/dashboard.js' %}"></script>#}
+<!-- AdminLTE for demo purposes -->
+<script src="{% static 'YSE_App/dist/js/demo.js' %}"></script>
+			<script>
+
+				(function() {
+
+	// Vars.
+		var	$body = document.querySelector('body');
+
+	// Slideshow Background.
+		(function() {
+
+			// Settings.
+				var settings = {
+
+					// Images (in the format of 'url': 'alignment').
+						images: {
+							"{% static 'YSE_App/images/ps1Observatory-Sm.jpg' %}": 'center',
+							//"{% static 'YSE_App/images/Pan-STARRS_skySurvey_sm.jpg' %}": 'center',
+							// "{% static 'YSE_App/images/bg03.jpg' %}": 'center'
+						},
+
+				};
+
+			// Vars.
+			//	var	
+			//		$wrapper;
+
+			// Create BG wrapper, BGs.
+				//$wrapper = document.createElement('div');
+				//$wrapper.id = 'bg';
+				//$body.appendChild($wrapper);
+
+			// Create BG.
+				$bg = document.createElement('div');
+				$bg.id = 'bg';
+				$bg.style.backgroundImage = 'url({% static 'YSE_App/images/ps1Observatory-Sm.jpg' %})',//'url("' + k + '")';
+				$bg.style.backgroundPosition = 'center'; //settings.images[k];
+				$bg.style.backgroundSize = "cover";
+				$body.appendChild($bg);
+				//$wrapper.appendChild($bg);
+
+			// Main loop.
+				$bg.classList.add('visible');
+				$bg.classList.add('top');
+
+		})();
+
+})();
+			</script>
+	</body>
+</html>

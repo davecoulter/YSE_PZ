@@ -1,0 +1,618 @@
+{% load transient_detail_extras %}
+{% load el_pagination_tags %}
+{% load static %}
+{% load transient_detail_extras %}
+{% load widget_tweaks %}
+{% paginate transients %}
+{% for transient in transients %}
+
+  <div class="box" id="{{transient_cat.2}}">
+    <div class="box-header with-border">
+      <p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient }}</h3><span style="float:right;"><a href="{% url 'transient_detail' transient.slug %}" target="_blank"><h3 class="box-title">Detail View</h3></a></span></p>
+      <!--<h3 class="box-title">{{ transient }}</h3>-->
+    </div>
+    <div class="box-body">
+
+<div class="box-body">
+    <div class="row">
+    <div class="col-xs-12">
+  <div class="nav-tabs-custom">
+    <ul class="nav nav-tabs">
+      <li class="active"><a href="#summary_tab_{{transient.id}}" data-toggle="tab">Summary</a></li>
+      <li><a href="#photometry_tab_{{transient.id}}" data-toggle="tab">Photometry</a></li>
+      <li><a href="#followup_tab_{{transient.id}}" data-toggle="tab">Follow-up</a></li>
+      <li><a href="#tags_tab_{{transient.id}}" data-toggle="tab">Tags</a></li>
+    </ul>
+    <div class="tab-content">
+      <div class="active tab-pane" id="summary_tab_{{transient.id}}" style="height:800;overflow:visible;">
+        <div class="row">
+          <div class="col-xs-12">
+            <div class="box box-default">
+                <!--<strong style="float:left;margin-right:10px;">Status:</strong>-->
+                <h4 id="{{transient.id}}_status_name">Status: {{ transient.status }}</h4>
+                <div class="btn-group-horizontal">
+                  <button style="margin-bottom:5px;" type="button" transient_id="{{transient.id}}" data-status_id="{{ transient_status_follow.id }}" class="transientStatusChange btn btn-primary">{{ transient_status_follow.name }}</button>
+                  <button style="margin-bottom:5px;" type="button" transient_id="{{transient.id}}" data-status_id="{{ transient_status_followrequest.id }}" class="transientStatusChange btn btn-info">{{ transient_status_followrequest.name }}</button>
+                  <button style="margin-bottom:5px;" type="button" transient_id="{{transient.id}}" data-status_id="{{ transient_status_watch.id }}" class="transientStatusChange btn btn-warning">{{ transient_status_watch.name }}</button>
+                  <button style="margin-bottom:5px;" type="button" transient_id="{{transient.id}}" data-status_id="{{ transient_status_ignore.id }}" class="transientStatusChange btn btn-danger">{{ transient_status_ignore.name }}</button>
+                  <div class="btn-group">
+                    <button style="margin-bottom:5px;" type="button" transient_id="{{transient.id}}" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                      <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                      {% for status in all_transient_statuses %}
+                        <li><a data-status_id="{{ status.id }}" transient_id="{{transient.id}}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+        <div class="col-xs-12">
+          <div style="margin-top:0px;" class="form-group">
+            <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th>R.A./Dec</th>
+                <th>Disc. Date</th>
+                <th>Redshift</th>
+                <th>Spec. Class</th>
+                <th>Phot. Class</th>
+                <th>Galactic l/b</th>
+                <th>MW E(B-V)</th>
+                <th>Point Source Prob</th>
+                <th>Host</th>
+                <th>Host-<i>z</i></th>
+                <th>Host Sep</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  {{ transient.CoordString.0 }}&nbsp;&nbsp;&nbsp;{{ transient.CoordString.1 }}<br>
+                  <small>{{ transient.RADecimalString }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ transient.DecDecimalString }}</small>
+                </td>
+                <td>
+                  {% if first_magdate %}
+                    {{ first_magdate }}
+                  {% else %}
+                    Unknown
+                  {% endif %}
+                </td>
+                <td>
+                  {% if transient.redshift %}
+                    {{ transient.redshift }} 
+                    {% if transient.redshift_err %}
+                    +/- {{ transient.redshift_err }}
+                  {% endif %}
+                  {% else %}
+                    Unknown
+                  {% endif %}
+                </td>
+                <td>
+                  {% if transient.best_spec_class %}
+                    {{ transient.best_spec_class }}
+                  {% else %}
+                    Unknown
+                  {% endif %}
+                </td>
+                <td>{{ transient.photo_class }}</td>
+                <td>
+                  {{ transient.CoordString|galcoordsl }}&nbsp;&nbsp;&nbsp;&nbsp;{{ transient.CoordString|galcoordsb }} 
+                </td>
+                <td>
+                  {% if transient.mw_ebv %}
+                    {{ transient.mw_ebv }}
+                  {% if transient.mw_ebv >= 0.2 %}
+                    &nbsp;<b class="text-red">(warning!)</b>
+                  {% endif %}
+                    {% else %}
+                    Unknown
+                  {% endif %}
+                </td>
+                <td>
+                  {% if transient.point_source_probability %}
+                      {{ transient.point_source_probability }}
+                   {% else %}
+                      Unknown
+                  {% endif %}
+                 </td>
+                 <td>                         
+                  {% if transient.host %}
+                  {% if transient.host.name %}
+                      {{ transient.host.name }}
+                  {% endif %}
+                  {% else %}
+                    Unknown
+                  {% endif %}</td>
+                 <td>
+                  {% if transient.host %}
+                   {% if transient.host.redshift %}
+                   {{ transient.host.redshift }} 
+
+                  {% if transient.host.redshift_err %}
+                     +/- {{ transient.host.redshift_err }}
+                   {% endif %}
+                    {% endif %}
+                    {% else %}
+                      Unknown
+                    {% endif %}
+                 </td>
+                 <td>
+                   {% if transient.host %}
+                      {{ transient.Separation }} arcsec<br>
+                    {% else %}
+                      Unknown
+                    {% endif %}
+                 </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!--<div class="row">
+          <div class="col-xs-12">
+              <h3>Tags</h3>
+          </div>
+        </div>-->
+        <div class="row">
+          <div class="col-xs-3">
+          </div>
+        </div>
+          <div class="row">
+        <div class="container" id="centered">
+        <div class="row">
+            <div class="col-lg-4 col-md-4 col-xs-12">
+              <!--<div style="margin-top:0px;" class="form-group">-->
+                <div class="box box-primary">
+            <h3>Images</h3>
+            <div id="carousel-example-generic_{{transient.id}}" class="carousel slide" data-ride="carousel">
+              <ol class="carousel-indicators">
+                  <li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
+                  <li data-target="#carousel-example-generic" data-slide-to="1" class=""></li>
+                  <li data-target="#carousel-example-generic" data-slide-to="2" class=""></li>
+                  <li data-target="#carousel-example-generic" data-slide-to="3" class=""></li>
+              </ol>
+                <div class="carousel-inner">
+                  <div class="item active">
+                    <strong>SDSS Footprint</strong>
+                    <div style="width:400px;height:400px;">
+                      <a href="http://skyserver.sdss3.org/public/en/tools/chart/navi.aspx?opt=G&amp;ra={{ transient.ra }}&amp;dec={{ transient.dec }}&amp;scale=0.1981" target="_blank" title="Link to SDSS Navigate Tool" class="sdss-image-link">
+                      <img src="http://skyservice.pha.jhu.edu/DR14/ImgCutout/getjpeg.aspx?ra={{ transient.ra }}&dec={{ transient.dec }}&scale=0.5&width=200&height=200&opt=G&query=&Grid=on " style='width:400px' border="0">
+                      </a>
+                    </div>
+                  </div>
+                  <div class="item">
+                    <strong>DSS Footprint (Aladin)</strong>
+                    <div id="aladin-lite-div_{{transient.id}}" style="width:400px;height:400px;"></div>
+                  </div>
+                    <div class="item">
+                      <strong>Pan-STARRS Footprint</strong>
+                        <div id="ps1_image_{{transient.id}}" style="width:400px;height:400px;"></div>
+                    </div>
+                    <div class="item">
+                        <strong>Legacy Survey Image</strong>
+                      <div id="legacy_image_{{transient.id}}" style="width:400px;height:400px;"></div>
+                    </div>
+                    </div>
+                  <a class="left carousel-control" href="#carousel-example-generic_{{transient.id}}" data-slide="prev">
+                    <span class="fa fa-angle-left"></span>
+                  </a>
+                  <a class="right carousel-control" href="#carousel-example-generic_{{transient.id}}" data-slide="next">
+                    <span class="fa fa-angle-right"></span>
+                  </a>
+
+                  </div>
+                </div>
+              </div>
+
+    
+            <!-- Wrapping two boxes into a larger box -->
+            <div class="col-lg-8 col-md-8 col-xs-12">
+                <div class="row">
+                    <div class="col-lg-11 col-md-11 col-sm-11">
+                      <div class="box box-secondary">
+                        <h5>Photometry</h5>
+                      <div class="box-body" id="lcplot_{{transient.id}}" transient_id="{{transient.id}}" style="width:700px;height:200px;"></div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-11 col-md-11 col-sm-11">
+                        <div class="box box-secondary">
+            <h5>Spectra</h5>
+              {% if all_transient_spectra.count > 1 %}
+              &ensp;&nbsp;<div class="btn-group">
+              <button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                Select from {{ all_transient_spectra.count }} Spectra<span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                {% for spec in all_transient_spectra %}
+                  <li><a spec_plot-id="{{ spec.id }}" class="specPlotChange" href="#">{{ spec }} - {{ spec.instrument.name }}</a></li>
+                {% endfor %}
+              </ul>
+              </div>
+              {% endif %}
+              <div class="box-body" id="specplot_{{transient.id}}" style="width:700px;height:200px;"></div>
+              <p></p>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+    <div class="tab-pane" id="followup_tab_{{transient.id}}">
+      <div class="row">
+        <div class="col-xs-6">
+        </div>
+    </div>
+    <div class="tab-pane" id="photometry_tab_{{transient.id}}"></div>
+    <div class="tab-pane" id="tags_tab_{{transient.id}}"></div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+      <!-- main section -->
+
+    <!-- /.box-body -->
+    <div class="box-footer">
+    </div>
+    {% endfor %}
+    {% show_more %}
+
+{% block scripts %}
+  <script src="{% static 'YSE_App/bower_components/jquery/dist/jquery.min.js' %}"></script>
+  <script src="{% static 'YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+  <script src="{% static 'YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+  <script type="text/javascript" src="https://mpld3.github.io/js/d3.v3.min.js"></script>
+  <script type="text/javascript" src="https://mpld3.github.io/js/mpld3.v0.3.1.dev1.js"></script>
+  <script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-0.12.13.min.js"></script>
+  <script src="{% static 'YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js' %}"></script>
+<script type='text/javascript'>
+
+    $( document ).ready(function(){
+      {% for transient in transients %}
+        //var transient_id = $("#lcplot_{{transient.id}}").attr('transient_id')
+        var url_target = "{% url 'lightcurveplot' transient.id %}"; //.replace('-1', transient_id);
+        $.get(url_target).done(function(htmlresponse){
+          $("#lcplot_{{transient.id}}").html(htmlresponse);
+        });
+        $.get("{% url 'spectrumplot' transient.id %}").done(function(htmlresponse){
+          var rows = $("#specplot_{{transient.id}}");
+          $(rows).html(htmlresponse);
+        });
+        $.get("{% url 'get_ps1_image' transient.id %}").done(function(json){
+          var rows = $("#ps1_image_{{transient.id}}")
+          if (json["jpegurl"]) {
+          htmltext = "<a href=\"http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color\" class=\"ps1-thumb\" title=\"Link to PanSTARRS-1\" target=\"_blank\"><img src=\"" + json["jpegurl"] + "\" style='width:400px' alt=\"\" /></a>"
+          } else {
+            var htmltext = "<p class=\"text-muted\">Coordinates are outside the PS1 footprint</p>"
+          }
+        $(rows).append(htmltext)
+        });
+        $.get("{% url 'get_legacy_image' transient.id %}").done(function(json){
+          var rows = $("#legacy_image_{{transient.id}}")
+
+          var htmltext = "<a href="+json.fitsurl+"><img src=\"" + json.jpegurl + "\" style='width:400px' alt=\"\" /></a>"
+
+          $(rows).append(htmltext)
+        });
+        var aladin = A.aladin('#aladin-lite-div_{{transient.id}}', {survey: "P/DSS2/color", fov:0.017, target: "{{transient.ra}} {{transient.dec}}"});
+      {% endfor %}
+    });
+
+    $(function() {
+        //$('#follow_date_range').daterangepicker({ 
+        //  timePicker24Hour: true,
+        //  timePicker: true, 
+        //  timePickerIncrement: 1, 
+        //  {% if followup_initial_dates %}
+        //  startDate: '{{followup_initial_dates.0}}',
+        //  endDate:'{{followup_initial_dates.1}}',
+        //  {% endif %}
+        //  format: 'MM/DD/YYYY HH:mm', 
+        //  locale: {
+        //    format: 'MM/DD/YYYY HH:mm'
+        //  } 
+        //});
+
+        //fdr_picker = $('#follow_date_range').data('daterangepicker')
+        //$('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+        //$('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+
+        //$('#follow_date_range').on('apply.daterangepicker', function(ev, picker) {
+        //  $('#valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+        //  $('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+        //});
+
+        $('.add_task').on('click', function(event){
+        event.preventDefault();
+        var followup_id = $(this).attr('followup_id');
+        ToggleObservationTaskForm(followup_id,true)
+        });
+
+        $('.followup_edit').on('click', function(event){
+          event.preventDefault();
+          var followup_id = $(this).attr('followup_id');
+
+          //Set all form fields
+          //Expose form
+          alert("Edit: " + followup_id + "!");
+        });
+
+      // Submit post on submit
+      $('#add_transient_followup').on('submit', function(event){
+        event.preventDefault();
+        add_transient_followup();
+      });
+
+      function transientStatusChangeErr() {
+        alert("Transient Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
+      }
+
+      $('.transientStatusChange').on('click', function(event){
+        var status_id = $(this).attr('data-status_id')
+        var transient_id = $(this).attr('transient_id')
+        var url_target = "{% url 'transient-detail' -1 %}".replace('-1', transient_id);
+        var status_target = "{% url 'transientstatus-list' %}" + status_id + "/"
+
+        var base_url = window.location.protocol + "//" + window.location.hostname
+        var port = window.location.port
+        var api_url = base_url + url_target
+        var status_url = base_url + status_target
+
+        if (port != "") {
+          api_url = base_url + ":" + port + url_target
+          status_url = base_url + ":" + port + status_target
+        }
+
+        var putData = { "status": status_url }
+
+        $.ajax({
+          type: "PATCH",
+          url: api_url,
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+          data: putData,
+          success: function(data, textStatus, jqXHR) {
+            if (jqXHR.status == 200 && textStatus == "success") {
+
+              var tokens = data.status.split("/")
+              var status_name = tokens[tokens.length-2]
+              var button_id = "#"+transient_id+"_status_name"
+              $(button_id).text("Status: "+status_name)
+              
+              {#alert(textStatus)#}
+            } else {
+              transientStatusChangeErr()
+            }
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
+            transientStatusChangeErr()
+            {#alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));#}
+          }
+        });
+        event.preventDefault();
+      });
+
+      function add_transient_followup() {
+        // Grab the form, and associate it with the current transient detail page
+        var data = $('#add_transient_followup').serialize()
+        var transient_id = $('#transient_pk').val()
+        data = (data + "&transient=" + transient_id)
+
+        $.ajax({
+          url : "{% url 'add_transient_followup' %}", // the endpoint
+          type : "POST", // http method
+          data : data, // data sent with the post request
+
+          // handle a successful response
+          success : function(json) {
+            
+            // Required fields
+            var followup_pk = json.data["id"]
+            var status_id = json.data["status_id"]
+            var status_name = json.data["status_name"]
+            var valid_start = json.data["valid_start"]
+            var valid_stop = json.data["valid_stop"]
+            var modified_by = json.data["modified_by"]
+
+            if (!followup_pk || !status_id || !status_name ||
+              !valid_start || !valid_stop || !modified_by) {
+              alert("Required fields for `Transient Followup` not found! Please contact administrator. Exiting...")
+              throw "Missing required fields from ``AddTransientFollowupFormView"
+            }
+
+            var too_resource = json.data["too_resource"]
+            var classical_resource = json.data["classical_resource"]
+            var queued_resource = json.data["queued_resource"]
+
+            var spec_priority = json.data["spec_priority"] ? json.data["spec_priority"] : "None"
+            var phot_priority = json.data["phot_priority"] ? json.data["phot_priority"] : "None"
+            var offset_star_ra = json.data["offset_star_ra"] ? json.data["offset_star_ra"] : "None"
+            var offset_star_dec = json.data["offset_star_dec"] ? json.data["offset_star_dec"] : "None"
+            var offset_north = json.data["offset_north"] ? json.data["offset_north"] : "None"
+            var offset_east = json.data["offset_east"] ? json.data["offset_east"] : "None"
+
+            // Construct date strings
+            var start_date = new Date(valid_start)
+            var end_date = new Date(valid_stop)
+            var start_date_str = start_date.getUTCMonth() + "/" + start_date.getUTCDate() + "/" + start_date.getUTCFullYear()
+            var end_date_str = end_date.getUTCMonth() + "/" + end_date.getUTCDate() + "/" + end_date.getUTCFullYear()
+
+            // Construct associated resources
+            var associated_resouces = "";
+            if (too_resource) {
+              associated_resouces = (associated_resouces + too_resource + "<br>")
+            }
+            if (classical_resource) {
+              associated_resouces = (associated_resouces + classical_resource + "<br>")
+            }
+            if (queued_resource) {
+              associated_resouces = (associated_resouces + queued_resource)
+            }
+
+            // Construct HTML to append container
+            var followupHTML = "<div class='col-xs-12'>" +
+              "<div class='followupbox box box-primary'>" +
+              "<div class='box-header'>" + 
+              "<div class='col-xs-4'>" + 
+              "<h3 class='box-title'>Follow-up (id: " + followup_pk + ")</h3>" + 
+              "</div>" +
+              "<div class='col-xs-4'>" + 
+              "<h3 class='box-title'>Valid: " + start_date_str + " - " + end_date_str + "</h3>" + 
+              "</div>" +
+              "<div class='col-xs-4'>" + 
+              "<h3 style='float:right;padding-right:10px' class='box-title'>Last Modified: " + modified_by + "</h3>" + 
+              "</div>" +
+              "<div class='box-tools pull-right'>" +
+              "<button type='button' class='btn btn-box-tool' data-widget='collapse'><i class='fa fa-minus'></i></button>" +
+              "</div>" + 
+              "</div>" + 
+              "<div class='box-body'>" + 
+              "<table id='tbl_followup_" + followup_pk + "' class='table table-bordered table-striped'>" +
+              "<thead><tr><th>Spec. Priority</th><th>Phot. Priority</th><th>Offset Star<br>RA</th><th>Offset Star<br>DEC</th><th>Offset North</th><th>Offset East</th><th>Attached Resource</th><th>Status</th><th>Action</th></tr></thead>" + 
+              "<tbody><tr>" + 
+              "<td>" + spec_priority + "</td>" +
+              "<td>" + phot_priority + "</td>" +
+              "<td>" + offset_star_ra + "</td>" +
+              "<td>" + offset_star_dec + "</td>" +
+              "<td>" + offset_north + "</td>" +
+              "<td>" + offset_east + "</td>" +
+              "<td>" + associated_resouces + "</td>" + 
+              "<td>" + status_name + "</td>" + 
+              "<td><a target='_blank' href='{% url 'admin:YSE_App_transientfollowup_changelist' %}" + followup_pk + "/change/'>Edit</a></td>" + 
+              "</tr></tbody></table><hr>" + 
+              "<h4 class='box-title'>Observation Tasks</h4>" + 
+              "<table id='tbl_obs_followup_" + followup_pk + "' class='table table-bordered table-striped'>" +
+              "<thead><tr>" +
+              "<th>ID</th>" + 
+              "<th>Obs.</th>" + 
+              "<th>Tel.</th>" +
+              "<th>Inst.</th>" +
+              "<th>Desired Obs.<br>Date (UTC)</th>" +
+              "<th>Actual Obs.<br>Date (UTC)</th>" +
+              "<th>Exp.<br>Time</th>" +
+              "<th>Desc.</th>" +
+              "<th># of<br>Exposures</th>" +
+              "<th>Config. Name</th>" +
+              "<th>Config. Detail</th>" +
+              "<th>Status</th>" +
+              "<th>Last<br>Modified By</th>" +
+              "<th>Action</th>" +
+              "</tr></thead>" + 
+              "<tbody><tr><td colspan='13'></td><td><b><a class='add_task' followup_id='" + followup_pk + "' href='#'>Add</a></b></td></tr>" + 
+              "</tbody></table><br></div></div></div>"
+
+              var container_collection = $("#followup_container > div")
+              if (container_collection.length == 0) {
+                $("#followup_container").append(followupHTML)
+              } else {
+                $("#followup_container").prepend(followupHTML)
+              }
+
+              // Close & reset form box
+              $("#add_transient_followup_btn").trigger("click")
+              $('#add_transient_followup')[0].reset();
+
+              // Re-initialize the datepicker
+              $('#valid_start').val("")
+              $('#valid_stop').val("")
+              $('#follow_date_range').daterangepicker({ 
+                timePicker24Hour: true,
+                timePicker: true, 
+                timePickerIncrement: 1, 
+                format: 'MM/DD/YYYY HH:mm', 
+                locale: {
+                  format: 'MM/DD/YYYY HH:mm'
+                }
+              });
+
+              // Re-Initialize daterange
+              fdr_picker = $('#follow_date_range').data('daterangepicker')
+              $('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+              $('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+
+              // Re-wire widget behavior
+              $('.followupbox').boxWidget()
+              $('.add_task').on('click', function(event){
+                event.preventDefault();
+                var followup_id = $(this).attr('followup_id');
+                ToggleObservationTaskForm(followup_id,true)
+              });
+          },
+
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+            alert(xhr.status + ": " + xhr.responseText);
+          }
+        });
+      };
+
+      // This function gets cookie with a given name
+      function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+
+      var csrftoken = getCookie('csrftoken');
+
+      /*
+      The functions below will create a header with csrftoken
+      */
+
+      function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+      }
+
+      function sameOrigin(url) {
+        // test that a given url is a same-origin URL
+        // url could be relative or scheme relative or absolute
+        var host = document.location.host; // host + port
+        var protocol = document.location.protocol;
+        var sr_origin = '//' + host;
+        var origin = protocol + sr_origin;
+        // Allow absolute or scheme relative URLs to same origin
+        return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+        (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+          // or any other URL that isn't scheme relative or absolute i.e relative.
+          !(/^(\/\/|http:|https:).*/.test(url));
+        }
+
+        $.ajaxSetup({
+          beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
+            // Send the token to same-origin, relative URLs only.
+            // Send the token only if the method warrants CSRF protection
+            // Using the CSRFToken value acquired earlier
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+          }
+        }
+      });
+
+    });
+</script>
+{% endblock %}
