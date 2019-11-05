@@ -1,0 +1,5 @@
+python:
+  version: 3
+  extra_requirements:
+    - docs
+  requirements_file: null
