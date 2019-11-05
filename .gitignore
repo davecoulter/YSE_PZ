@@ -4,4 +4,4 @@ settings.ini
 YSE_PZ/static/
 .idea/
 __pycache__/
-
+*~
