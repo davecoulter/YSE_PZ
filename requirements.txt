@@ -75,3 +75,4 @@ django_cron
 django-el-pagination
 dustmaps
 sncosmo
+photutils

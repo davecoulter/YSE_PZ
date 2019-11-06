@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import requests
+import urllib
 import json
 import time
 from requests.auth import HTTPBasicAuth
@@ -9,6 +10,15 @@ import astropy.units as u
 from astropy.time import Time
 import numpy as np
 import coreapi
+from django_cron import CronJobBase, Schedule
+from django.conf import settings as djangoSettings
+import optparse
+import configparser
+import os
+import shutil
+from io import open as iopen
+
+psst_image_url = "https://star.pst.qub.ac.uk/sne/ps13pi/site_media/images/data/ps13pi"
 
 try:
   from dustmaps.sfd import SFDQuery
@@ -78,9 +88,48 @@ def get_ps_score(RA, DEC):
 
 	return output
 
-class QUB:
-	def __init__(self):
-		pass
+class QUB(CronJobBase):
+
+	RUN_EVERY_MINS = 0.1
+
+	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+	code = 'YSE_App.data_ingest.QUB_data.QUB'
+
+	def do(self):
+
+		usagestring = "TNS_Synopsis.py <options>"
+
+		tstart = time.time()
+
+		# read in the options from the param file and the command line
+		# some convoluted syntax here, making it so param file is not required
+
+		parser = self.add_options(usage=usagestring)
+		options,  args = parser.parse_args()
+
+		config = configparser.ConfigParser()
+		config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+		parser = self.add_options(usage=usagestring,config=config)
+		options,  args = parser.parse_args()
+		self.options = options
+		#tnsproc.hostmatchrad = options.hostmatchrad
+
+		if "hi": #try:
+			nsn = self.main()
+		else: #except Exception as e:
+			nsn = 0
+			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+			subject = "QUB Transient Upload Failure"
+			print("Sending error email")
+			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg += "Error : %s"
+			sendemail(from_addr, options.dbemail, subject,
+					  html_msg%(e),
+					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+
+		print('QUB -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
+
 
 	def add_options(self, parser=None, usage=None, config=None):
 		import optparse
@@ -136,6 +185,7 @@ class QUB:
 	def main(self):
 		transientdict,nsn = self.parse_data()
 		self.send_data(transientdict)
+		self.copy_stamps(transientdict)
 		return nsn
 		
 	def parse_data(self):
@@ -172,10 +222,17 @@ class QUB:
 			mw_ebv = float('%.3f'%(sfd(sc)*0.86))
 
 			iLC = (lc['ps1_designation'] == s['ps1_designation']) & (nowmjd - lc['mjd_obs'] < self.options.max_days)
+
 			tdict = {'name':s['ps1_designation'],
 					 'ra':s['ra_psf'],
 					 'dec':s['dec_psf'],
 					 'obs_group':'PSST',
+					 'postage_stamp_file':'%s/%s/%s.jpeg'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['target']),
+					 'postage_stamp_ref':'%s/%s/%s.jpeg'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['ref']),
+					 'postage_stamp_diff':'%s/%s/%s.jpeg'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['diff']),
+					 'postage_stamp_file_fits':'%s/%s/%s.fits'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['target']),
+					 'postage_stamp_ref_fits':'%s/%s/%s.fits'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['ref']),
+					 'postage_stamp_diff_fits':'%s/%s/%s.fits'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['diff']),
 					 'status':self.options.status,
 					 #'best_spec_class':s['context_classification'],
 					 #'host':s['host'],
@@ -228,130 +285,65 @@ class QUB:
 		#import pdb; pdb.set_trace()
 		return transientdict,nsn
 
-	#def getZTFPhotometry(self,transientdict,ra,dec):
-	#	nowjd = Time.now().jd
-	#	nowmjd = Time.now().mjd
-
-	#	ramin,ramax,decmin,decmax = getRADecBox(ra,dec,size=0.00042)
-		
-	#	antares_query = {
-	#		"query": {
-	#			"bool": {
-	#				"must": [
-	#					{
-	#						"range": {
-	#							"mjd": {
-	#								"gte": nowmjd-7,
-	#								"lte": nowmjd+1,
-	#							}
-	#						}
-	#					},
-	#					{
-	#						"range": {
-	#							"ra": {
-	#								"gte": ramin,
-	#								"lte": ramax,
-	#							}
-	#						}
-	#					},
-	#					{
-	#						"range": {
-	#							"dec": {
-	#								"gte": decmin,
-	#								"lte": decmax,
-	#							}
-	#						}
-	#					}
-    #
-	#				]
-    #
-    #				}
-#				}
-#			}
-#		query_test = {
-#			"query": {
-#				"bool": {
-#					"must": [
-#						{
-#							"range": {
-#								"ra": {
-#									"gte": 109.9,
-#									"lte": 110.1,
-#								}
-#							}
-#						},
-#						{
-#							"range": {
-#								"properties.ztf_rb": {
-#									"gte": 0.9,
-#								}
-#							}
-#						}
-#					]
-#				}
-#			}
-#		}
-#		
-#		from antares_client.search import search
-#		import time
-#		tstart = time.time()
-#		print('starting query')
-#		result_set = search(antares_query)
-#		print('query took %i seconds'%(time.time()-tstart))
-#		import pdb; pdb.set_trace()
-#		#antares = 
-#		
-#		ztfurl = '%s/?format=json&sort_value=jd&sort_order=desc&jd_gt=%i&limit=1000'%(
-#			self.options.ztfurl,nowjd-self.options.max_days)
-#		client = coreapi.Client()
-#		schema = client.get(ztfurl)
-#		photometrydict = {}
-#		if 'results' in schema.keys():
-#			import pdb; pdb.set_trace()
-#			for i in range(len(schema['results'])):
-#				
-#				sc = SkyCoord(schema['results'][i]['candidate']['ra'],schema['results'][i]['candidate']['dec'],unit=u.deg)
-#				sep = sc.separation(scall)
-#				if np.min(sep.arcsec) > 2: continue
-#				import pdb; pdb.set_trace()
-#				transient = obj[sep == np.min(sep)]
-#				if transient not in photometrydict.keys(): photometrydict[transient] = {}
-#				
-#				phot = schema['results'][i]['candidate']
-#				if phot['isdiffpos'] == 'f':
-#					continue
-#				PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
-#								  'band':'%s-ZTF'%phot['filter'],
-#								  'groups':[]}
-#				PhotUploadDict['mag'] = phot['magap']
-#				PhotUploadDict['mag_err'] = phot['sigmagap']
-#				PhotUploadDict['flux'] = None
-#				PhotUploadDict['flux_err'] = None
-#				PhotUploadDict['data_quality'] = 0
-#				PhotUploadDict['forced'] = None
-#				PhotUploadDict['flux_zero_point'] = None
-#				PhotUploadDict['discovery_point'] = 0
-#				PhotUploadDict['diffim'] = 1
-#
-#				photometrydict[transient]['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
-#
-#			for transient in photometrydict.keys():
-#				photometrydict = {'instrument':'ZTF-Cam',
-#								  'obs_group':'ZTF',
-#								  'photdata':{}}
-#				transientdict[transient]['transientphotometry']['ZTF'] = photometrydict
-#				for k in photometrydict[transient].keys():
-#					transientdict[transient]['transientphotometry']['ZTF']['photdata'][k] = photometrydict[transient][k]
-#			#transientdict[transient]['transientphotometry']['ZTF'] = photometrydict
-#			return transientdict
-#
-#		else: return None
-
 	def send_data(self,TransientUploadDict):
 
 		TransientUploadDict['noupdatestatus'] = True #self.options.noupdatestatus
 		self.UploadTransients(TransientUploadDict)
 
+	def copy_stamps(self,transientdict):
+		try:
+			if not djangoSettings.DEBUG: basedir = "%sYSE_App/images/stamps"%(djangoSettings.STATIC_ROOT)
+			else: basedir = "%s/YSE_App/static/YSE_App/images/stamps"%(djangoSettings.BASE_DIR)
+			for k in transientdict.keys():
+				if k == 'noupdatestatus': continue
+				if not os.path.exists("%s/%s"%(basedir,os.path.dirname(transientdict[k]['postage_stamp_ref']))):
+					os.makedirs("%s/%s"%(basedir,os.path.dirname(transientdict[k]['postage_stamp_ref'])))
+				if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_ref'])):
+					r = requests.get(
+						"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_ref'].split('/',1)[-1]),
+						auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+					with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_ref']), 'wb') as fout:
+						fout.write(r.content)
+
+				if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_diff'])):
+					r = requests.get(
+						"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_diff'].split('/',1)[-1]),
+						auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+					with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_diff']), 'wb') as fout:
+						fout.write(r.content)
+
+				if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_file'])):
+					r = requests.get(
+						"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_file'].split('/',1)[-1]),
+						auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+					with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_file']), 'wb') as fout:
+						fout.write(r.content)
+						
+				if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_ref_fits'])):
+					r = requests.get(
+						"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_ref_fits'].split('/',1)[-1]),
+						auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+					with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_ref_fits']), 'wb') as fout:
+						fout.write(r.content)
+
+				if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_diff_fits'])):
+					r = requests.get(
+						"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_diff_fits'].split('/',1)[-1]),
+						auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+					with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_diff_fits']), 'wb') as fout:
+						fout.write(r.content)
+
+				if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_file_fits'])):
+					r = requests.get(
+						"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_file_fits'].split('/',1)[-1]),
+						auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+					with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_file_fits']), 'wb') as fout:
+						fout.write(r.content)
+
+		except Exception as e:
+			print(e)
+			import pdb; pdb.set_trace()
+						
 	def UploadTransients(self,TransientUploadDict):
 
 		url = '%s'%self.options.dburl.replace('/api','/add_transient')
@@ -468,7 +460,7 @@ if __name__ == """__main__""":
 	options,  args = parser.parse_args()
 	qub.options = options
 	#tnsproc.hostmatchrad = options.hostmatchrad
-	
+
 	if "hi": #try:
 		nsn = qub.main()
 	else: #except Exception as e:

@@ -444,6 +444,42 @@
 										</div>
 										<p></p>
 									</div>
+																		<div class="box box-primary">
+										<div class="box-header">
+											<h3 class="box-title">Image Stamps</h3>
+										</div>
+																		              {% if transient.postage_stamp_file %}
+              <div class="row">
+                <div class="col-xs-4">
+                  {% static "" as baseUrl %}
+                  {% with "YSE_App/images/stamps/"|add:transient.postage_stamp_file as stampfile %}
+                  {% with "YSE_App/images/stamps/"|add:transient.postage_stamp_file_fits as stampfitsfile %}
+                  <a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
+                  {% endwith %}
+                  {% endwith %}
+                  <br><br>
+                </div>
+                <div class="col-xs-4">
+                  {% static "" as baseUrl %}
+                  {% with "YSE_App/images/stamps/"|add:transient.postage_stamp_ref as stampfile %}
+                  {% with "YSE_App/images/stamps/"|add:transient.postage_stamp_ref_fits as stampfitsfile %}
+                  <a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
+                  {% endwith %}
+                  {% endwith %}
+                  <br><br>
+                </div>
+                <div class="col-xs-4">
+                  {% static "" as baseUrl %}
+                  {% with "YSE_App/images/stamps/"|add:transient.postage_stamp_diff as stampfile %}
+                  {% with "YSE_App/images/stamps/"|add:transient.postage_stamp_diff_fits as stampfitsfile %}
+                  <a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
+                  {% endwith %}
+                  {% endwith %}
+                  <br><br>
+                </div>
+              </div>
+              {% endif %}
+          </div>
 								</div>
 								<div class="col-xs-12">
 									<div class="col-xs-6">

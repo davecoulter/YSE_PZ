@@ -53,6 +53,11 @@ class Transient(BaseModel):
 	abs_mag_peak = models.FloatField(null=True, blank=True)
 	abs_mag_peak_date = models.DateTimeField(null=True, blank=True)
 	postage_stamp_file = models.CharField(max_length=512, null=True, blank=True)
+	postage_stamp_ref = models.CharField(max_length=512, null=True, blank=True)
+	postage_stamp_diff = models.CharField(max_length=512, null=True, blank=True)
+	postage_stamp_file_fits = models.CharField(max_length=512, null=True, blank=True)
+	postage_stamp_ref_fits = models.CharField(max_length=512, null=True, blank=True)
+	postage_stamp_diff_fits = models.CharField(max_length=512, null=True, blank=True)
 	k2_validated = models.NullBooleanField(null=True, blank=True)
 	k2_msg = models.TextField(null=True, blank=True)
 	TNS_spec_class = models.CharField(max_length=64, null=True, blank=True) # To hold the TNS classiciation in case we don't have a matching enum
