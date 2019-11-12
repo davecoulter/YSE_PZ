@@ -1,0 +1,14 @@
+{% load widget_tweaks %}
+
+{% block content %}
+
+        <form id="remove_dashboard_query" action="{% url 'remove_dashboard_query' -1 %}" method="post" style="margin: 0; padding: 0;">
+        {{ title }}
+        {% csrf_token %}
+        {% for hidden_field in form.hidden_fields %}
+         {{ hidden_field }}
+        {% endfor %}
+          &nbsp;<button type="submit" class="fa fa-trash-o fa-border"></button>
+      </form>
+
+{% endblock %}

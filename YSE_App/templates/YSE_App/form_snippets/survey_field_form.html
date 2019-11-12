@@ -1,0 +1,102 @@
+{% load widget_tweaks %}
+
+{% block content %}
+	<div class="box box-primary box-solid"> <!--collapsed-box-->
+		<div class="box-header with-border">
+			<button id="add_survey_field_btn" type="button" class="btn btn-box-tool" data-widget="collapse" style="height: 30px;"><h3 class="box-title">Add Pan-STARRS Survey Field</h3></button>
+		</div>
+		<div class="box-body">
+			<form id="add_survey_field" action="{% url 'add_survey_field' %}" method="post">
+				{% csrf_token %}
+				{% for hidden_field in form.hidden_fields %}
+					{{ hidden_field }}
+				{% endfor %}
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>ID</label>
+						{% render_field form.field_id class+="form-control select2" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Coordinates</label>
+						{% render_field form.coord class+="form-control select2" style+="width: 100%;"%}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Cadence</label>
+						{% render_field form.cadence class+="form-control select2" style+="width: 100%;" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Instrument</label>
+						{% render_field form.instrument class+="form-control select2" style+="width: 100%;" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>ZTF ID</label>
+						{% render_field form.ztf_field_id class+="form-control select2" style+="width: 100%;" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Date Range (UT)</label>
+						<div class="input-group">
+							<div class="input-group-addon">
+								<i class="fa fa-clock-o"></i>
+							</div>
+							<input type="text" class="form-control pull-right" id="survey_field_date_range">
+						</div>
+						<input type="hidden" id="valid_start" name="valid_start">
+						<input type="hidden" id="valid_stop" name="valid_stop">
+					</div>
+				</div>
+				<!--<div class="col-xs-6">
+					<div class="form-group">
+						<label>Spec Priority</label>
+						{% render_field form.spec_priority class+="form-control" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Phot Priority</label>
+						{% render_field form.phot_priority class+="form-control" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Offset Star RA</label>
+						{% render_field form.offset_star_ra class+="form-control" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Offset Star DEC</label>
+						{% render_field form.offset_star_dec class+="form-control" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Offset North</label>
+						{% render_field form.offset_north class+="form-control" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Offset East</label>
+						{% render_field form.offset_east class+="form-control" %}
+					</div>
+				</div>-->
+				<div class="col-xs-12">
+					<div class="form-group">
+						<br>
+						<button type="submit" class="btn btn-block btn-primary btn-lg">Submit</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+{% endblock %}
