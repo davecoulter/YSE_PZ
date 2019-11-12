@@ -1,0 +1,299 @@
+{% extends 'YSE_App/base.html' %}
+{% load transient_detail_extras %}
+{% load dashboard_extras %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
+{% load static %}
+
+{% block content %}
+
+<!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>
+        YSE Observing Night, {{ obs_date }} (Hawaii)
+      </h1>
+      <ol class="breadcrumb">
+        <li><i class="fa fa-dashboard"></i> Home</li>
+      </ol>
+    </section>
+
+<script language="JavaScript">
+function toggle(source) {
+    checkboxes = document.getElementsByName('selection');
+    for(var i in checkboxes)
+        checkboxes[i].checked = source.checked;
+}
+</script>
+
+    <!-- Main content -->
+    <section class="content">
+
+<div class="row">
+    <div class="col-xs-7">
+      <div class="box">
+    <table id="telescope_tbl" class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Sunset (UT)</th>
+          <th>12 Deg. Twilight</th>  
+          <th>18 Deg. Twilight</th>
+          <th>18 Deg. Twilight</th>
+          <th>12 Deg. Twilight</th>
+          <th>Sunrise</th>
+         </tr>
+        </thead>
+      <tbody>
+        <tr>
+          <td>{{ sunriseset.0 }}</td>
+          <td>{{ sunriseset.1 }}</td>
+          <td>{{ sunriseset.2 }}</td>
+          <td>{{ sunriseset.3 }}</td>
+          <td>{{ sunriseset.4 }}</td>
+          <td>{{ sunriseset.5 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    </div>
+</div>
+
+      <!-- Default box -->
+    <div class="box"> <!--id="{{followup_table.2}}">-->
+
+    <div class="row">
+      <div class="col-xs-6">
+        <!--<input type="hidden" id="survey_field" value=""/>-->
+        <div class="box-body">
+      <!--<form id="obs_table" action="" method="post">-->
+        {% render_table obs_table %}
+        <!--<button class="btn btn-primary red" type="submit" disabled>Delete</button>-->
+      <!--</form>-->
+      <div class="btn-group">
+        <button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+          Change Selected<span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+          {% for status in all_statuses %}
+          <li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" class="obsTaskStatusChange" href="#">{{ status.name }}</a></li>
+          {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    </div>
+    <div class="row">
+      <div class="col-xs-6">
+        <!--<input type="hidden" id="survey_field" value=""/>-->
+        {% include "YSE_App/form_snippets/survey_field_form.html" with form=survey_field_form %}
+      </div>
+    </div>
+
+    <!-- /.box-body -->
+    <div class="box-footer">
+    </div>
+  </div>
+    <!-- /.box-footer-->
+  
+  <!-- /.box -->
+    
+{% endblock %}
+
+
+{% block scripts %}
+<script src="{% static 'YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+<script type="text/javascript" src="https://mpld3.github.io/js/d3.v3.min.js"></script>
+<script type="text/javascript" src="https://mpld3.github.io/js/mpld3.v0.3.1.dev1.js"></script>
+<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-1.3.4.min.js"></script>
+<script src="{% static 'YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js' %}"></script>
+<script type='text/javascript'>
+{% if anchor %}
+$(document).ready(function(){
+    window.location = '#{{ anchor }}'
+});
+{% endif %}
+
+    $(function() {
+      $('#survey_field_date_range').daterangepicker({ 
+        timePicker24Hour: true,
+        timePicker: true, 
+        timePickerIncrement: 1, 
+        startDate: '{{obs_date_str}} {{sunriseset.1}}',
+        endDate:'{{obs_date_str}} {{sunriseset.1}}',
+        format: 'MM/DD/YYYY HH:mm', 
+        locale: {
+          format: 'MM/DD/YYYY HH:mm'
+        } 
+      });
+
+      // Initialize daterange
+      fdr_picker = $('#survey_field_date_range').data('daterangepicker')
+      $('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+      $('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+      $('#survey_field_date_range').on('apply.daterangepicker', function(ev, picker) {
+        $('#valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+        $('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+      });
+
+      function ChangeErr() {
+        alert("Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
+      }
+
+      $('.obsTaskStatusChange').on('click', function(event){
+        //checkboxes = document.getElementsByName('selection');
+        for(var i in checkboxes)
+         if (checkboxes[i].checked){
+        var status_id = $(this).attr('data-status_id')
+        var status_name_change = $(this).attr('data-status_name')
+        var obs_id = checkboxes[i].value
+        if (typeof obs_id !== 'undefined'){
+        var url_target = "{% url 'surveyobservationtask-detail' -1 %}".replace('-1', obs_id);
+        var status_target = "{% url 'taskstatus-list' %}" + status_id + "/"
+
+        var base_url = window.location.protocol + "//" + window.location.hostname
+        var port = window.location.port
+        var api_url = base_url + url_target
+        var status_url = base_url + status_target
+
+        if (port != "") {
+          api_url = base_url + ":" + port + url_target
+          status_url = base_url + ":" + port + status_target
+        }
+
+        var putData = { "status": status_url }
+
+            $.ajax({
+              type: "PATCH",
+              url: api_url,
+              csrfmiddlewaretoken: "{{ csrf_token }}",
+              data: putData,
+              success: function(data, textStatus, jqXHR) {
+               if (jqXHR.status == 200 && textStatus == "success") {
+
+                  var tokens = data.status.split("/")
+                  var status_name = tokens[tokens.length-2]
+                  //alert(data.status);
+                  for(var i in checkboxes)
+                   if (checkboxes[i].checked){
+                    var obs_id = checkboxes[i].value
+                    var box_id = '#'+obs_id+'_status'
+                    $(box_id).text(status_name_change)
+                    }  
+                  //alert(status_name_change)
+               } else {
+                 ChangeErr()
+               }
+              },
+              error: function(XMLHttpRequest, textStatus, errorThrown) {
+               ChangeErr()
+               //{#alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));#}
+              }
+
+           });
+          //}
+        }
+        }
+      });
+
+      // Submit post on submit
+      $('#add_survey_field').on('submit', function(event){
+        event.preventDefault();
+        add_survey_field();
+      });
+
+      function add_survey_field() {
+        // Grab the form, and associate it with the current transient detail page
+        var data = $('#add_survey_field').serialize()
+        //var transient_id = $('#transient_pk').val()
+        //data = (data + "&transient=" + transient_id)
+
+        $.ajax({
+          url : "{% url 'add_survey_field' %}", // the endpoint
+          type : "POST", // http method
+          data : data, // data sent with the post request
+
+          // handle a successful response
+          success : function(json) {
+            
+            // Required fields
+
+              // Re-initialize the datepicker
+              $('#valid_start').val("")
+              $('#valid_stop').val("")
+              $('#follow_date_range').daterangepicker({ 
+                timePicker24Hour: true,
+                timePicker: true, 
+                timePickerIncrement: 1, 
+                format: 'MM/DD/YYYY HH:mm', 
+                locale: {
+                  format: 'MM/DD/YYYY HH:mm'
+                }
+              });
+          },
+
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+            alert(xhr.status + ": " + xhr.responseText);
+          }
+          });
+        }
+
+      // This function gets cookie with a given name
+      function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+
+      var csrftoken = getCookie('csrftoken');
+
+      /*
+      The functions below will create a header with csrftoken
+      */
+
+      function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+      }
+
+      function sameOrigin(url) {
+        // test that a given url is a same-origin URL
+        // url could be relative or scheme relative or absolute
+        var host = document.location.host; // host + port
+        var protocol = document.location.protocol;
+        var sr_origin = '//' + host;
+        var origin = protocol + sr_origin;
+        // Allow absolute or scheme relative URLs to same origin
+        return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+        (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+          // or any other URL that isn't scheme relative or absolute i.e relative.
+          !(/^(\/\/|http:|https:).*/.test(url));
+        }
+
+        $.ajaxSetup({
+          beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
+            // Send the token to same-origin, relative URLs only.
+            // Send the token only if the method warrants CSRF protection
+            // Using the CSRFToken value acquired earlier
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+          }
+        }
+      });
+
+    });
+
+</script>
+{% endblock %}
+
