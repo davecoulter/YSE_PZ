@@ -6,9 +6,32 @@ from astroplan import Observer
 from astropy.time import Time
 import requests
 
+def coordstr_to_decimal(coord):
+	if ',' in coord:
+		ra,dec = coord.split(',')
+	elif ' ' in coord:
+		ra,dec = coord.split()
+	else:
+		raise RuntimeError('RA/Dec format not recognized')
+
+	try:
+		ra = float(ra); dec = float(dec)
+		return ra,dec
+	except:
+		if ':' in ra and ':' in dec:
+			sc = SkyCoord(ra,dec,unit=(u.hourangle,u.deg))
+			return sc.ra.degree,sc.dec.degree
+		else:
+			sc = SkyCoord(ra,dec)
+			return sc.ra.degree,sc.dec.degree
+
 def date_to_mjd(date):
 	time = Time(date,scale='utc')
 	return time.mjd
+
+def mjd_to_date(mjd):
+    time = Time(mjd,format='mjd',scale='utc')
+    return time.isot
 
 def getSeparation(ra1_decimal,dec1_decimal,
 				  ra2_decimal,dec2_decimal):

@@ -625,8 +625,9 @@ class processTNS():
 			
 			# Mark messages as "Seen"
 			result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')
-
-		nsn = self.GetAndUploadAllData(objs,ras,decs)
+		if len(objs):
+			nsn = self.GetAndUploadAllData(objs,ras,decs)
+		else: nsn = 0
 		return nsn
 
 	def GetAndUploadAllData(self,objs,ras,decs,doNED=True):
@@ -726,6 +727,7 @@ class processTNS():
 			TransientUploadDict[obj] = transientdict
 
 		TransientUploadDict['noupdatestatus'] = self.noupdatestatus
+		TransientUploadDict['TNS'] = True
 		self.UploadTransients(TransientUploadDict)
 
 		return(len(TransientUploadDict))

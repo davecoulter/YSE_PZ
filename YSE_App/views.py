@@ -31,13 +31,18 @@ import os
 from .data import PhotometryService, SpectraService, ObservingResourceService
 import json
 import time
+import dateutil.parser
+from astroplan import moon_illumination
+from astropy.time import Time
 
-from .table_utils import TransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter
+from .table_utils import TransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable
 import django_tables2 as tables
 from django_tables2 import RequestConfig
 from .basicauth import *
 from django.views.decorators.csrf import csrf_exempt
 from django.template import RequestContext
+
+from .common.utilities import date_to_mjd, mjd_to_date
 
 # Create your views here.
 
@@ -92,7 +97,7 @@ def dashboard(request):
 	newtransientfilter = TransientFilter(request.GET, queryset=new_transients,prefix='new')
 	new_table = NewTransientTable(newtransientfilter.qs,prefix='new')
 	RequestConfig(request, paginate={'per_page': 10}).configure(new_table)
-		
+
 	status_watch = TransientStatus.objects.filter(name='Watch').order_by('-modified_date')
 	if len(status_watch) == 1:
 		watch_transients = Transient.objects.filter(status=status_watch[0]).order_by('-disc_date')
@@ -348,6 +353,35 @@ def observing_calendar(request):
 	}
 	return render(request, 'YSE_App/observing_calendar.html', context)
 
+@login_required
+def yse_observing_calendar(request):
+
+	all_obs = SurveyObservationTask.objects.all().select_related()
+	all_dates,all_ztf_ids,all_filters = np.array([]),np.array([]),np.array([])
+	for obs in all_obs:
+		# dates, and rough time zone conversion
+		all_dates = np.append(all_dates,mjd_to_date(obs.mjd_requested-0.375))
+		all_ztf_ids = np.append(all_ztf_ids,obs.survey_field.ztf_field_id)
+		all_filters = np.append(all_filters,obs.requested_photometric_band.name)
+
+	colors = ['#dd4b39', 
+			  '#f39c12', 
+			  '#00c0ef']
+	dates = np.unique(all_dates)
+	obstuple = ()
+	for i,d in enumerate(dates):
+		ztf_ids = ','.join(np.unique(all_ztf_ids[all_dates == d]))
+		filters = ','.join(np.unique(all_filters[all_dates == d]))
+		obstuple += ((ztf_ids,filters,dateutil.parser.parse(d),
+					  '%i%%'%(moon_illumination(Time(d))*100),colors[i%len(colors)]),)
+	
+	context = {
+		'all_obs': obstuple,
+		#'telescope_colors': telescope_colors
+	}
+	return render(request, 'YSE_App/yse_observing_calendar.html', context)
+
+
 def observing_night(request, telescope, obs_date):
 
 	# get follow requests for telescope/date
@@ -387,6 +421,49 @@ def observing_night(request, telescope, obs_date):
 		'sunriseset':(sunset,night_start_12,night_start_18,night_end_18,night_end_12,sunrise)
 	}
 	return render(request, 'YSE_App/observing_night.html', context)
+
+def yse_observing_night(request, obs_date):
+
+	survey_field_form = SurveyFieldForm()
+	
+	# get follow requests for telescope/date
+	survey_obs = SurveyObservationTask.objects.filter(
+		mjd_requested__gte = date_to_mjd(obs_date)+0.375).\
+		filter(mjd_requested__lte = date_to_mjd(obs_date)+1.375).\
+		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
+	obs_table = YSEObsNightTable(survey_obs,obs_date=obs_date)
+	
+	telescope = Telescope.objects.get(name='Pan-STARRS1')
+	location = EarthLocation.from_geodetic(
+		telescope.longitude*u.deg,telescope.latitude*u.deg,
+		telescope.elevation*u.m)
+	time = Time(str(obs_date).split('+')[0], format='iso')
+	tel = Observer(location=location, timezone="UTC")
+
+	sunset = tel.sun_set_time(time,which="previous").isot.split('T')[-1][:-7]
+	night_start_12 = tel.twilight_evening_nautical(time,which="previous").isot.split('T')[-1][:-7]
+	night_start_18 = tel.twilight_evening_astronomical(time,which="previous").isot.split('T')[-1][:-7]
+	night_end_18 = tel.twilight_morning_astronomical(time,which="previous").isot.split('T')[-1][:-7]
+	night_end_12 = tel.twilight_morning_nautical(time,which="previous").isot.split('T')[-1][:-7]
+	sunrise = tel.sun_rise_time(time,which="previous").isot.split('T')[-1][:-7]
+
+	if request.META['QUERY_STRING']:
+		anchor = request.META['QUERY_STRING'].split('-ex')[0]
+	else: anchor = ''
+	context = {
+		'survey_obs':survey_obs,
+		'all_statuses':TaskStatus.objects.all(),
+		'anchor':anchor,
+		'obs_date':obs_date,
+		'obs_table':obs_table,
+		'survey_field_form':survey_field_form,
+		'sunriseset':(sunset,night_start_12,night_start_18,night_end_18,night_end_12,sunrise)
+	}
+
+	context['obs_date_str'] = datetime.datetime(
+			int(obs_date.split('-')[0]),int(obs_date.split('-')[1]),int(obs_date.split('-')[2])+1).strftime('%m/%d/%Y')
+	return render(request, 'YSE_App/yse_observing_night.html', context)
+
 
 def download_target_list(request, telescope, obs_date):
 

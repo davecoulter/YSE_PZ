@@ -47,7 +47,8 @@ def add_transient(request):
 	# first bulk create new transients
 	for transientlistkey in transient_data.keys():
 		if transientlistkey == 'noupdatestatus': continue
-
+		if transientlistkey == 'TNS': continue
+		
 		transient = transient_data[transientlistkey]
 
 		transientkeys = transient.keys()
@@ -94,11 +95,36 @@ def add_transient(request):
 					Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
 					Q(disc_date__year=transient['disc_date'].split('-')[0]))
 				if len(dbtransient):
-					dbtransient = dbtransient[0]
+					#dbtransient = dbtransient[0]
 					obs_group = ObservationGroup.objects.get(name=transient['obs_group'])
-					AlternateTransientNames.objects.create(
-						transient=dbtransient,obs_group=obs_group,name=transient['name'],
-						created_by_id=user.id,modified_by_id=user.id)
+					if 'TNS' in transient_data.keys() and transient_data['TNS']:
+						AlternateTransientNames.objects.create(
+							transient=dbtransient[0],obs_group=obs_group,name=dbtransient[0].name,
+							created_by_id=user.id,modified_by_id=user.id)
+						dbtransient[0].name = transient['name']
+						dbtransient[0].slug = transient['name']
+						dbtransient[0].save()
+					else:
+						AlternateTransientNames.objects.create(
+							transient=dbtransient[0],obs_group=obs_group,name=transient['name'],
+							created_by_id=user.id,modified_by_id=user.id)
+						#transient['name'] = dbtransient[0].name
+
+					if 'noupdatestatus' in transient_data.keys() and not transient_data['noupdatestatus']:
+						if dbtransient[0].status.name == 'Ignore':
+							dbtransient[0].status = TransientStatus.objects.filter(name='New')[0]
+						else: transientdict['status'] = dbtransient[0].status
+					else: transientdict['status'] = dbtransient[0].status
+					if dbtransient[0].postage_stamp_file:
+						transientdict['postage_stamp_file'] = dbtransient[0].postage_stamp_file
+						transientdict['postage_stamp_ref'] = dbtransient[0].postage_stamp_ref
+						transientdict['postage_stamp_diff'] = dbtransient[0].postage_stamp_diff
+						transientdict['postage_stamp_file_fits'] = dbtransient[0].postage_stamp_file_fits
+						transientdict['postage_stamp_ref_fits'] = dbtransient[0].postage_stamp_ref_fits
+						transientdict['postage_stamp_diff_fits'] = dbtransient[0].postage_stamp_diff_fits
+
+					dbtransient.update(**transientdict)
+
 				else:
 					dbtransient = Transient(**transientdict)
 					transient_entries += [dbtransient]
@@ -108,6 +134,14 @@ def add_transient(request):
 					if dbtransient[0].status.name == 'Ignore': dbtransient[0].status = TransientStatus.objects.filter(name='New')[0]
 					else: transientdict['status'] = dbtransient[0].status
 				else: transientdict['status'] = dbtransient[0].status
+				if dbtransient[0].postage_stamp_file:
+					transientdict['postage_stamp_file'] = dbtransient[0].postage_stamp_file
+					transientdict['postage_stamp_ref'] = dbtransient[0].postage_stamp_ref
+					transientdict['postage_stamp_diff'] = dbtransient[0].postage_stamp_diff
+					transientdict['postage_stamp_file_fits'] = dbtransient[0].postage_stamp_file_fits
+					transientdict['postage_stamp_ref_fits'] = dbtransient[0].postage_stamp_ref_fits
+					transientdict['postage_stamp_diff_fits'] = dbtransient[0].postage_stamp_diff_fits
+
 				dbtransient.update(**transientdict)
 				dbtransient = dbtransient[0]
 

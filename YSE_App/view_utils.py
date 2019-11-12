@@ -204,7 +204,7 @@ class finder(TemplateView):
 		basedir = "%sYSE_App/images/findercharts"%(djangoSettings.STATIC_ROOT)
 		if not os.path.exists(basedir):
 			os.makedirs(basedir)
-		
+
 		outputOffsetFileName = '%s/%s/%s.offsetstars.txt'%(
 			basedir,transient.name,transient.name)
 		outputFinderFileName = '%s/%s/%s.finder.png'%(

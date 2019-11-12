@@ -1,4 +1,4 @@
-numpy==1.14.5
+numpy
 asn1crypto==0.24.0
 astroplan==0.4
 astropy
@@ -16,7 +16,7 @@ coreschema==0.0.4
 cryptography==2.1.4
 cycler==0.10.0
 Django==2.0.4
-django-autoslug==1.9.6
+django-autoslug
 django-bootstrap3==10.0.1
 django-filter==1.1.0
 django-filters==0.2.1
@@ -75,3 +75,4 @@ django_cron
 django-el-pagination
 dustmaps
 sncosmo
+photutils

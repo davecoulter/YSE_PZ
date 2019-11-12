@@ -69,6 +69,25 @@ class TransientFollowupForm(ModelForm):
 			'offset_east',
 			'transient']
 
+class SurveyFieldForm(ModelForm):
+
+	valid_start = forms.DateTimeField()
+	valid_stop = forms.DateTimeField()
+	coord = forms.CharField()
+	qs = Instrument.objects.filter(name__startswith = 'GPC').select_related()
+	if len(qs):
+		instrument = forms.ModelChoiceField(
+			queryset=qs,
+			initial=qs[0],
+			required=False)
+	
+	class Meta:
+		model = SurveyField
+		fields = ['field_id',
+				  'cadence',
+				  'ztf_field_id',
+				  'instrument']
+		
 		
 class TransientCommentForm(ModelForm):
 	class Meta:

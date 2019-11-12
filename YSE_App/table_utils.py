@@ -410,6 +410,100 @@ class ObsNightFollowupTable(tables.Table):
 			"order": [[ 2, "desc" ]],
 		}
 
+
+class YSEObsNightTable(tables.Table):
+
+	field_id = tables.Column(accessor="survey_field.field_id",verbose_name="Field ID",order_by="survey_field.field_id")
+	ra_string = tables.Column(accessor='survey_field.CoordString.0',
+							  verbose_name='RA',orderable=True,order_by='survey_field.ra_dec')
+	dec_string = tables.Column(accessor='survey_field.CoordString.1',
+							   verbose_name='DEC',orderable=True,order_by='survey_field.dec_cen')
+	band = tables.Column(accessor='requested_photometric_band.name',
+						 verbose_name='band',orderable=True)
+
+	rise_time = tables.Column(verbose_name='Rise Time (UT)',orderable=False,accessor='survey_field.CoordString')
+	set_time = tables.Column(verbose_name='Set Time (UT)',orderable=False,accessor='survey_field.CoordString')
+	moon_angle = tables.Column(verbose_name='Moon Angle',orderable=False,accessor='survey_field.CoordString')
+	selection = tables.CheckBoxColumn(accessor="pk",attrs = { "th__input": 
+															  {"onclick": "toggle(this)"}})
+	status_str = tables.TemplateColumn("<span id='{{record.id}}_status'>{{record.status.name}}</span>",verbose_name="status")
+	#status_string = tables.TemplateColumn("""<div class="btn-group">
+#<button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
+	#										<span id="{{ record.id }}_status_name" class="dropbtn">{{ record.status }}</span>
+	#									</button>
+	#									<ul class="dropdown-menu">
+	#										{% for status in all_followup_statuses %}
+    #												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+	#										{% endfor %}
+	#									</ul>
+#</div>""",
+	#									  verbose_name='Followup Status',orderable=True,order_by='status')
+
+		
+	def __init__(self,*args, obs_date=None, **kwargs):
+		super().__init__(*args, **kwargs)
+		telescope = Telescope.objects.get(name='Pan-STARRS1')
+		
+		#self.base_columns['transient.status'].verbose_name = 'Transient Status'
+		#self.base_columns['status'].verbose_name = 'Followup Status'
+
+		location = EarthLocation.from_geodetic(
+			telescope.longitude*u.deg,telescope.latitude*u.deg,
+			telescope.elevation*u.m)
+		self.tel = Observer(location=location, timezone="UTC")
+		self.tme = Time(str(obs_date).split()[0])
+		
+	def render_rise_time(self, value):
+		sc = SkyCoord('%s %s'%(value[0],value[1]),unit=(u.hourangle,u.deg))
+		target_rise_time = self.tel.target_rise_time(self.tme,sc,horizon=18*u.deg,which="previous")
+
+		if target_rise_time:
+			risetime = target_rise_time.isot.split('T')[-1].split('.')[0]
+		else:
+			risetime = None
+		
+		return risetime
+
+	def render_set_time(self, value):
+		sc = SkyCoord('%s %s'%(value[0],value[1]),unit=(u.hourangle,u.deg))
+		target_set_time = self.tel.target_set_time(self.tme,sc,horizon=18*u.deg,which="previous")
+
+		if target_set_time:
+			settime = target_set_time.isot.split('T')[-1].split('.')[0]
+		else:
+			settime = None
+		
+		return settime
+
+	def render_moon_angle(self, value):
+		mooncoord = get_moon(self.tme)
+		sc = SkyCoord('%s %s'%(value[0],value[1]),unit=(u.hourangle,u.deg))
+		return('%.1f'%sc.separation(mooncoord).deg)
+	
+	def render_airmass(self, value):
+		from astroplan.plots import plot_airmass
+			
+	class Meta:
+		model = SurveyObservationTask
+		fields = ('field_id','ra_string','dec_string','rise_time','set_time','moon_angle')#,'transient.status')
+		template_name='YSE_App/django-tables2/bootstrap.html'
+		attrs = {
+			'th' : {
+				'_ordering': {
+					'orderable': 'sortable', # Instead of `orderable`
+					'ascending': 'ascend',	 # Instead of `asc`
+					'descending': 'descend'	 # Instead of `desc`
+				}
+			},
+			"columnDefs": [
+				{"type":"title-numeric","targets":1},
+				{"type":"title-numeric","targets":2},
+			],
+			'class': 'table table-bordered table-hover',
+			"order": [[ 2, "desc" ]],
+		}
+
+
 		
 def annotate_with_disc_mag(qs):
 

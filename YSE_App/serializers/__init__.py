@@ -19,3 +19,4 @@ from YSE_App.serializers.user_serializers import *
 from YSE_App.serializers.group_serializers import *
 from YSE_App.serializers.tag_serializers import *
 from YSE_App.serializers.gw_serializers import *
+from YSE_App.serializers.surveyfield_serializers import *
