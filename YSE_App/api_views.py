@@ -37,6 +37,22 @@ class FollowupStatusViewSet(viewsets.ReadOnlyModelViewSet):
 	serializer_class = FollowupStatusSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+### `SurveyField ViewSets` ###
+class SurveyFieldViewSet(viewsets.ReadOnlyModelViewSet):
+	queryset = SurveyField.objects.all()
+	serializer_class = SurveyFieldSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
+class SurveyObservationTaskViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = SurveyObservationTask.objects.all()
+	serializer_class = SurveyObservationTaskSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
+class SurveyObservationViewSet(viewsets.ReadOnlyModelViewSet):
+	queryset = SurveyObservation.objects.all()
+	serializer_class = SurveyObservationSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+	
 class TaskStatusViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = TaskStatus.objects.all()
 	serializer_class = TaskStatusSerializer
@@ -113,7 +129,7 @@ class HostFollowupViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = HostFollowup.objects.all()
 	serializer_class = HostFollowupSerializer
 	permission_classes = (permissions.IsAuthenticated,)
-
+	
 ### `Host` ViewSets ###
 class HostViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = Host.objects.all()

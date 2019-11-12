@@ -39,8 +39,11 @@ urlpatterns = [
     url(r'^transient_summary/(?P<status_name>[a-zA-Z0-9_-]+)/$', views.transient_summary, name='transient_summary'),
 
     url(r'^observing_calendar/$', views.observing_calendar, name='observing_calendar'),
+    url(r'^yse_observing_calendar/$', views.yse_observing_calendar, name='yse_observing_calendar'),
     url(r'^observing_night/(?P<telescope>.*)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.observing_night, name='observing_night'),
-
+    #url(r'^survey_observing_calendar/$', views.survey_observing_calendar, name='survey_observing_calendar'),
+    url(r'^yse_observing_night/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.yse_observing_night, name='yse_observing_night'),
+	
 	url(r'^get_transient/(?P<slug>[a-zA-Z0-9_-]+)/$', data_utils.get_transient, name='get_transient'),
 	url(r'^add_transient/', data_utils.add_transient, name='add_transient'),
 	url(r'^add_gw_candidate/', data_utils.add_gw_candidate, name='add_gw_candidate'),
@@ -66,6 +69,7 @@ urlpatterns = [
 	
 	url(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
     url(r'^add_transient_observation_task/', AddTransientObservationTaskFormView.as_view(), name='add_transient_observation_task'),
+	url(r'^add_survey_field/', AddSurveyFieldFormView.as_view(), name='add_survey_field'),
     url(r'^add_transient_comment/', AddTransientCommentFormView.as_view(), name='add_transient_comment'),
 	url(r'^add_dashboard_query/', AddDashboardQueryFormView.as_view(), name='add_dashboard_query'),
 	url(r'^remove_dashboard_query/(?P<pk>[0-9_-]+)/', RemoveDashboardQueryFormView.as_view(), name='remove_dashboard_query'),
@@ -133,6 +137,10 @@ router.register(r'transientobservationtasks', api_views.TransientObservationTask
 router.register(r'hostobservationtasks', api_views.HostObservationTaskViewSet)
 router.register(r'observatories', api_views.ObservatoryViewSet)
 router.register(r'oncalldates', api_views.OnCallDateViewSet)
+
+router.register(r'surveyfields', api_views.SurveyFieldViewSet)
+router.register(r'surveyobservationtasks', api_views.SurveyObservationTaskViewSet)
+router.register(r'surveyobservations', api_views.SurveyObservationViewSet)
 
 router.register(r'transientphotometry', api_views.TransientPhotometryViewSet, base_name='transientphotometry')
 router.register(r'hostphotometry', api_views.HostPhotometryViewSet, base_name='hostphotometry')

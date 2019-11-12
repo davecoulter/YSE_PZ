@@ -10,6 +10,8 @@ import requests
 import sys
 from datetime import datetime
 import re
+from astroplan import moon_illumination
+from astropy.time import Time
 
 from .models import *
 # from .forms import *
@@ -21,6 +23,7 @@ from .forms import *
 from django.http import JsonResponse
 from django.forms.models import model_to_dict
 from .common import alert
+from .common.utilities import date_to_mjd, coordstr_to_decimal
 import numpy as np
 
 class AddTransientFollowupFormView(FormView):
@@ -137,6 +140,90 @@ class AddTransientObservationTaskFormView(FormView):
 		else:
 			return response
 
+class AddSurveyFieldFormView(FormView):
+	form_class = SurveyFieldForm
+	template_name = 'YSE_App/form_snippets/survey_field_form.html'
+	success_url = '/form-success/'
+
+	def form_invalid(self, form):
+		response = super(AddTransientFollowupFormView, self).form_invalid(form)
+		if self.request.is_ajax():
+			return JsonResponse(form.errors, status=400)
+		else:
+			return response
+
+	def form_valid(self, form):
+		response = super(AddSurveyFieldFormView, self).form_valid(form)
+		if self.request.is_ajax():
+			instance = form.save(commit=False)
+			instance.created_by = self.request.user
+			instance.modified_by = self.request.user
+			instance.obs_group = ObservationGroup.objects.get(name='YSE')
+			instance.width_deg = 3.3
+			instance.height_deg = 3.3
+			instance.first_mjd = date_to_mjd(form.cleaned_data['valid_start'])
+			instance.last_mjd = date_to_mjd(form.cleaned_data['valid_stop'])
+			instance.ra_cen,instance.dec_cen = coordstr_to_decimal(
+				form.cleaned_data['coord'])
+			
+			instance.save() #update_fields=['created_by','modified_by']
+
+			print(form.cleaned_data)
+
+			# clear out the conflicting SurveyObservationTasks
+			# danger!
+			obs_requests = SurveyObservationTask.objects.\
+						   filter(survey_field__id=instance.field_id).\
+						   filter(mjd_requested__range=(instance.first_mjd,
+														instance.last_mjd))
+			obs_requests.delete()
+			
+			# use the SurveyField to populate the SurveyObservationTask list
+			# rules: follow cad
+			#import pdb; pdb.set_trace()
+			mjd = np.arange(instance.first_mjd,instance.last_mjd,instance.cadence)
+			for i,m in enumerate(mjd):
+				t = Time(m,format='mjd')
+				illum = moon_illumination(t)
+				if illum < 0.33:
+					if i % 2: band1name,band2name = 'g','r'
+					else: band1name,band2name = 'g','i'
+				elif illum < 0.66:
+					if i % 2: band1name,band2name = 'g','i'
+					else: band1name,band2name = 'g','z'
+				else:
+					if i % 2: band1name,band2name = 'r','i'
+					else: band1name,band2name = 'r','z'
+					
+				band1 = PhotometricBand.objects.filter(
+					name=band1name,instrument__name=instance.instrument.name)[0]
+				band2 = PhotometricBand.objects.filter(
+					name=band2name,instrument__name=instance.instrument.name)[0]				
+				SurveyObservationTask.objects.create(
+					mjd_requested=m,
+					survey_field=instance,
+					status=TaskStatus.objects.get(name='Requested'),
+					requested_exposure_time=27,
+					requested_photometric_band=band1,
+					created_by=self.request.user,
+					modified_by=self.request.user)
+				SurveyObservationTask.objects.create(
+					mjd_requested=m,
+					survey_field=instance,
+					status=TaskStatus.objects.get(name='Requested'),
+					requested_exposure_time=27,
+					requested_photometric_band=band2,
+					created_by=self.request.user,
+					modified_by=self.request.user)
+			
+			# for key,value in form.cleaned_data.items():
+			data = {
+				'message': "Successfully submitted form data.",
+			}
+			return JsonResponse(data)
+		else:
+			return response
+			
 class AddTransientCommentFormView(FormView):
 	form_class = TransientCommentForm
 	template_name = 'simple.html'#YSE_App/form_snippets/transient_followup_form.html'

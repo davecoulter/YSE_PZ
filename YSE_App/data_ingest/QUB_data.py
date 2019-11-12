@@ -184,6 +184,7 @@ class QUB(CronJobBase):
 
 	def main(self):
 		transientdict,nsn = self.parse_data()
+		print('uploading %i transients'%nsn)
 		self.send_data(transientdict)
 		self.copy_stamps(transientdict)
 		return nsn
@@ -208,7 +209,7 @@ class QUB(CronJobBase):
 		nsn = 0
 		for i,s in enumerate(summary):
 			if nowmjd - s['mjd_obs'] > self.options.max_days: continue
-			if nsn > 100: break
+			#if nsn > 100: break
 			#if nsn < 20:
 			#	nsn += 1
 			#	continue
@@ -223,6 +224,10 @@ class QUB(CronJobBase):
 
 			iLC = (lc['ps1_designation'] == s['ps1_designation']) & (nowmjd - lc['mjd_obs'] < self.options.max_days)
 
+			if nowmjd - Time('%s 00:00:00'%s['followup_flag_date'],format='iso',scale='utc').mjd > self.options.max_days:
+				status = 'Ignore'
+			else:
+				status = self.options.status
 			tdict = {'name':s['ps1_designation'],
 					 'ra':s['ra_psf'],
 					 'dec':s['dec_psf'],
@@ -233,7 +238,7 @@ class QUB(CronJobBase):
 					 'postage_stamp_file_fits':'%s/%s/%s.fits'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['target']),
 					 'postage_stamp_ref_fits':'%s/%s/%s.fits'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['ref']),
 					 'postage_stamp_diff_fits':'%s/%s/%s.fits'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['diff']),
-					 'status':self.options.status,
+					 'status':status,
 					 #'best_spec_class':s['context_classification'],
 					 #'host':s['host'],
 					 'tags':['PSST'],
@@ -255,7 +260,6 @@ class QUB(CronJobBase):
 
 				flux = 10**(0.4*(l['cal_psf_mag']-27.5))
 				flux_err = np.log(10)*0.4*flux*l['psf_inst_mag_sig']
-
 				phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
 									'band':l['filter'],
 									'groups':[],
@@ -274,7 +278,7 @@ class QUB(CronJobBase):
 			PhotUploadAll['PS1'] = photometrydict
 			transientdict[s['ps1_designation']] = tdict
 			transientdict[s['ps1_designation']]['transientphotometry'] = PhotUploadAll
-			#import pdb; pdb.set_trace()
+
 			nsn += 1
 			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
 			
@@ -287,7 +291,7 @@ class QUB(CronJobBase):
 
 	def send_data(self,TransientUploadDict):
 
-		TransientUploadDict['noupdatestatus'] = True #self.options.noupdatestatus
+		TransientUploadDict['noupdatestatus'] = True
 		self.UploadTransients(TransientUploadDict)
 
 	def copy_stamps(self,transientdict):
@@ -298,47 +302,50 @@ class QUB(CronJobBase):
 				if k == 'noupdatestatus': continue
 				if not os.path.exists("%s/%s"%(basedir,os.path.dirname(transientdict[k]['postage_stamp_ref']))):
 					os.makedirs("%s/%s"%(basedir,os.path.dirname(transientdict[k]['postage_stamp_ref'])))
-				if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_ref'])):
-					r = requests.get(
-						"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_ref'].split('/',1)[-1]),
-						auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
-					with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_ref']), 'wb') as fout:
-						fout.write(r.content)
 
-				if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_diff'])):
-					r = requests.get(
-						"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_diff'].split('/',1)[-1]),
-						auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
-					with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_diff']), 'wb') as fout:
-						fout.write(r.content)
+					# only download the files if the directory didn't exist before now.  AKA, don't
+					# continuously grab new stamps
+					if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_ref'])):
+						r = requests.get(
+							"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_ref'].split('/',1)[-1]),
+							auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+						with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_ref']), 'wb') as fout:
+							fout.write(r.content)
 
-				if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_file'])):
-					r = requests.get(
-						"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_file'].split('/',1)[-1]),
-						auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
-					with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_file']), 'wb') as fout:
-						fout.write(r.content)
-						
-				if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_ref_fits'])):
-					r = requests.get(
-						"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_ref_fits'].split('/',1)[-1]),
-						auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
-					with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_ref_fits']), 'wb') as fout:
-						fout.write(r.content)
+					if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_diff'])):
+						r = requests.get(
+							"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_diff'].split('/',1)[-1]),
+							auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+						with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_diff']), 'wb') as fout:
+							fout.write(r.content)
 
-				if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_diff_fits'])):
-					r = requests.get(
-						"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_diff_fits'].split('/',1)[-1]),
-						auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
-					with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_diff_fits']), 'wb') as fout:
-						fout.write(r.content)
+					if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_file'])):
+						r = requests.get(
+							"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_file'].split('/',1)[-1]),
+							auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+						with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_file']), 'wb') as fout:
+							fout.write(r.content)
 
-				if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_file_fits'])):
-					r = requests.get(
-						"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_file_fits'].split('/',1)[-1]),
-						auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
-					with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_file_fits']), 'wb') as fout:
-						fout.write(r.content)
+					if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_ref_fits'])):
+						r = requests.get(
+							"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_ref_fits'].split('/',1)[-1]),
+							auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+						with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_ref_fits']), 'wb') as fout:
+							fout.write(r.content)
+
+					if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_diff_fits'])):
+						r = requests.get(
+							"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_diff_fits'].split('/',1)[-1]),
+							auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+						with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_diff_fits']), 'wb') as fout:
+							fout.write(r.content)
+
+					if not os.path.exists("%s/%s"%(basedir,transientdict[k]['postage_stamp_file_fits'])):
+						r = requests.get(
+							"%s/%s"%(psst_image_url,transientdict[k]['postage_stamp_file_fits'].split('/',1)[-1]),
+							auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+						with iopen("%s/%s"%(basedir,transientdict[k]['postage_stamp_file_fits']), 'wb') as fout:
+							fout.write(r.content)
 
 		except Exception as e:
 			print(e)
