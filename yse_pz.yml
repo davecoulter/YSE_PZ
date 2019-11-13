@@ -1,5 +1,4 @@
-name: yse_pz2
+name: yse_pz
 dependencies:
 - python=3.7
 - numpy
-- extinction

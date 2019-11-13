@@ -19,6 +19,18 @@ using Homebrew.  To get homebrew, run::
 Then to install and start MySQL::
 
   brew install mysql
+
+Check your :code:`MySQL` version with:
+
+  mysql --version
+
+If you're running version 5, you should try
+to upgrade to :code:`MySQL` version 8 if possible::
+
+  brew upgrade mysql
+
+After that, start the :code:`MySQL` server with::
+
   brew tap homebrew/services
   brew services start mysql
 
@@ -73,6 +85,10 @@ Should be straightforward::
 Put the :code:`settings.ini` file in the :code:`YSE_PZ/`
 directory (**not** the main repository directory, the directory
 with the same name one level down).
+
+Please note that sometimes the extinction module is buggy.
+It is needed for some functionality but I would 
+recommend trying to install it last.
    
 Starting the Web Server
 =======================
