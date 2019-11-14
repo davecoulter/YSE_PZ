@@ -73,6 +73,7 @@ git+git://github.com/dfm/casjobs@master
 git+git://github.com/rlwastro/mastcasjobs@master
 django_cron
 django-el-pagination
+django-silk
 dustmaps
 sncosmo
 photutils
