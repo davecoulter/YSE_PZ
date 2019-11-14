@@ -331,6 +331,30 @@ def calendar(request):
 	return render(request, 'YSE_App/calendar.html', context)
 
 @login_required
+def yse_oncall_calendar(request):
+	all_dates = YSEOnCallDate.objects.all()
+	colors = ['#dd4b39', 
+				'#f39c12', 
+				'#00c0ef', 
+				'#0073b7', 
+				'#f012be', 
+				'#3c8dbc',
+				'#00a65a',
+				'#d2d6de',
+				'#001f3f']
+
+	user_colors = {}
+	for i, u in enumerate(User.objects.all().exclude(username='admin')):
+		user_colors[u.username] = colors[i % len(colors)]
+
+	context = {
+		'all_dates': all_dates,
+		'user_colors': user_colors
+	}
+	return render(request, 'YSE_App/calendar.html', context)
+
+
+@login_required
 def observing_calendar(request):
 	all_dates = ClassicalObservingDate.objects.all().select_related()
 	colors = ['#dd4b39', 
@@ -354,15 +378,24 @@ def observing_calendar(request):
 	return render(request, 'YSE_App/observing_calendar.html', context)
 
 @login_required
+def yse_home(request):
+
+	
+	context = {
+	}
+	return render(request, 'YSE_App/yse_home.html', context)
+
+
+@login_required
 def yse_observing_calendar(request):
 
-	all_obs = SurveyObservationTask.objects.all().select_related()
+	all_obs = SurveyObservation.objects.all().select_related()
 	all_dates,all_ztf_ids,all_filters = np.array([]),np.array([]),np.array([])
 	for obs in all_obs:
 		# dates, and rough time zone conversion
 		all_dates = np.append(all_dates,mjd_to_date(obs.mjd_requested-0.375))
 		all_ztf_ids = np.append(all_ztf_ids,obs.survey_field.ztf_field_id)
-		all_filters = np.append(all_filters,obs.requested_photometric_band.name)
+		all_filters = np.append(all_filters,obs.photometric_band.name)
 
 	colors = ['#dd4b39', 
 			  '#f39c12', 
@@ -427,7 +460,7 @@ def yse_observing_night(request, obs_date):
 	survey_field_form = SurveyFieldForm()
 	
 	# get follow requests for telescope/date
-	survey_obs = SurveyObservationTask.objects.filter(
+	survey_obs = SurveyObservation.objects.filter(
 		mjd_requested__gte = date_to_mjd(obs_date)+0.375).\
 		filter(mjd_requested__lte = date_to_mjd(obs_date)+1.375).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()

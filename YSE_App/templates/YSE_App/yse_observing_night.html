@@ -148,7 +148,7 @@ $(document).ready(function(){
         var status_name_change = $(this).attr('data-status_name')
         var obs_id = checkboxes[i].value
         if (typeof obs_id !== 'undefined'){
-        var url_target = "{% url 'surveyobservationtask-detail' -1 %}".replace('-1', obs_id);
+        var url_target = "{% url 'surveyobservation-detail' -1 %}".replace('-1', obs_id);
         var status_target = "{% url 'taskstatus-list' %}" + status_id + "/"
 
         var base_url = window.location.protocol + "//" + window.location.hostname

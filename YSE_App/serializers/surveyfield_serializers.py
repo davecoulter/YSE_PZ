@@ -34,38 +34,14 @@ class SurveyFieldSerializer(serializers.HyperlinkedModelSerializer):
 
 		return instance
 
-class SurveyObservationTaskSerializer(serializers.HyperlinkedModelSerializer):
+class SurveyObservationSerializer(serializers.HyperlinkedModelSerializer):
 	survey_field = serializers.HyperlinkedRelatedField(queryset=SurveyField.objects.all(), view_name='surveyfield-detail')
 	status = serializers.HyperlinkedRelatedField(queryset=TaskStatus.objects.all(), view_name='taskstatus-detail')
-	requested_photometric_band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), view_name='photometricband-detail',lookup_field="id")
+	photometric_band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), view_name='photometricband-detail',lookup_field="id")
 	
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 
-	class Meta:
-		model = SurveyObservationTask
-		fields = "__all__"
-
-	def create(self, validated_data):
-		return SurveyObservationTask.objects.create(**validated_data)
-
-	def update(self, instance, validated_data):
-		instance.survey_field = validated_data.get('survey_field', instance.survey_field)
-		instance.mjd_requested = validated_data.get('mjd_requested', instance.mjd_requested)
-		instance.status = validated_data.get('status', instance.status)
-		instance.requested_exposure_time = validated_data.get('requested_exposure_time', instance.requested_exposure_time)
-		instance.requested_photometric_band = validated_data.get('requested_photometric_band', instance.requested_photometric_band)
-		
-		instance.save()
-
-		return instance
-
-class SurveyObservationSerializer(serializers.HyperlinkedModelSerializer):
-	survey_observation_task = serializers.HyperlinkedRelatedField(queryset=SurveyObservation.objects.all(), view_name='surveyobservationtask-detail')
-	status = serializers.HyperlinkedRelatedField(queryset=TaskStatus.objects.all(), view_name='taskstatus-detail')
-	instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail',lookup_field="id")
-	requested_photometric_band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), view_name='photometricband-detail',lookup_field="id")
-	
 	class Meta:
 		model = SurveyObservation
 		fields = "__all__"
@@ -74,12 +50,14 @@ class SurveyObservationSerializer(serializers.HyperlinkedModelSerializer):
 		return SurveyObservation.objects.create(**validated_data)
 
 	def update(self, instance, validated_data):
+		instance.mjd_requested = validated_data.get('mjd_requested', instance.mjd_requested)
 		instance.obs_mjd = validated_data.get('obs_mjd', instance.obs_mjd)
-		instance.survey_observation_task = validated_data.get('survey_observation_task', instance.survey_observation_task)
+		instance.survey_field = validated_data.get('survey_field', instance.survey_field)
 		instance.status = validated_data.get('status', instance.status)
-		instance.instrument = validated_data.get('instrument', instance.instrument)
 		instance.exposure_time = validated_data.get('exposure_time', instance.exposure_time)
 		instance.photometric_band = validated_data.get('photometric_band', instance.photometric_band)
+
+		instance.status = validated_data.get('status', instance.status)
 		instance.pos_angle_deg = validated_data.get('pos_angle_deg', instance.pos_angle_deg)
 
 		instance.fwhm = validated_data.get('fwhm', instance.fwhm)
@@ -90,4 +68,3 @@ class SurveyObservationSerializer(serializers.HyperlinkedModelSerializer):
 		instance.save()
 
 		return instance
-

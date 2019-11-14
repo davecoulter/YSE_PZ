@@ -20,6 +20,7 @@ urlpatterns = [
 	# ex: /yse/
     url(r'^$', views.index, name='index'),
     url(r'^dashboard/$', views.dashboard, name='dashboard'),
+    url(r'^yse_home/$', views.yse_home, name='yse_home'),
     url(r'^personaldashboard/$', views.personaldashboard, name='personaldashboard'),
     url(r'^calendar/$', views.calendar, name='calendar'),
     url(r'^followup/$', views.followup, name='followup'),
@@ -40,6 +41,7 @@ urlpatterns = [
 
     url(r'^observing_calendar/$', views.observing_calendar, name='observing_calendar'),
     url(r'^yse_observing_calendar/$', views.yse_observing_calendar, name='yse_observing_calendar'),
+    url(r'^yse_oncall_calendar/$', views.yse_oncall_calendar, name='yse_oncall_calendar'),
     url(r'^observing_night/(?P<telescope>.*)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.observing_night, name='observing_night'),
     #url(r'^survey_observing_calendar/$', views.survey_observing_calendar, name='survey_observing_calendar'),
     url(r'^yse_observing_night/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.yse_observing_night, name='yse_observing_night'),
@@ -139,7 +141,6 @@ router.register(r'observatories', api_views.ObservatoryViewSet)
 router.register(r'oncalldates', api_views.OnCallDateViewSet)
 
 router.register(r'surveyfields', api_views.SurveyFieldViewSet)
-router.register(r'surveyobservationtasks', api_views.SurveyObservationTaskViewSet)
 router.register(r'surveyobservations', api_views.SurveyObservationViewSet)
 
 router.register(r'transientphotometry', api_views.TransientPhotometryViewSet, base_name='transientphotometry')

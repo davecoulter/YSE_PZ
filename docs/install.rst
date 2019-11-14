@@ -71,6 +71,10 @@ that command would be::
 
   mysql -u root -p YSE < 20191104_YSE.sql
 
+If this fails with a collation error, you might have to
+open up the file and replace :code:`utf8mb4_0900_ai_ci` 
+:code:`utf8mb4_unicode_ci`.
+
 Installing the YSE_PZ Code
 ==========================
 
