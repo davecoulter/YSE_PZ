@@ -70,11 +70,7 @@ def get_recent_phot_for_host(user, host_id=None):
 
 def get_all_phot_for_transient(user, transient_id=None):
 	photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id)
-
-	if photdata:	
-		return(photdata)
-	else:
-		return(None)
+	return(photdata)
 
 def get_recent_phot_for_transient(user, transient_id=None):
 	photdata = get_all_phot_for_transient(user, transient_id)

@@ -19,6 +19,18 @@ using Homebrew.  To get homebrew, run::
 Then to install and start MySQL::
 
   brew install mysql
+
+Check your :code:`MySQL` version with:
+
+  mysql --version
+
+If you're running version 5, you should try
+to upgrade to :code:`MySQL` version 8 if possible::
+
+  brew upgrade mysql
+
+After that, start the :code:`MySQL` server with::
+
   brew tap homebrew/services
   brew services start mysql
 
@@ -59,6 +71,10 @@ that command would be::
 
   mysql -u root -p YSE < 20191104_YSE.sql
 
+If this fails with a collation error, you might have to
+open up the file and replace :code:`utf8mb4_0900_ai_ci` 
+:code:`utf8mb4_unicode_ci`.
+
 Installing the YSE_PZ Code
 ==========================
 
@@ -73,6 +89,10 @@ Should be straightforward::
 Put the :code:`settings.ini` file in the :code:`YSE_PZ/`
 directory (**not** the main repository directory, the directory
 with the same name one level down).
+
+Please note that sometimes the extinction module is buggy.
+It is needed for some functionality but I would 
+recommend trying to install it last.
    
 Starting the Web Server
 =======================

@@ -484,7 +484,7 @@ class YSEObsNightTable(tables.Table):
 		from astroplan.plots import plot_airmass
 			
 	class Meta:
-		model = SurveyObservationTask
+		model = SurveyObservation
 		fields = ('field_id','ra_string','dec_string','rise_time','set_time','moon_angle')#,'transient.status')
 		template_name='YSE_App/django-tables2/bootstrap.html'
 		attrs = {

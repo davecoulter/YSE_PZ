@@ -43,12 +43,7 @@ class SurveyFieldViewSet(viewsets.ReadOnlyModelViewSet):
 	serializer_class = SurveyFieldSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
-class SurveyObservationTaskViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-	queryset = SurveyObservationTask.objects.all()
-	serializer_class = SurveyObservationTaskSerializer
-	permission_classes = (permissions.IsAuthenticated,)
-
-class SurveyObservationViewSet(viewsets.ReadOnlyModelViewSet):
+class SurveyObservationViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = SurveyObservation.objects.all()
 	serializer_class = SurveyObservationSerializer
 	permission_classes = (permissions.IsAuthenticated,)

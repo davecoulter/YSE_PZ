@@ -18,8 +18,8 @@ class SurveyField(BaseModel):
 
 	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
 	field_id = models.CharField(max_length=64)
-	first_mjd = models.FloatField(null=True, blank=True)
-	last_mjd = models.FloatField(null=True, blank=True)
+	#first_mjd = models.FloatField(null=True, blank=True)
+	#last_mjd = models.FloatField(null=True, blank=True)
 	cadence = models.FloatField(null=True, blank=True)
 	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
 	ztf_field_id = models.CharField(max_length=64,null=True,blank=True)
@@ -38,32 +38,46 @@ class SurveyField(BaseModel):
 	def CoordString(self):
 		return GetSexigesimalString(self.ra_cen, self.dec_cen)
 	
-class SurveyObservationTask(BaseModel):
-
-	mjd_requested = models.FloatField()
-	survey_field = models.ForeignKey(SurveyField, on_delete=models.CASCADE)
-	status = models.ForeignKey(TaskStatus, models.SET(get_sentinel_taskstatus))
-	requested_exposure_time = models.FloatField()
-	requested_photometric_band = models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
-	
-	def __str__(self):
-		return '%s: %s'%(
-			self.survey_field.field_id,self.mjd_requested)
-
 class SurveyObservation(BaseModel):
 
+	mjd_requested = models.FloatField(null=True,blank=True)
 	obs_mjd = models.FloatField(null=True, blank=True)
-	survey_observation_task = models.ForeignKey(SurveyObservationTask, on_delete=models.CASCADE)
+	survey_field = models.ForeignKey(SurveyField, on_delete=models.CASCADE)
 	status = models.ForeignKey(TaskStatus, models.SET(get_sentinel_taskstatus))
-	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
+	#requested_exposure_time = models.FloatField()
+	#requested_photometric_band = models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
+	#status = models.ForeignKey(TaskStatus, models.SET(get_sentinel_taskstatus))
+	#instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
 	exposure_time = models.FloatField()
 	photometric_band = models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
-	pos_angle_deg = models.FloatField()
+	pos_angle_deg = models.FloatField(null=True, blank=True)
 	fwhm = models.FloatField(null=True, blank=True)
 	eccentricity = models.FloatField(null=True, blank=True)
 	airmass = models.FloatField(null=True, blank=True)
-	image_id = models.BigIntegerField()
+	image_id = models.BigIntegerField(null=True, blank=True)
 	
 	def __str__(self):
-		return '%s: %s - %s'%(
-			self.survey_observation_task,self.obs_mjd)
+		if self.mjd:
+			return '%s: %s'%(
+				self.survey_field.field_id,self.obs_mjd)
+		else:
+			return '%s: %s'%(
+				self.survey_field.field_id,self.mjd_requested)
+
+#class SurveyObservation(BaseModel):
+
+#	obs_mjd = models.FloatField(null=True, blank=True)
+#	survey_observation_task = models.ForeignKey(SurveyObservationTask, on_delete=models.CASCADE)
+#	status = models.ForeignKey(TaskStatus, models.SET(get_sentinel_taskstatus))
+#	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
+#	exposure_time = models.FloatField()
+#	photometric_band = models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
+#	pos_angle_deg = models.FloatField()
+#	fwhm = models.FloatField(null=True, blank=True)
+#	eccentricity = models.FloatField(null=True, blank=True)
+#	airmass = models.FloatField(null=True, blank=True)
+#	image_id = models.BigIntegerField()
+	
+#	def __str__(self):
+#		return '%s: %s - %s'%(
+#			self.survey_observation_task,self.obs_mjd)

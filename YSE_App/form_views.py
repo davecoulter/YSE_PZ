@@ -172,7 +172,7 @@ class AddSurveyFieldFormView(FormView):
 
 			# clear out the conflicting SurveyObservationTasks
 			# danger!
-			obs_requests = SurveyObservationTask.objects.\
+			obs_requests = SurveyObservation.objects.\
 						   filter(survey_field__id=instance.field_id).\
 						   filter(mjd_requested__range=(instance.first_mjd,
 														instance.last_mjd))
@@ -199,23 +199,23 @@ class AddSurveyFieldFormView(FormView):
 					name=band1name,instrument__name=instance.instrument.name)[0]
 				band2 = PhotometricBand.objects.filter(
 					name=band2name,instrument__name=instance.instrument.name)[0]				
-				SurveyObservationTask.objects.create(
+				SurveyObservation.objects.create(
 					mjd_requested=m,
 					survey_field=instance,
 					status=TaskStatus.objects.get(name='Requested'),
-					requested_exposure_time=27,
-					requested_photometric_band=band1,
+					exposure_time=27,
+					photometric_band=band1,
 					created_by=self.request.user,
 					modified_by=self.request.user)
-				SurveyObservationTask.objects.create(
+				SurveyObservation.objects.create(
 					mjd_requested=m,
 					survey_field=instance,
 					status=TaskStatus.objects.get(name='Requested'),
-					requested_exposure_time=27,
-					requested_photometric_band=band2,
+					exposure_time=27,
+					photometric_band=band2,
 					created_by=self.request.user,
 					modified_by=self.request.user)
-			
+
 			# for key,value in form.cleaned_data.items():
 			data = {
 				'message': "Successfully submitted form data.",
