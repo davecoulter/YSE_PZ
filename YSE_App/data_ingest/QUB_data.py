@@ -158,7 +158,7 @@ class QUB(CronJobBase):
 							  help='URL to POST transients to a database (default=%default)')
 			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
 							  help='ZTF URL (default=%default)')
-			parser.add_option('--STATIC', default=config.get('main','STATIC'), type="string",
+			parser.add_option('--STATIC', default=config.get('site_settings','STATIC'), type="string",
 							  help='static directory (default=%default)')
 			parser.add_option('--qubuser', default=config.get('main','qubuser'), type="string",
 							  help='QUB database username (default=%default)')
