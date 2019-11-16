@@ -36,6 +36,7 @@ import smtplib
 from collections import OrderedDict
 import mastrequests
 from astropy.io import ascii
+from itertools import islice
 
 reg_obj = "https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -725,21 +726,28 @@ class processTNS():
 			#	pass
 	
 			TransientUploadDict[obj] = transientdict
-
-		TransientUploadDict['noupdatestatus'] = self.noupdatestatus
-		TransientUploadDict['TNS'] = True
-		self.UploadTransients(TransientUploadDict)
+			if not j % 10:
+				TransientUploadDict['noupdatestatus'] = self.noupdatestatus
+				TransientUploadDict['TNS'] = True
+				self.UploadTransients(TransientUploadDict)
+				TransientUploadDict = {}
+		if j % 10:
+			TransientUploadDict['noupdatestatus'] = self.noupdatestatus
+			TransientUploadDict['TNS'] = True
+			self.UploadTransients(TransientUploadDict)
 
 		return(len(TransientUploadDict))
 
 	def UploadTransients(self,TransientUploadDict):
 
 		url = '%s'%self.dburl.replace('/api','/add_transient')
-		r = requests.post(url = url, data = json.dumps(TransientUploadDict),
-						  auth=HTTPBasicAuth(self.dblogin,self.dbpassword))
+		try:
+			r = requests.post(url = url, data = json.dumps(TransientUploadDict),
+							  auth=HTTPBasicAuth(self.dblogin,self.dbpassword))
 
-		try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
-		except: print(r.text)
+			try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
+			except: print(r.text)
+		except: import pdb; pdb.set_trace()
 		print("Process done.")
 
 

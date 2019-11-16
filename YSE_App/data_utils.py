@@ -171,6 +171,7 @@ def add_transient(request):
 	phot_entries = []
 	for transientlistkey in transient_data.keys():
 		if transientlistkey == 'noupdatestatus': continue
+		if transientlistkey == 'TNS': continue
 		transient = transient_data[transientlistkey]
 		transientkeys = transient.keys()
 
@@ -200,6 +201,7 @@ def add_transient(request):
 	photdata_entries = []
 	for transientlistkey in transient_data.keys():
 		if transientlistkey == 'noupdatestatus': continue
+		if transientlistkey == 'TNS': continue
 		transient = transient_data[transientlistkey]
 		transientkeys = transient.keys()
 
