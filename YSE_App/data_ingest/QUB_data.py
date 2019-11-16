@@ -299,7 +299,7 @@ class QUB(CronJobBase):
 	def copy_stamps(self,transientdict):
 		try:
 			if not djangoSettings.DEBUG: basedir = "%sYSE_App/images/stamps"%(djangoSettings.STATIC_ROOT)
-			else: basedir = "%s/YSE_App%sYSE_App/images/stamps"%(self.options.STATIC,djangoSettings.BASE_DIR)
+			else: basedir = "%s/YSE_App%sYSE_App/images/stamps"%(djangoSettings.BASE_DIR,self.options.STATIC)
 			for k in transientdict.keys():
 				if k == 'noupdatestatus': continue
 				if k == 'TNS': continue
