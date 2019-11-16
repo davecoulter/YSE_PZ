@@ -561,8 +561,8 @@ def transient_detail(request, slug):
 	alternate_transient = AlternateTransientNames.objects.filter(slug=slug)
 	if len(alternate_transient) and not len(transient):
 		transient = Transient.objects.filter(name=alternate_transient[0].transient.name).select_related()
-		return redirect('/transient_detail/%s/'%transient[0].slug)
-		#reverse_lazy('transient_detail')
+		#return redirect('/transient_detail/%s/'%transient[0].slug)
+		return reverse_lazy('transient_detail',kwargs={'slug':transient[0].slug})
 	logs = Log.objects.filter(transient=transient[0].id)
 
 	obs = None
