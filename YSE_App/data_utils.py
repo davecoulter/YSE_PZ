@@ -48,15 +48,16 @@ def add_transient(request):
 	for transientlistkey in transient_data.keys():
 		if transientlistkey == 'noupdatestatus': continue
 		if transientlistkey == 'TNS': continue
-		
-		transient = transient_data[transientlistkey]
 
+		transient = transient_data[transientlistkey]
+		tmp_name = transient['name']
+		
 		transientkeys = transient.keys()
 		if 'name' not in transientkeys:
 			return_dict = {"message":"Error : Transient name not provided for transient %s!"%transientlistkey}
 			return JsonResponse(return_dict)
 		print('updating transient %s'%transient['name'])
-		if 'hi': #try:
+		try:
 			transientdict = {'created_by_id':user.id,'modified_by_id':user.id}
 			for transientkey in transientkeys:
 				if transientkey == 'transientphotometry' or \
@@ -105,10 +106,12 @@ def add_transient(request):
 						dbtransient[0].slug = transient['name']
 						dbtransient[0].save()
 					else:
+						#import pdb; pdb.set_trace()
 						AlternateTransientNames.objects.create(
 							transient=dbtransient[0],obs_group=obs_group,name=transient['name'],
 							created_by_id=user.id,modified_by_id=user.id)
-						#transient['name'] = dbtransient[0].name
+						transientdict['name'] = dbtransient[0].name
+						#dbtransient[0].save()
 
 					if 'noupdatestatus' in transient_data.keys() and not transient_data['noupdatestatus']:
 						if dbtransient[0].status.name == 'Ignore':
@@ -154,7 +157,7 @@ def add_transient(request):
 
 			#print('applied tags in %.1f sec'%(t5-t4))
 				
-		else: #except Exception as e:
+		except Exception as e:
 			print('Transient %s failed!'%transient['name'])
 			print("Sending email to: %s" % user.username)
 			html_msg = "Alert : YSE_PZ Failed to upload transient %s with error %s"
