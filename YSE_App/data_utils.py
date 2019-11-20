@@ -99,17 +99,21 @@ def add_transient(request):
 					#dbtransient = dbtransient[0]
 					obs_group = ObservationGroup.objects.get(name=transient['obs_group'])
 					if 'TNS' in transient_data.keys() and transient_data['TNS']:
-						AlternateTransientNames.objects.create(
-							transient=dbtransient[0],obs_group=obs_group,name=dbtransient[0].name,
-							created_by_id=user.id,modified_by_id=user.id)
+						alt_transients = AlternateTransientNames.objects.filter(name=dbtransient[0].name)
+						if not len(alt_transients):
+							AlternateTransientNames.objects.create(
+								transient=dbtransient[0],obs_group=obs_group,name=dbtransient[0].name,
+								created_by_id=user.id,modified_by_id=user.id)
 						dbtransient[0].name = transient['name']
 						dbtransient[0].slug = transient['name']
 						dbtransient[0].save()
 					else:
 						#import pdb; pdb.set_trace()
-						AlternateTransientNames.objects.create(
-							transient=dbtransient[0],obs_group=obs_group,name=transient['name'],
-							created_by_id=user.id,modified_by_id=user.id)
+						alt_transients = AlternateTransientNames.objects.filter(name=dbtransient[0].name)
+						if not len(alt_transients):
+							AlternateTransientNames.objects.create(
+								transient=dbtransient[0],obs_group=obs_group,name=transient['name'],
+								created_by_id=user.id,modified_by_id=user.id)
 						transientdict['name'] = dbtransient[0].name
 						#dbtransient[0].save()
 
@@ -772,105 +776,109 @@ def add_transient_phot(request):
 @csrf_exempt
 @login_or_basic_auth_required
 def add_transient_spec(request):
-	spec_data = JSONParser().parse(request)
+	try:
+		spec_data = JSONParser().parse(request)
 
-	auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
-	credentials = base64.b64decode(credentials.strip()).decode('utf-8')
-	username, password = credentials.split(':', 1)
-	user = auth.authenticate(username=username, password=password)
-	
-	if 'header' in spec_data.keys() and 'transient' in spec_data.keys():
-		hd = spec_data['header']
-		tr = spec_data['transient']
-	else:
-		return_dict = {"message":"header and transient keys are required"}
-		return JsonResponse(return_dict)
+		auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+		credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+		username, password = credentials.split(':', 1)
+		user = auth.authenticate(username=username, password=password)
 
-	# get all the foreign keys we need
-	instrument = Instrument.objects.filter(name=hd['instrument'])
-	if not len(instrument):
-		instrument = Instrument.objects.filter(name='Unknown')
-	instrument = instrument[0]
+		if 'header' in spec_data.keys() and 'transient' in spec_data.keys():
+			hd = spec_data['header']
+			tr = spec_data['transient']
+		else:
+			return_dict = {"message":"header and transient keys are required"}
+			return JsonResponse(return_dict)
 
-	obs_group = ObservationGroup.objects.filter(name=hd['obs_group'])
-	if not len(obs_group):
-		obs_group = ObservationGroup.objects.filter(name='Unknown')
-	obs_group = obs_group[0]
+		# get all the foreign keys we need
+		instrument = Instrument.objects.filter(name=hd['instrument'])
+		if not len(instrument):
+			instrument = Instrument.objects.filter(name='Unknown')
+		instrument = instrument[0]
 
-	allgroups = []
-	if hd['groups']:
-		for specgroup in hd['groups'].split(','):
-			group = Group.objects.filter(name=specgroup)
-			if not len(group):
-				return_dict = {"message":"group %s is not in DB"%hd['groups']}
-				return JsonResponse(return_dict)
-			group = group[0]
-			allgroups += [group]
+		obs_group = ObservationGroup.objects.filter(name=hd['obs_group'])
+		if not len(obs_group):
+			obs_group = ObservationGroup.objects.filter(name='Unknown')
+		obs_group = obs_group[0]
 
-	# get or create transient
-	transient = Transient.objects.filter(name=tr['name'])
-	if not len(transient):
-		return_dict = {"message":"transient %s is not in DB"%tr['name']}
-		return JsonResponse(return_dict)
-	else: transient = transient[0]
+		allgroups = []
+		if hd['groups']:
+			for specgroup in hd['groups'].split(','):
+				group = Group.objects.filter(name=specgroup)
+				if not len(group):
+					return_dict = {"message":"group %s is not in DB"%hd['groups']}
+					return JsonResponse(return_dict)
+				group = group[0]
+				allgroups += [group]
 
-	if hd['data_quality']:
-		dq = DataQuality.objects.filter(name=hd['data_quality'])
-		if not dq:
-			dq = DataQuality.objects.filter(name='Bad')
-			dq = dq[0]
-	else: dq = None
+		# get or create transient
+		transient = Transient.objects.filter(name=tr['name'])
+		if not len(transient):
+			return_dict = {"message":"transient %s is not in DB"%tr['name']}
+			return JsonResponse(return_dict)
+		else: transient = transient[0]
 
-	
-	# get the spectrum
-	transientspec = TransientSpectrum.objects.filter(transient=transient).filter(instrument=instrument).filter(obs_group=obs_group).filter(obs_date=hd['obs_date'])
-	if not len(transientspec):
-		transientspec = TransientSpectrum.objects.create(
-			ra=hd['ra'],dec=hd['dec'],instrument=instrument,obs_group=obs_group,transient=transient,
-			rlap=hd['rlap'],redshift=hd['redshift'],redshift_err=hd['redshift_err'],
-			redshift_quality=hd['redshift_quality'],spectrum_notes=hd['spectrum_notes'],
-			spec_phase=hd['spec_phase'],obs_date=hd['obs_date'],data_quality=dq,
-			created_by_id=user.id,modified_by_id=user.id)
-	else:
-		transientspec = transientspec[0]
-		if hd['clobber']:
-			transientspec.data_quality = dq
-			transientspec.ra = hd['ra']
-			transientspec.dec = hd['dec']
-			transientspec.rlap = hd['rlap']
-			transientspec.redshift = hd['redshift']
-			transientspec.redshift_err = hd['redshift_err']
-			transientspec.redshift_quality = hd['redshift_quality']
-			transientspec.spectrum_notes = hd['spectrum_notes']
-			transientspec.spec_phase = hd['spec_phase']
-			transientspec.modified_by_id = user.id
-			transientspec.save()
-	if len(allgroups):
-		for group in allgroups:
-			if group not in transientspec.groups.all():
-				transientspec.groups.add(group)
+		if hd['data_quality']:
+			dq = DataQuality.objects.filter(name=hd['data_quality'])
+			if not dq:
+				dq = DataQuality.objects.filter(name='Bad')
+				dq = dq[0]
+		else: dq = None
+
+
+		# get the spectrum
+		transientspec = TransientSpectrum.objects.filter(transient=transient).filter(instrument=instrument).filter(obs_group=obs_group).filter(obs_date=hd['obs_date'])
+		if not len(transientspec):
+			transientspec = TransientSpectrum.objects.create(
+				ra=hd['ra'],dec=hd['dec'],instrument=instrument,obs_group=obs_group,transient=transient,
+				rlap=hd['rlap'],redshift=hd['redshift'],redshift_err=hd['redshift_err'],
+				redshift_quality=hd['redshift_quality'],spectrum_notes=hd['spectrum_notes'],
+				spec_phase=hd['spec_phase'],obs_date=hd['obs_date'],data_quality=dq,
+				created_by_id=user.id,modified_by_id=user.id)
+		else:
+			transientspec = transientspec[0]
+			if hd['clobber']:
+				transientspec.data_quality = dq
+				transientspec.ra = hd['ra']
+				transientspec.dec = hd['dec']
+				transientspec.rlap = hd['rlap']
+				transientspec.redshift = hd['redshift']
+				transientspec.redshift_err = hd['redshift_err']
+				transientspec.redshift_quality = hd['redshift_quality']
+				transientspec.spectrum_notes = hd['spectrum_notes']
+				transientspec.spec_phase = hd['spec_phase']
+				transientspec.modified_by_id = user.id
 				transientspec.save()
-				
-	# add the spec data
-	existingspec = TransientSpecData.objects.filter(spectrum=transientspec)
-	# loop through new, comp against existing
-	if len(existingspec) and hd['clobber']:
-		for e in existingspec: e.delete()
-	elif len(existingspec):
-		return_dict = {"message":"spectrum exists.	Not clobbering"}
+		if len(allgroups):
+			for group in allgroups:
+				if group not in transientspec.groups.all():
+					transientspec.groups.add(group)
+					transientspec.save()
+
+		# add the spec data
+		existingspec = TransientSpecData.objects.filter(spectrum=transientspec)
+		# loop through new, comp against existing
+		if len(existingspec) and hd['clobber']:
+			for e in existingspec: e.delete()
+		elif len(existingspec):
+			return_dict = {"message":"spectrum exists.	Not clobbering"}
+			return JsonResponse(return_dict)
+
+		for k in spec_data.keys():
+			if k == 'header' or k == 'transient': continue
+			s = spec_data[k]
+
+			TransientSpecData.objects.create(spectrum=transientspec,wavelength=s['wavelength'],
+											 flux=s['flux'],flux_err=s['flux_err'],
+											 created_by_id=user.id,modified_by_id=user.id)
+
+		return_dict = {"message":"success"}
 		return JsonResponse(return_dict)
-
-	for k in spec_data.keys():
-		if k == 'header' or k == 'transient': continue
-		s = spec_data[k]
-
-		TransientSpecData.objects.create(spectrum=transientspec,wavelength=s['wavelength'],
-										 flux=s['flux'],flux_err=s['flux_err'],
-										 created_by_id=user.id,modified_by_id=user.id)
-	
-	return_dict = {"message":"success"}
-	return JsonResponse(return_dict)
-
+	except Exception as e:
+		return_dict = {"message":e.__str__()}
+		return JsonResponse(return_dict)
+		
 @login_or_basic_auth_required
 def get_transient(request, slug):
 	t = Transient.objects.filter(slug=slug)
