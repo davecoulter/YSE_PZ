@@ -99,7 +99,7 @@ def add_transient(request):
 					#dbtransient = dbtransient[0]
 					obs_group = ObservationGroup.objects.get(name=transient['obs_group'])
 					if 'TNS' in transient_data.keys() and transient_data['TNS']:
-						alt_transients = AlternateTransientNames.objects.filter(name=dbtransient[0].name)
+						alt_transients = AlternateTransientNames.objects.filter(name=transient['name'])
 						if not len(alt_transients):
 							AlternateTransientNames.objects.create(
 								transient=dbtransient[0],obs_group=obs_group,name=dbtransient[0].name,
@@ -109,7 +109,7 @@ def add_transient(request):
 						dbtransient[0].save()
 					else:
 						#import pdb; pdb.set_trace()
-						alt_transients = AlternateTransientNames.objects.filter(name=dbtransient[0].name)
+						alt_transients = AlternateTransientNames.objects.filter(name=transient['name'])
 						if not len(alt_transients):
 							AlternateTransientNames.objects.create(
 								transient=dbtransient[0],obs_group=obs_group,name=transient['name'],
