@@ -90,7 +90,7 @@ def get_ps_score(RA, DEC):
 
 class QUB(CronJobBase):
 
-	RUN_EVERY_MINS = 0.1
+	RUN_EVERY_MINS = 120
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.QUB_data.QUB'
@@ -114,9 +114,10 @@ class QUB(CronJobBase):
 		self.options = options
 		#tnsproc.hostmatchrad = options.hostmatchrad
 
-		if "hi": #try:
+		try:
 			nsn = self.main()
-		else: #except Exception as e:
+		except Exception as e:
+			print(e)
 			nsn = 0
 			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
 			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
@@ -262,11 +263,17 @@ class QUB(CronJobBase):
 
 				flux = 10**(0.4*(l['cal_psf_mag']-27.5))
 				flux_err = np.log(10)*0.4*flux*l['psf_inst_mag_sig']
+				if type(l['psf_inst_mag_sig']) == np.ma.core.MaskedConstant:
+					mag_err = 0
+					flux_err = 0
+				else:
+					mag_err = l['psf_inst_mag_sig']
+
 				phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
 									'band':l['filter'],
 									'groups':[],
 									'mag':l['cal_psf_mag'],
-									'mag_err':l['psf_inst_mag_sig'],
+									'mag_err':mag_err,
 									'flux':flux,
 									'flux_err':flux_err,
 									'data_quality':0,
@@ -274,7 +281,6 @@ class QUB(CronJobBase):
 									'flux_zero_point':27.5,
 									'discovery_point':disc_point,
 									'diffim':1}
-
 				photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
 
 			PhotUploadAll['PS1'] = photometrydict
@@ -471,9 +477,9 @@ if __name__ == """__main__""":
 	qub.options = options
 	#tnsproc.hostmatchrad = options.hostmatchrad
 
-	if "hi": #try:
+	try:
 		nsn = qub.main()
-	else: #except Exception as e:
+	except Exception as e:
 		nsn = 0
 		from django.conf import settings as djangoSettings
 		smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
