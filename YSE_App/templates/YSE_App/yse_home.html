@@ -66,21 +66,20 @@
         </div>
         <div class="box-header with-border"> <!--id="{{followup_table.2}}">-->
           <h3 class="box-title">Latest Transients</h3>
-          <!--<h3 class="box-title">{{ transient_cat.1 }}</h3>-->
-          <p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient_cat.1 }}</h3><span style="float:right;"><a href="{% url 'transient_summary' transient_cat.2 %}"><h3 class="box-title">Summary View</h3></a></span></p>
+          <!--<p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient_table.2 }}</h3><span style="float:right;"><a href="{% url 'transient_summary' transient_table.2 %}"><h3 class="box-title">Summary View</h3></a></span></p>-->
           </div>
           <div align='right'>
-            {% if transient_cat.3 %}
+            {% if transient_table.2 %}
           <form action="" method="get" class="form form-inline">
-          {% bootstrap_form transient_cat.3.form layout='inline' %}
-          {% with "#"|add:transient_cat.2 as link %}
+          {% bootstrap_form transient_table.2.form layout='inline' %}
+          {% with "#"|add:transient_table.1 as link %}
           {% bootstrap_button 'filter' %}&ensp;&nbsp;
           {% endwith %}
           </form>
           {% endif %}
         </div>
         <div class="box-body">
-          {% render_table transient_cat.0 %}
+          {% render_table transient_table.0 %}
 
         </div>
     <!-- /.box-body -->
