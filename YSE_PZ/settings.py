@@ -54,7 +54,7 @@ INSTALLED_APPS = [
 	'django_filters',
 	'django_cron',
 	'el_pagination',
-	'silk'
+	#'silk'
 ]
 
 CRON_CLASSES = [
@@ -63,7 +63,7 @@ CRON_CLASSES = [
 ]
 
 MIDDLEWARE = [
-	'silk.middleware.SilkyMiddleware',
+	#'silk.middleware.SilkyMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
