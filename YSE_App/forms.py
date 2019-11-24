@@ -87,6 +87,25 @@ class SurveyFieldForm(ModelForm):
 				  'cadence',
 				  'ztf_field_id',
 				  'instrument']
+
+class OncallForm(ModelForm):
+
+	valid_start = forms.DateTimeField()
+	valid_stop = forms.DateTimeField()
+	qs = User.objects.all().order_by('username')
+	if len(qs):
+		user = forms.ModelChoiceField(
+			queryset=qs,
+			initial=qs[0],
+			required=False)
+	
+	class Meta:
+		model = YSEOnCallDate
+		fields = [] #['field_id',
+		#		  'cadence',
+		#		  'ztf_field_id',
+		#		  'instrument']
+
 		
 		
 class TransientCommentForm(ModelForm):

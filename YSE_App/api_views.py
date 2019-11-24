@@ -183,7 +183,10 @@ class OnCallDateViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	serializer_class = OnCallDateSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
-
+class YSEOnCallDateViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = YSEOnCallDate.objects.all()
+	serializer_class = YSEOnCallDateSerializer
+	permission_classes = (permissions.IsAuthenticated,)
 
 ### `Phot` ViewSets ###
 class TransientPhotometryViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):

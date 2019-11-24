@@ -37,7 +37,7 @@ urlpatterns = [
     url(r'^transient_edit/$', views.transient_edit, name='transient_edit'),
     url(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
     url(r'^transient_detail/(?P<slug>[a-zA-Z0-9_-]+)/$', views.transient_detail, name='transient_detail'),
-    url(r'^transient_summary/(?P<status_name>[a-zA-Z0-9_-]+)/$', views.transient_summary, name='transient_summary'),
+    url(r'^transient_summary/(?P<status_or_query_name>.*)/$', views.transient_summary, name='transient_summary'),
 
     url(r'^observing_calendar/$', views.observing_calendar, name='observing_calendar'),
     url(r'^yse_observing_calendar/$', views.yse_observing_calendar, name='yse_observing_calendar'),
@@ -72,6 +72,7 @@ urlpatterns = [
 	url(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
     url(r'^add_transient_observation_task/', AddTransientObservationTaskFormView.as_view(), name='add_transient_observation_task'),
 	url(r'^add_survey_field/', AddSurveyFieldFormView.as_view(), name='add_survey_field'),
+	url(r'^add_oncall_observer/', AddOncallUserFormView.as_view(), name='add_oncall_observer'),
     url(r'^add_transient_comment/', AddTransientCommentFormView.as_view(), name='add_transient_comment'),
 	url(r'^add_dashboard_query/', AddDashboardQueryFormView.as_view(), name='add_dashboard_query'),
 	url(r'^remove_dashboard_query/(?P<pk>[0-9_-]+)/', RemoveDashboardQueryFormView.as_view(), name='remove_dashboard_query'),

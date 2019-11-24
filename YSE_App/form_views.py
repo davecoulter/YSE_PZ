@@ -146,7 +146,7 @@ class AddSurveyFieldFormView(FormView):
 	success_url = '/form-success/'
 
 	def form_invalid(self, form):
-		response = super(AddTransientFollowupFormView, self).form_invalid(form)
+		response = super(AddSurveyFieldFormView, self).form_invalid(form)
 		if self.request.is_ajax():
 			return JsonResponse(form.errors, status=400)
 		else:
@@ -223,7 +223,72 @@ class AddSurveyFieldFormView(FormView):
 			return JsonResponse(data)
 		else:
 			return response
+
+class AddOncallUserFormView(FormView):
+	form_class = OncallForm
+	template_name = 'YSE_App/form_snippets/oncall_form.html'
+	success_url = '/form-success/'
+
+	def form_invalid(self, form):
+		response = super(AddOncallUserFormView, self).form_invalid(form)
+		if self.request.is_ajax():
+			return JsonResponse(form.errors, status=400)
+		else:
+			return response
+
+	def form_valid(self, form):
+		response = super(AddOncallUserFormView, self).form_valid(form)
+		if self.request.is_ajax():
+			instance = form.save(commit=False)
+			#instance.created_by = self.request.user
+			#instance.modified_by = self.request.user
+			#instance.obs_group = ObservationGroup.objects.get(name='YSE')
+			#instance.width_deg = 3.3
+			#instance.height_deg = 3.3
+			first_mjd = date_to_mjd(form.cleaned_data['valid_start'])
+			last_mjd = date_to_mjd(form.cleaned_data['valid_stop'])
+			#instance.ra_cen,instance.dec_cen = coordstr_to_decimal(
+			#	form.cleaned_data['coord'])
 			
+			#instance.save() #update_fields=['created_by','modified_by']
+
+			#print(form.cleaned_data)
+
+			# clear out the conflicting SurveyObservationTasks
+			# danger!
+			#obs_requests = SurveyObservation.objects.\
+			#			   filter(survey_field__id=instance.field_id).\
+			#			   filter(mjd_requested__range=(instance.first_mjd,
+			#											instance.last_mjd))
+			#obs_requests.delete()
+			
+			# use the SurveyField to populate the SurveyObservationTask list
+			# rules: follow cad
+			#import pdb; pdb.set_trace()
+			mjd = np.arange(first_mjd,last_mjd,1)
+			for i,m in enumerate(mjd):
+				t = Time(m,format='mjd')
+				yse_date = YSEOnCallDate.objects.filter(on_call_date='%s 00:00:00'%t.iso.split()[0])
+				if not len(yse_date):
+					yse_date = YSEOnCallDate.objects.create(
+						created_by=self.request.user,
+						modified_by=self.request.user,
+						on_call_date='%s 00:00:00'%t.iso.split()[0])
+				else:
+					yse_date = yse_date[0]
+				yse_date.user.add(form.cleaned_data['user'])
+				yse_date.save()
+				
+			# for key,value in form.cleaned_data.items():
+			data = {
+				'message': "Successfully submitted form data.",
+			}
+			return JsonResponse(data)
+	
+		else:
+			return response
+
+		
 class AddTransientCommentFormView(FormView):
 	form_class = TransientCommentForm
 	template_name = 'simple.html'#YSE_App/form_snippets/transient_followup_form.html'

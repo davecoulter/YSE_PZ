@@ -622,13 +622,16 @@ def add_transient_spec_util(specdict,transient,user):
 			return JsonResponse(return_dict)
 
 		specdata = spectrum['specdata']
+		specdata_entries = []
 		for k in specdata.keys():
 			s = specdata[k]
 
-			TransientSpecData.objects.create(spectrum=transientspec,wavelength=s['wavelength'],
-											 flux=s['flux'],flux_err=s['flux_err'],
-											 created_by_id=user.id,modified_by_id=user.id)
-	
+			specdata_single = TransientSpecData(spectrum=transientspec,wavelength=s['wavelength'],
+												flux=s['flux'],flux_err=s['flux_err'],
+												created_by_id=user.id,modified_by_id=user.id)
+			specdata_entries += [specdata_single]
+		TransientSpecData.objects.bulk_create(**specdata_entries)
+			
 	return_dict = {"message":"successfully added spec data"}
 	return JsonResponse(return_dict)
 	
