@@ -180,8 +180,9 @@ less than this, in the same filter/instrument are treated as the same data.	 All
 		r = requests.post(url = url, data = json.dumps(PhotUploadAll),
 						  auth=HTTPBasicAuth(db.dblogin,db.dbpassword))
 		print(self.options.clobber)
+
 		print('YSE_PZ says: %s'%json.loads(r.text)['message'])
-		
+			
 	def parsePhotHeaderData(self,snid,ra,dec):
 
 		transientdict = {'obs_group':self.options.obsgroup,

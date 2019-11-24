@@ -418,7 +418,7 @@ class YSEObsNightTable(tables.Table):
 							  verbose_name='RA',orderable=True,order_by='survey_field.ra_dec')
 	dec_string = tables.Column(accessor='survey_field.CoordString.1',
 							   verbose_name='DEC',orderable=True,order_by='survey_field.dec_cen')
-	band = tables.Column(accessor='requested_photometric_band.name',
+	band = tables.Column(accessor='photometric_band.name',
 						 verbose_name='band',orderable=True)
 
 	rise_time = tables.Column(verbose_name='Rise Time (UT)',orderable=False,accessor='survey_field.CoordString')

@@ -41,6 +41,7 @@ from django_tables2 import RequestConfig
 from .basicauth import *
 from django.views.decorators.csrf import csrf_exempt
 from django.template import RequestContext
+from urllib.parse import unquote
 
 from .common.utilities import date_to_mjd, mjd_to_date
 
@@ -191,7 +192,7 @@ def personaldashboard(request):
 	return render(request, 'YSE_App/personaldashboard.html', context)
 
 @login_required
-def transient_summary(request,status_name,
+def transient_summary(request,status_or_query_name,
 					  template='YSE_App/transient_summary_paginate.html',
 					  extra_context=None,
 					  page_template='YSE_App/transient_summary_individual.html'):
@@ -209,16 +210,25 @@ def transient_summary(request,status_name,
 	transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
 
 	
-	status = TransientStatus.objects.filter(name=status_name.replace('followrequest','FollowupRequested')).order_by('-modified_date')
+	status = TransientStatus.objects.filter(name=status_or_query_name.replace('followrequest','FollowupRequested')).order_by('-modified_date')
 	if len(status) == 1:
 		transients = Transient.objects.filter(status=status[0]).order_by('-disc_date')
-	
+	else:
+		#import pdb; pdb.set_trace()
+		query = Query.objects.filter(title=unquote(status_or_query_name))[0]
+		if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
+		if 'name' not in query.sql.lower(): return Http404('Invalid Query')
+		if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
+		cursor = connections['explorer'].cursor()
+		cursor.execute(query.sql.replace('%','%%'), ())
+		transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+		cursor.close()
+		
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-')[0]
 	else: anchor = ''
 	context = {
 		'transients':transients,
-		'transient_status':status_name,
 		'all_transient_statuses': all_transient_statuses,
 		'transient_status_follow': transient_status_follow,
 		'transient_status_followrequest': transient_status_followrequest,
@@ -346,12 +356,16 @@ def yse_oncall_calendar(request):
 	user_colors = {}
 	for i, u in enumerate(User.objects.all().exclude(username='admin')):
 		user_colors[u.username] = colors[i % len(colors)]
-
+	oncall_form = OncallForm()
+		
 	context = {
 		'all_dates': all_dates,
-		'user_colors': user_colors
+		'user_colors': user_colors,
+		'oncall_form': oncall_form,
+		'date_start': datetime.datetime.now().__str__().split()[0],
+		'date_end': (datetime.datetime.now()+datetime.timedelta(1)).__str__().split()[0]
 	}
-	return render(request, 'YSE_App/calendar.html', context)
+	return render(request, 'YSE_App/yse_oncall_calendar.html', context)
 
 
 @login_required
@@ -379,9 +393,21 @@ def observing_calendar(request):
 
 @login_required
 def yse_home(request):
+	oncall_form = OncallForm()
 
+	transients = Transient.objects.filter(tags='YSE').order_by('-disc_date')
+	transientfilter = TransientFilter(request.GET, queryset=transients,prefix='new')
+	table = NewTransientTable(transientfilter.qs,prefix='new')
+	RequestConfig(request, paginate={'per_page': 10}).configure(table)
 	
-	context = {
+	nowdate = datetime.datetime.utcnow()
+	on_call = YSEOnCallDate.objects.filter(on_call_date__gte=nowdate-timedelta(0.5)).\
+		filter(on_call_date__lte=nowdate+timedelta(0.5))
+	context = {'on_call_observers':on_call,
+			   'oncall_form':oncall_form,
+			   'date_start': datetime.datetime.now().__str__().split()[0],
+			   'date_end': (datetime.datetime.now()+datetime.timedelta(1)).__str__().split()[0],
+			   'transient_table':(table,transientfilter),
 	}
 	return render(request, 'YSE_App/yse_home.html', context)
 
@@ -455,6 +481,7 @@ def observing_night(request, telescope, obs_date):
 	}
 	return render(request, 'YSE_App/observing_night.html', context)
 
+@login_required
 def yse_observing_night(request, obs_date):
 
 	survey_field_form = SurveyFieldForm()
