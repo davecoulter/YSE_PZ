@@ -395,11 +395,11 @@ def observing_calendar(request):
 def yse_home(request):
 	oncall_form = OncallForm()
 
-	transients = Transient.objects.filter(tags='YSE').order_by('-disc_date')
-	transientfilter = TransientFilter(request.GET, queryset=transients,prefix='new')
-	table = NewTransientTable(transientfilter.qs,prefix='new')
+	transients = Transient.objects.filter(tags__name='YSE').order_by('-disc_date')
+	transientfilter = TransientFilter(request.GET, queryset=transients,prefix='yse')
+	table = NewTransientTable(transientfilter.qs,prefix='yse')
 	RequestConfig(request, paginate={'per_page': 10}).configure(table)
-	
+
 	nowdate = datetime.datetime.utcnow()
 	on_call = YSEOnCallDate.objects.filter(on_call_date__gte=nowdate-timedelta(0.5)).\
 		filter(on_call_date__lte=nowdate+timedelta(0.5))
@@ -407,7 +407,7 @@ def yse_home(request):
 			   'oncall_form':oncall_form,
 			   'date_start': datetime.datetime.now().__str__().split()[0],
 			   'date_end': (datetime.datetime.now()+datetime.timedelta(1)).__str__().split()[0],
-			   'transient_table':(table,transientfilter),
+			   'transient_table':(table,'yse',transientfilter),
 	}
 	return render(request, 'YSE_App/yse_home.html', context)
 
