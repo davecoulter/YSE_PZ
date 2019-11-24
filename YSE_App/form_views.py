@@ -173,7 +173,7 @@ class AddSurveyFieldFormView(FormView):
 			# clear out the conflicting SurveyObservationTasks
 			# danger!
 			obs_requests = SurveyObservation.objects.\
-						   filter(survey_field__id=instance.field_id).\
+						   filter(survey_field__field_id=instance.field_id).\
 						   filter(mjd_requested__range=(instance.first_mjd,
 														instance.last_mjd))
 			obs_requests.delete()
@@ -198,7 +198,7 @@ class AddSurveyFieldFormView(FormView):
 				band1 = PhotometricBand.objects.filter(
 					name=band1name,instrument__name=instance.instrument.name)[0]
 				band2 = PhotometricBand.objects.filter(
-					name=band2name,instrument__name=instance.instrument.name)[0]				
+					name=band2name,instrument__name=instance.instrument.name)[0]
 				SurveyObservation.objects.create(
 					mjd_requested=m,
 					survey_field=instance,
