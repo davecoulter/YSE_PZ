@@ -400,6 +400,12 @@ def yse_home(request):
 	table = NewTransientTable(transientfilter.qs,prefix='yse')
 	RequestConfig(request, paginate={'per_page': 10}).configure(table)
 
+	transients_spec = Transient.objects.filter(tags__name='YSE').order_by('-disc_date').filter(tags__name='Spectroscopy Requested')
+	transientfilter_spec = TransientFilter(request.GET, queryset=transients_spec,prefix='yse')
+	table = NewTransientTable(transientfilter_spec.qs,prefix='yse_spec')
+	RequestConfig(request, paginate={'per_page': 10}).configure(table)
+
+	
 	nowdate = datetime.datetime.utcnow()
 	on_call = YSEOnCallDate.objects.filter(on_call_date__gte=nowdate-timedelta(0.5)).\
 		filter(on_call_date__lte=nowdate+timedelta(0.5))
