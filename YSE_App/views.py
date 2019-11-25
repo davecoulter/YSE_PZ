@@ -494,8 +494,8 @@ def yse_observing_night(request, obs_date):
 	
 	# get follow requests for telescope/date
 	survey_obs = SurveyObservation.objects.filter(
-		mjd_requested__gte = date_to_mjd(obs_date)+0.375).\
-		filter(mjd_requested__lte = date_to_mjd(obs_date)+1.375).\
+		Q(mjd_requested__gte = date_to_mjd(obs_date)+0.375) | Q(obs_mjd__gte = date_to_mjd(obs_date)+0.375)).\
+		filter(Q(mjd_requested__lte = date_to_mjd(obs_date)+1.375) | Q(obs_mjd__lte = date_to_mjd(obs_date)+1.375)).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
 	obs_table = YSEObsNightTable(survey_obs,obs_date=obs_date)
 	
@@ -512,7 +512,8 @@ def yse_observing_night(request, obs_date):
 	night_end_18 = tel.twilight_morning_astronomical(time,which="previous").isot.split('T')[-1][:-7]
 	night_end_12 = tel.twilight_morning_nautical(time,which="previous").isot.split('T')[-1][:-7]
 	sunrise = tel.sun_rise_time(time,which="previous").isot.split('T')[-1][:-7]
-
+	moon_illum = '%.3f'%moon_illumination(time)
+	
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-ex')[0]
 	else: anchor = ''
@@ -523,7 +524,7 @@ def yse_observing_night(request, obs_date):
 		'obs_date':obs_date,
 		'obs_table':obs_table,
 		'survey_field_form':survey_field_form,
-		'sunriseset':(sunset,night_start_12,night_start_18,night_end_18,night_end_12,sunrise)
+		'sunriseset':(sunset,night_start_12,night_start_18,night_end_18,night_end_12,sunrise,moon_illum)
 	}
 
 	context['obs_date_str'] = datetime.datetime(

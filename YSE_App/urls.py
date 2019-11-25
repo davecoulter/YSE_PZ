@@ -48,7 +48,7 @@ urlpatterns = [
 	
 	url(r'^get_transient/(?P<slug>[a-zA-Z0-9_-]+)/$', data_utils.get_transient, name='get_transient'),
 	url(r'^add_transient/', data_utils.add_transient, name='add_transient'),
-	url(r'^add_survey_obs/', data_utils.add_survey_obs, name='add_survey_obs'),
+	url(r'^add_yse_survey_obs/', data_utils.add_yse_survey_obs, name='add_yse_survey_obs'),
 	url(r'^add_gw_candidate/', data_utils.add_gw_candidate, name='add_gw_candidate'),
 	url(r'^add_transient_phot/', data_utils.add_transient_phot, name='add_transient_phot'),
 	url(r'^add_transient_spec/', data_utils.add_transient_spec, name='add_transient_spec'),
