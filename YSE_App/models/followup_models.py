@@ -57,7 +57,7 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 
 		usertelescopes = UserTelescopeToFollow.objects.all()
 		for u in usertelescopes:
-			if u.telescope.name == instance.classical_resource.telescope.name:
+			if instance.classical_resource and u.telescope.name == instance.classical_resource.telescope.name:
 				SendFollowingNotice(instance.id, instance.transient.name,
 									instance.classical_resource.telescope, u.profile)
 	
