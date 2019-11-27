@@ -464,13 +464,14 @@ def yse_observing_calendar(request):
 
 	#import pdb; pdb.set_trace()
 	todaydate = dateutil.parser.parse(datetime.datetime.today().strftime('%Y-%m-%d 00:00:00'))
-	base = todaydate-datetime.timedelta(5)
-	date_list = [base + datetime.timedelta(days=x) for x in range(5)]
+	base = todaydate-datetime.timedelta(10)
+	date_list = [base + datetime.timedelta(days=x) for x in range(20)]
 	obstuple = ()
 	colors = ['#dd4b39', 
 			  '#f39c12', 
 			  '#00c0ef']
-	for i,date in enumerate(date_list): #obs in all_obs:
+	for i,date in enumerate(date_list):
+		#obs in all_obs:
 		#if obs.mjd_requested: time = Time(mjd_to_date, format='iso')
 		#else:
 
@@ -481,6 +482,7 @@ def yse_observing_calendar(request):
 		survey_obs = SurveyObservation.objects.filter(
 			Q(mjd_requested__gte = date_to_mjd(sunset_forobs)-0.1) | Q(obs_mjd__gte = date_to_mjd(sunset_forobs)-0.1)).\
 			filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1))
+		if not len(survey_obs): continue
 		ztf_ids = survey_obs.values_list('survey_field__ztf_field_id',flat=True).distinct()
 		filters = survey_obs.values_list('photometric_band__name',flat=True).distinct()
 		ztf_list,filters_list = [],[]
