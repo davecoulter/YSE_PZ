@@ -491,7 +491,6 @@ def yse_observing_calendar(request):
 		if len(survey_obs):
 			obstuple += ((','.join(ztf_list),','.join(filters_list),date-datetime.timedelta(1),
 						  '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)]),)
-		import pdb; pdb.set_trace()
 			
 	context = {
 		'all_obs': obstuple,
