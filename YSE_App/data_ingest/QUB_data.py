@@ -400,7 +400,7 @@ class QUB(CronJobBase):
 
 		except Exception as e:
 			print(e)
-			import pdb; pdb.set_trace()
+			#import pdb; pdb.set_trace()
 						
 	def UploadTransients(self,TransientUploadDict):
 
@@ -722,7 +722,7 @@ class YSE(CronJobBase):
 
 		except Exception as e:
 			print(e)
-			import pdb; pdb.set_trace()
+			#import pdb; pdb.set_trace()
 						
 	def UploadTransients(self,TransientUploadDict):
 

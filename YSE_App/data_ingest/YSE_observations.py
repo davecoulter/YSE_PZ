@@ -67,7 +67,6 @@ class SurveyObs(CronJobBase):
 			uploaddict = self.process_emails()
 		except Exception as e:
 			print(e)
-			import pdb; pdb.set_trace()
 
 		if uploaddict is not None: self.upload(uploaddict)
 		
@@ -176,7 +175,7 @@ class SurveyObs(CronJobBase):
 
 			try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
 			except: print(r.text)
-		except: import pdb; pdb.set_trace()
+		except exception as e: print(e)
 		print("upload finished.")
 		
 	def add_options(self, parser=None, usage=None, config=None):
