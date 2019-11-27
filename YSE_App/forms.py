@@ -87,7 +87,29 @@ class SurveyFieldForm(ModelForm):
 				  'cadence',
 				  'ztf_field_id',
 				  'instrument']
+		
+class SurveyObsForm(ModelForm):
 
+	survey_obs_date = forms.DateTimeField()
+	#import pdb; pdb.set_trace()
+	qs = [(i['ztf_field_id'], i['ztf_field_id']) for i in SurveyField.objects.all().values('ztf_field_id').distinct()]
+	#type_choices = [(i['type'], i['type']) for i in Property.objects.values('type').distinct()]
+
+	if len(qs):
+		ztf_field_id = forms.ChoiceField(
+			choices=qs,
+			initial=qs[0],
+			required=True)
+	else:
+		ztf_field_id = forms.ChoiceField(
+			choices=[],
+			required=True)
+		
+	class Meta:
+		model = SurveyObservation
+		fields = ['survey_obs_date','ztf_field_id']
+
+		
 class OncallForm(ModelForm):
 
 	valid_start = forms.DateTimeField()
@@ -132,7 +154,7 @@ class TransientObservationTaskForm(ModelForm):
 class QueryModelChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return obj.__unicode__
-		
+
 class AddDashboardQueryForm(ModelForm):
 	query = QueryModelChoiceField(Query.objects.all())
 

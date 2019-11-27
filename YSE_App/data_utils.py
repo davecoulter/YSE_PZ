@@ -29,6 +29,146 @@ from django.db.models import Q
 
 @csrf_exempt
 @login_or_basic_auth_required
+def add_yse_survey_fields(request):
+	telescope = Telescope.objects.get(name='Pan-STARRS1')
+	location = EarthLocation.from_geodetic(
+		telescope.longitude*u.deg,telescope.latitude*u.deg,
+		telescope.elevation*u.m)
+
+	survey_data = JSONParser().parse(request)
+
+	auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+	credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+	username, password = credentials.split(':', 1)
+	user = auth.authenticate(username=username, password=password)
+
+	# ready to send error emails
+	smtpserver = "%s:%s" % (djangoSettings.SMTP_HOST, djangoSettings.SMTP_PORT)
+	from_addr = "%s@gmail.com" % djangoSettings.SMTP_LOGIN
+	subject = "Survey Upload Failure"
+	txt_msg = "Alert : YSE_PZ Failed to upload today's survey fields "
+
+	survey_entries = []
+	for surveylistkey in survey_data.keys():
+		surveydict = {'created_by_id':user.id,'modified_by_id':user.id}
+		survey = survey_data[surveylistkey]
+		
+		surveykeys = survey.keys()
+		for surveykey in surveykeys:
+			if not isinstance(SurveyField._meta.get_field(surveykey), ForeignKey):
+				surveydict[surveykey] = survey[surveykey]
+			else:
+				fkmodel = SurveyField._meta.get_field(surveykey).remote_field.model
+				if surveykey == 'photometric_band':
+					fk = fkmodel.objects.filter(name=survey[surveykey].split('-')[1]).filter(instrument__name=survey[surveykey].split('-')[0])
+				elif surveykey == 'survey_field':
+					fk = fkmodel.objects.filter(field_id=survey[surveykey])
+				else: fk = fkmodel.objects.filter(name=survey[surveykey])
+				if not len(fk):
+					print("Sending email to: %s" % user.username)
+					html_msg = "Alert : YSE_PZ Failed to upload survey obs "
+					html_msg += "\nError : %s value doesn\'t exist in SurveyField.%s FK relationship"
+					sendemail(from_addr, user.email, subject,
+							  html_msg%(survey[surveykey],surveykey),
+							  djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+					continue
+
+				surveydict[surveykey] = fk[0]
+
+		dbsurveyfield = SurveyField.objects.filter(
+			field_id=surveydict['field_id'])
+
+		if len(dbsurveyfield):
+			dbsurveyfield.update(**surveydict)
+		else:
+			dbsurveyfield = SurveyField(**surveydict)
+			survey_entries += [dbsurveyfield]
+
+	SurveyField.objects.bulk_create(survey_entries)
+	return_dict = {"message":"success"}
+	return JsonResponse(return_dict)
+
+
+@csrf_exempt
+@login_or_basic_auth_required
+def add_yse_survey_obs(request):
+	telescope = Telescope.objects.get(name='Pan-STARRS1')
+	location = EarthLocation.from_geodetic(
+		telescope.longitude*u.deg,telescope.latitude*u.deg,
+		telescope.elevation*u.m)
+
+	survey_data = JSONParser().parse(request)
+
+	auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+	credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+	username, password = credentials.split(':', 1)
+	user = auth.authenticate(username=username, password=password)
+
+	# ready to send error emails
+	smtpserver = "%s:%s" % (djangoSettings.SMTP_HOST, djangoSettings.SMTP_PORT)
+	from_addr = "%s@gmail.com" % djangoSettings.SMTP_LOGIN
+	subject = "Survey Upload Failure"
+	txt_msg = "Alert : YSE_PZ Failed to upload today's survey fields "
+
+	survey_entries = []
+	for surveylistkey in survey_data.keys():
+		surveydict = {'created_by_id':user.id,'modified_by_id':user.id}
+		survey = survey_data[surveylistkey]
+		
+		surveykeys = survey.keys()
+		for surveykey in surveykeys:
+			if not isinstance(SurveyObservation._meta.get_field(surveykey), ForeignKey):
+				surveydict[surveykey] = survey[surveykey]
+			else:
+				fkmodel = SurveyObservation._meta.get_field(surveykey).remote_field.model
+				if surveykey == 'photometric_band':
+					fk = fkmodel.objects.filter(name=survey[surveykey].split('-')[1]).filter(instrument__name=survey[surveykey].split('-')[0])
+				elif surveykey == 'survey_field':
+					fk = fkmodel.objects.filter(field_id=survey[surveykey])
+				else: fk = fkmodel.objects.filter(name=survey[surveykey])
+				if not len(fk):
+					print("Sending email to: %s" % user.username)
+					html_msg = "Alert : YSE_PZ Failed to upload survey obs "
+					html_msg += "\nError : %s value doesn\'t exist in SurveyObservation.%s FK relationship"
+					sendemail(from_addr, user.email, subject,
+							  html_msg%(survey[surveykey],surveykey),
+							  djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+					continue
+
+				surveydict[surveykey] = fk[0]
+
+		dbsurveyfield = SurveyObservation.objects.filter(
+			survey_field=surveydict['survey_field']).filter(
+				obs_mjd__gt=float(surveydict['obs_mjd'])-0.01).filter(
+					obs_mjd__lt=float(surveydict['obs_mjd'])+0.01).filter(
+						photometric_band=surveydict['photometric_band'])
+		if not len(dbsurveyfield):
+			# obs MJD on same night - probably need to get rise/set times
+			# to do this right
+			time = Time(mjd_to_date(surveydict['obs_mjd']), format='isot')
+			tel = Observer(location=location, timezone="UTC")
+
+			sunset = date_to_mjd(tel.sun_set_time(time,which="previous").isot)
+			sunrise = date_to_mjd(tel.sun_rise_time(time,which="next").isot)
+
+			dbsurveyfield = SurveyObservation.objects.filter(
+				survey_field=surveydict['survey_field']).filter(
+					mjd_requested__gt=sunset).filter(
+						mjd_requested__lt=sunrise).filter(
+							photometric_band=surveydict['photometric_band'])
+
+		if len(dbsurveyfield):
+			dbsurveyfield.update(**surveydict)
+		else:
+			dbsurveyfield = SurveyObservation(**surveydict)
+			survey_entries += [dbsurveyfield]
+
+	SurveyObservation.objects.bulk_create(survey_entries)
+	return_dict = {"message":"success"}
+	return JsonResponse(return_dict)
+	
+@csrf_exempt
+@login_or_basic_auth_required
 def add_transient(request):
 	transient_data = JSONParser().parse(request)
 	
@@ -130,10 +270,21 @@ def add_transient(request):
 						transientdict['postage_stamp_ref_fits'] = dbtransient[0].postage_stamp_ref_fits
 						transientdict['postage_stamp_diff_fits'] = dbtransient[0].postage_stamp_diff_fits
 
+					#taglist = []
+					#if 'tags' in transientkeys:
+					#	for tag in transient['tags']:
+					#		tagobj = TransientTag.objects.get(name=tag)
+					#		taglist += [tagobj]
 					dbtransient.update(**transientdict)
+					if 'tags' in transientkeys:
+						for tag in transient['tags']:
+							tagobj = TransientTag.objects.get(name=tag)
+							dbtransient[0].tags.add(tagobj)
+							dbtransient[0].save()
 
 				else:
 					dbtransient = Transient(**transientdict)
+					
 					transient_entries += [dbtransient]
 					#dbtransient = Transient.objects.create(**transientdict)
 			else: #if clobber:
@@ -153,9 +304,6 @@ def add_transient(request):
 				dbtransient = dbtransient[0]
 
 			#print('saved transient in %.1f sec'%(t4-t3))
-			#if 'tags' in transientkeys:
-			#	for tag in transient['tags']:
-			#		tagobj = TransientTag.objects.get(name=tag)
 			#		dbtransient.tags.add(tagobj)
 			#	dbtransient.save()
 
@@ -173,7 +321,15 @@ def add_transient(request):
 
 	#import pdb; pdb.set_trace()
 	Transient.objects.bulk_create(transient_entries)
-
+	for t in transient_entries:
+		dbt = Transient.objects.get(name=t.name)
+		transient = transient_data[t.name]
+		if 'tags' in transient.keys():
+			for tag in transient['tags']:
+				tagobj = TransientTag.objects.get(name=tag)
+				dbt.tags.add(tagobj)
+				dbt.save()
+		
 	# add photometry, spectra, hosts
 	phot_entries = []
 	for transientlistkey in transient_data.keys():

@@ -54,16 +54,19 @@ INSTALLED_APPS = [
 	'django_filters',
 	'django_cron',
 	'el_pagination',
-	'silk'
+	#'silk'
 ]
 
 CRON_CLASSES = [
-	'YSE_App.data_ingest.QUB_data.QUB',
-    'YSE_App.rapid.rapid_classify.rapid_classify_cron',
+	'YSE_App.data_ingest.YSE_observations.SurveyObs',
+	#'YSE_App.data_ingest.Query_ZTF.MARS_ZTF',
+	#'YSE_App.data_ingest.QUB_data.YSE',
+	#'YSE_App.data_ingest.QUB_data.QUB',
+    #'YSE_App.rapid.rapid_classify.rapid_classify_cron',
 ]
 
 MIDDLEWARE = [
-	'silk.middleware.SilkyMiddleware',
+	#'silk.middleware.SilkyMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

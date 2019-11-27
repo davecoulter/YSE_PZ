@@ -115,6 +115,11 @@ class InformationSourceViewSet(viewsets.ReadOnlyModelViewSet):
 	permission_classes = (permissions.IsAuthenticated,)
 
 ### `Followup` ViewSets ###
+class SimpleTransientSpecRequestViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+	queryset = SimpleTransientSpecRequest.objects.all()
+	serializer_class = SimpleTransientSpecRequestSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
 class TransientFollowupViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = TransientFollowup.objects.all()
 	serializer_class = TransientFollowupSerializer

@@ -60,11 +60,16 @@ class SurveyObservationSerializer(serializers.HyperlinkedModelSerializer):
 		instance.status = validated_data.get('status', instance.status)
 		instance.pos_angle_deg = validated_data.get('pos_angle_deg', instance.pos_angle_deg)
 
-		instance.fwhm = validated_data.get('fwhm', instance.fwhm)
+		instance.fwhm_major = validated_data.get('fwhm', instance.fwhm_major)
 		instance.eccentricity = validated_data.get('eccentricity', instance.eccentricity)
 		instance.airmass = validated_data.get('airmass', instance.airmass)
 		instance.image_id = validated_data.get('image_id', instance.image_id)
-		
+
+		instance.mag_lim = validated_data.get('mag_lim', instance.mag_lim)
+		instance.zpt_obs = validated_data.get('zpt_obs', instance.zpt_obs)
+		instance.quality = validated_data.get('quality', instance.quality)
+		instance.n_good_skycell = validated_data.get('n_good_skycell', instance.n_good_skycell)		
+
 		instance.save()
 
 		return instance

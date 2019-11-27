@@ -45,9 +45,12 @@ urlpatterns = [
     url(r'^observing_night/(?P<telescope>.*)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.observing_night, name='observing_night'),
     #url(r'^survey_observing_calendar/$', views.survey_observing_calendar, name='survey_observing_calendar'),
     url(r'^yse_observing_night/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.yse_observing_night, name='yse_observing_night'),
+    url(r'^view_yse_fields/$', view_utils.view_yse_fields, name='view_yse_fields'),
 	
 	url(r'^get_transient/(?P<slug>[a-zA-Z0-9_-]+)/$', data_utils.get_transient, name='get_transient'),
 	url(r'^add_transient/', data_utils.add_transient, name='add_transient'),
+	url(r'^add_yse_survey_obs/', data_utils.add_yse_survey_obs, name='add_yse_survey_obs'),
+	url(r'^add_yse_survey_fields/', data_utils.add_yse_survey_fields, name='add_yse_survey_fields'),
 	url(r'^add_gw_candidate/', data_utils.add_gw_candidate, name='add_gw_candidate'),
 	url(r'^add_transient_phot/', data_utils.add_transient_phot, name='add_transient_phot'),
 	url(r'^add_transient_spec/', data_utils.add_transient_spec, name='add_transient_spec'),
@@ -72,6 +75,7 @@ urlpatterns = [
 	url(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
     url(r'^add_transient_observation_task/', AddTransientObservationTaskFormView.as_view(), name='add_transient_observation_task'),
 	url(r'^add_survey_field/', AddSurveyFieldFormView.as_view(), name='add_survey_field'),
+	url(r'^add_survey_obs/', AddSurveyObsFormView.as_view(), name='add_survey_obs'),
 	url(r'^add_oncall_observer/', AddOncallUserFormView.as_view(), name='add_oncall_observer'),
     url(r'^add_transient_comment/', AddTransientCommentFormView.as_view(), name='add_transient_comment'),
 	url(r'^add_dashboard_query/', AddDashboardQueryFormView.as_view(), name='add_dashboard_query'),
@@ -91,7 +95,7 @@ urlpatterns = [
 	url(r'^tonight_moon_angle/(?P<transient_id>[0-9]+)/(?P<too_id>[a-zA-Z0-9_-]+)',
 		view_utils.tonight_moon_angle, name='tonight_moon_angle'),
 
-	url(r'^delta_too_hours/(?P<transient_id>[0-9]+)/(?P<too_id>[a-zA-Z0-9_-]+)',
+	url(r'^delta_too_hours/(?P<too_id>[a-zA-Z0-9_-]+)',
 		view_utils.delta_too_hours, name='delta_too_hours'),
 
 	url(r'^get_ps1_image/(?P<transient_id>[0-9]+)',
@@ -105,7 +109,7 @@ urlpatterns = [
 
     path('accounts/', include('django.contrib.auth.urls')),
 	url(r'^explorer/', include('explorer.urls')),
-	url(r'^silk/', include('silk.urls', namespace='silk')),
+	#url(r'^silk/', include('silk.urls', namespace='silk')),
 ]
 
 router = DefaultRouter()

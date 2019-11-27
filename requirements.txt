@@ -78,3 +78,4 @@ dustmaps
 sncosmo
 photutils
 extinction
+antares-client

@@ -51,13 +51,17 @@ class SurveyObservation(BaseModel):
 	exposure_time = models.FloatField()
 	photometric_band = models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
 	pos_angle_deg = models.FloatField(null=True, blank=True)
-	fwhm = models.FloatField(null=True, blank=True)
+	fwhm_major = models.FloatField(null=True, blank=True)
 	eccentricity = models.FloatField(null=True, blank=True)
 	airmass = models.FloatField(null=True, blank=True)
-	image_id = models.BigIntegerField(null=True, blank=True)
+	image_id = models.CharField(max_length=128,null=True,blank=True)
+	mag_lim = models.FloatField(null=True, blank=True)
+	zpt_obs = models.FloatField(null=True, blank=True)
+	quality = models.IntegerField(null=True, blank=True)
+	n_good_skycell = models.IntegerField(null=True, blank=True)
 	
 	def __str__(self):
-		if self.mjd:
+		if self.obs_mjd:
 			return '%s: %s'%(
 				self.survey_field.field_id,self.obs_mjd)
 		else:

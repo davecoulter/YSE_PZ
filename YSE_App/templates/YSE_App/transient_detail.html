@@ -1799,7 +1799,7 @@
                   $(rows).append(json["moon_angle"])
               });
 
-              $.get("{% url 'delta_too_hours' transient.id too_resource.id %}").done(function(json){
+              $.get("{% url 'delta_too_hours' too_resource.id %}").done(function(json){
                   var rows = $("#delta_too_hours_{{too_resource.id}}")
                   $(rows).append(json["delta_too_hours"])
               });

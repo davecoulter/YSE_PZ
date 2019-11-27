@@ -1,0 +1,43 @@
+{% load widget_tweaks %}
+
+{% block content %}
+	<div class="box box-primary box-solid"> <!--collapsed-box-->
+		<div class="box-header with-border">
+			<button id="add_survey_obs_btn" type="button" class="btn btn-box-tool" data-widget="collapse" style="height: 30px;"><h3 class="box-title">Add Pan-STARRS Survey Observation</h3></button>
+		</div>
+		<div class="box-body">
+			<form id="add_survey_obs" action="{% url 'add_survey_obs' %}" method="post">
+				{% csrf_token %}
+				{% for hidden_field in form.hidden_fields %}
+					{{ hidden_field }}
+				{% endfor %}
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>ID</label>
+						{% render_field form.ztf_field_id class+="form-control select2" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Date (UT)</label>
+						<div class="input-group">
+							<div class="input-group-addon">
+								<i class="fa fa-clock-o"></i>
+							</div>
+							<!--
+							<input type="text" class="form-control pull-right" id="survey_obs_date">
+						</div>
+						<input type="hidden" id="valid_date" name="valid_date">-->
+						<input id="survey_obs_date" class="span2 datepicker" type="text" value="" name="survey_obs_date" default="{{obs_date_str}}" data-date="{{obs_date_str}}" data-behavior="datepicker" format="mm/dd/yyyy">
+					</div>
+				</div>
+				<div class="col-xs-12">
+					<div class="form-group">
+						<br>
+						<button type="submit" class="btn btn-block btn-primary btn-lg">Submit</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+{% endblock %}

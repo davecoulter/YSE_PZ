@@ -6,7 +6,7 @@ import copy
 from .models import *
 from django.db import models
 from astropy.coordinates import EarthLocation
-from astropy.coordinates import get_moon, SkyCoord
+from astropy.coordinates import get_moon, SkyCoord, Angle
 from astropy.time import Time
 import astropy.units as u
 import datetime
@@ -42,11 +42,12 @@ iers.conf.auto_download = False
 
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.dates import DateFormatter
 from matplotlib import rcParams
-
+import healpy as hp
 
 py2bokeh_symboldict = {"^":"triangle",
 					   "+":"cross",
@@ -447,6 +448,91 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
 	response=django.http.HttpResponse(content_type='image/png')
 	canvas.print_jpg(response)
 	return response
+
+def view_yse_fields(request):
+
+	cmap = cm.gray
+	cmap.set_bad('grey')
+	cmap.set_under('white')
+
+	obs_date_now = datetime.datetime.utcnow().strftime('%Y-%m-%d 00:00:00')
+	survey_obs = SurveyObservation.objects.filter(
+		Q(mjd_requested__gte = date_to_mjd(obs_date_now)) | Q(obs_mjd__gte = date_to_mjd(obs_date_now))).\
+		filter(Q(mjd_requested__lte = date_to_mjd(obs_date_now)+1) | Q(obs_mjd__lte = date_to_mjd(obs_date_now)+1)).\
+		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
+	field_pk = survey_obs.values('survey_field').distinct()
+	survey_fields_tonight = SurveyField.objects.filter(pk__in = field_pk).select_related()
+
+	obs_date_last = datetime.datetime.utcnow().strftime('%Y-%m-%d 00:00:00')
+	survey_obs = SurveyObservation.objects.filter(
+		Q(mjd_requested__gte = date_to_mjd(obs_date_last)-1) | Q(obs_mjd__gte = date_to_mjd(obs_date_last)-1)).\
+		filter(Q(mjd_requested__lte = date_to_mjd(obs_date_last)) | Q(obs_mjd__lte = date_to_mjd(obs_date_last))).\
+		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
+	field_pk = survey_obs.values('survey_field').distinct()
+	survey_fields_last_night = SurveyField.objects.filter(pk__in = field_pk).select_related()
+
+	obs_date_last = datetime.datetime.utcnow().strftime('%Y-%m-%d 00:00:00')
+	survey_obs = SurveyObservation.objects.filter(
+		Q(mjd_requested__gte = date_to_mjd(obs_date_last)-2) | Q(obs_mjd__gte = date_to_mjd(obs_date_last)-2)).\
+		filter(Q(mjd_requested__lte = date_to_mjd(obs_date_last)-1) | Q(obs_mjd__lte = date_to_mjd(obs_date_last)-1)).\
+		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
+	field_pk = survey_obs.values('survey_field').distinct()
+	survey_fields_two_nights_ago = SurveyField.objects.filter(pk__in = field_pk).select_related()
+	
+	mapdata = hp.fitsfunc.read_map(
+		'%s/YSE_metric_map.fits'%djangoSettings.STATIC_ROOT, h=False, verbose=True)
+
+	npix = hp.nside2npix(128)
+	newmap = np.zeros(npix, dtype=np.float32)
+	fieldmap = hp.ma(np.arange(hp.nside2npix(128), dtype=np.double))
+	fieldmap.data[:] = 0
+
+	def map_survey_fields(f,metric_value=1.0):
+		sc = SkyCoord(f.ra_cen,f.dec_cen,unit=u.deg)
+		
+		width_corr = 1.65/np.abs(np.cos(f.dec_cen))
+		ra_offset = Angle(width_corr, unit=u.deg)
+		dec_offset = Angle(1.65, unit=u.deg)
+		PS_SW = SkyCoord(sc.ra - ra_offset, sc.dec - dec_offset)
+		PS_NW = SkyCoord(sc.ra - ra_offset, sc.dec + dec_offset)
+		PS_SE = SkyCoord(sc.ra + ra_offset, sc.dec - dec_offset)
+		PS_NE = SkyCoord(sc.ra + ra_offset, sc.dec + dec_offset)
+		
+		corners = np.asarray([PS_SW,PS_NW,PS_NE,PS_SE])
+		xyz_vertices = []
+		for c in corners:
+			galcoord = c.transform_to('galactic')
+			if galcoord.l.degree > 180.:
+				theta2 = galcoord.l.degree-360.
+			else:
+				theta2 = galcoord.l.degree
+			phi2 = galcoord.b.degree
+			xyz_vertices.append(hp.ang2vec(theta2, phi2, lonlat=True))
+		corner_xyz = np.asarray(xyz_vertices)
+		internal_pix = hp.query_polygon(128, corner_xyz, inclusive=False)
+		fieldmap.data[internal_pix] = metric_value
+	
+	for f in survey_fields_tonight:
+		map_survey_fields(f,metric_value=0.01)
+	for f in survey_fields_last_night:
+		map_survey_fields(f,metric_value=0.1)
+	for f in survey_fields_two_nights_ago:
+		map_survey_fields(f,metric_value=0.2)
+
+	fieldmap.data[fieldmap.data == 0] = hp.pixelfunc.UNSEEN
+	hp.mollview(mapdata, norm='hist', coord=('G','C'),
+				title='YSE Fields',fig=1,cbar=False,cmap=cmap,notext=True)		
+	hp.mollview(fieldmap.data, norm='hist', coord=('G','C'),
+				title=None,fig=1,badcolor='none',cbar=False,cmap='Paired')
+	hp.graticule()
+	fig = plt.gcf()
+	canvas=FigureCanvas(fig)
+
+	
+	response=django.http.HttpResponse(content_type='image/png')
+	canvas.print_jpg(response)
+	return response
+
 
 def salt2plot(request, transient_id, salt2fit):
 
@@ -1000,7 +1086,7 @@ def get_legacy_image(request,transient_id):
 
 	return(JsonResponse(jpegurldict))
 
-def delta_too_hours(request,transient_id,too_id):
+def delta_too_hours(request,too_id):
 	too = ToOResource.objects.get(id=too_id)
 	diff = (too.awarded_too_hours - too.used_too_hours)
 
