@@ -113,7 +113,8 @@
             <thead>
               <tr>
                 <th>Telescope</th>
-                <th>ToO Hours</th>  
+                <th>ToO Hours</th>
+                <th>PI</th>  
               </tr>
             </thead>
             <tbody>
@@ -121,6 +122,7 @@
                 <tr>
                     <td>{{ t.telescope }}</td>
                     <td id="delta_too_hours_{{t.id}}"></td>
+                    <td>{{ t.principal_investigator }}</td>
                 </tr>
               {% endfor %}
               </tbody>
