@@ -87,7 +87,7 @@ function toggle(source) {
     <div class="row">
       <div class="col-xs-6">
         <!--<input type="hidden" id="survey_field" value=""/>-->
-        {% include "YSE_App/form_snippets/survey_field_form.html" with form=survey_field_form %}
+        {% include "YSE_App/form_snippets/survey_obs_form.html" with form=survey_obs_form %}
       </div>
     </div>
 
@@ -119,26 +119,45 @@ $(document).ready(function(){
     $(function() {
       checkboxes = document.getElementsByName('selection');
       
-      $('#survey_field_date_range').daterangepicker({ 
+      //$('#survey_field_date_range').daterangepicker({ 
+      //  timePicker24Hour: true,
+      //  timePicker: true, 
+      //  timePickerIncrement: 1, 
+      //  startDate: '{{obs_date_str}} {{sunriseset.1}}',
+      //  endDate:'{{obs_date_str}} {{sunriseset.1}}',
+      //  format: 'MM/DD/YYYY HH:mm', 
+      //  locale: {
+      //    format: 'MM/DD/YYYY HH:mm'
+      //  } 
+      //});
+
+      // Initialize daterange
+      //fdr_picker = $('#survey_field_date_range').data('daterangepicker')
+      //$('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+      //$('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+      //$('#survey_field_date_range').on('apply.daterangepicker', function(ev, picker) {
+      //  $('#valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+      //  $('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+      //});
+
+      $('#survey_obs_date').datepicker({ 
         timePicker24Hour: true,
         timePicker: true, 
         timePickerIncrement: 1, 
-        startDate: '{{obs_date_str}} {{sunriseset.1}}',
-        endDate:'{{obs_date_str}} {{sunriseset.1}}',
-        format: 'MM/DD/YYYY HH:mm', 
+        startDate: '{{obs_date_str}}', //' {{sunriseset.1}}',
+        format: 'mm/dd/yyyy', 
+        //todayBtn: "linked",
         locale: {
-          format: 'MM/DD/YYYY HH:mm'
+          format: 'mm/dd/yyyy'
         } 
       });
 
       // Initialize daterange
-      fdr_picker = $('#survey_field_date_range').data('daterangepicker')
-      $('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-      $('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
-      $('#survey_field_date_range').on('apply.daterangepicker', function(ev, picker) {
-        $('#valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-        $('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
-      });
+      //fdr_picker = $('#survey_obs_date').data('datepicker')
+      //$('#valid_date').val(fdr_picker.date)
+      //$('#survey_obs_date').on('apply.datepicker', function(ev, picker) {
+      //  $('#valid_date').val(picker.date)
+      //});
 
       function ChangeErr() {
         alert("Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
@@ -223,15 +242,56 @@ $(document).ready(function(){
             // Required fields
 
               // Re-initialize the datepicker
-              $('#valid_start').val("")
-              $('#valid_stop').val("")
-              $('#follow_date_range').daterangepicker({ 
+              $('#valid_date').val("")
+              $('#survey_obs_date').datepicker({ 
                 timePicker24Hour: true,
                 timePicker: true, 
                 timePickerIncrement: 1, 
                 format: 'MM/DD/YYYY HH:mm', 
                 locale: {
                   format: 'MM/DD/YYYY HH:mm'
+                }
+              });
+          },
+
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+            alert(xhr.status + ": " + xhr.responseText);
+          }
+          });
+        }
+
+      // Submit post on submit
+      $('#add_survey_obs').on('submit', function(event){
+        event.preventDefault();
+        add_survey_obs();
+      });
+
+      function add_survey_obs() {
+        // Grab the form, and associate it with the current transient detail page
+        var data = $('#add_survey_obs').serialize()
+        //var valid_date = $('#survey_obs_date').datepicker({ dateFormat: 'mm/dd/yyyy' }).val();
+        //data = (data + "&valid_date=" + valid_date)
+
+        $.ajax({
+          url : "{% url 'add_survey_obs' %}", // the endpoint
+          type : "POST", // http method
+          data : data, // data sent with the post request
+
+          // handle a successful response
+          success : function(json) {
+            
+            // Required fields
+
+              // Re-initialize the datepicker
+              $('#valid_date').val("")
+              $('#survey_obs_date').datepicker({ 
+                timePicker24Hour: true,
+                timePicker: true, 
+                timePickerIncrement: 1, 
+                format: 'mm/dd/yyyy', 
+                locale: {
+                  format: 'mm/dd/yyyy'
                 }
               });
           },

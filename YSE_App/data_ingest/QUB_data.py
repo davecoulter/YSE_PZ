@@ -288,6 +288,10 @@ class QUB(CronJobBase):
 			transientdict[s['ps1_designation']] = tdict
 			transientdict[s['ps1_designation']]['transientphotometry'] = PhotUploadAll
 
+			photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+			if photometrydict_ztf is not None:
+				PhotUploadAll['ZTF'] = photometrydict_ztf
+			
 			nsn += 1
 			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
 			
@@ -298,6 +302,43 @@ class QUB(CronJobBase):
 		#import pdb; pdb.set_trace()
 		return transientdict,nsn
 
+	def getZTFPhotometry(self,ra,dec):
+
+		ztfurl = '%s/?format=json&sort_value=jd&sort_order=desc&cone=%.7f%%2C%.7f%%2C0.0014'%(
+			self.options.ztfurl,ra,dec)
+		client = coreapi.Client()
+		schema = client.get(ztfurl)
+		if 'results' in schema.keys():
+			PhotUploadAll = {"mjdmatchmin":0.01,
+							 "clobber":False}
+			photometrydict = {'instrument':'ZTF-Cam',
+							  'obs_group':'ZTF',
+							  'photdata':{}}
+
+			for i in range(len(schema['results'])):
+				phot = schema['results'][i]['candidate']
+				if phot['isdiffpos'] == 'f':
+					continue
+				PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
+								  'band':'%s-ZTF'%phot['filter'],
+								  'groups':[]}
+				PhotUploadDict['mag'] = phot['magap']
+				PhotUploadDict['mag_err'] = phot['sigmagap']
+				PhotUploadDict['flux'] = None
+				PhotUploadDict['flux_err'] = None
+				PhotUploadDict['data_quality'] = 0
+				PhotUploadDict['forced'] = None
+				PhotUploadDict['flux_zero_point'] = None
+				PhotUploadDict['discovery_point'] = 0
+				PhotUploadDict['diffim'] = 1
+
+				photometrydict['photdata']['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
+
+			return photometrydict
+
+		else: return None
+
+	
 	def send_data(self,TransientUploadDict):
 
 		TransientUploadDict['noupdatestatus'] = True
@@ -386,18 +427,16 @@ class YSE(CronJobBase):
 
 		# read in the options from the param file and the command line
 		# some convoluted syntax here, making it so param file is not required
-
-		parser = self.add_options(usage=usagestring)
-		options,  args = parser.parse_args()
-
-		config = configparser.ConfigParser()
-		config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
-		parser = self.add_options(usage=usagestring,config=config)
-		options,  args = parser.parse_args()
-		self.options = options
-		#tnsproc.hostmatchrad = options.hostmatchrad
-
 		try:
+			parser = self.add_options(usage=usagestring)
+			options,  args = parser.parse_args()
+
+			config = configparser.ConfigParser()
+			config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+			parser = self.add_options(usage=usagestring,config=config)
+			options,  args = parser.parse_args()
+			self.options = options
+
 			nsn = self.main()
 		except Exception as e:
 			print(e)
@@ -570,6 +609,11 @@ class YSE(CronJobBase):
 			transientdict[s['ps1_designation']] = tdict
 			transientdict[s['ps1_designation']]['transientphotometry'] = PhotUploadAll
 
+			photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+			if photometrydict_ztf is not None:
+				PhotUploadAll['ZTF'] = photometrydict_ztf
+
+			
 			nsn += 1
 			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
 			
@@ -580,6 +624,43 @@ class YSE(CronJobBase):
 		#import pdb; pdb.set_trace()
 		return transientdict,nsn
 
+	def getZTFPhotometry(self,ra,dec):
+
+		ztfurl = '%s/?format=json&sort_value=jd&sort_order=desc&cone=%.7f%%2C%.7f%%2C0.0014'%(
+			self.options.ztfurl,ra,dec)
+		client = coreapi.Client()
+		schema = client.get(ztfurl)
+		if 'results' in schema.keys():
+			PhotUploadAll = {"mjdmatchmin":0.01,
+							 "clobber":False}
+			photometrydict = {'instrument':'ZTF-Cam',
+							  'obs_group':'ZTF',
+							  'photdata':{}}
+
+			for i in range(len(schema['results'])):
+				phot = schema['results'][i]['candidate']
+				if phot['isdiffpos'] == 'f':
+					continue
+				PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
+								  'band':'%s-ZTF'%phot['filter'],
+								  'groups':[]}
+				PhotUploadDict['mag'] = phot['magap']
+				PhotUploadDict['mag_err'] = phot['sigmagap']
+				PhotUploadDict['flux'] = None
+				PhotUploadDict['flux_err'] = None
+				PhotUploadDict['data_quality'] = 0
+				PhotUploadDict['forced'] = None
+				PhotUploadDict['flux_zero_point'] = None
+				PhotUploadDict['discovery_point'] = 0
+				PhotUploadDict['diffim'] = 1
+
+				photometrydict['photdata']['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
+
+			return photometrydict
+
+		else: return None
+
+	
 	def send_data(self,TransientUploadDict):
 
 		TransientUploadDict['noupdatestatus'] = True

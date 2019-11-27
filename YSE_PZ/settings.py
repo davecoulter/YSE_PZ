@@ -59,6 +59,7 @@ INSTALLED_APPS = [
 
 CRON_CLASSES = [
 	'YSE_App.data_ingest.YSE_observations.SurveyObs',
+	#'YSE_App.data_ingest.Query_ZTF.MARS_ZTF',
 	#'YSE_App.data_ingest.QUB_data.YSE',
 	#'YSE_App.data_ingest.QUB_data.QUB',
     #'YSE_App.rapid.rapid_classify.rapid_classify_cron',

@@ -21,16 +21,166 @@
     <section class="content">
 
   <div class="row">
-    <div class="col-xs-7">
+    <div class="col-xs-12">
       <div class="box">
       <!-- Default box -->
-        <div class="box"> <!--id="{{followup_table.2}}">-->
-          <h3 class="box-title">Fields</h3>
+          <div class="box-header with-border"> <!--id="{{followup_table.2}}">-->
+          <h3 class="box-title">Current YSE Fields</h3>
           <div class="box-body">
+            <img src="{% url 'view_yse_fields' %}">
           </div>
           <div class="box-footer"></div>
         </div>
-        <div class="box"> <!--id="{{followup_table.2}}">-->
+        <div class="box-header with-border"> <!--id="{{followup_table.2}}">-->
+          <h3 class="box-title">Tonight's Fields</h3>
+          <div class="box-body">
+            <table id="YSE_fields_tbl" class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>RA</th>
+                <th>Dec</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in survey_fields_tonight %}
+                <tr>
+                    <td>{{ f.field_id }}</td>
+                    <td>{{ f.CoordString.0 }}</td>
+                    <td>{{ f.CoordString.1 }}</td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="box-footer"></div>
+        </div>
+          <div class="box-header with-border"> <!--id="{{followup_table.2}}">-->
+          <h3 class="box-title">Last Night's Fields</h3>
+          <div class="box-body">
+            <table id="YSE_fields_tbl" class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>RA</th>
+                <th>Dec</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in survey_fields_last_night %}
+                <tr>
+                    <td>{{ f.field_id }}</td>
+                    <td>{{ f.CoordString.0 }}</td>
+                    <td>{{ f.CoordString.1 }}</td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="box-footer"></div>
+        </div>
+        <div class="box-header with-border"> <!--id="{{followup_table.2}}">-->
+          <h3 class="box-title">Next Telescope Nights</h3>
+          <div class="box-body">
+            {% if upcoming_observing_nights %}
+            <table id="obsnight_tbl" class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Telescope</th>
+                <th>Night</th>  
+                <th>PI</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for n in upcoming_observing_nights %}
+              {% if n.resource.telescope.name != 'Swope' %}
+                <tr>
+                    <td>{{ n.resource.telescope }}</td>
+                    <td>{{ n.obs_date }}</td>
+                    <td>{{ n.principal_investigator }}</td>
+                </tr>
+                {% endif %}
+              {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+              No upcoming observing nights
+            {% endif %}
+
+            <h3 class="box-title">ToO Resources</h3>
+            {% if too_resources %}
+            <table id="obsnight_tbl" class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Telescope</th>
+                <th>ToO Hours</th>  
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in too_resources %}
+                <tr>
+                    <td>{{ t.telescope }}</td>
+                    <td id="delta_too_hours_{{t.id}}"></td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+              No upcoming observing nights
+            {% endif %}
+          </div>
+          <div class="box-footer"></div>
+        </div>
+        <div class="box-header with-border" id="{{transient_table.2}}"> <!--id="{{followup_table.2}}">-->
+          <h3 class="box-title">Latest Transients</h3><span style="float:right;"><a href="{% url 'transient_summary' 'PSST_Transients' %}"><h3 class="box-title">Summary View</h3></a></span>
+          <!--<p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient_table.2 }}</h3><span style="float:right;"><a href="{% url 'transient_summary' transient_table.2 %}"><h3 class="box-title">Summary View</h3></a></span></p>-->
+          </div>
+          <div align='right'>
+            {% if transient_table.2 %}
+          <form action="" method="get" class="form form-inline">
+          {% bootstrap_form transient_table.2.form layout='inline' %}
+          {% with "#"|add:transient_table.1 as link %}
+          {% bootstrap_button 'filter' %}&ensp;&nbsp;
+          {% endwith %}
+          </form>
+          {% endif %}
+        </div>
+        <div class="box-body">
+          {% render_table transient_table.0 %}
+
+        </div>
+    <!-- /.box-body -->
+    <div class="box-footer">
+    </div>
+    <div class="box-header with-border" id="{{transient_follow_table.2}}"> <!--id="{{followup_table.2}}">-->
+          <h3 class="box-title">Transients with Followup Requested</h3><span style="float:right;"><a href="{% url 'transient_summary' 'PSST_Transients_ToFollow' %}"><h3 class="box-title">Summary View</h3></a></span>
+          <!--<p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient_table.2 }}</h3><span style="float:right;"><a href="{% url 'transient_summary' transient_table.2 %}"><h3 class="box-title">Summary View</h3></a></span></p>-->
+          </div>
+          <div align='right'>
+            {% if transient_follow_table.2 %}
+          <form action="" method="get" class="form form-inline">
+          {% bootstrap_form transient_follow_table.2.form layout='inline' %}
+          {% with "#"|add:transient_follow_table.1 as link %}
+          {% bootstrap_button 'filter' %}&ensp;&nbsp;
+          {% endwith %}
+          </form>
+          {% endif %}
+        </div>
+        <div class="box-body">
+          {% render_table transient_follow_table.0 %}
+
+        </div>
+    <!-- /.box-body -->
+    <div class="box-footer">
+    </div>
+    <!-- /.box-footer-->
+  </div>
+    <!-- /.box-body -->
+  </div>
+    <div class="row">
+    <div class="col-xs-12">
+  <div class="box">
+  <div class="box-header with-border"> <!--id="{{followup_table.2}}">-->
           <h3 class="box-title">Currently On-Call</h3>
           <div class="box-body">
             {% if on_call_observers %}
@@ -64,39 +214,9 @@
           </div>
           <div class="box-footer"></div>
         </div>
-        <div class="box-header with-border"> <!--id="{{followup_table.2}}">-->
-          <h3 class="box-title">Latest Transients</h3>
-          <!--<p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient_table.2 }}</h3><span style="float:right;"><a href="{% url 'transient_summary' transient_table.2 %}"><h3 class="box-title">Summary View</h3></a></span></p>-->
-          </div>
-          <div align='right'>
-            {% if transient_table.2 %}
-          <form action="" method="get" class="form form-inline">
-          {% bootstrap_form transient_table.2.form layout='inline' %}
-          {% with "#"|add:transient_table.1 as link %}
-          {% bootstrap_button 'filter' %}&ensp;&nbsp;
-          {% endwith %}
-          </form>
-          {% endif %}
-        </div>
-        <div class="box-body">
-          {% render_table transient_table.0 %}
-
-        </div>
-    <!-- /.box-body -->
-    <div class="box-footer">
-    </div>
-    <!-- /.box-footer-->
-  </div>
-          <div class="box-body">
-          </div>
-          <div class="box-footer"></div>
-        </div>
       </div>
-    <!-- /.box-body -->
-    <div class="box-footer">
     </div>
   </div>
-</div>
     <!-- /.box-footer-->
   
   <!-- /.box -->
@@ -113,6 +233,17 @@
   <script src="{% static 'YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js' %}"></script>
 
   <script>
+    $( document ).ready(function(){
+        {% for too_resource in too_resources %}
+          {% if too_resource.used_too_hours < too_resource.awarded_too_hours %}
+
+              $.get("{% url 'delta_too_hours' too_resource.id %}").done(function(json){
+                  var rows = $("#delta_too_hours_{{too_resource.id}}")
+                  $(rows).append(json["delta_too_hours"])
+              });
+          {% endif %}
+    {% endfor %}
+  });
   $(function () {
 
       $('#oncall_date_range').daterangepicker({ 
@@ -179,6 +310,56 @@
           });
         }
 
+      function transientStatusChangeErr() {
+        alert("Transient Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
+      }
+
+      $('.transientStatusChange').on('click', function(event){
+        var status_id = $(this).attr('data-status_id')
+        var transient_id = $(this).attr('transient_id')
+        var url_target = "{% url 'transient-detail' -1 %}".replace('-1', transient_id);
+        var status_target = "{% url 'transientstatus-list' %}" + status_id + "/"
+
+        var base_url = window.location.protocol + "//" + window.location.hostname
+        var port = window.location.port
+        var api_url = base_url + url_target
+        var status_url = base_url + status_target
+
+        if (port != "") {
+          api_url = base_url + ":" + port + url_target
+          status_url = base_url + ":" + port + status_target
+        }
+
+        var putData = { "status": status_url }
+
+        $.ajax({
+          type: "PATCH",
+          url: api_url,
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+          data: putData,
+          success: function(data, textStatus, jqXHR) {
+            if (jqXHR.status == 200 && textStatus == "success") {
+
+              var tokens = data.status.split("/")
+              var status_name = tokens[tokens.length-2]
+              var button_id = "#"+transient_id+"_status_name"
+              $(button_id).text(status_name)
+              var second_button_id = "#"+transient_id+"_status_name_yse"
+              $(second_button_id).text(status_name)
+
+              {#alert(textStatus)#}
+            } else {
+              transientStatusChangeErr()
+            }
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
+            transientStatusChangeErr()
+            {#alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));#}
+          }
+        });
+        event.preventDefault();
+      });
+
       // This function gets cookie with a given name
       function getCookie(name) {
         var cookieValue = null;
@@ -232,5 +413,6 @@
         }
       });
     });
+
 </script>
 {% endblock %}

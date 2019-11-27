@@ -224,6 +224,113 @@ class AddSurveyFieldFormView(FormView):
 		else:
 			return response
 
+class AddSurveyObsFormView(FormView):
+	form_class = SurveyObsForm
+	template_name = 'YSE_App/form_snippets/survey_obs_form.html'
+	success_url = '/form-success/'
+
+	def form_invalid(self, form):
+		response = super(AddSurveyObsFormView, self).form_invalid(form)
+		if self.request.is_ajax():
+			return JsonResponse(form.errors, status=400)
+		else:
+			return response
+
+	def form_valid(self, form):
+		response = super(AddSurveyObsFormView, self).form_valid(form)
+		if self.request.is_ajax():
+			instance = form.save(commit=False)
+			#instance.created_by = self.request.user
+			#instance.modified_by = self.request.user
+			#instance.mjd = date_to_mjd(form.cleaned_data['valid_start'])
+			#instance.ra_cen,instance.dec_cen = coordstr_to_decimal(
+			#	form.cleaned_data['coord'])
+			
+			#instance.save() #update_fields=['created_by','modified_by']
+
+			#print(form.cleaned_data)
+
+			# clear out the conflicting SurveyObservationTasks
+			# danger!
+			
+			# use the SurveyField to populate the SurveyObservationTask list
+			# rules: follow cad
+			#import pdb; pdb.set_trace()
+			telescope = Telescope.objects.get(name='Pan-STARRS1')
+			location = EarthLocation.from_geodetic(
+				telescope.longitude*u.deg,telescope.latitude*u.deg,
+				telescope.elevation*u.m)
+			tel = Observer(location=location, timezone="UTC")
+			
+			m = date_to_mjd(form.cleaned_data['survey_obs_date'])
+			time = Time(m,format='mjd')
+			sunset_forobs = mjd_to_date(tel.sun_set_time(time,which="next"))
+			
+			survey_field = SurveyField.objects.filter(ztf_field_id=form.cleaned_data['ztf_field_id'])
+			for s in survey_field:
+				t = Time(m,format='mjd')
+				illum = moon_illumination(t)
+
+				# need to see what was observed in the previous obs w/ the same moon illumination
+				previous_obs = SurveyObservation.objects.filter(survey_field=s).\
+					filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('obs_mjd').select_related()
+				#filter(Q(obs_mjd__gt=m-3) | Q(mjd_requested__gt=m-3)).\
+
+				def previous_obs_func(illum_min,illum_max):
+					filt = []
+					for p in previous_obs:
+						if p.obs_mjd: mjd_prev = p.obs_mjd
+						elif p.mjd_requested: mjd_prev = p.mjd_requested
+						t_prev = Time(mjd_prev,format='mjd')
+						illum_prev = moon_illumination(t_prev)
+						if illum_prev >= illum_min and illum_prev <= illum_max:
+							filt += [p.photometric_band.name]
+						if len(filt) == 2: return filt
+					return None
+
+				if illum < 0.33:
+					filt = previous_obs_func(0,0.33)
+					if filt is None or 'i' in filt: band1name,band2name = 'g','r'
+					else: band1name,band2name = 'g','i'
+				elif illum < 0.66:
+					filt = previous_obs_func(0.33,0.66)
+					if filt is None or 'z' in filt: band1name,band2name = 'g','i'
+					else: band1name,band2name = 'g','z'
+				else:
+					filt = previous_obs_func(0.66,1)
+					if filt is None or 'z' in filt: band1name,band2name = 'r','i'
+					else: band1name,band2name = 'r','z'
+					
+				band1 = PhotometricBand.objects.filter(
+					name=band1name,instrument__name=s.instrument.name)[0]
+				band2 = PhotometricBand.objects.filter(
+					name=band2name,instrument__name=s.instrument.name)[0]
+				SurveyObservation.objects.create(
+					mjd_requested=date_to_mjd(sunset_forobs),
+					survey_field=s,
+					status=TaskStatus.objects.get(name='Requested'),
+					exposure_time=27,
+					photometric_band=band1,
+					created_by=self.request.user,
+					modified_by=self.request.user)
+				SurveyObservation.objects.create(
+					mjd_requested=date_to_mjd(sunset_forobs),
+					survey_field=s,
+					status=TaskStatus.objects.get(name='Requested'),
+					exposure_time=27,
+					photometric_band=band2,
+					created_by=self.request.user,
+					modified_by=self.request.user)
+
+			# for key,value in form.cleaned_data.items():
+			data = {
+				'message': "Successfully submitted form data.",
+			}
+			return JsonResponse(data)
+		else:
+			return response
+
+		
 class AddOncallUserFormView(FormView):
 	form_class = OncallForm
 	template_name = 'YSE_App/form_snippets/oncall_form.html'
