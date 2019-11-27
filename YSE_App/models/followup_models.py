@@ -7,9 +7,9 @@ from YSE_App.models.host_models import *
 from YSE_App.models.profile_models import *
 from YSE_App.common.alert import SendFollowingNotice
 
-class SimpleTransientSpecRequest(BaseModel):
-	status = models.ForeignKey(FollowupStatus, on_delete=models.SET(get_sentinel_followupstatus))
-	transient = models.ForeignKey(Transient, on_delete=models.CASCADE)
+#class SimpleTransientSpecRequest(BaseModel):
+#	status = models.ForeignKey(FollowupStatus, on_delete=models.SET(get_sentinel_followupstatus))
+#	transient = models.ForeignKey(Transient, on_delete=models.CASCADE)
 
 class Followup(BaseModel):
 
