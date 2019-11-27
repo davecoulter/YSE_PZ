@@ -414,21 +414,39 @@ def yse_home(request):
 	too_resources = view_utils.get_too_resources(request.user)
 	all_transient_statuses = TransientStatus.objects.all()
 
+	# get current fields
+	telescope = Telescope.objects.get(name='Pan-STARRS1')
+	location = EarthLocation.from_geodetic(
+		telescope.longitude*u.deg,telescope.latitude*u.deg,
+		telescope.elevation*u.m)
+	ut_obs_date = (datetime.datetime.utcnow()+datetime.timedelta(1)).strftime('%Y-%m-%d 00:00:00')
+	time = Time(ut_obs_date, format='iso')
+	tel = Observer(location=location, timezone="UTC")
+	sunset_forobs = tel.sun_set_time(time,which="next")
+	sunrise_forobs = tel.sun_rise_time(time,which="next")
+
 	obs_date_now = datetime.datetime.utcnow().strftime('%Y-%m-%d 00:00:00')
 	survey_obs = SurveyObservation.objects.filter(
-		Q(mjd_requested__gte = date_to_mjd(obs_date_now)) | Q(obs_mjd__gte = date_to_mjd(obs_date_now))).\
-		filter(Q(mjd_requested__lte = date_to_mjd(obs_date_now)+1) | Q(obs_mjd__lte = date_to_mjd(obs_date_now)+1)).\
+		Q(mjd_requested__gte = date_to_mjd(sunset_forobs)-0.1) | Q(obs_mjd__gte = date_to_mjd(sunset_forobs)-0.1)).\
+		filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
 	field_pk = survey_obs.values('survey_field').distinct()
 	survey_fields_tonight = SurveyField.objects.filter(pk__in = field_pk).select_related()
 
+	ut_obs_date = (datetime.datetime.utcnow()).strftime('%Y-%m-%d 00:00:00')
+	time = Time(ut_obs_date, format='iso')
+	tel = Observer(location=location, timezone="UTC")
+	sunset_forobs = tel.sun_set_time(time,which="next")
+	sunrise_forobs = tel.sun_rise_time(time,which="next")
+
 	obs_date_last = datetime.datetime.utcnow().strftime('%Y-%m-%d 00:00:00')
 	survey_obs = SurveyObservation.objects.filter(
-		Q(mjd_requested__gte = date_to_mjd(obs_date_last)-1) | Q(obs_mjd__gte = date_to_mjd(obs_date_last)-1)).\
-		filter(Q(mjd_requested__lte = date_to_mjd(obs_date_last)) | Q(obs_mjd__lte = date_to_mjd(obs_date_last))).\
+		Q(mjd_requested__gte = date_to_mjd(sunset_forobs)-0.1) | Q(obs_mjd__gte = date_to_mjd(sunset_forobs)-0.1)).\
+		filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
 	field_pk = survey_obs.values('survey_field').distinct()
 	survey_fields_last_night = SurveyField.objects.filter(pk__in = field_pk).select_related()
+	
 	
 	nowdate = datetime.datetime.utcnow()
 	on_call = YSEOnCallDate.objects.filter(on_call_date__gte=nowdate-timedelta(0.5)).\
