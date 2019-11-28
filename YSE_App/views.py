@@ -512,6 +512,7 @@ def yse_observing_calendar(request):
 			
 	context = {
 		'all_obs': obstuple,
+		'utc_time': datetime.datetime.utcnow().isoformat().replace(' ','T'),
 		#'telescope_colors': telescope_colors
 	}
 	return render(request, 'YSE_App/yse_observing_calendar.html', context)
