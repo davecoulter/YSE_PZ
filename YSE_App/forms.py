@@ -51,7 +51,7 @@ class TransientFollowupForm(ModelForm):
 			required=False)
 		valid_start = forms.DateTimeField()
 		valid_stop = forms.DateTimeField()
-		
+
 	class Meta:
 		model = TransientFollowup
 		fields = [
@@ -93,18 +93,17 @@ class SurveyObsForm(ModelForm):
 	survey_obs_date = forms.DateTimeField()
 	#import pdb; pdb.set_trace()
 	qs = [(i['ztf_field_id'], i['ztf_field_id']) for i in SurveyField.objects.all().values('ztf_field_id').distinct()]
-	#type_choices = [(i['type'], i['type']) for i in Property.objects.values('type').distinct()]
-
+	
 	if len(qs):
-		ztf_field_id = forms.ChoiceField(
+		ztf_field_id = forms.MultipleChoiceField(
 			choices=qs,
 			initial=qs[0],
 			required=True)
 	else:
-		ztf_field_id = forms.ChoiceField(
+		ztf_field_id = forms.MultipleChoiceField(
 			choices=[],
 			required=True)
-		
+
 	class Meta:
 		model = SurveyObservation
 		fields = ['survey_obs_date','ztf_field_id']

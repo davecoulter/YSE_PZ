@@ -240,33 +240,17 @@ class AddSurveyObsFormView(FormView):
 		response = super(AddSurveyObsFormView, self).form_valid(form)
 		if self.request.is_ajax():
 			instance = form.save(commit=False)
-			#instance.created_by = self.request.user
-			#instance.modified_by = self.request.user
-			#instance.mjd = date_to_mjd(form.cleaned_data['valid_start'])
-			#instance.ra_cen,instance.dec_cen = coordstr_to_decimal(
-			#	form.cleaned_data['coord'])
-			
-			#instance.save() #update_fields=['created_by','modified_by']
 
-			#print(form.cleaned_data)
-
-			# clear out the conflicting SurveyObservationTasks
-			# danger!
-			
-			# use the SurveyField to populate the SurveyObservationTask list
-			# rules: follow cad
-			#import pdb; pdb.set_trace()
 			telescope = Telescope.objects.get(name='Pan-STARRS1')
 			location = EarthLocation.from_geodetic(
 				telescope.longitude*u.deg,telescope.latitude*u.deg,
 				telescope.elevation*u.m)
-			tel = Observer(location=location, timezone="UTC")
+			tel = Observer(location=location, timezone="US/Hawaii")
 			
 			m = date_to_mjd(form.cleaned_data['survey_obs_date'])
 			time = Time(m,format='mjd')
 			sunset_forobs = mjd_to_date(tel.sun_set_time(time,which="next"))
-			
-			survey_field = SurveyField.objects.filter(ztf_field_id=form.cleaned_data['ztf_field_id'])
+			survey_field = SurveyField.objects.filter(ztf_field_id__in=form.cleaned_data['ztf_field_id'])
 			for s in survey_field:
 				t = Time(m,format='mjd')
 				illum = moon_illumination(t)
