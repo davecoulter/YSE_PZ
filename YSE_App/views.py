@@ -507,7 +507,7 @@ def yse_observing_calendar(request):
 		for z in ztf_ids: ztf_list += [z.__str__()]
 		for f in filters: filters_list += [f.__str__()]
 		if len(survey_obs):
-			obstuple += ((','.join(ztf_list),','.join(filters_list),date-datetime.timedelta(1),
+			obstuple += ((','.join(ztf_list),','.join(filters_list),date,
 						  '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)]),)
 			
 	context = {
@@ -568,7 +568,7 @@ def yse_observing_night(request, obs_date):
 		telescope.longitude*u.deg,telescope.latitude*u.deg,
 		telescope.elevation*u.m)
 
-	ut_obs_date = (dateutil.parser.parse(obs_date)+datetime.timedelta(1)).strftime('%Y-%m-%d 00:00:00')
+	ut_obs_date = (dateutil.parser.parse(obs_date)).strftime('%Y-%m-%d 00:00:00')
 	time = Time(ut_obs_date, format='iso')
 	tel = Observer(location=location, timezone="UTC")
 
@@ -589,7 +589,6 @@ def yse_observing_night(request, obs_date):
 		filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
 	obs_table = YSEObsNightTable(survey_obs,obs_date=obs_date)
-	#import pdb; pdb.set_trace()
 	
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-ex')[0]
@@ -606,7 +605,7 @@ def yse_observing_night(request, obs_date):
 	}
 
 	context['obs_date_str'] = datetime.datetime(
-			int(obs_date.split('-')[0]),int(obs_date.split('-')[1]),int(obs_date.split('-')[2])+1).strftime('%m/%d/%Y')
+			int(obs_date.split('-')[0]),int(obs_date.split('-')[1]),int(obs_date.split('-')[2])).strftime('%m/%d/%Y')
 	return render(request, 'YSE_App/yse_observing_night.html', context)
 
 
