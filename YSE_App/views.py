@@ -400,12 +400,12 @@ def observing_calendar(request):
 def yse_home(request):
 	oncall_form = OncallForm()
 
-	transients = Transient.objects.filter(tags__name='PSST').filter(~Q(status__name='Ignore')).order_by('-disc_date')
+	transients = Transient.objects.filter(tags__name='YSE').filter(~Q(status__name='Ignore')).order_by('-disc_date')
 	transientfilter = TransientFilter(request.GET, queryset=transients,prefix='yse')
 	table = TransientTable(transientfilter.qs,prefix='yse')
 	RequestConfig(request, paginate={'per_page': 10}).configure(table)
 
-	transients_follow = Transient.objects.filter(tags__name='PSST').order_by('-disc_date').filter(Q(status__name='FollowupRequested') | Q(status__name='Following'))
+	transients_follow = Transient.objects.filter(tags__name='YSE').order_by('-disc_date').filter(Q(status__name='FollowupRequested') | Q(status__name='Following'))
 	transientfilter_follow = TransientFilter(request.GET, queryset=transients_follow,prefix='yse_follow')
 	table_follow = YSETransientTable(transientfilter_follow.qs,prefix='yse_follow')
 	RequestConfig(request, paginate={'per_page': 10}).configure(table)
