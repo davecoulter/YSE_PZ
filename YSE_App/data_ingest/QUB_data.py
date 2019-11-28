@@ -488,9 +488,13 @@ class YSE(CronJobBase):
 			parser.add_option('--qubpass', default=config.get('main','qubpass'), type="string",
 							  help='QUB database password (default=%default)')
 			parser.add_option('--yselink_summary', default=config.get('main','yselink_summary'), type="string",
-							  help='PSST summary CSV (default=%default)')
+							  help='YSE summary CSV (default=%default)')
 			parser.add_option('--yselink_lc', default=config.get('main','yselink_lc'), type="string",
 							  help='YSE lightcurve CSV (default=%default)')
+			parser.add_option('--yselink_genericsummary', default=config.get('main','yselink_genericsummary'), type="string",
+							  help='YSE summary CSV for possible candidates (default=%default)')
+			parser.add_option('--yselink_genericlc', default=config.get('main','yselink_genericlc'), type="string",
+							  help='YSE lightcurve CSV for possible candidates (default=%default)')
 			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
 							  help='ZTF URL (default=%default)')
 
@@ -517,104 +521,112 @@ class YSE(CronJobBase):
 	def parse_data(self):
 		# today's date
 		nowmjd = Time.now().mjd
-		
-		# grab CSV files
-		r = requests.get(url=self.options.yselink_summary,
-						 auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
-		if r.status_code != 200: raise RuntimeError('problem accessing summary link %s'%self.options.yselink_summary)
-		summary = at.Table.read(r.text, format='ascii', delimiter='|')
-
-		r = requests.get(url=self.options.yselink_lc,
-						 auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
-		if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
-		lc = at.Table.read(r.text, format='ascii', delimiter='|')
 
 		transientdict = {}
 		obj,ra,dec = [],[],[]
 		nsn = 0
-		for i,s in enumerate(summary):
-			if nowmjd - s['mjd_obs'] > self.options.max_days: continue
-			#if nsn > 100: break
-			#if nsn < 20:
-			#	nsn += 1
-			#	continue
+		
+		for yselink_summary, yselink_lc, namecol in zip([self.options.yselink_summary,self.options.yselink_genericsummary],
+														[self.options.yselink_lc,self.options.yselink_genericlc],
+														['ps1_designation','local_designation']):
+
+			# grab CSV files
+			r = requests.get(url=yselink_summary,
+							 auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+			if r.status_code != 200: raise RuntimeError('problem accessing summary link %s'%self.options.yselink_summary)
+			try: summary = at.Table.read(r.text, format='ascii', delimiter='|')
+			except: continue
 			
-			sc = SkyCoord(s['ra_psf'],s['dec_psf'],unit=u.deg)
-			try:
-				ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
-			except:
-				ps_prob = None
+			r = requests.get(url=yselink_lc,
+							 auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+			if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
+			try: lc = at.Table.read(r.text, format='ascii', delimiter='|')
+			except: continue
+			
+			for i,s in enumerate(summary):
+				if nowmjd - s['mjd_obs'] > self.options.max_days: continue
+				#if nsn > 100: break
+				#if nsn < 20:
+				#	nsn += 1
+				#	continue
 
-			mw_ebv = float('%.3f'%(sfd(sc)*0.86))
+				sc = SkyCoord(s['ra_psf'],s['dec_psf'],unit=u.deg)
+				try:
+					ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
+				except:
+					ps_prob = None
 
-			iLC = (lc['ps1_designation'] == s['ps1_designation']) & (nowmjd - lc['mjd_obs'] < self.options.max_days)
+				mw_ebv = float('%.3f'%(sfd(sc)*0.86))
 
-			if nowmjd - Time('%s 00:00:00'%s['followup_flag_date'],format='iso',scale='utc').mjd > self.options.max_days:
-				status = 'Ignore'
-			else:
-				status = self.options.status
-			tdict = {'name':s['ps1_designation'],
-					 'ra':s['ra_psf'],
-					 'dec':s['dec_psf'],
-					 'obs_group':'YSE',
-					 'postage_stamp_file':'%s/%s/%s.jpeg'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['target']),
-					 'postage_stamp_ref':'%s/%s/%s.jpeg'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['ref']),
-					 'postage_stamp_diff':'%s/%s/%s.jpeg'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['diff']),
-					 'postage_stamp_file_fits':'%s/%s/%s.fits'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['target']),
-					 'postage_stamp_ref_fits':'%s/%s/%s.fits'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['ref']),
-					 'postage_stamp_diff_fits':'%s/%s/%s.fits'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['diff']),
-					 'status':status,
-					 #'best_spec_class':s['context_classification'],
-					 #'host':s['host'],
-					 'tags':['YSE'],
-					 'disc_date':mjd_to_date(s['mjd_obs']),
-					 'mw_ebv':mw_ebv,
-					 'point_source_probability':ps_prob}
-			obj += [s['ps1_designation']]
-			ra += [s['ra_psf']]
-			dec += [s['dec_psf']]
+				iLC = (lc['local_designation'] == s['local_designation']) & (nowmjd - lc['mjd_obs'] < self.options.max_days)
 
-			PhotUploadAll = {"mjdmatchmin":0.01,
-							 "clobber":self.options.clobber}
-			photometrydict = {'instrument':'GPC1',
-							  'obs_group':'YSE',
-							  'photdata':{}}
-			for j,l in enumerate(lc[iLC]):
-				if j == 0: disc_point = 1
-				else: disc_point = 0
-
-				flux = 10**(0.4*(l['cal_psf_mag']-27.5))
-				flux_err = np.log(10)*0.4*flux*l['psf_inst_mag_sig']
-				if type(l['psf_inst_mag_sig']) == np.ma.core.MaskedConstant:
-					mag_err = 0
-					flux_err = 0
+				if nowmjd - Time('%s 00:00:00'%s['followup_flag_date'],format='iso',scale='utc').mjd > self.options.max_days:
+					status = 'Ignore'
 				else:
-					mag_err = l['psf_inst_mag_sig']
+					status = self.options.status
+				tdict = {'name':s['local_designation'],
+						 'ra':s['ra_psf'],
+						 'dec':s['dec_psf'],
+						 'obs_group':'YSE',
+						 'postage_stamp_file':'%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target']),
+						 'postage_stamp_ref':'%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref']),
+						 'postage_stamp_diff':'%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff']),
+						 'postage_stamp_file_fits':'%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target']),
+						 'postage_stamp_ref_fits':'%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref']),
+						 'postage_stamp_diff_fits':'%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff']),
+						 'status':status,
+						 #'best_spec_class':s['context_classification'],
+						 #'host':s['host'],
+						 'tags':['YSE'],
+						 'disc_date':mjd_to_date(s['mjd_obs']),
+						 'mw_ebv':mw_ebv,
+						 'point_source_probability':ps_prob}
+				obj += [s['local_designation']]
+				ra += [s['ra_psf']]
+				dec += [s['dec_psf']]
 
-				phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
-									'band':l['filter'],
-									'groups':[],
-									'mag':l['cal_psf_mag'],
-									'mag_err':mag_err,
-									'flux':flux,
-									'flux_err':flux_err,
-									'data_quality':0,
-									'forced':0,
-									'flux_zero_point':27.5,
-									'discovery_point':disc_point,
-									'diffim':1}
-				photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
+				PhotUploadAll = {"mjdmatchmin":0.01,
+								 "clobber":self.options.clobber}
+				photometrydict = {'instrument':'GPC1',
+								  'obs_group':'YSE',
+								  'photdata':{}}
 
-			PhotUploadAll['PS1'] = photometrydict
-			transientdict[s['ps1_designation']] = tdict
-			transientdict[s['ps1_designation']]['transientphotometry'] = PhotUploadAll
+				for j,l in enumerate(lc[iLC]):
+					if j == 0: disc_point = 1
+					else: disc_point = 0
 
-			photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
-			if photometrydict_ztf is not None:
-				PhotUploadAll['ZTF'] = photometrydict_ztf
+					flux = 10**(0.4*(l['cal_psf_mag']-27.5))
+					flux_err = np.log(10)*0.4*flux*l['psf_inst_mag_sig']
+					if type(l['psf_inst_mag_sig']) == np.ma.core.MaskedConstant:
+						mag_err = 0
+						flux_err = 0
+					else:
+						mag_err = l['psf_inst_mag_sig']
 
-			
-			nsn += 1
+					phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
+										'band':l['filter'],
+										'groups':'YSE',
+										'mag':l['cal_psf_mag'],
+										'mag_err':mag_err,
+										'flux':flux,
+										'flux_err':flux_err,
+										'data_quality':0,
+										'forced':0,
+										'flux_zero_point':27.5,
+										'discovery_point':disc_point,
+										'diffim':1}
+					photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
+
+				PhotUploadAll['PS1'] = photometrydict
+				transientdict[s['local_designation']] = tdict
+				transientdict[s['local_designation']]['transientphotometry'] = PhotUploadAll
+
+				photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+				if photometrydict_ztf is not None:
+					PhotUploadAll['ZTF'] = photometrydict_ztf
+
+
+				nsn += 1
 			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
 			
 			#transientdict['transientphotometry'] = photometrydict

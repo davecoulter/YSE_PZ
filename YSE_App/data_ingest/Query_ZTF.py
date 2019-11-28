@@ -59,15 +59,17 @@ query_template = {
                         },
                     }
                 },
-				{
-					"match": {
-						"properties.ztf_object_id": "ZTF18abrfjdh"
-					}
-                }
              ]
         }
     }
 }
+
+#				{
+#					"match": {
+#						"properties.ztf_object_id": "ZTF18abrfjdh"
+#					}
+#                }
+
 
 class AntaresZTF(CronJobBase):
 
@@ -131,7 +133,6 @@ class AntaresZTF(CronJobBase):
 			query['query']['bool']['must'][1]['range']['dec']['lte'] = dec_max.deg
 			query['query']['bool']['must'][2]['range']['properties.ztf_rb']['gte'] = 0.5
 			query['query']['bool']['must'][3]['range']['properties.ztf_jd']['gte'] = recentmjd+2400000.5
-			import pdb; pdb.set_trace()
 			result_set = search(query)
 
 			transientdict,nsn = self.parse_data(result_set)
