@@ -9,7 +9,7 @@ import datetime
 
 class Tags(CronJobBase):
 
-	RUN_EVERY_MINS = 0.1
+	RUN_EVERY_MINS = 480
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.Apply_Tags.Tags'
@@ -17,7 +17,7 @@ class Tags(CronJobBase):
 	def do(self,tag_K2=False):
 
 		try:
-			nowdate = datetime.datetime.utcnow() - datetime.timedelta(21)
+			nowdate = datetime.datetime.utcnow() - datetime.timedelta(1)
 			transients = Transient.objects.filter(created_date__gt=nowdate)
 			for t in transients:
 				print('checking transient %s'%t)
