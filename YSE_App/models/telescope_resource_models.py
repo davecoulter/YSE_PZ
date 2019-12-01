@@ -34,8 +34,11 @@ class TelescopeResource(BaseModel):
 class ToOResource(TelescopeResource):
 	### Properites ###
 	# Required
-	awarded_too_hours = models.FloatField()
-	used_too_hours = models.FloatField()
+	awarded_too_hours = models.FloatField(null=True, blank=True)
+	used_too_hours = models.FloatField(null=True, blank=True)
+
+	awarded_too_triggers = models.FloatField(null=True, blank=True)
+	used_too_triggers = models.FloatField(null=True, blank=True)
 
 	def __str__(self):
 		return "ToO Resource: %s; Valid: %s to %s" % (self.telescope.name, self.begin_date_valid.strftime('%m/%d/%Y'), self.end_date_valid.strftime('%m/%d/%Y'))

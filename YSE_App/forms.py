@@ -69,6 +69,35 @@ class TransientFollowupForm(ModelForm):
 			'offset_east',
 			'transient']
 
+class ClassicalResourceForm(ModelForm):
+
+	observing_date = forms.DateTimeField()
+	
+	class Meta:
+		model = ClassicalResource
+		fields = [
+			'telescope',
+			'principal_investigator']
+
+class ToOResourceForm(ModelForm):
+
+	awarded_too_hours = forms.FloatField(initial=0)
+	used_too_hours = forms.FloatField(initial=0)
+	awarded_too_triggers = forms.FloatField(initial=0)
+	used_too_triggers = forms.FloatField(initial=0)
+	
+	class Meta:
+		model = ToOResource
+		fields = [
+			'telescope',
+			'principal_investigator',
+			'begin_date_valid',
+			'end_date_valid',
+			'awarded_too_hours',
+			'used_too_hours',
+			'awarded_too_triggers',
+			'used_too_triggers']
+		
 class SurveyFieldForm(ModelForm):
 
 	valid_start = forms.DateTimeField()

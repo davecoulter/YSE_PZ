@@ -34,7 +34,7 @@
         <div class="box-header with-border"> <!--id="{{followup_table.2}}">-->
           <h3 class="box-title">Tonight's Fields</h3>
           <div class="box-body">
-            <table id="YSE_fields_tbl" class="table table-bordered">
+            <table id="YSE_fields_tonight" class="table table-bordered">
             <thead>
               <tr>
                 <th>Field</th>
@@ -58,7 +58,7 @@
           <div class="box-header with-border"> <!--id="{{followup_table.2}}">-->
           <h3 class="box-title">Last Night's Fields</h3>
           <div class="box-body">
-            <table id="YSE_fields_tbl" class="table table-bordered">
+            <table id="YSE_fields_lastnight" class="table table-bordered">
             <thead>
               <tr>
                 <th>Field</th>
@@ -83,7 +83,7 @@
           <h3 class="box-title">Next Telescope Nights</h3>
           <div class="box-body">
             {% if upcoming_observing_nights %}
-            <table id="obsnight_tbl" class="table table-bordered">
+            <table id="classical_resources" class="table table-bordered">
             <thead>
               <tr>
                 <th>Telescope</th>
@@ -93,10 +93,10 @@
             </thead>
             <tbody>
               {% for n in upcoming_observing_nights %}
-              {% if n.resource.telescope.name != 'Swope' %}
+              {% if n.telescope.name != 'Swope' %}
                 <tr>
-                    <td>{{ n.resource.telescope }}</td>
-                    <td>{{ n.obs_date }}</td>
+                    <td>{{ n.telescope }}</td>
+                    <td>{{ n.begin_date_valid }}</td>
                     <td>{{ n.principal_investigator }}</td>
                 </tr>
                 {% endif %}
@@ -106,14 +106,22 @@
             {% else %}
               No upcoming observing nights
             {% endif %}
-
+            </div>
+            <div class="box-footer">
+              <div class="row">
+                <div class="col-xs-12">
+                  {% include "YSE_App/form_snippets/classical_resource_form.html" with form=classical_resource_form %}
+                </div>
+               </div>
+            </div>
+            <div class="box-header with-border">
             <h3 class="box-title">ToO Resources</h3>
             {% if too_resources %}
-            <table id="obsnight_tbl" class="table table-bordered">
+            <table id="too_resources" class="table table-bordered">
             <thead>
               <tr>
                 <th>Telescope</th>
-                <th>ToO Hours</th>
+                <th type='numeric'>ToO Hours</th>
                 <th>PI</th>  
               </tr>
             </thead>
@@ -132,6 +140,11 @@
             {% endif %}
           </div>
           <div class="box-footer"></div>
+            <div class="row">
+              <div class="col-xs-12">
+                {% include "YSE_App/form_snippets/too_resource_form.html" with form=too_resource_form %}
+              </div>
+            </div>
         </div>
         <div class="box-header with-border" id="{{transient_table.2}}"> <!--id="{{followup_table.2}}">-->
           <h3 class="box-title">Latest Transients</h3><span style="float:right;"><a href="{% url 'transient_summary' 'YSE_Transients' %}"><h3 class="box-title">Summary View</h3></a></span>
@@ -245,9 +258,48 @@
               });
           {% endif %}
     {% endfor %}
+
+    $('#YSE_fields_tonight').DataTable();
+    $('#YSE_fields_lastnight').DataTable();
+    $('#classical_resources').DataTable();
+    $('#too_resources').DataTable();
+    $('.dataTables_length').addClass('bs-select');
   });
   $(function () {
 
+      // too resource
+      $('#too_resource_date_range').daterangepicker({ 
+        timePicker24Hour: true,
+        timePicker: true, 
+        timePickerIncrement: 1, 
+        format: 'YYYY-MM-DD HH:mm', 
+        locale: {
+          format: 'YYYY-MM-DD HH:mm'
+        } 
+      });
+
+      // Initialize daterange
+      fdr_picker = $('#too_resource_date_range').data('daterangepicker')
+      $('#begin_date_valid').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+      $('#end_date_valid').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+      $('#too_resource_date_range').on('apply.daterangepicker', function(ev, picker) {
+        $('#begin_date_valid').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+        $('#end_date_valid').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+      });
+
+      // classical resource
+      $('#observing_date').datepicker({ 
+        timePicker24Hour: true,
+        timePicker: true,
+        timePickerIncrement: 1,
+        format: 'mm/dd/yyyy',
+        //todayBtn: "linked",
+        locale: {
+          format: 'mm/dd/yyyy'
+        } 
+      });
+
+      // on-call date range
       $('#oncall_date_range').daterangepicker({ 
         timePicker24Hour: true,
         timePicker: true, 
@@ -292,17 +344,69 @@
             // Required fields
 
               // Re-initialize the datepicker
-              $('#valid_start').val("")
-              $('#valid_stop').val("")
-              $('#follow_date_range').daterangepicker({ 
-                timePicker24Hour: true,
-                timePicker: true, 
-                timePickerIncrement: 1, 
-                format: 'MM/DD/YYYY HH:mm', 
-                locale: {
-                  format: 'MM/DD/YYYY HH:mm'
-                }
-              });
+              location.reload();
+          },
+
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+            alert(xhr.status + ": " + xhr.responseText);
+          }
+          });
+        }
+
+      // classical resource
+      $('#add_classical_resource').on('submit', function(event){
+        event.preventDefault();
+        add_classical_resource();
+      });
+
+      function add_classical_resource() {
+        // Grab the form, and associate it with the current transient detail page
+        var data = $('#add_classical_resource').serialize()
+        //var transient_id = $('#transient_pk').val()
+        //data = (data + "&transient=" + transient_id)
+
+        $.ajax({
+          url : "{% url 'add_classical_resource' %}", // the endpoint
+          type : "POST", // http method
+          data : data, // data sent with the post request
+
+          // handle a successful response
+          success : function(json) {
+            
+            // Required fields
+              location.reload();
+          },
+
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+            alert(xhr.status + ": " + xhr.responseText);
+          }
+          });
+        }
+
+// classical resource
+      $('#add_too_resource').on('submit', function(event){
+        event.preventDefault();
+        add_too_resource();
+      });
+
+      function add_too_resource() {
+        // Grab the form, and associate it with the current transient detail page
+        var data = $('#add_too_resource').serialize()
+        //var transient_id = $('#transient_pk').val()
+        //data = (data + "&transient=" + transient_id)
+
+        $.ajax({
+          url : "{% url 'add_too_resource' %}", // the endpoint
+          type : "POST", // http method
+          data : data, // data sent with the post request
+
+          // handle a successful response
+          success : function(json) {
+            
+            // Required fields
+              location.reload();
           },
 
           // handle a non-successful response

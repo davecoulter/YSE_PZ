@@ -399,7 +399,9 @@ def observing_calendar(request):
 @login_required
 def yse_home(request):
 	oncall_form = OncallForm()
-
+	classical_resource_form = ClassicalResourceForm()
+	too_resource_form = ToOResourceForm()
+	
 	transients = Transient.objects.filter(tags__name='YSE').filter(~Q(status__name='Ignore')).order_by('-disc_date')
 	transientfilter = TransientFilter(request.GET, queryset=transients,prefix='yse')
 	table = TransientTable(transientfilter.qs,prefix='yse')
@@ -410,7 +412,12 @@ def yse_home(request):
 	table_follow = YSETransientTable(transientfilter_follow.qs,prefix='yse_follow')
 	RequestConfig(request, paginate={'per_page': 10}).configure(table)
 
-	obsnights = view_utils.get_obs_nights_happening_soon(request.user)
+	#obsnights = view_utils.get_obs_nights_happening_soon(request.user)
+	obsnights = ObservingResourceService.GetAuthorizedClassicalResource_ByUser(request.user).\
+		filter(begin_date_valid__lte=datetime.datetime.utcnow()+datetime.timedelta(5)).\
+		filter(begin_date_valid__gte=datetime.datetime.utcnow()-datetime.timedelta(1)).\
+		select_related().order_by('begin_date_valid')
+
 	too_resources = view_utils.get_too_resources(request.user)
 	all_transient_statuses = TransientStatus.objects.all()
 
@@ -464,6 +471,8 @@ def yse_home(request):
 			   'survey_fields_last_night':survey_fields_last_night,
 			   'obs_date_last':obs_date_last.split()[0],
 			   'obs_date_now':obs_date_now.split()[0],
+			   'classical_resource_form':classical_resource_form,
+			   'too_resource_form':too_resource_form
 	}
 	return render(request, 'YSE_App/yse_home.html', context)
 

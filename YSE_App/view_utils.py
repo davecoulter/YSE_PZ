@@ -108,7 +108,6 @@ def getMoonAngle(observingdate,telescope,ra,dec):
 
 def get_obs_nights_happening_soon(user):
 	allowed_nights = ObservingResourceService.GetAuthorizedClassicalObservingDate_ByUser(user).select_related()
-
 	allowed_nights_happening_soon = []
 	for an in allowed_nights:
 		if an.happening_soon():

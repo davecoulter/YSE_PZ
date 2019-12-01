@@ -50,6 +50,8 @@ class ToOResourceSerializer(serializers.HyperlinkedModelSerializer):
 		instance.end_date_valid = validated_data.get('end_date_valid', instance.end_date_valid)
 		instance.awarded_too_hours = validated_data.get('awarded_too_hours', instance.awarded_too_hours)
 		instance.used_too_hours = validated_data.get('used_too_hours', instance.used_too_hours)
+		instance.awarded_too_triggers = validated_data.get('awarded_too_hours', instance.awarded_too_triggers)
+		instance.used_too_triggers = validated_data.get('used_too_hours', instance.used_too_triggers)
 		instance.description = validated_data.get('description', instance.description)
 
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
