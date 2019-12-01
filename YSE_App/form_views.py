@@ -77,12 +77,78 @@ class AddTransientFollowupFormView(FormView):
 
 			data = {
 				'message': "Successfully submitted form data.",
-				'data': data_dict
 			}
 			return JsonResponse(data)
 		else:
 			return response
 
+class AddClassicalResourceFormView(FormView):
+	form_class = ClassicalResourceForm
+	template_name = 'YSE_App/form_snippets/classical_resource_form.html'
+	success_url = '/form-success/'
+	
+	def form_invalid(self, form):
+		response = super(AddClassicalResourceFormView, self).form_invalid(form)
+		if self.request.is_ajax():
+			return JsonResponse(form.errors, status=400)
+		else:
+			return response
+
+	def form_valid(self, form):
+		response = super(AddClassicalResourceFormView, self).form_valid(form)
+		if self.request.is_ajax():
+
+			instance = form.save(commit=False)
+			instance.created_by = self.request.user
+			instance.modified_by = self.request.user
+			instance.begin_date_valid = form.cleaned_data['observing_date']
+			instance.end_date_valid = form.cleaned_data['observing_date'] + datetime.timedelta(1)
+			
+			instance.save() #update_fields=['created_by','modified_by']
+			instance.groups.set(Group.objects.filter(name='YSE'))
+			instance.save()
+			
+			print(form.cleaned_data)
+
+			data = {
+				'message': "Successfully submitted form data.",
+			}
+			return JsonResponse(data)
+		else:
+			return response
+
+class AddToOResourceFormView(FormView):
+	form_class = ToOResourceForm
+	template_name = 'YSE_App/form_snippets/classical_resource_form.html'
+	success_url = '/form-success/'
+	
+	def form_invalid(self, form):
+		response = super(AddToOResourceFormView, self).form_invalid(form)
+		if self.request.is_ajax():
+			return JsonResponse(form.errors, status=400)
+		else:
+			return response
+
+	def form_valid(self, form):
+		response = super(AddToOResourceFormView, self).form_valid(form)
+		if self.request.is_ajax():
+
+			instance = form.save(commit=False)
+			instance.created_by = self.request.user
+			instance.modified_by = self.request.user
+			
+			instance.save() #update_fields=['created_by','modified_by']
+
+			print(form.cleaned_data)
+
+			data = {
+				'message': "Successfully submitted form data.",
+			}
+			return JsonResponse(data)
+		else:
+			return response
+		
+		
 class AddTransientObservationTaskFormView(FormView):
 	form_class = TransientObservationTaskForm
 	template_name = 'YSE_App/form_snippets/transient_observation_task_form.html'

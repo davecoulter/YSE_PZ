@@ -73,6 +73,8 @@ urlpatterns = [
 	url(r'^finderim/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderim, name='finderim'),
 	
 	url(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
+	url(r'^add_classical_resource/', AddClassicalResourceFormView.as_view(), name='add_classical_resource'),
+	url(r'^add_too_resource/', AddToOResourceFormView.as_view(), name='add_too_resource'),
     url(r'^add_transient_observation_task/', AddTransientObservationTaskFormView.as_view(), name='add_transient_observation_task'),
 	url(r'^add_survey_field/', AddSurveyFieldFormView.as_view(), name='add_survey_field'),
 	url(r'^add_survey_obs/', AddSurveyObsFormView.as_view(), name='add_survey_obs'),
