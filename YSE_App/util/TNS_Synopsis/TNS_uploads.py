@@ -189,7 +189,7 @@ class processTNS():
 
 		if jd:
 			TransientDict['disc_date'] = jd['discoverydate']
-			TransientDict['obs_group'] = jd['source_group']['group_name']
+			TransientDict['obs_group'] = jd['discovery_data_source']['group_name']
 			if not TransientDict['obs_group']:
 				TransientDict['obs_group'] = 'Unknown'
 			z = jd['redshift']
