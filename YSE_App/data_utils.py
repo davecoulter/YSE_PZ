@@ -459,6 +459,7 @@ def add_gw_candidate(request):
 					if dbtransient[0].status.name == 'Ignore': dbtransient[0].status = TransientStatus.objects.filter(name='New')[0]
 					else: transientdict['status'] = dbtransient[0].status
 				else: transientdict['status'] = dbtransient[0].status
+
 				dbtransient.update(**transientdict)
 				dbtransient = dbtransient[0]
 			if 'tags' in transientkeys:

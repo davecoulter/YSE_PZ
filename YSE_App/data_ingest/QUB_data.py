@@ -414,7 +414,7 @@ class QUB(CronJobBase):
 
 class YSE(CronJobBase):
 
-	RUN_EVERY_MINS = 120
+	RUN_EVERY_MINS = 30
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.QUB_data.QUB'
@@ -564,6 +564,7 @@ class YSE(CronJobBase):
 					status = 'Ignore'
 				else:
 					status = self.options.status
+
 				tdict = {'name':s['local_designation'],
 						 'ra':s['ra_psf'],
 						 'dec':s['dec_psf'],
@@ -578,7 +579,7 @@ class YSE(CronJobBase):
 						 #'best_spec_class':s['context_classification'],
 						 #'host':s['host'],
 						 'tags':['YSE'],
-						 'disc_date':mjd_to_date(s['mjd_obs']),
+						 'disc_date':s['followup_flag_date'], #mjd_to_date(s['mjd_obs']),
 						 'mw_ebv':mw_ebv,
 						 'point_source_probability':ps_prob}
 				obj += [s['local_designation']]
@@ -586,13 +587,13 @@ class YSE(CronJobBase):
 				dec += [s['dec_psf']]
 
 				PhotUploadAll = {"mjdmatchmin":0.01,
-								 "clobber":self.options.clobber}
+								 "clobber":True} #self.options.clobber}
 				photometrydict = {'instrument':'GPC1',
 								  'obs_group':'YSE',
 								  'photdata':{}}
 
 				for j,l in enumerate(lc[iLC]):
-					if j == 0: disc_point = 1
+					if j == len(lc[iLC])-1: disc_point = 1
 					else: disc_point = 0
 
 					flux = 10**(0.4*(l['cal_psf_mag']-27.5))

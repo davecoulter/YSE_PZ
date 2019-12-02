@@ -75,7 +75,6 @@ def get_all_phot_for_transient(user, transient_id=None):
 
 def get_recent_phot_for_transient(user, transient_id=None):
 	photdata = get_all_phot_for_transient(user, transient_id)
-
 	if photdata:
 		photdata = photdata.order_by('-obs_date')
 		return(photdata[0])
