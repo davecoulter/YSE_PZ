@@ -246,7 +246,7 @@ class QUB(CronJobBase):
 					 #'best_spec_class':s['context_classification'],
 					 #'host':s['host'],
 					 'tags':['PSST'],
-					 'disc_date':mjd_to_date(s['mjd_obs']),
+					 'disc_date':mjd_to_date(s['followup_flag_date']),
 					 'mw_ebv':mw_ebv,
 					 'point_source_probability':ps_prob}
 			obj += [s['ps1_designation']]
@@ -259,7 +259,7 @@ class QUB(CronJobBase):
 							  'obs_group':'PSST',
 							  'photdata':{}}
 			for j,l in enumerate(lc[iLC]):
-				if j == 0: disc_point = 1
+				if j == len(lc[iLC])-1: disc_point = 1
 				else: disc_point = 0
 
 				flux = 10**(0.4*(l['cal_psf_mag']-27.5))
@@ -587,7 +587,7 @@ class YSE(CronJobBase):
 				dec += [s['dec_psf']]
 
 				PhotUploadAll = {"mjdmatchmin":0.01,
-								 "clobber":True} #self.options.clobber}
+								 "clobber":self.options.clobber}
 				photometrydict = {'instrument':'GPC1',
 								  'obs_group':'YSE',
 								  'photdata':{}}
