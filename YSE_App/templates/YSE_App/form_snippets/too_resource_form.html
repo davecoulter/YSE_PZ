@@ -1,0 +1,75 @@
+{% load widget_tweaks %}
+
+{% block content %}
+	<div class="box box-primary box-solid collapsed-box"> <!--collapsed-box-->
+		<div class="box-header with-border" data-widget="collapse" type="button" class="btn btn-box-tool">
+			<button id="add_too_resource_btn" class="btn btn-box-tool" style="height: 30px;"><h3 class="box-title">Add ToO Resource</h3></button>
+			<div class="box-tools pull-right">
+				<button id="add_too_resource_btn" class="btn btn-box-tool"><i class="fa fa-plus"></i></button>
+			</div>
+		</div>
+		<div class="box-body">
+			<form id="add_too_resource" action="{% url 'add_too_resource' %}" method="post">
+				{% csrf_token %}
+				{% for hidden_field in form.hidden_fields %}
+					{{ hidden_field }}
+				{% endfor %}
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Telescope</label>
+						{% render_field form.telescope class+="form-control select2" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>PI</label>
+						{% render_field form.principal_investigator class+="form-control select2" style+="width: 100%;"%}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>ToO Hours</label>
+						{% render_field form.awarded_too_hours class+="form-control select2" style+="width: 100%;"%}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Used ToO Hours</label>
+						{% render_field form.used_too_hours class+="form-control select2" style+="width: 100%;"%}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>ToO Triggers</label>
+						{% render_field form.awarded_too_triggers class+="form-control select2" style+="width: 100%;"%}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Used ToO Triggers</label>
+						{% render_field form.used_too_triggers class+="form-control select2" style+="width: 100%;"%}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Date Range</label>
+						<div class="input-group">
+							<div class="input-group-addon">
+								<i class="fa fa-clock-o"></i>
+							</div>
+							<input type="text" class="form-control pull-right" id="too_resource_date_range">
+						</div>
+						<input type="hidden" id="begin_date_valid" name="begin_date_valid">
+						<input type="hidden" id="end_date_valid" name="end_date_valid">
+					</div>
+				</div>
+				<div class="col-xs-12">
+					<div class="form-group">
+						<br>
+						<button type="submit" class="btn btn-block btn-primary btn-lg">Submit</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+{% endblock %}
