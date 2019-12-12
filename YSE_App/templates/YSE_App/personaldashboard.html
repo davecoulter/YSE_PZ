@@ -73,7 +73,7 @@
         {% endfor %}
           &nbsp;<button type="submit" class="fa fa-trash-o fa-border"></button>
       </form>
-    </h3>
+    </h3><span style="float:right;"><a href="{% url 'transient_summary' transient_cat.1 %}"><h3 class="box-title">Summary View</h3></a></span>
   </div>
     <div align='right'>
       {% if transient_cat.3 %}

@@ -18,6 +18,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.dates import DateFormatter
 from matplotlib import rcParams
+from django.db.models.expressions import RawSQL
 rcParams['figure.figsize'] = (7,7)
 
 class TransientTable(tables.Table):
@@ -79,13 +80,21 @@ class TransientTable(tables.Table):
 	
 	def order_recent_mag(self, queryset, is_descending):
 
-		all_phot = TransientPhotometry.objects.values('transient').filter(transient__in = queryset)
-		phot_ids = all_phot.values('id')
+		raw_query = """
+SELECT pd.mag
+   FROM YSE_App_transient t, YSE_App_transientphotdata pd, YSE_App_transientphotometry p
+   WHERE pd.photometry_id = p.id AND
+   YSE_App_transient.id = t.id AND
+   pd.id = (
+         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+         ORDER BY pd2.obs_date DESC
+         LIMIT 1
+     )
+"""
+
+		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
 		
-		phot_data_query = Q(transientphotometry__id__in=phot_ids)
-		queryset = queryset.annotate(
-			recent_mag=Max('transientphotometry__transientphotdata__mag',filter=phot_data_query), #,filter=phot_data_query
-		).order_by(('-' if is_descending else '') + 'recent_mag')
 		return (queryset, True)
 
 	def order_recent_magdate(self, queryset, is_descending):
@@ -141,6 +150,9 @@ class YSETransientTable(tables.Table):
 								  verbose_name='Redshift',orderable=True,order_by='host__redshift')
 	requested_followup_resources = tables.Column(accessor='pk',verbose_name='Req. Followup')
 	successful_followup_resources = tables.Column(accessor='pk',verbose_name='Followed By')
+	context_class = tables.Column(accessor='context_class',
+								  verbose_name='QUB Class.',orderable=True)
+
 	
 	#mw_ebv = tables.Column(accessor='mw_ebv',
 	#						   verbose_name='MW E(B-V)',orderable=True)
@@ -216,13 +228,21 @@ class YSETransientTable(tables.Table):
 	
 	def order_recent_mag(self, queryset, is_descending):
 
-		all_phot = TransientPhotometry.objects.values('transient').filter(transient__in = queryset)
-		phot_ids = all_phot.values('id')
+		raw_query = """
+SELECT pd.mag
+   FROM YSE_App_transient t, YSE_App_transientphotdata pd, YSE_App_transientphotometry p
+   WHERE pd.photometry_id = p.id AND
+   YSE_App_transient.id = t.id AND
+   pd.id = (
+         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+         ORDER BY pd2.obs_date DESC
+         LIMIT 1
+     )
+"""
+
+		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
 		
-		phot_data_query = Q(transientphotometry__id__in=phot_ids)
-		queryset = queryset.annotate(
-			recent_mag=Max('transientphotometry__transientphotdata__mag',filter=phot_data_query), #,filter=phot_data_query
-		).order_by(('-' if is_descending else '') + 'recent_mag')
 		return (queryset, True)
 
 	def order_recent_magdate(self, queryset, is_descending):
@@ -260,6 +280,308 @@ class YSETransientTable(tables.Table):
 			"order": [[ 3, "desc" ]],
 		}
 
+class YSEFullTransientTable(tables.Table):
+
+	name_string = tables.TemplateColumn("<a href=\"{% url 'transient_detail' record.slug %}\">{{ record.name }}</a>",
+										verbose_name='Name',orderable=True,order_by='name')
+	ra_string = tables.Column(accessor='CoordString.0',
+							  verbose_name='RA',orderable=True,order_by='ra')
+	dec_string = tables.Column(accessor='CoordString.1',
+							   verbose_name='DEC',orderable=True,order_by='dec')
+	disc_date_string = tables.Column(accessor='disc_date_string',
+									 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
+	recent_mag = tables.Column(accessor='recent_mag',
+							   verbose_name='Last Mag',orderable=True)
+	recent_magdate = tables.Column(accessor='recent_magdate',
+							   verbose_name='Last Obs. Date',orderable=True)
+	best_redshift = tables.Column(accessor='z_or_hostz',
+								  verbose_name='Redshift',orderable=True,order_by='host__redshift')
+	context_class = tables.Column(accessor='context_class',
+								  verbose_name='QUB Class.',orderable=True)
+
+	
+	#mw_ebv = tables.Column(accessor='mw_ebv',
+	#						   verbose_name='MW E(B-V)',orderable=True)
+	mw_ebv = tables.TemplateColumn("""{% if record.mw_ebv %}
+{% if record.mw_ebv >= 0.2 %}
+&nbsp;<b class="text-red">{{ record.mw_ebv }}</b>
+{% else %}
+{{ record.mw_ebv }}
+{% endif %}
+{% else %}
+-
+{% endif %}""",
+								   verbose_name='MW E(B-V)',orderable=True,order_by='mw_ebv')
+
+	
+	status_string = tables.TemplateColumn("""<div class="btn-group">
+<button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
+											<span id="{{ record.id }}_status_name_yse" class="dropbtn">{{ record.status }}</span>
+										</button>
+										<ul class="dropdown-menu">
+											{% for status in all_transient_statuses %}
+    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+											{% endfor %}
+										</ul>
+</div>""",
+										  verbose_name='Status',orderable=True,order_by='status')
+
+	
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
+
+	def order_best_redshift(self, queryset, is_descending):
+
+		queryset = queryset.annotate(
+			best_redshift=Coalesce('redshift', 'host__redshift'),
+		).order_by(('-' if is_descending else '') + 'best_redshift')
+		return (queryset, True)
+
+	def render_requested_followup_resources(self, value):
+		#import pdb; pdb.set_trace()
+		qs_too = TransientFollowup.objects.filter(transient__id=value).filter(Q(status__name='Requested') | Q(status__name='InProcess')).\
+			values_list('too_resource__telescope__name',flat=True)
+		qs_class = TransientFollowup.objects.filter(transient__id=value).filter(Q(status__name='Requested') | Q(status__name='InProcess')).\
+			values_list('classical_resource__telescope__name',flat=True)
+		qs_queued = TransientFollowup.objects.filter(transient__id=value).filter(Q(status__name='Requested') | Q(status__name='InProcess')).\
+			values_list('queued_resource__telescope__name',flat=True)
+
+		resource_list = []
+		for qs in [qs_too,qs_class,qs_queued]:
+			for q in qs:
+				if q is not None: resource_list += [q]
+
+		return ', '.join(np.unique(resource_list))
+
+	def render_successful_followup_resources(self, value):
+		#import pdb; pdb.set_trace()
+		qs_too = TransientFollowup.objects.filter(transient__id=value).filter(status__name='Successful').\
+			values_list('too_resource__telescope__name',flat=True)
+		qs_class = TransientFollowup.objects.filter(transient__id=value).filter(status__name='Successful').\
+			values_list('classical_resource__telescope__name',flat=True)
+		qs_queued = TransientFollowup.objects.filter(transient__id=value).filter(status__name='Successful').\
+			values_list('queued_resource__telescope__name',flat=True)
+
+		resource_list = []
+		for qs in [qs_too,qs_class,qs_queued]:
+			for q in qs:
+				if q is not None: resource_list += [q]
+
+		return ', '.join(np.unique(resource_list))
+
+
+	def order_recent_mag(self, queryset, is_descending):
+
+		raw_query = """
+SELECT pd.mag
+   FROM YSE_App_transient t, YSE_App_transientphotdata pd, YSE_App_transientphotometry p
+   WHERE pd.photometry_id = p.id AND
+   YSE_App_transient.id = t.id AND
+   pd.id = (
+         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+         ORDER BY pd2.obs_date DESC
+         LIMIT 1
+     )
+"""
+
+		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
+		
+		return (queryset, True)
+
+	def order_recent_magdate(self, queryset, is_descending):
+
+		all_phot = TransientPhotometry.objects.values('transient').filter(transient__in = queryset)
+		phot_ids = all_phot.values('id')
+		
+		phot_data_query = Q(transientphotometry__id__in=phot_ids)
+		queryset = queryset.annotate(
+			recent_magdate=Max('transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
+		).order_by(('-' if is_descending else '') + 'recent_magdate')
+		return (queryset, True)
+	
+	
+	class Meta:
+		model = Transient
+		fields = ('name_string','ra_string','dec_string','disc_date_string','recent_mag','recent_magdate','mw_ebv',
+				  'obs_group','best_spec_class','best_redshift','context_class','status_string')
+		
+		template_name='YSE_App/django-tables2/bootstrap.html'
+		attrs = {
+			'th' : {
+				'_ordering': {
+					'orderable': 'sortable', # Instead of `orderable`
+					'ascending': 'ascend',	 # Instead of `asc`
+					'descending': 'descend'	 # Instead of `desc`
+				}
+			},
+			'class': 'table table-bordered table-hover',
+			'id': 'k2_transient_tbl',
+			"columnDefs": [
+				{"type":"title-numeric","targets":1},
+				{"type":"title-numeric","targets":2},
+			],
+			"order": [[ 3, "desc" ]],
+		}
+
+class YSERisingTransientTable(tables.Table):
+
+	name_string = tables.TemplateColumn("<a href=\"{% url 'transient_detail' record.slug %}\">{{ record.name }}</a>",
+										verbose_name='Name',orderable=True,order_by='name')
+	ra_string = tables.Column(accessor='CoordString.0',
+							  verbose_name='RA',orderable=True,order_by='ra')
+	dec_string = tables.Column(accessor='CoordString.1',
+							   verbose_name='DEC',orderable=True,order_by='dec')
+	disc_date_string = tables.Column(accessor='disc_date_string',
+									 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
+	recent_mag = tables.Column(accessor='recent_mag',
+							   verbose_name='Last Mag',orderable=True)
+	recent_magdate = tables.Column(accessor='recent_magdate',
+							   verbose_name='Last Obs. Date',orderable=True)
+	best_redshift = tables.Column(accessor='z_or_hostz',
+								  verbose_name='Redshift',orderable=True,order_by='host__redshift')
+	context_class = tables.Column(accessor='context_class',
+								  verbose_name='QUB Class.',orderable=True)
+	dm_g = tables.TemplateColumn('{{ record.dm_g|floatformat:3 }}',
+								 verbose_name='Delta g',orderable=True,order_by='dm_g')
+	dm_r = tables.TemplateColumn('{{ record.dm_r|floatformat:3 }}',
+								 verbose_name='Delta r',orderable=True,order_by='dm_r')
+	dm_i = tables.TemplateColumn('{{ record.dm_i|floatformat:3 }}',
+								 verbose_name='Delta i',orderable=True,order_by='dm_i')
+
+	
+	#mw_ebv = tables.Column(accessor='mw_ebv',
+	#						   verbose_name='MW E(B-V)',orderable=True)
+	mw_ebv = tables.TemplateColumn("""{% if record.mw_ebv %}
+{% if record.mw_ebv >= 0.2 %}
+&nbsp;<b class="text-red">{{ record.mw_ebv }}</b>
+{% else %}
+{{ record.mw_ebv }}
+{% endif %}
+{% else %}
+-
+{% endif %}""",
+								   verbose_name='MW E(B-V)',orderable=True,order_by='mw_ebv')
+
+	
+	status_string = tables.TemplateColumn("""<div class="btn-group">
+<button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
+											<span id="{{ record.id }}_status_name_yse" class="dropbtn">{{ record.status }}</span>
+										</button>
+										<ul class="dropdown-menu">
+											{% for status in all_transient_statuses %}
+    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+											{% endfor %}
+										</ul>
+</div>""",
+										  verbose_name='Status',orderable=True,order_by='status')
+
+	
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
+
+	def order_best_redshift(self, queryset, is_descending):
+
+		queryset = queryset.annotate(
+			best_redshift=Coalesce('redshift', 'host__redshift'),
+		).order_by(('-' if is_descending else '') + 'best_redshift')
+		return (queryset, True)
+
+	def render_requested_followup_resources(self, value):
+		#import pdb; pdb.set_trace()
+		qs_too = TransientFollowup.objects.filter(transient__id=value).filter(Q(status__name='Requested') | Q(status__name='InProcess')).\
+			values_list('too_resource__telescope__name',flat=True)
+		qs_class = TransientFollowup.objects.filter(transient__id=value).filter(Q(status__name='Requested') | Q(status__name='InProcess')).\
+			values_list('classical_resource__telescope__name',flat=True)
+		qs_queued = TransientFollowup.objects.filter(transient__id=value).filter(Q(status__name='Requested') | Q(status__name='InProcess')).\
+			values_list('queued_resource__telescope__name',flat=True)
+
+		resource_list = []
+		for qs in [qs_too,qs_class,qs_queued]:
+			for q in qs:
+				if q is not None: resource_list += [q]
+
+		return ', '.join(np.unique(resource_list))
+
+	def render_successful_followup_resources(self, value):
+		#import pdb; pdb.set_trace()
+		qs_too = TransientFollowup.objects.filter(transient__id=value).filter(status__name='Successful').\
+			values_list('too_resource__telescope__name',flat=True)
+		qs_class = TransientFollowup.objects.filter(transient__id=value).filter(status__name='Successful').\
+			values_list('classical_resource__telescope__name',flat=True)
+		qs_queued = TransientFollowup.objects.filter(transient__id=value).filter(status__name='Successful').\
+			values_list('queued_resource__telescope__name',flat=True)
+
+		resource_list = []
+		for qs in [qs_too,qs_class,qs_queued]:
+			for q in qs:
+				if q is not None: resource_list += [q]
+
+		return ', '.join(np.unique(resource_list))
+
+
+	def render_dt(self,value):
+
+		return '%.2f'%value/24/60/60
+		
+	def order_recent_mag(self, queryset, is_descending):
+
+		raw_query = """
+SELECT pd.mag
+   FROM YSE_App_transient t, YSE_App_transientphotdata pd, YSE_App_transientphotometry p
+   WHERE pd.photometry_id = p.id AND
+   YSE_App_transient.id = t.id AND
+   pd.id = (
+         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+         ORDER BY pd2.obs_date DESC
+         LIMIT 1
+     )
+"""
+
+		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
+		
+		return (queryset, True)
+
+	def order_recent_magdate(self, queryset, is_descending):
+
+		all_phot = TransientPhotometry.objects.values('transient').filter(transient__in = queryset)
+		phot_ids = all_phot.values('id')
+		
+		phot_data_query = Q(transientphotometry__id__in=phot_ids)
+		queryset = queryset.annotate(
+			recent_magdate=Max('transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
+		).order_by(('-' if is_descending else '') + 'recent_magdate')
+		return (queryset, True)
+	
+	
+	class Meta:
+		model = Transient
+		fields = ('name_string','ra_string','dec_string','disc_date_string','recent_mag','recent_magdate','mw_ebv',
+				  'obs_group','best_spec_class','best_redshift','context_class','status_string')
+		
+		template_name='YSE_App/django-tables2/bootstrap.html'
+		attrs = {
+			'th' : {
+				'_ordering': {
+					'orderable': 'sortable', # Instead of `orderable`
+					'ascending': 'ascend',	 # Instead of `asc`
+					'descending': 'descend'	 # Instead of `desc`
+				}
+			},
+			'class': 'table table-bordered table-hover',
+			'id': 'k2_transient_tbl',
+			"columnDefs": [
+				{"type":"title-numeric","targets":1},
+				{"type":"title-numeric","targets":2},
+			],
+			"order": [[ 3, "desc" ]],
+		}
+		
 		
 class NewTransientTable(tables.Table):
 
@@ -319,16 +641,23 @@ class NewTransientTable(tables.Table):
 		).order_by(('-' if is_descending else '') + 'best_redshift')
 		return (queryset, True)
 
-	
 	def order_recent_mag(self, queryset, is_descending):
 
-		all_phot = TransientPhotometry.objects.values('transient').filter(transient__in = queryset)
-		phot_ids = all_phot.values('id')
+		raw_query = """
+SELECT pd.mag
+   FROM YSE_App_transient t, YSE_App_transientphotdata pd, YSE_App_transientphotometry p
+   WHERE pd.photometry_id = p.id AND
+   YSE_App_transient.id = t.id AND
+   pd.id = (
+         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+         ORDER BY pd2.obs_date DESC
+         LIMIT 1
+     )
+"""
+
+		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
 		
-		phot_data_query = Q(transientphotometry__id__in=phot_ids)
-		queryset = queryset.annotate(
-			recent_mag=Max('transientphotometry__transientphotdata__mag',filter=phot_data_query), #,filter=phot_data_query
-		).order_by(('-' if is_descending else '') + 'recent_mag')
 		return (queryset, True)
 
 	def order_recent_magdate(self, queryset, is_descending):
@@ -410,13 +739,21 @@ class FollowupTable(tables.Table):
 
 	def order_recent_mag(self, queryset, is_descending):
 
-		all_phot = TransientPhotometry.objects.values('transient').filter(transient__transientfollowup__in = queryset)
-		phot_ids = all_phot.values('id')
+		raw_query = """
+SELECT pd.mag
+   FROM YSE_App_transient t, YSE_App_transientphotdata pd, YSE_App_transientphotometry p
+   WHERE pd.photometry_id = p.id AND
+   YSE_App_transient.id = t.id AND
+   pd.id = (
+         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+         ORDER BY pd2.obs_date DESC
+         LIMIT 1
+     )
+"""
+
+		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
 		
-		phot_data_query = Q(transient__transientphotometry__id__in=phot_ids)
-		queryset = queryset.annotate(
-			recent_magdate=Max('transient__transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
-		).order_by(('-' if is_descending else '') + 'recent_magdate')
 		return (queryset, True)
 		
 	class Meta:
@@ -457,6 +794,8 @@ class ObsNightFollowupTable(tables.Table):
 	rise_time = tables.Column(verbose_name='Rise Time (UT)',orderable=False,accessor='transient.CoordString')
 	set_time = tables.Column(verbose_name='Set Time (UT)',orderable=False,accessor='transient.CoordString')
 	moon_angle = tables.Column(verbose_name='Moon Angle',orderable=False,accessor='transient.CoordString')
+	created_by = tables.Column(verbose_name='Added By',orderable=True,accessor='created_by')
+	comment = tables.Column(verbose_name='Comments',orderable=True,accessor='id')
 	
 	status_string = tables.TemplateColumn("""<div class="btn-group">
 <button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
@@ -497,7 +836,7 @@ class ObsNightFollowupTable(tables.Table):
 			risetime = None
 		
 		return risetime
-
+	
 	def render_set_time(self, value):
 		sc = SkyCoord('%s %s'%(value[0],value[1]),unit=(u.hourangle,u.deg))
 		target_set_time = self.tel.target_set_time(self.tme,sc,horizon=18*u.deg,which="previous")
@@ -516,21 +855,41 @@ class ObsNightFollowupTable(tables.Table):
 	
 	def render_airmass(self, value):
 		from astroplan.plots import plot_airmass
-	
+
+	def render_comment(self, value):
+
+		comments = Log.objects.filter(transient_followup__id=value)
+		comment_list = []
+		for c in comments:
+			comment_list += [c.comment]
+		if len(comment_list): return '; '.join(comment_list)
+		else: return ''
+
+		
 	def order_recent_mag(self, queryset, is_descending):
 
-		all_phot = TransientPhotometry.objects.values('transient').filter(transient__transientfollowup__in = queryset)
-		phot_ids = all_phot.values('id')
+		raw_query = """
+SELECT pd.mag
+   FROM YSE_App_transient t, YSE_App_transientphotdata pd, YSE_App_transientphotometry p
+   WHERE pd.photometry_id = p.id AND
+   YSE_App_transient.id = t.id AND
+   pd.id = (
+         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+         ORDER BY pd2.obs_date DESC
+         LIMIT 1
+     )
+"""
+
+		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
 		
-		phot_data_query = Q(transient__transientphotometry__id__in=phot_ids)
-		queryset = queryset.annotate(
-			recent_magdate=Max('transient__transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
-		).order_by(('-' if is_descending else '') + 'recent_magdate')
 		return (queryset, True)
 		
 	class Meta:
 		model = TransientFollowup
-		fields = ('name_string','ra_string','dec_string','recent_mag','rise_time','set_time','moon_angle','transient.status')
+		fields = ('name_string','ra_string','dec_string','recent_mag',
+				  'rise_time','set_time','moon_angle','transient.status',
+				  'created_by')
 		template_name='YSE_App/django-tables2/bootstrap.html'
 		attrs = {
 			'th' : {

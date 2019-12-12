@@ -35,7 +35,8 @@ import dateutil.parser
 from astroplan import moon_illumination
 from astropy.time import Time
 
-from .table_utils import TransientTable,YSETransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable
+from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable
+from .queries.yse_python_queries import rising_transient_queryset,fastrising_transient_queryset
 import django_tables2 as tables
 from django_tables2 import RequestConfig
 from .basicauth import *
@@ -401,10 +402,21 @@ def yse_home(request):
 	oncall_form = OncallForm()
 	classical_resource_form = ClassicalResourceForm()
 	too_resource_form = ToOResourceForm()
+
+	fastrising_transients = fastrising_transient_queryset(ndays=7).filter(tags__name='YSE')
+	fastrisingtransientfilter = TransientFilter(request.GET, queryset=fastrising_transients,prefix='ysefastrise')
+	table_fastrising = YSERisingTransientTable(fastrisingtransientfilter.qs,prefix='ysefastrise')
+	RequestConfig(request, paginate={'per_page': 10}).configure(table_fastrising)
+
+	rising_transients = rising_transient_queryset(ndays=7).filter(tags__name='YSE')
+	risingtransientfilter = TransientFilter(request.GET, queryset=rising_transients,prefix='yserise')
+	table_rising = YSERisingTransientTable(risingtransientfilter.qs,prefix='yserise')
+	RequestConfig(request, paginate={'per_page': 10}).configure(table_rising)
+
 	
 	transients = Transient.objects.filter(tags__name='YSE').filter(~Q(status__name='Ignore')).order_by('-disc_date')
 	transientfilter = TransientFilter(request.GET, queryset=transients,prefix='yse')
-	table = TransientTable(transientfilter.qs,prefix='yse')
+	table = YSEFullTransientTable(transientfilter.qs,prefix='yse')
 	RequestConfig(request, paginate={'per_page': 10}).configure(table)
 
 	transients_follow = Transient.objects.filter(tags__name='YSE').order_by('-disc_date').filter(Q(status__name='FollowupRequested') | Q(status__name='Following'))
@@ -458,12 +470,18 @@ def yse_home(request):
 	nowdate = datetime.datetime.utcnow()
 	on_call = YSEOnCallDate.objects.filter(on_call_date__gte=nowdate-timedelta(0.5)).\
 		filter(on_call_date__lte=nowdate+timedelta(0.5))
+
+	if request.META['QUERY_STRING']:
+		anchor = request.META['QUERY_STRING'].split('-')[0]
+	else: anchor = ''	
 	context = {'on_call_observers':on_call,
 			   'oncall_form':oncall_form,
 			   'date_start': datetime.datetime.now().__str__().split()[0],
 			   'date_end': (datetime.datetime.now()+datetime.timedelta(1)).__str__().split()[0],
 			   'transient_table':(table,'yse',transientfilter),
 			   'transient_follow_table':(table_follow,'yse_follow',transientfilter_follow),
+			   'transient_rising_table':(table_rising,'yserise',risingtransientfilter),
+			   'transient_fastrising_table':(table_fastrising,'ysefastrise',fastrisingtransientfilter),
 			   'upcoming_observing_nights':obsnights,
 			   'too_resources':too_resources,
 			   'all_transient_statuses':all_transient_statuses,
@@ -472,7 +490,8 @@ def yse_home(request):
 			   'obs_date_last':obs_date_last.split()[0],
 			   'obs_date_now':obs_date_now.split()[0],
 			   'classical_resource_form':classical_resource_form,
-			   'too_resource_form':too_resource_form
+			   'too_resource_form':too_resource_form,
+			   'anchor':anchor
 	}
 	return render(request, 'YSE_App/yse_home.html', context)
 
@@ -737,7 +756,13 @@ def transient_detail(request, slug):
 					followups[i].resource = followups[i].too_resource
 				elif followups[i].queued_resource:
 					followups[i].resource = followups[i].queued_resource
-		#else:
+
+				comments = Log.objects.filter(transient_followup=followups[i].id).select_related()
+				comment_list = []
+				for c in comments:
+					comment_list += [c.comment]
+				if len(comments): followups[i].comment = '; '.join(comment_list)
+				#else:
 		#	followups = None
 
 		hostdata = Host.objects.filter(pk=transient_obj.host_id).select_related()
@@ -770,10 +795,9 @@ def transient_detail(request, slug):
 		date_format='%m/%d/%Y %H:%M:%S'
 
 		spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id)
-		
 		context = {
 			'transient':transient_obj,
-			'followups':followups.select_related(),
+			'followups':followups,
 			# 'telescope_list': tellist,
 			'observing_nights': obsnights,
 			'too_resource_list': too_resources.select_related(),

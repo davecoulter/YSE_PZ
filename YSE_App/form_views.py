@@ -46,10 +46,15 @@ class AddTransientFollowupFormView(FormView):
 			instance.created_by = self.request.user
 			instance.modified_by = self.request.user
 
-
-
 			instance.save() #update_fields=['created_by','modified_by']
 
+			if form.cleaned_data['comment']:
+				log = Log(transient_followup=TransientFollowup.objects.get(id=instance.id),
+						  comment=form.cleaned_data['comment'])
+				log.created_by = self.request.user
+				log.modified_by = self.request.user
+				log.save()
+			
 			print(form.cleaned_data)
 
 			# for key,value in form.cleaned_data.items():
@@ -72,7 +77,8 @@ class AddTransientFollowupFormView(FormView):
 			data_dict['offset_star_dec'] = form.cleaned_data['offset_star_dec']
 			data_dict['offset_north'] = form.cleaned_data['offset_north']
 			data_dict['offset_east'] = form.cleaned_data['offset_east']
-
+			data_dict['comment'] = form.cleaned_data['comment']
+			
 			data_dict['modified_by'] = instance.modified_by.username
 
 			data = {
