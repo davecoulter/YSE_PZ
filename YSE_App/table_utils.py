@@ -150,6 +150,7 @@ class YSETransientTable(tables.Table):
 								  verbose_name='Redshift',orderable=True,order_by='host__redshift')
 	requested_followup_resources = tables.Column(accessor='pk',verbose_name='Req. Followup')
 	successful_followup_resources = tables.Column(accessor='pk',verbose_name='Followed By')
+	followup_comments = tables.Column(accessor='pk',verbose_name='Followup Comments')
 	context_class = tables.Column(accessor='context_class',
 								  verbose_name='QUB Class.',orderable=True)
 
@@ -225,6 +226,15 @@ class YSETransientTable(tables.Table):
 
 		return ', '.join(np.unique(resource_list))
 
+	def render_followup_comments(self, value):
+		qs = Log.objects.filter(transient_followup__transient__id=value).values_list('comment')
+		
+		comment_list = []
+		for q in qs:
+			if q is not None: comment_list += [q]
+
+		return '; '.join(np.unique(comment_list))
+	
 	
 	def order_recent_mag(self, queryset, is_descending):
 
