@@ -344,7 +344,7 @@
     $( document ).ready(function(){
       {% for transient in transients %}
         //var transient_id = $("#lcplot_{{transient.id}}").attr('transient_id')
-        var url_target = "{% url 'lightcurveplot' transient.id %}"; //.replace('-1', transient_id);
+        var url_target = "{% url 'lightcurveplot_summary' transient.id %}"; //.replace('-1', transient_id);
         $.get(url_target).done(function(htmlresponse){
           $("#lcplot_{{transient.id}}").html(htmlresponse);
         });

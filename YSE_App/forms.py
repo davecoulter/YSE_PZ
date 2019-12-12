@@ -51,6 +51,7 @@ class TransientFollowupForm(ModelForm):
 			required=False)
 		valid_start = forms.DateTimeField()
 		valid_stop = forms.DateTimeField()
+	comment = forms.CharField()
 
 	class Meta:
 		model = TransientFollowup
@@ -59,6 +60,7 @@ class TransientFollowupForm(ModelForm):
 			'too_resource',
 			'classical_resource',
 			'queued_resource',
+			'comment',
 			'valid_start',
 			'valid_stop',
 			'spec_priority',
@@ -121,7 +123,7 @@ class SurveyObsForm(ModelForm):
 
 	survey_obs_date = forms.DateTimeField()
 	#import pdb; pdb.set_trace()
-	qs = [(i['ztf_field_id'], i['ztf_field_id']) for i in SurveyField.objects.all().values('ztf_field_id').distinct()]
+	qs = [(i['ztf_field_id'], i['ztf_field_id']) for i in SurveyField.objects.all().values('ztf_field_id').distinct().order_by('ztf_field_id')]
 	
 	if len(qs):
 		ztf_field_id = forms.MultipleChoiceField(
@@ -142,7 +144,7 @@ class OncallForm(ModelForm):
 
 	valid_start = forms.DateTimeField()
 	valid_stop = forms.DateTimeField()
-	qs = User.objects.all().order_by('username')
+	qs = User.objects.all().filter(groups__name='YSE').filter(~Q(username='admin')).order_by('username')
 	if len(qs):
 		user = forms.ModelChoiceField(
 			queryset=qs,

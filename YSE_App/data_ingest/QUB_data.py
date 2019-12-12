@@ -232,6 +232,7 @@ class QUB(CronJobBase):
 				status = 'Ignore'
 			else:
 				status = self.options.status
+
 			tdict = {'name':s['ps1_designation'],
 					 'ra':s['ra_psf'],
 					 'dec':s['dec_psf'],
@@ -243,10 +244,9 @@ class QUB(CronJobBase):
 					 'postage_stamp_ref_fits':'%s/%s/%s.fits'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['ref']),
 					 'postage_stamp_diff_fits':'%s/%s/%s.fits'%(s['ps1_designation'],s['target'].split('_')[1].split('.')[0],s['diff']),
 					 'status':status,
-					 #'best_spec_class':s['context_classification'],
 					 #'host':s['host'],
 					 'tags':['PSST'],
-					 'disc_date':mjd_to_date(s['followup_flag_date']),
+					 'disc_date':s['followup_flag_date'],
 					 'mw_ebv':mw_ebv,
 					 'point_source_probability':ps_prob}
 			obj += [s['ps1_designation']]
@@ -262,7 +262,7 @@ class QUB(CronJobBase):
 				if j == len(lc[iLC])-1: disc_point = 1
 				else: disc_point = 0
 
-				flux = 10**(0.4*(l['cal_psf_mag']-27.5))
+				flux = 10**(-0.4*(l['cal_psf_mag']-27.5))
 				flux_err = np.log(10)*0.4*flux*l['psf_inst_mag_sig']
 				if type(l['psf_inst_mag_sig']) == np.ma.core.MaskedConstant:
 					mag_err = 0
@@ -310,7 +310,7 @@ class QUB(CronJobBase):
 		schema = client.get(ztfurl)
 		if 'results' in schema.keys():
 			PhotUploadAll = {"mjdmatchmin":0.01,
-							 "clobber":False}
+							 "clobber":self.options.clobber}
 			photometrydict = {'instrument':'ZTF-Cam',
 							  'obs_group':'ZTF',
 							  'photdata':{}}
@@ -529,7 +529,6 @@ class YSE(CronJobBase):
 		for yselink_summary, yselink_lc, namecol in zip([self.options.yselink_summary,self.options.yselink_genericsummary],
 														[self.options.yselink_lc,self.options.yselink_genericlc],
 														['ps1_designation','local_designation']):
-
 			# grab CSV files
 			r = requests.get(url=yselink_summary,
 							 auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
@@ -576,7 +575,7 @@ class YSE(CronJobBase):
 						 'postage_stamp_ref_fits':'%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref']),
 						 'postage_stamp_diff_fits':'%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff']),
 						 'status':status,
-						 #'best_spec_class':s['context_classification'],
+						 'context_class':s['sherlockClassification'].replace('UNCLEAR','Unknown'),
 						 #'host':s['host'],
 						 'tags':['YSE'],
 						 'disc_date':s['followup_flag_date'], #mjd_to_date(s['mjd_obs']),
@@ -596,14 +595,13 @@ class YSE(CronJobBase):
 					if j == len(lc[iLC])-1: disc_point = 1
 					else: disc_point = 0
 
-					flux = 10**(0.4*(l['cal_psf_mag']-27.5))
+					flux = 10**(-0.4*(l['cal_psf_mag']-27.5))
 					flux_err = np.log(10)*0.4*flux*l['psf_inst_mag_sig']
 					if type(l['psf_inst_mag_sig']) == np.ma.core.MaskedConstant:
 						mag_err = 0
 						flux_err = 0
 					else:
 						mag_err = l['psf_inst_mag_sig']
-
 					phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
 										'band':l['filter'],
 										'groups':'YSE',
@@ -631,10 +629,10 @@ class YSE(CronJobBase):
 			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
 			
 			#transientdict['transientphotometry'] = photometrydict
-		#import pdb; pdb.set_trace()
+
 		#scall = SkyCoord(ra,dec,unit=u.deg) #summary['ra_psf'],summary['dec_psf']
 		#transientdict = self.getZTFPhotometry(transientdict,obj,scall)
-		#import pdb; pdb.set_trace()
+
 		return transientdict,nsn
 
 	def getZTFPhotometry(self,ra,dec):

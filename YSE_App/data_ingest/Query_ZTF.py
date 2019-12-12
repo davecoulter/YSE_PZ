@@ -198,7 +198,7 @@ class AntaresZTF(CronJobBase):
 				PhotUploadAll = transientdict[s['properties']['ztf_object_id']]['transientphotometry']
 				photometrydict = PhotUploadAll['ZTF']
 								
-			flux = 10**(0.4*(s['properties']['ztf_magpsf']-27.5))
+			flux = 10**(-0.4*(s['properties']['ztf_magpsf']-27.5))
 			flux_err = np.log(10)*0.4*flux*s['properties']['ztf_sigmapsf']
 
 			phot_upload_dict = {'obs_date':mjd_to_date(s['properties']['ztf_jd']-2400000.5),
@@ -396,7 +396,7 @@ class MARS_ZTF(CronJobBase):
 				PhotUploadAll = transientdict[s['objectId']]['transientphotometry']
 				photometrydict = PhotUploadAll['ZTF']
 								
-			flux = 10**(0.4*(s['candidate']['magpsf']-27.5))
+			flux = 10**(-0.4*(s['candidate']['magpsf']-27.5))
 			flux_err = np.log(10)*0.4*flux*s['candidate']['sigmapsf']
 
 			phot_upload_dict = {'obs_date':mjd_to_date(s['candidate']['jd']-2400000.5),

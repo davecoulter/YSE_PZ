@@ -584,6 +584,7 @@
 																<th>Offset East</th>
 																<th>Attached Resource</th>
 																<th>Status</th>
+																<th>Comment</th>
 																<th>Action</th>
 															</tr>
 														</thead>
@@ -609,6 +610,7 @@
 																	{% endif %}
 																</td>
 																<td>{{ f.status }}</td>
+																<td>{{ f.comment }}</td>
 																<td><a target='_blank' href="{% url 'admin:YSE_App_transientfollowup_change' f.id %}">Edit</a></td>
 															</tr>
 														</tbody>
@@ -1511,6 +1513,7 @@
 						var offset_star_dec = json.data["offset_star_dec"] ? json.data["offset_star_dec"] : "None"
 						var offset_north = json.data["offset_north"] ? json.data["offset_north"] : "None"
 						var offset_east = json.data["offset_east"] ? json.data["offset_east"] : "None"
+						var comment = json.data["comment"] ? json.data["comment"] : "None"
 
 						// Construct date strings
 						var start_date = new Date(valid_start)
@@ -1559,6 +1562,7 @@
 							"<td>" + offset_east + "</td>" +
 							"<td>" + associated_resouces + "</td>" + 
 							"<td>" + status_name + "</td>" + 
+							"<td>" + comment + "</td>" +
 							"<td><a target='_blank' href='{% url 'admin:YSE_App_transientfollowup_changelist' %}" + followup_pk + "/change/'>Edit</a></td>" + 
 							"</tr></tbody></table><hr>" + 
 							"<h4 class='box-title'>Observation Tasks</h4>" + 
@@ -1757,11 +1761,11 @@
 	  		$(rows).html(htmlresponse);
 	  	});
 
-		$.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
+		$.get("{% url 'lightcurveplot_detail' transient.id %}").done(function(htmlresponse){
 	  		$("#lcplot").html(htmlresponse);
 	  	});
 
-	  	//$.get("{% url 'lightcurveplot' transient.id %}").done(function(htmlresponse){
+	  	//$.get("{% url 'lightcurveplot_detail' transient.id %}").done(function(htmlresponse){
 	  	//	
 	  	//	$("#biglcplot").html(htmlresponse.replace("width: 500px; height: 400px;","width: 1000px; height: 800px;"));
 	  	//});
