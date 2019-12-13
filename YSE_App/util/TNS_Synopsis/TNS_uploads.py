@@ -220,8 +220,8 @@ class processTNS():
 				PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
 								  'band':'%s-ZTF'%phot['filter'],
 								  'groups':[]}
-				PhotUploadDict['mag'] = phot['magap']
-				PhotUploadDict['mag_err'] = phot['sigmagap']
+				PhotUploadDict['mag'] = phot['magpsf']
+				PhotUploadDict['mag_err'] = phot['sigmapsf']
 				PhotUploadDict['flux'] = None
 				PhotUploadDict['flux_err'] = None
 				PhotUploadDict['data_quality'] = 0
