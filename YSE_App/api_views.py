@@ -43,10 +43,23 @@ class SurveyFieldViewSet(viewsets.ReadOnlyModelViewSet):
 	serializer_class = SurveyFieldSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+### `Transient` Filter Set ###
+class SurveyObsFilter(django_filters.FilterSet):
+	status_in = django_filters.BaseInFilter(name="status__name")#, lookup_expr='in')
+	obs_mjd_gte = django_filters.Filter(name="obs_mjd", lookup_expr='gte')
+	obs_mjd_lte = django_filters.Filter(name="obs_mjd", lookup_expr='lte')
+	
+	class Meta:
+		model = SurveyObservation
+		fields = ()
+
+	
 class SurveyObservationViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = SurveyObservation.objects.all()
 	serializer_class = SurveyObservationSerializer
 	permission_classes = (permissions.IsAuthenticated,)
+	filter_backends = (DjangoFilterBackend,)
+	filter_class = SurveyObsFilter
 	
 class TaskStatusViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = TaskStatus.objects.all()
