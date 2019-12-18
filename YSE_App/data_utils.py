@@ -787,7 +787,7 @@ def add_transient_spec_util(specdict,transient,user):
 												flux=s['flux'],flux_err=s['flux_err'],
 												created_by_id=user.id,modified_by_id=user.id)
 			specdata_entries += [specdata_single]
-		TransientSpecData.objects.bulk_create(**specdata_entries)
+		TransientSpecData.objects.bulk_create(specdata_entries)
 			
 	return_dict = {"message":"successfully added spec data"}
 	return JsonResponse(return_dict)
