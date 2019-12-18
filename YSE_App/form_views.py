@@ -84,6 +84,7 @@ class AddTransientFollowupFormView(FormView):
 			data_dict['modified_by'] = instance.modified_by.username
 
 			data = {
+				'data':data_dict,
 				'message': "Successfully submitted form data.",
 			}
 			return JsonResponse(data)
