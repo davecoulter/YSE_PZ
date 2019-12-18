@@ -25,6 +25,8 @@ from django.forms.models import model_to_dict
 from .common import alert
 from .common.utilities import date_to_mjd, coordstr_to_decimal
 import numpy as np
+from django.views.decorators.csrf import csrf_exempt
+from .basicauth import *
 
 class AddTransientFollowupFormView(FormView):
 	form_class = TransientFollowupForm
@@ -301,6 +303,18 @@ class AddSurveyObsFormView(FormView):
 	template_name = 'YSE_App/form_snippets/survey_obs_form.html'
 	success_url = '/form-success/'
 
+	@csrf_exempt
+	@login_or_basic_auth_required
+	def dispatch(self, request, *args, **kwargs):
+
+		if not self.request.is_ajax():
+			auth_method, credentials = self.request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+			credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+			username, password = credentials.split(':', 1)
+			self.request.user = auth.authenticate(username=username, password=password)
+		
+		return super(AddSurveyObsFormView, self).dispatch(request, *args, **kwargs)
+	
 	def form_invalid(self, form):
 		response = super(AddSurveyObsFormView, self).form_invalid(form)
 		if self.request.is_ajax():
@@ -310,7 +324,7 @@ class AddSurveyObsFormView(FormView):
 
 	def form_valid(self, form):
 		response = super(AddSurveyObsFormView, self).form_valid(form)
-		if self.request.is_ajax():
+		if 'hi': #self.request.is_ajax():
 			instance = form.save(commit=False)
 
 			telescope = Telescope.objects.get(name='Pan-STARRS1')
@@ -361,6 +375,7 @@ class AddSurveyObsFormView(FormView):
 					name=band1name,instrument__name=s.instrument.name)[0]
 				band2 = PhotometricBand.objects.filter(
 					name=band2name,instrument__name=s.instrument.name)[0]
+
 				SurveyObservation.objects.create(
 					mjd_requested=date_to_mjd(sunset_forobs),
 					survey_field=s,

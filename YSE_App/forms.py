@@ -51,7 +51,7 @@ class TransientFollowupForm(ModelForm):
 			required=False)
 		valid_start = forms.DateTimeField()
 		valid_stop = forms.DateTimeField()
-	comment = forms.CharField()
+	comment = forms.CharField(required=False)
 
 	class Meta:
 		model = TransientFollowup
