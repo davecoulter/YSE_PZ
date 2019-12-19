@@ -510,8 +510,8 @@ def yse_observing_calendar(request):
 
 	#import pdb; pdb.set_trace()
 	todaydate = dateutil.parser.parse(datetime.datetime.today().strftime('%Y-%m-%d 00:00:00'))
-	base = todaydate-datetime.timedelta(10)
-	date_list = [base + datetime.timedelta(days=x) for x in range(20)]
+	base = todaydate-datetime.timedelta(30)
+	date_list = [base + datetime.timedelta(days=x) for x in range(40)]
 	obstuple = ()
 	colors = ['#dd4b39', 
 			  '#f39c12', 
@@ -530,12 +530,14 @@ def yse_observing_calendar(request):
 			filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1))
 		if not len(survey_obs): continue
 		ztf_ids = survey_obs.values_list('survey_field__ztf_field_id',flat=True).distinct()
-		filters = survey_obs.values_list('photometric_band__name',flat=True).distinct()
-		ztf_list,filters_list = [],[]
-		for z in ztf_ids: ztf_list += [z.__str__()]
-		for f in filters: filters_list += [f.__str__()]
+
+		ztf_str = ''
+		for z in ztf_ids:
+			filters = survey_obs.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
+			ztf_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
+
 		if len(survey_obs):
-			obstuple += ((','.join(ztf_list),','.join(filters_list),date,
+			obstuple += ((ztf_str[:-2],date,
 						  '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)]),)
 			
 	context = {

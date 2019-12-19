@@ -257,6 +257,7 @@ class AddSurveyFieldFormView(FormView):
 			# rules: follow cad
 			#import pdb; pdb.set_trace()
 			mjd = np.arange(instance.first_mjd,instance.last_mjd,instance.cadence)
+			#if len(mjd) > 1: import pdb; pdb.set_trace()
 			for i,m in enumerate(mjd):
 				t = Time(m,format='mjd')
 				illum = moon_illumination(t)

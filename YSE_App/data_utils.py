@@ -632,6 +632,7 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
 			instrument = Instrument.objects.filter(name='Unknown')
 		instrument = instrument[0]
 
+
 		obs_group = ObservationGroup.objects.filter(name=photometry['obs_group'])
 		if not len(obs_group):
 			obs_group = ObservationGroup.objects.filter(name='Unknown')

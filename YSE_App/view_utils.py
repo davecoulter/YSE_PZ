@@ -790,7 +790,6 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
 	transient = Transient.objects.get(pk=transient_id)
 	photdata = get_all_phot_for_transient(request.user, transient_id).select_related()
-
 	if not photdata:
 		return django.http.HttpResponse('')
 
@@ -804,8 +803,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
-	#import pdb; pdb.set_trace()
-	
+
 	for p in photdata:
 		#dbflux,dbfluxerr,dbobsdate,dbmag,dbmagerr,dbdata_quality,dbdiscovery_point = \
 		#	p.flux,p.flux_err,p.obs_date,p.mag,p.mag_err,p.data_quality,p.discovery_point
