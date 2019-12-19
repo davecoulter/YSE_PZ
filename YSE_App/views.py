@@ -510,8 +510,8 @@ def yse_observing_calendar(request):
 
 	#import pdb; pdb.set_trace()
 	todaydate = dateutil.parser.parse(datetime.datetime.today().strftime('%Y-%m-%d 00:00:00'))
-	base = todaydate-datetime.timedelta(30)
-	date_list = [base + datetime.timedelta(days=x) for x in range(40)]
+	base = todaydate-datetime.timedelta(10)
+	date_list = [base + datetime.timedelta(days=x) for x in range(20)]
 	obstuple = ()
 	colors = ['#dd4b39', 
 			  '#f39c12', 
