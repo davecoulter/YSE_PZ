@@ -48,6 +48,8 @@ class SurveyObsFilter(django_filters.FilterSet):
 	status_in = django_filters.BaseInFilter(name="status__name")#, lookup_expr='in')
 	obs_mjd_gte = django_filters.Filter(name="obs_mjd", lookup_expr='gte')
 	obs_mjd_lte = django_filters.Filter(name="obs_mjd", lookup_expr='lte')
+	mjd_requested_gte = django_filters.Filter(name="mjd_requested", lookup_expr='gte')
+	mjd_requested_lte = django_filters.Filter(name="mjd_requested", lookup_expr='lte')
 	
 	class Meta:
 		model = SurveyObservation

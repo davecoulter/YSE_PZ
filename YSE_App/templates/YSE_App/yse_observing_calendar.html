@@ -93,12 +93,12 @@
       events: [
         {% for obs in all_obs %}
             {
-              title          : 'ZTF Fields: {{obs.0}}\nFilters: {{obs.1}}\nMoon: {{obs.3}}',
-              start          : new Date({{ obs.2.year }}, {{ obs.2.month|add:"-1" }}, {{ obs.2.day }}),
+              title          : 'ZTF Fields:\n{{obs.0}}\nMoon: {{obs.2}}',
+              start          : new Date({{ obs.1.year }}, {{ obs.1.month|add:"-1" }}, {{ obs.1.day }}),
               allDay         : true,
-              backgroundColor: '{{obs.4}}',
-              borderColor    : '{{obs.4}}',
-              url: "{% url 'yse_observing_night' obs.2|date:'Y-m-d' %}"
+              backgroundColor: '{{obs.3}}',
+              borderColor    : '{{obs.3}}',
+              url: "{% url 'yse_observing_night' obs.1|date:'Y-m-d' %}"
             },
         {% endfor %}
       ],
