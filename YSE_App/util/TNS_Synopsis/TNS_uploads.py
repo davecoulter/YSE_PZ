@@ -330,8 +330,13 @@ class processTNS():
 		photometrycount = 0
 		for ins in np.unique(tinst):
 
+			if np.array(obsgroups)[np.array(tinst) == ins][0] is None:
+				obsgroup = None
+			else:
+				obsgroup = re.sub(r'[^\x00-\x7f]',r'',np.array(obsgroups)[np.array(tinst) == ins][0])
+			
 			photometrydict = {'instrument':ins,
-							  'obs_group':np.array(obsgroups)[np.array(tinst) == ins][0],
+							  'obs_group':obsgroup,
 							  'photdata':{}}
 
 			for f,k in zip(np.unique(tfilt),range(len(np.unique(tfilt)))):
@@ -453,7 +458,7 @@ class processTNS():
 			Spectrum['specdata'] = SpecData
 			Spectrum['instrument'] = si
 			Spectrum['obs_date'] = so
-			Spectrum['obs_group'] = sog
+			Spectrum['obs_group'] = re.sub(r'[^\x00-\x7f]',r'',sog)
 			SpecDictAll[s] = Spectrum
 		return SpecDictAll
 
@@ -694,9 +699,9 @@ class processTNS():
 				jd = None
 
 			transientdict = self.getTNSData(jd,obj,sc,ebv)
-			try:
-				photdict = self.getZTFPhotometry(sc)
-			except: photdict = None
+			#try:
+			photdict = self.getZTFPhotometry(sc)
+			#except: photdict = None
 			try:
 				if jd:
 					photdict,nondetectdate,nondetectmaglim,nondetectfilt,nondetectins = \
@@ -747,7 +752,7 @@ class processTNS():
 
 			try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
 			except: print(r.text)
-		except: import pdb; pdb.set_trace()
+		except Exception as e: raise RuntimeError(e)
 		print("Process done.")
 
 
