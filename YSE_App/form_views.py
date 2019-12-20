@@ -345,7 +345,7 @@ class AddSurveyObsFormView(FormView):
 
 				# need to see what was observed in the previous obs w/ the same moon illumination
 				previous_obs = SurveyObservation.objects.filter(survey_field=s).\
-					filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('obs_mjd').select_related()
+					filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').order_by('-mjd_requested').select_related()
 				#filter(Q(obs_mjd__gt=m-3) | Q(mjd_requested__gt=m-3)).\
 
 				def previous_obs_func(illum_min,illum_max):
