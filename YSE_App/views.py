@@ -620,7 +620,7 @@ def yse_observing_night(request, obs_date):
 		filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
 	obs_table = YSEObsNightTable(survey_obs,obs_date=obs_date)
-	
+
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-ex')[0]
 	else: anchor = ''
