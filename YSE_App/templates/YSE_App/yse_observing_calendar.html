@@ -150,7 +150,7 @@
       //Save color
       currColor = $(this).css('color')
       //Add color effect to button
-      $('#add-new-event').css({ 'background-color': currColor, 'border-color': currColor, 'white-space': 'normal' })
+      $('#add-new-event').css({ 'background-color': currColor, 'border-color': currColor})
     })
     $('#add-new-event').click(function (e) {
       e.preventDefault()
@@ -166,7 +166,6 @@
         'background-color': currColor,
         'border-color'    : currColor,
         'color'           : '#fff',
-        'white-space'     : 'normal',
       }).addClass('external-event')
       event.html(val)
       $('#external-events').prepend(event)
