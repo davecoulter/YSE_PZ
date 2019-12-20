@@ -37,6 +37,16 @@
 {% block scripts %}
   <link rel="stylesheet" href="{% static 'YSE_App/bower_components/fullcalendar/dist/fullcalendar.min.css' %}">
   <link rel="stylesheet" href="{% static 'YSE_App/bower_components/fullcalendar/dist/fullcalendar.print.min.css' %}" media="print">
+  <style>
+    .fc-event-time, .fc-event-title {
+    padding: 0 1px;
+    white-space: nowrap;
+    }
+
+    .fc-title {
+    white-space: normal;
+    }
+  </style>
   <script src="{% static 'YSE_App/bower_components/moment/moment.js' %}"></script>
   <script src="{% static 'YSE_App/bower_components/fullcalendar/dist/fullcalendar.min.js' %}"></script>
   <script src="https://momentjs.com/downloads/moment-timezone.min.js"></script>
@@ -98,7 +108,7 @@
               allDay         : true,
               backgroundColor: '{{obs.3}}',
               borderColor    : '{{obs.3}}',
-              url: "{% url 'yse_observing_night' obs.1|date:'Y-m-d' %}"
+              url: "{% url 'yse_observing_night' obs.1|date:'Y-m-d' %}",
             },
         {% endfor %}
       ],
@@ -140,7 +150,7 @@
       //Save color
       currColor = $(this).css('color')
       //Add color effect to button
-      $('#add-new-event').css({ 'background-color': currColor, 'border-color': currColor })
+      $('#add-new-event').css({ 'background-color': currColor, 'border-color': currColor, 'white-space': 'normal' })
     })
     $('#add-new-event').click(function (e) {
       e.preventDefault()
@@ -155,7 +165,8 @@
       event.css({
         'background-color': currColor,
         'border-color'    : currColor,
-        'color'           : '#fff'
+        'color'           : '#fff',
+        'white-space'     : 'normal',
       }).addClass('external-event')
       event.html(val)
       $('#external-events').prepend(event)
