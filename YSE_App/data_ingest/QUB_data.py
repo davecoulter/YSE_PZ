@@ -656,7 +656,7 @@ class YSE(CronJobBase):
 								  'band':'%s-ZTF'%phot['filter'],
 								  'groups':[]}
 				PhotUploadDict['mag'] = phot['magpsf']
-				PhotUploadDict['mag_err'] = phot['sigmagpsf']
+				PhotUploadDict['mag_err'] = phot['sigmapsf']
 				PhotUploadDict['flux'] = None
 				PhotUploadDict['flux_err'] = None
 				PhotUploadDict['data_quality'] = 0
