@@ -258,8 +258,8 @@ class QUB(CronJobBase):
 			photometrydict = {'instrument':'GPC1',
 							  'obs_group':'PSST',
 							  'photdata':{}}
-			for j,l in enumerate(lc[iLC]):
-				if j == len(lc[iLC])-1: disc_point = 1
+			for j,l in enumerate(lc[iLC][np.argsort(lc['mjd_obs'][iLC])]):
+				if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-l['mjd_obs']) < 1: disc_point = 1
 				else: disc_point = 0
 
 				flux = 10**(-0.4*(l['cal_psf_mag']-27.5))
@@ -544,10 +544,6 @@ class YSE(CronJobBase):
 			
 			for i,s in enumerate(summary):
 				if nowmjd - s['mjd_obs'] > self.options.max_days: continue
-				#if nsn > 100: break
-				#if nsn < 20:
-				#	nsn += 1
-				#	continue
 
 				sc = SkyCoord(s['ra_psf'],s['dec_psf'],unit=u.deg)
 				try:
@@ -590,9 +586,8 @@ class YSE(CronJobBase):
 				photometrydict = {'instrument':'GPC1',
 								  'obs_group':'YSE',
 								  'photdata':{}}
-
-				for j,l in enumerate(lc[iLC]):
-					if j == len(lc[iLC])-1: disc_point = 1
+				for j,l in enumerate(lc[iLC][np.argsort(lc['mjd_obs'][iLC])]):
+					if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-l['mjd_obs']) < 1: disc_point = 1
 					else: disc_point = 0
 
 					flux = 10**(-0.4*(l['cal_psf_mag']-27.5))
