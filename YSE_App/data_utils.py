@@ -7,6 +7,7 @@ from astropy.coordinates import get_moon, SkyCoord
 from astropy.time import Time
 import astropy.units as u
 import datetime
+import dateutil
 import json
 import time
 import numpy as np
@@ -26,6 +27,7 @@ from django.db.models import ForeignKey
 from .common.alert import sendemail
 from .common.utilities import getRADecBox
 from django.db.models import Q
+from .queries.yse_python_queries import *
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -232,9 +234,16 @@ def add_transient(request):
 			if not len(dbtransient):
 				# check RA/dec
 				ramin,ramax,decmin,decmax = getRADecBox(transient['ra'],transient['dec'],size=0.00042)
+				#dbtransient = Transient.objects.filter(
+				#	Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
+				#	Q(disc_date__year=transient['disc_date'].split('-')[0]))
+				#dateutil.parser.parse(obs_date)
 				dbtransient = Transient.objects.filter(
 					Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
-					Q(disc_date__year=transient['disc_date'].split('-')[0]))
+					Q(disc_date__gte=dateutil.parser.parse(transient['disc_date'])-datetime.timedelta(365)) &
+					Q(disc_date__lte=dateutil.parser.parse(transient['disc_date'])+datetime.timedelta(365)))
+				#if transient['name'] == '10AYSEaaj':
+				#	import pdb; pdb.set_trace()
 				if len(dbtransient):
 					#dbtransient = dbtransient[0]
 					obs_group = ObservationGroup.objects.get(name=transient['obs_group'])
@@ -1052,6 +1061,16 @@ def get_transient(request, slug):
 
 	return JsonResponse(return_dict)
 
+@login_or_basic_auth_required
+def get_rising_transients(request,ndays):
+	qs = recent_rising_transient_queryset(ndays=ndays)
+
+	return_dict = {"transient":""}
+	for transient in qs:
+		serializer = TransientSerializer(instance=transient, context={"request":Request(request)})
+		return_dict[transient.name] = serializer.data
+
+	return JsonResponse(return_dict)
 
 def find_separation(host_queryset, query_coord, sep_threshold):
 
@@ -1062,7 +1081,7 @@ def find_separation(host_queryset, query_coord, sep_threshold):
 	sep = host_coords.separation(query_coord)
 	for idx in np.where(sep.arcminute <= sep_threshold)[0]:
 		yield host_queryset[int(idx)],sep.arcminute[idx]
-
+		
 @login_or_basic_auth_required		
 def get_host(request, ra, dec, sep):
 
@@ -1084,9 +1103,54 @@ def get_host(request, ra, dec, sep):
 
 	return JsonResponse(return_dict)
 
-def getRADecBox(ra,dec,size=None):
-	RAboxsize = DECboxsize = size
+@login_or_basic_auth_required		
+def get_rising_transients_box(request, ra, dec, ra_width, dec_width):
 
+	qs = recent_rising_transient_queryset(ndays=5)
+	ramin,ramax,decmin,decmax = getRADecBox(float(ra),float(dec),float(ra_width),float(dec_width))
+	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax).filter(~Q(status__name='Ignore'))
+	
+	serialized_transients = []
+	for t in qs:
+		serialized_transients.append(
+			{"transient_ra":t.ra,"transient_dec":t.dec,
+			 "transient_name":t.name,"transient_id":t.id}
+		)
+
+	return_dict = {"requested ra":float(ra),
+				   "requested dec":float(dec),
+				   "transients":serialized_transients }
+
+	return JsonResponse(return_dict)
+
+@login_or_basic_auth_required		
+def get_new_transients_box(request, ra, dec, ra_width, dec_width):
+
+	qs = Transient.objects.all() #filter(disc_date__gte=datetime.datetime.utcnow()-datetime.timedelta(5)) #.filter(~Q(TNS_spec_class__isnull=True))
+	ramin,ramax,decmin,decmax = getRADecBox(float(ra),float(dec),float(ra_width),float(dec_width))
+	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax).filter(Q(status__name='Watch') | Q(status__name='Following'))
+	
+	serialized_transients = []
+	for t in qs:
+		serialized_transients.append(
+			{"transient_ra":t.ra,"transient_dec":t.dec,
+			 "transient_name":t.name,"transient_id":t.id}
+		)
+
+	return_dict = {"requested ra":float(ra),
+				   "requested dec":float(dec),
+				   "transients":serialized_transients }
+
+	return JsonResponse(return_dict)
+
+
+def getRADecBox(ra,dec,size=None,dec_size=None):
+	if not dec_size:
+		RAboxsize = DECboxsize = size
+	else:
+		RAboxsize = size
+		DECboxsize = size
+		
 	# get the maximum 1.0/cos(DEC) term: used for RA cut
 	minDec = dec-0.5*DECboxsize
 	if minDec<=-90.0:minDec=-89.9
