@@ -16,6 +16,9 @@ import optparse
 import configparser
 import os
 import shutil
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
 from io import open as iopen
 
 psst_image_url = "https://star.pst.qub.ac.uk/sne/ps13pi/site_media/images/data/ps13pi"
@@ -525,7 +528,7 @@ class YSE(CronJobBase):
 		transientdict = {}
 		obj,ra,dec = [],[],[]
 		nsn = 0
-		
+
 		for yselink_summary, yselink_lc, namecol in zip([self.options.yselink_summary,self.options.yselink_genericsummary],
 														[self.options.yselink_lc,self.options.yselink_genericlc],
 														['ps1_designation','local_designation']):
@@ -560,16 +563,31 @@ class YSE(CronJobBase):
 				else:
 					status = self.options.status
 
+				if type(s['target']) == np.ma.core.MaskedConstant:
+					postage_stamp_file = ''
+					postage_stamp_ref = ''
+					postage_stamp_diff = ''
+					postage_stamp_file_fits = ''
+					postage_stamp_ref_fits = ''
+					postage_stamp_diff_fits = ''
+				else:
+					postage_stamp_file = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target'])
+					postage_stamp_ref = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref'])
+					postage_stamp_diff = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff'])
+					postage_stamp_file_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target'])
+					postage_stamp_ref_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref'])
+					postage_stamp_diff_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff'])
+					
 				tdict = {'name':s['local_designation'],
 						 'ra':s['ra_psf'],
 						 'dec':s['dec_psf'],
 						 'obs_group':'YSE',
-						 'postage_stamp_file':'%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target']),
-						 'postage_stamp_ref':'%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref']),
-						 'postage_stamp_diff':'%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff']),
-						 'postage_stamp_file_fits':'%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target']),
-						 'postage_stamp_ref_fits':'%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref']),
-						 'postage_stamp_diff_fits':'%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff']),
+						 'postage_stamp_file':postage_stamp_file,
+						 'postage_stamp_ref':postage_stamp_ref,
+						 'postage_stamp_diff':postage_stamp_diff,
+						 'postage_stamp_file_fits':postage_stamp_file_fits,
+						 'postage_stamp_ref_fits':postage_stamp_ref_fits,
+						 'postage_stamp_diff_fits':postage_stamp_diff_fits,
 						 'status':status,
 						 'context_class':s['sherlockClassification'].replace('UNCLEAR','Unknown'),
 						 #'host':s['host'],
@@ -577,6 +595,7 @@ class YSE(CronJobBase):
 						 'disc_date':s['followup_flag_date'], #mjd_to_date(s['mjd_obs']),
 						 'mw_ebv':mw_ebv,
 						 'point_source_probability':ps_prob}
+
 				obj += [s['local_designation']]
 				ra += [s['ra_psf']]
 				dec += [s['dec_psf']]
