@@ -56,7 +56,7 @@ class finder():
 	def mkChart(self,ra,dec,outfile,ax=None,saveImg=True,clobber=True):
 
 		if ':' in ra and ':' in dec:
-			sc = SkyCoord("%s %s"%(ra,dec),FK5,unit=(u.hourangle,u.deg))
+			sc = SkyCoord(ra,dec,frame="fk5",unit=(u.hourangle,u.deg))
 			self.options.ra = sc.ra.deg
 			self.options.dec = sc.dec.deg
 			ra,dec = sc.ra.deg,sc.dec.deg
