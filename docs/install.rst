@@ -62,8 +62,8 @@ Inside MySQL::
   GRANT ALL PRIVILEGES ON *.* TO 'django'@'localhost' WITH GRANT OPTION;
   CREATE USER 'django'@'%' IDENTIFIED BY '4django!';
   GRANT ALL PRIVILEGES ON *.* TO 'django'@'%' WITH GRANT OPTION;
-  GRANT ALL PRIVILEGES ON *.* TO 'explorer'@'localhost' WITH GRANT OPTION;
   CREATE USER 'explorer'@'localhost' IDENTIFIED BY '4Explor3R!';
+  GRANT ALL PRIVILEGES ON *.* TO 'explorer'@'localhost' WITH GRANT OPTION;
 
 Finally, load the database using the existing YSE_PZ database
 file that someone hopefully sent you.  For the DB backup taken on Nov. 4th,
