@@ -417,7 +417,7 @@ class QUB(CronJobBase):
 
 class YSE(CronJobBase):
 
-	RUN_EVERY_MINS = 30
+	RUN_EVERY_MINS = 0.1
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.QUB_data.QUB'
@@ -637,7 +637,8 @@ class YSE(CronJobBase):
 				photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
 				if photometrydict_ztf is not None:
 					PhotUploadAll['ZTF'] = photometrydict_ztf
-
+				#if s['local_designation'] == '10AYSEaaj':
+				#	import pdb; pdb.set_trace()
 
 				nsn += 1
 			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])

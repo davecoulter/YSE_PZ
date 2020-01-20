@@ -7,10 +7,11 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import DefaultRouter
 from rest_framework.schemas import get_schema_view
 
-from . import views, view_utils, data_utils, table_utils
+from . import views, view_utils, data_utils, table_utils, yse_views
 from . import api_views
 from .form_views import *
 from . import surveypages
+from YSE_App.yse_utils import yse_pointings
 
 schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
 
@@ -41,6 +42,15 @@ urlpatterns = [
 
     url(r'^observing_calendar/$', views.observing_calendar, name='observing_calendar'),
     url(r'^yse_observing_calendar/$', views.yse_observing_calendar, name='yse_observing_calendar'),
+    url(r'^yse_planning/$', yse_views.yse_planning, name='yse_planning'),
+    #url(r'^yse_msb/$', yse_views.yse_msb, name='yse_msb'),
+    url(r'^yse_pointings/(?P<field_name>.*)/(?P<snid>[a-zA-Z0-9_-]+)/$', yse_pointings.get_yse_pointings, name='yse_pointings'),
+    url(r'^yse_pointings_plot/(?P<field_name>.*)/(?P<snid>[a-zA-Z0-9_-]+)/$', yse_pointings.yse_pointing_plot, name='yse_pointings_plot'),
+    url(r'^adjust_yse_pointings/(?P<field_name>.*)/(?P<snid>[a-zA-Z0-9_-]+)/$', yse_pointings.adjust_yse_pointings, name='adjust_yse_pointings'),
+    url(r'^adjust_yse_pointings_plot/(?P<field_name>.*)/(?P<snid>[a-zA-Z0-9_-]+)/$', yse_pointings.adjust_yse_pointings_plot, name='adjust_yse_pointings_plot'),
+    url(r'^yse_msb_change/(?P<field_to_drop>.*)/(?P<field_to_add>.*)/(?P<snid>[a-zA-Z0-9_-]+)/(?P<ra_to_add>.*)/(?P<dec_to_add>.*)/$', 
+		yse_views.yse_msb_change, name='yse_msb_change'),
+
     url(r'^yse_oncall_calendar/$', views.yse_oncall_calendar, name='yse_oncall_calendar'),
     url(r'^observing_night/(?P<telescope>.*)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.observing_night, name='observing_night'),
     #url(r'^survey_observing_calendar/$', views.survey_observing_calendar, name='survey_observing_calendar'),
@@ -48,6 +58,7 @@ urlpatterns = [
     url(r'^view_yse_fields/$', view_utils.view_yse_fields, name='view_yse_fields'),
 	
 	url(r'^get_transient/(?P<slug>[a-zA-Z0-9_-]+)/$', data_utils.get_transient, name='get_transient'),
+	url(r'^get_rising_transients/(?P<ndays>[a-zA-Z0-9_-]+)/$', data_utils.get_rising_transients, name='get_rising_transients'),
 	url(r'^add_transient/', data_utils.add_transient, name='add_transient'),
 	url(r'^add_yse_survey_obs/', data_utils.add_yse_survey_obs, name='add_yse_survey_obs'),
 	url(r'^add_yse_survey_fields/', data_utils.add_yse_survey_fields, name='add_yse_survey_fields'),
@@ -55,6 +66,10 @@ urlpatterns = [
 	url(r'^add_transient_phot/', data_utils.add_transient_phot, name='add_transient_phot'),
 	url(r'^add_transient_spec/', data_utils.add_transient_spec, name='add_transient_spec'),
 	url(r'^get_host/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<sep>\d+\.?\d*)/$', data_utils.get_host, name='get_host'),
+	url(r'^get_rising_transients_box/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<ra_width>\d+\.?\d*)/(?P<dec_width>\d+\.?\d*)/$', 
+		data_utils.get_rising_transients_box, name='get_rising_transients_box'),
+	url(r'^get_new_transients_box/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<ra_width>\d+\.?\d*)/(?P<dec_width>\d+\.?\d*)/$', 
+		data_utils.get_new_transients_box, name='get_new_transients_box'),
 	url(r'^download_data/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_data, name='download_data'),
 	url(r'^download_photometry/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_photometry, name='download_photometry'),
 	url(r'^download_target_list/(?P<telescope>[a-zA-Z0-9_-]+)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.download_target_list, name='download_target_list'),

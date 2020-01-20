@@ -185,7 +185,21 @@
 												<br>
 											</div>
 										</div>
-										
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>YSE Field</strong>
+												<p class="text-muted">
+													{% with transient.LikelyYSEField as ysefield %}
+													{% if ysefield.0 %}
+													{{ ysefield.0 }}, obs. {{ ysefield.3|floatformat:1 }} days ago
+													{% else %}
+													None
+													{% endif %}
+													{% endwith %}
+												</p>
+												<br>
+											</div>
+										</div>
 										<div class="col-xs-12">
 											<hr>
 											<h4>Photometric Summary</h4>

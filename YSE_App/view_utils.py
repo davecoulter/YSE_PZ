@@ -459,7 +459,7 @@ def view_yse_fields(request):
 		filter(Q(mjd_requested__lte = date_to_mjd(obs_date_now)+1) | Q(obs_mjd__lte = date_to_mjd(obs_date_now)+1)).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
 	field_pk = survey_obs.values('survey_field').distinct()
-	survey_fields_tonight = SurveyField.objects.filter(pk__in = field_pk).select_related()
+	survey_fields_tonight = SurveyField.objects.filter(pk__in = field_pk).filter(~Q(obs_group__name='ZTF')).select_related()
 
 	obs_date_last = datetime.datetime.utcnow().strftime('%Y-%m-%d 00:00:00')
 	survey_obs = SurveyObservation.objects.filter(
@@ -467,7 +467,7 @@ def view_yse_fields(request):
 		filter(Q(mjd_requested__lte = date_to_mjd(obs_date_last)) | Q(obs_mjd__lte = date_to_mjd(obs_date_last))).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
 	field_pk = survey_obs.values('survey_field').distinct()
-	survey_fields_last_night = SurveyField.objects.filter(pk__in = field_pk).select_related()
+	survey_fields_last_night = SurveyField.objects.filter(pk__in = field_pk).filter(~Q(obs_group__name='ZTF')).select_related()
 
 	obs_date_last = datetime.datetime.utcnow().strftime('%Y-%m-%d 00:00:00')
 	survey_obs = SurveyObservation.objects.filter(
@@ -475,7 +475,7 @@ def view_yse_fields(request):
 		filter(Q(mjd_requested__lte = date_to_mjd(obs_date_last)-1) | Q(obs_mjd__lte = date_to_mjd(obs_date_last)-1)).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
 	field_pk = survey_obs.values('survey_field').distinct()
-	survey_fields_two_nights_ago = SurveyField.objects.filter(pk__in = field_pk).select_related()
+	survey_fields_two_nights_ago = SurveyField.objects.filter(pk__in = field_pk).filter(~Q(obs_group__name='ZTF')).select_related()
 	
 	mapdata = hp.fitsfunc.read_map(
 		'%s/YSE_metric_map.fits'%djangoSettings.STATIC_ROOT, h=False, verbose=True)

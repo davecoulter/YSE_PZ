@@ -28,6 +28,7 @@ from .common.alert import sendemail
 from .common.utilities import getRADecBox
 from django.db.models import Q
 from .queries.yse_python_queries import *
+import sys
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -51,8 +52,9 @@ def add_yse_survey_fields(request):
 	txt_msg = "Alert : YSE_PZ Failed to upload today's survey fields "
 
 	survey_entries = []
+	yse_group = ObservationGroup.objects.filter(name='YSE')[0]
 	for surveylistkey in survey_data.keys():
-		surveydict = {'created_by_id':user.id,'modified_by_id':user.id}
+		surveydict = {'created_by_id':user.id,'modified_by_id':user.id,'obs_group':yse_group}
 		survey = survey_data[surveylistkey]
 		
 		surveykeys = survey.keys()
@@ -79,14 +81,28 @@ def add_yse_survey_fields(request):
 
 		dbsurveyfield = SurveyField.objects.filter(
 			field_id=surveydict['field_id'])
-
+		
 		if len(dbsurveyfield):
 			dbsurveyfield.update(**surveydict)
+			dbsurveyfield = dbsurveyfield[0]
 		else:
-			dbsurveyfield = SurveyField(**surveydict)
-			survey_entries += [dbsurveyfield]
+			dbsurveyfield = SurveyField.objects.create(**surveydict)
+			#survey_entries += [dbsurveyfield]
 
-	SurveyField.objects.bulk_create(survey_entries)
+		surveymsb = SurveyFieldMSB.objects.filter(name=surveydict['field_id'].split('.')[0])
+		if not len(surveymsb):
+			surveymsbdict = {'created_by_id':user.id,'modified_by_id':user.id,
+							 'obs_group':yse_group,'name':surveydict['field_id'].split('.')[0]}
+			surveymsb = SurveyFieldMSB.objects.create(**surveymsbdict)
+			surveymsb.survey_fields.add(dbsurveyfield)
+			surveymsb.save()
+		elif len(surveymsb):
+			surveymsb = surveymsb[0]
+			if surveymsb.survey_fields.count() < 6 and not len(surveymsb.survey_fields.filter(field_id=dbsurveyfield.field_id)):
+				surveymsb.survey_fields.add(dbsurveyfield)
+				surveymsb.save()
+
+	#SurveyField.objects.bulk_create(survey_entries)
 	return_dict = {"message":"success"}
 	return JsonResponse(return_dict)
 
@@ -319,10 +335,11 @@ def add_transient(request):
 			#print('applied tags in %.1f sec'%(t5-t4))
 				
 		except Exception as e:
+			exc_type, exc_obj, exc_tb = sys.exc_info()
 			print('Transient %s failed!'%transient['name'])
 			print("Sending email to: %s" % user.username)
-			html_msg = "Alert : YSE_PZ Failed to upload transient %s with error %s"
-			sendemail(from_addr, user.email, subject, html_msg%(transient['name'],e),
+			html_msg = """Alert : YSE_PZ Failed to upload transient %s with error %s at line number %s"""
+			sendemail(from_addr, user.email, subject, html_msg%(transient['name'],e,exc_tb.tb_lineno),
 					  djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
 			# sending SMS is too scary for now
 			#sendsms(from_addr, phone_email, subject, txt_msg%transient['name'],

@@ -5,6 +5,7 @@ from YSE_App.models import *
 from YSE_App import view_utils
 from django.utils import timezone
 from datetime import timedelta
+from YSE_App.queries.yse_python_queries import python_query_reg
 
 class TransientForm(ModelForm):
 	class Meta:
@@ -123,7 +124,8 @@ class SurveyObsForm(ModelForm):
 
 	survey_obs_date = forms.DateTimeField()
 	#import pdb; pdb.set_trace()
-	qs = [(i['ztf_field_id'], i['ztf_field_id']) for i in SurveyField.objects.all().values('ztf_field_id').distinct().order_by('ztf_field_id')]
+	
+	qs = [(i['ztf_field_id'], i['ztf_field_id']) for i in SurveyField.objects.filter(~Q(obs_group__name='ZTF')).values('ztf_field_id').distinct().order_by('ztf_field_id')]
 
 	if len(qs):
 		ztf_field_id = forms.MultipleChoiceField(
@@ -186,12 +188,15 @@ class QueryModelChoiceField(forms.ModelChoiceField):
         return obj.__unicode__
 
 class AddDashboardQueryForm(ModelForm):
-	query = QueryModelChoiceField(Query.objects.all())
-
+	query = QueryModelChoiceField(Query.objects.all(),required=False)
+	query_names = [('', '---------')] + [(q,q) for i,q in enumerate(python_query_reg.all.keys())]
+	python_query = forms.ChoiceField(choices=query_names,required=False)
+	#import pdb; pdb.set_trace()
+	
 	class Meta:
 		model = UserQuery
 		fields = [
-			'query']
+			'query','python_query']
 
 class RemoveDashboardQueryForm(ModelForm):
 	query = QueryModelChoiceField(Query.objects.all())

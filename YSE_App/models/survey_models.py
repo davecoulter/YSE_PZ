@@ -37,6 +37,15 @@ class SurveyField(BaseModel):
 
 	def CoordString(self):
 		return GetSexigesimalString(self.ra_cen, self.dec_cen)
+
+class SurveyFieldMSB(BaseModel):
+
+	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
+	name = models.CharField(max_length=64)
+	survey_fields = models.ManyToManyField(SurveyField,blank=True)
+
+	def __str__(self):
+		return self.name
 	
 class SurveyObservation(BaseModel):
 

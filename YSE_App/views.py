@@ -36,7 +36,8 @@ from astroplan import moon_illumination
 from astropy.time import Time
 
 from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable
-from .queries.yse_python_queries import rising_transient_queryset,fastrising_transient_queryset
+from .queries.yse_python_queries import *
+from .queries import yse_python_queries
 import django_tables2 as tables
 from django_tables2 import RequestConfig
 from .basicauth import *
@@ -162,20 +163,29 @@ def personaldashboard(request):
 	queries = UserQuery.objects.filter(user = request.user)
 	tables = []
 	for q in queries:
-		if 'yse_app_transient' not in q.query.sql.lower(): continue
-		if 'name' not in q.query.sql.lower(): continue
-		if not q.query.sql.lower().startswith('select'): continue
-		cursor = connections['explorer'].cursor()
-		cursor.execute(q.query.sql.replace('%','%%'), ())
-		transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
-		cursor.close()
+		if q.query:
+			if 'yse_app_transient' not in q.query.sql.lower(): continue
+			if 'name' not in q.query.sql.lower(): continue
+			if not q.query.sql.lower().startswith('select'): continue
+			cursor = connections['explorer'].cursor()
+			cursor.execute(q.query.sql.replace('%','%%'), ())
+			transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+			cursor.close()
 
-		transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.query.title.replace(' ',''))
-		table = TransientTable(transientfilter.qs,prefix=q.query.title.replace(' ',''))
-		RequestConfig(request, paginate={'per_page': 10}).configure(table)
-		tables += [(table,q.query.title,q.query.title.replace(' ',''),transientfilter,q.id)]
+			transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.query.title.replace(' ',''))
+			table = TransientTable(transientfilter.qs,prefix=q.query.title.replace(' ',''))
+			RequestConfig(request, paginate={'per_page': 10}).configure(table)
+			tables += [(table,q.query.title,q.query.title.replace(' ',''),transientfilter,q.id)]
 
-		
+		elif q.python_query:
+			transients = getattr(yse_python_queries,q.python_query)()
+
+			transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.python_query)
+			table = TransientTable(transientfilter.qs,prefix=q.python_query)
+			RequestConfig(request, paginate={'per_page': 10}).configure(table)
+			tables += [(table,q.python_query,q.python_query,transientfilter,q.id)]
+
+			
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-')[0]
 	else: anchor = ''
@@ -219,16 +229,22 @@ def transient_summary(request,status_or_query_name,
 	if len(status) == 1:
 		transients = Transient.objects.filter(status=status[0]).order_by('-disc_date')
 	else:
-		#import pdb; pdb.set_trace()
-		query = Query.objects.filter(title=unquote(status_or_query_name))[0]
-		if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
-		if 'name' not in query.sql.lower(): return Http404('Invalid Query')
-		if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
-		cursor = connections['explorer'].cursor()
-		cursor.execute(query.sql.replace('%','%%'), ())
-		transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
-		cursor.close()
-		
+		query = Query.objects.filter(title=unquote(status_or_query_name))
+		if len(query):
+			query = query[0]
+			if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
+			if 'name' not in query.sql.lower(): return Http404('Invalid Query')
+			if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
+			cursor = connections['explorer'].cursor()
+			cursor.execute(query.sql.replace('%','%%'), ())
+			transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+			cursor.close()
+		else:
+			query = UserQuery.objects.filter(python_query = unquote(status_or_query_name))
+			if not len(query): return Http404('Invalid Query')
+			query = query[0]
+			transients = getattr(yse_python_queries,query.python_query)()
+			
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-')[0]
 	else: anchor = ''
@@ -450,7 +466,7 @@ def yse_home(request):
 		filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
 	field_pk = survey_obs.values('survey_field').distinct()
-	survey_fields_tonight = SurveyField.objects.filter(pk__in = field_pk).select_related()
+	survey_fields_tonight = SurveyField.objects.filter(pk__in = field_pk).filter(~Q(obs_group__name='ZTF')).select_related()
 
 	ut_obs_date = (datetime.datetime.utcnow()).strftime('%Y-%m-%d 00:00:00')
 	time = Time(ut_obs_date, format='iso')
@@ -464,7 +480,7 @@ def yse_home(request):
 		filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
 	field_pk = survey_obs.values('survey_field').distinct()
-	survey_fields_last_night = SurveyField.objects.filter(pk__in = field_pk).select_related()
+	survey_fields_last_night = SurveyField.objects.filter(pk__in = field_pk).filter(~Q(obs_group__name='ZTF')).select_related()
 	
 	
 	nowdate = datetime.datetime.utcnow()
@@ -510,8 +526,8 @@ def yse_observing_calendar(request):
 
 	#import pdb; pdb.set_trace()
 	todaydate = dateutil.parser.parse(datetime.datetime.today().strftime('%Y-%m-%d 00:00:00'))
-	base = todaydate-datetime.timedelta(10)
-	date_list = [base + datetime.timedelta(days=x) for x in range(20)]
+	base = todaydate-datetime.timedelta(30)
+	date_list = [base + datetime.timedelta(days=x) for x in range(40)]
 	obstuple = ()
 	colors = ['#dd4b39', 
 			  '#f39c12', 
@@ -795,7 +811,7 @@ def transient_detail(request, slug):
 
 		date = datetime.datetime.now(tz=pytz.utc)
 		date_format='%m/%d/%Y %H:%M:%S'
-
+		
 		spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id)
 		context = {
 			'transient':transient_obj,

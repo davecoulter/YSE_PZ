@@ -48,6 +48,7 @@ class UserQuerySerializer(serializers.HyperlinkedModelSerializer):
 		instance.profile = validated_data.get('profile', instance.profile)
 		instance.name = validated_data.get('name', instance.name)
 		instance.query = validated_data.get('query', instance.query)
+		instance.python_query = validated_data.get('python_query', instance.python_query)
 
 		instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
 

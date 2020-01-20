@@ -372,6 +372,7 @@ class TransientFilter(django_filters.FilterSet):
 	ra_lte = django_filters.Filter(name="ra", lookup_expr='lte')
 	dec_gte = django_filters.Filter(name="dec", lookup_expr='gte')
 	dec_lte = django_filters.Filter(name="dec", lookup_expr='lte')
+	tag_in = django_filters.BaseInFilter(name="tags__name")
 	
 	class Meta:
 		model = Transient

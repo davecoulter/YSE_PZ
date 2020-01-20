@@ -15,6 +15,10 @@ from django.dispatch import receiver
 from pytz import timezone
 from django.utils.text import slugify
 from autoslug import AutoSlugField
+import astropy.coordinates as cd
+import astropy.units as u
+from YSE_App.models.survey_models import *
+import datetime
 
 class Transient(BaseModel):
 
@@ -79,6 +83,101 @@ class Transient(BaseModel):
 		host = Host.objects.get(pk=self.host_id)
 		return '%.2f'%getSeparation(self.ra,self.dec,host.ra,host.dec)
 
+	def LikelyYSEField(self):
+		d = self.dec*np.pi/180
+		width_corr = 3.3/np.abs(np.cos(d))
+		# Define the tile offsets:
+		ra_offset = cd.Angle(width_corr/2., unit=u.deg)
+		dec_offset = cd.Angle(3.3/2., unit=u.deg)
+
+		sf = SurveyField.objects.filter(~Q(obs_group__name='ZTF')).\
+				filter((Q(ra_cen__gt = self.ra-ra_offset.degree) &
+						Q(ra_cen__lt = self.ra+ra_offset.degree) &
+						Q(dec_cen__gt = self.dec-dec_offset.degree) &
+						Q(dec_cen__lt = self.dec+dec_offset.degree)))
+
+		if len(sf): 
+			so = SurveyObservation.objects.filter(survey_field__field_id=sf[0].field_id).order_by('-obs_mjd')
+			if len(so):
+				time_since_last_obs = date_to_mjd(datetime.datetime.utcnow())-so[0].obs_mjd
+			else:
+				time_since_last_obs = None
+			return sf[0].field_id, sf[0].ra_cen, sf[0].dec_cen, time_since_last_obs
+		else: return None,None,None,None
+
+	def nearest_ztf_field(self):
+		d = self.dec*np.pi/180
+		width_corr = 6.9/np.abs(np.cos(d))
+		# Define the tile offsets:
+		ra_offset = cd.Angle(width_corr/2., unit=u.deg)
+		dec_offset = cd.Angle(6.9/2., unit=u.deg)
+
+		sf = SurveyField.objects.filter(obs_group__name='ZTF').\
+			filter((Q(ra_cen__gt = self.ra-ra_offset.degree) &
+					Q(ra_cen__lt = self.ra+ra_offset.degree) &
+					Q(dec_cen__gt = self.dec-dec_offset.degree) &
+					Q(dec_cen__lt = self.dec+dec_offset.degree)))
+
+		if len(sf): 
+			return sf[0].field_id
+		else: return None
+
+	def nearest_ztf_field_sep(self):
+		d = self.dec*np.pi/180
+		width_corr = 6.9/np.abs(np.cos(d))
+		# Define the tile offsets:
+		ra_offset = cd.Angle(width_corr/2., unit=u.deg)
+		dec_offset = cd.Angle(6.9/2., unit=u.deg)
+
+		sf = SurveyField.objects.filter(obs_group__name='ZTF').\
+			filter((Q(ra_cen__gt = self.ra-ra_offset.degree) &
+					Q(ra_cen__lt = self.ra+ra_offset.degree) &
+					Q(dec_cen__gt = self.dec-dec_offset.degree) &
+					Q(dec_cen__lt = self.dec+dec_offset.degree))).select_related()
+
+		sc = cd.SkyCoord(self.ra,self.dec,unit=u.deg)
+		sc2 = cd.SkyCoord(sf[0].ra_cen,sf[0].dec_cen,unit=u.deg)
+		if len(sf): 
+			return '%.1f'%sc.separation(sc2).degree
+		else: return None
+
+	def nearest_yse_field(self):
+		d = self.dec*np.pi/180
+		width_corr = 15/np.abs(np.cos(d))
+		# Define the tile offsets:
+		ra_offset = cd.Angle(width_corr, unit=u.deg)
+		dec_offset = cd.Angle(15, unit=u.deg)
+
+		sf = SurveyField.objects.filter(~Q(obs_group__name='ZTF')).\
+			filter((Q(ra_cen__gt = self.ra-ra_offset.degree) &
+					Q(ra_cen__lt = self.ra+ra_offset.degree) &
+					Q(dec_cen__gt = self.dec-dec_offset.degree) &
+					Q(dec_cen__lt = self.dec+dec_offset.degree)))
+
+		if len(sf): 
+			return sf[0].field_id
+		else: return None
+
+	def nearest_yse_field_sep(self):
+		d = self.dec*np.pi/180
+		width_corr = 15/np.abs(np.cos(d))
+		# Define the tile offsets:
+		ra_offset = cd.Angle(width_corr, unit=u.deg)
+		dec_offset = cd.Angle(15, unit=u.deg)
+
+		sf = SurveyField.objects.filter(~Q(obs_group__name='ZTF')).\
+			filter((Q(ra_cen__gt = self.ra-ra_offset.degree) &
+					Q(ra_cen__lt = self.ra+ra_offset.degree) &
+					Q(dec_cen__gt = self.dec-dec_offset.degree) &
+					Q(dec_cen__lt = self.dec+dec_offset.degree))).select_related()
+
+		sc = cd.SkyCoord(self.ra,self.dec,unit=u.deg)
+		sc2 = cd.SkyCoord(sf[0].ra_cen,sf[0].dec_cen,unit=u.deg)
+		if len(sf): 
+			return '%.1f'%sc.separation(sc2).degree
+		else: return None
+		
+		
 	def modified_date_pacific(self):
 		date_format = '%m/%d/%Y %H:%M:%S %Z'
 		mod_date = self.modified_date.astimezone(timezone('US/Pacific'))

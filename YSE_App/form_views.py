@@ -338,62 +338,76 @@ class AddSurveyObsFormView(FormView):
 			m = date_to_mjd(form.cleaned_data['survey_obs_date'])
 			time = Time(m,format='mjd')
 			sunset_forobs = mjd_to_date(tel.sun_set_time(time,which="next"))
-			survey_field = SurveyField.objects.filter(ztf_field_id__in=form.cleaned_data['ztf_field_id'])
-			for s in survey_field:
-				t = Time(m,format='mjd')
-				illum = moon_illumination(t)
+			survey_field_blocks = SurveyFieldMSB.objects.filter(name__in=form.cleaned_data['ztf_field_id'])
+			#survey_field = SurveyField.objects.filter(ztf_field_id__in=form.cleaned_data['ztf_field_id'])
+			for sb in survey_field_blocks:
+				for s in sb.survey_fields.all():
+					t = Time(m,format='mjd')
+					illum = moon_illumination(t)
 
-				# need to see what was observed in the previous obs w/ the same moon illumination
-				previous_obs = SurveyObservation.objects.filter(survey_field=s).\
-					filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').order_by('-mjd_requested').select_related()
-				#filter(Q(obs_mjd__gt=m-3) | Q(mjd_requested__gt=m-3)).\
+					# need to see what was observed in the previous obs w/ the same moon illumination
+					previous_obs = SurveyObservation.objects.filter(survey_field=s).\
+						filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').\
+						order_by('-mjd_requested').select_related()
 
-				def previous_obs_func(illum_min,illum_max):
-					filt = []
-					for p in previous_obs:
-						if p.obs_mjd: mjd_prev = p.obs_mjd
-						elif p.mjd_requested: mjd_prev = p.mjd_requested
-						t_prev = Time(mjd_prev,format='mjd')
-						illum_prev = moon_illumination(t_prev)
-						if illum_prev >= illum_min and illum_prev <= illum_max:
-							filt += [p.photometric_band.name]
-						if len(filt) == 2: return filt
-					return None
+					def previous_obs_func(illum_min,illum_max):
+						filt = []
+						for p in previous_obs:
+							if p.obs_mjd: mjd_prev = p.obs_mjd
+							elif p.mjd_requested: mjd_prev = p.mjd_requested
+							t_prev = Time(mjd_prev,format='mjd')
+							illum_prev = moon_illumination(t_prev)
+							if illum_prev >= illum_min and illum_prev <= illum_max:
+								filt += [p.photometric_band.name]
+							if len(filt) == 2: return filt
+						return None
 
-				if illum < 0.33:
-					filt = previous_obs_func(0,0.33)
-					if filt is None or 'i' in filt: band1name,band2name = 'g','r'
-					else: band1name,band2name = 'g','i'
-				elif illum < 0.66:
-					filt = previous_obs_func(0.33,0.66)
-					if filt is None or 'z' in filt: band1name,band2name = 'g','i'
-					else: band1name,band2name = 'g','z'
-				else:
-					filt = previous_obs_func(0.66,1)
-					if filt is None or 'z' in filt: band1name,band2name = 'r','i'
-					else: band1name,band2name = 'r','z'
-					
-				band1 = PhotometricBand.objects.filter(
-					name=band1name,instrument__name=s.instrument.name)[0]
-				band2 = PhotometricBand.objects.filter(
-					name=band2name,instrument__name=s.instrument.name)[0]
+					if s.field_id.lower().startswith('virgo'):
+						if illum < 0.66:
+							filt = previous_obs_func(0,0.66)
+							if filt is None: band1name,band2name = 'g','r'
+							elif 'r' in filt: band1name,band2name = 'g','i'
+							elif 'i' in filt: band1name,band2name = 'g','z'
+							else: band1name,band2name = 'g','r'
+						else:
+							filt = previous_obs_func(0.66,1)
+							if filt is None or 'z' in filt: band1name,band2name = 'r','i'
+							else: band1name,band2name = 'r','z'
+					else:
+						if illum < 0.33:
+							filt = previous_obs_func(0,0.33)
+							if filt is None or 'i' in filt: band1name,band2name = 'g','r'
+							else: band1name,band2name = 'g','i'
+						elif illum < 0.66:
+							filt = previous_obs_func(0.33,0.66)
+							if filt is None or 'z' in filt: band1name,band2name = 'g','i'
+							else: band1name,band2name = 'g','z'
+						else:
+							filt = previous_obs_func(0.66,1)
+							if filt is None or 'z' in filt: band1name,band2name = 'r','i'
+							else: band1name,band2name = 'r','z'
 
-				SurveyObservation.objects.create(
-					mjd_requested=date_to_mjd(sunset_forobs),
-					survey_field=s,
-					status=TaskStatus.objects.get(name='Requested'),
-					exposure_time=27,
-					photometric_band=band1,
-					created_by=self.request.user,
-					modified_by=self.request.user)
-				SurveyObservation.objects.create(
-					mjd_requested=date_to_mjd(sunset_forobs),
-					survey_field=s,
-					status=TaskStatus.objects.get(name='Requested'),
-					exposure_time=27,
-					photometric_band=band2,
-					created_by=self.request.user,
-					modified_by=self.request.user)
+					band1 = PhotometricBand.objects.filter(
+						name=band1name,instrument__name=s.instrument.name)[0]
+					band2 = PhotometricBand.objects.filter(
+						name=band2name,instrument__name=s.instrument.name)[0]
+
+					SurveyObservation.objects.create(
+						mjd_requested=date_to_mjd(sunset_forobs),
+						survey_field=s,
+						status=TaskStatus.objects.get(name='Requested'),
+						exposure_time=27,
+						photometric_band=band1,
+						created_by=self.request.user,
+						modified_by=self.request.user)
+					SurveyObservation.objects.create(
+						mjd_requested=date_to_mjd(sunset_forobs),
+						survey_field=s,
+						status=TaskStatus.objects.get(name='Requested'),
+						exposure_time=27,
+						photometric_band=band2,
+						created_by=self.request.user,
+						modified_by=self.request.user)
 
 			# for key,value in form.cleaned_data.items():
 			data = {
@@ -570,7 +584,6 @@ class AddDashboardQueryFormView(FormView):
 			instance.created_by = self.request.user
 			instance.modified_by = self.request.user
 			instance.user = self.request.user
-
 
 			instance.save() #update_fields=['created_by','modified_by']
 

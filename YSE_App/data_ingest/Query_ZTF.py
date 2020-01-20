@@ -19,6 +19,8 @@ from astropy.coordinates import SkyCoord, Angle
 import astropy.units as u
 import time
 import coreapi
+from alerce.api import AlerceAPI
+import sys
 
 try:
   from dustmaps.sfd import SFDQuery
@@ -62,6 +64,27 @@ query_template = {
              ]
         }
     }
+}
+
+query_test = {
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "properties.ztf_object_id": "ZTF18abrfjdh"
+          }
+        },
+        {
+          "range": {
+            "mjd": {
+              "gte": 58798
+            }
+          }
+        }
+      ]
+    }
+  }
 }
 
 #				{
@@ -110,7 +133,7 @@ class AntaresZTF(CronJobBase):
 
 	def main(self):
 		
-		recentmjd = date_to_mjd(datetime.datetime.utcnow() - datetime.timedelta(14))
+		recentmjd = date_to_mjd(datetime.datetime.utcnow() - datetime.timedelta(7))
 		survey_obs = SurveyObservation.objects.filter(obs_mjd__gt=recentmjd)
 		field_pk = survey_obs.values('survey_field').distinct()
 		survey_fields = SurveyField.objects.filter(pk__in = field_pk).select_related()
@@ -134,7 +157,7 @@ class AntaresZTF(CronJobBase):
 			query['query']['bool']['must'][2]['range']['properties.ztf_rb']['gte'] = 0.5
 			query['query']['bool']['must'][3]['range']['properties.ztf_jd']['gte'] = recentmjd+2400000.5
 			result_set = search(query)
-
+			
 			transientdict,nsn = self.parse_data(result_set)
 			print('uploading %i transients'%nsn)
 			self.send_data(transientdict)
@@ -161,6 +184,7 @@ class AntaresZTF(CronJobBase):
 		obj,ra,dec = [],[],[]
 		nsn = 0
 		for i,s in enumerate(result_set):
+			if 'astrorapid_skipped' in s['properties'].keys(): continue
 			
 			sc = SkyCoord(s['properties']['ztf_ra'],s['properties']['ztf_dec'],unit=u.deg)
 			try:
@@ -224,9 +248,9 @@ class AntaresZTF(CronJobBase):
 
 			#if s['properties']['ztf_object_id'] == 'ZTF18abrfjdh':
 			#	import pdb; pdb.set_trace()
-			if s['properties']['passband'] == 'R' and s['properties']['ztf_object_id'] == 'ZTF18abrfjdh':
-				import pdb; pdb.set_trace()
-				
+			#if s['properties']['passband'] == 'R' and s['properties']['ztf_object_id'] == 'ZTF18abrfjdh':
+			#	import pdb; pdb.set_trace()
+
 		return transientdict,nsn
 
 	def add_options(self, parser=None, usage=None, config=None):
@@ -463,6 +487,238 @@ class MARS_ZTF(CronJobBase):
 			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
 							  help='ZTF URL (default=%default)')
 			
+		else:
+			pass
+
+
+		return(parser)
+						  
+class AlerceZTF(CronJobBase):
+
+	RUN_EVERY_MINS = 0.1
+
+	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+	code = 'YSE_App.data_ingest.Query_ZTF.AntaresZTF'
+	
+	def do(self):
+
+		tstart = time.time()
+		
+		parser = self.add_options(usage='')
+		options,  args = parser.parse_args()
+
+		config = configparser.ConfigParser()
+		config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+		parser = self.add_options(usage='',config=config)
+		options,  args = parser.parse_args()
+		self.options = options
+
+		try:
+			self.main()
+		except Exception as e:
+			print(e)
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			print(exc_tb.tb_lineno)
+			nsn = 0
+			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+			subject = "QUB Transient Upload Failure"
+			print("Sending error email")
+			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg += "Error : %s"
+			sendemail(from_addr, options.dbemail, subject,
+					  html_msg%(e),
+					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+
+		print('Antares -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
+
+	def main(self):
+		
+		recentmjd = date_to_mjd(datetime.datetime.utcnow() - datetime.timedelta(7))
+		survey_obs = SurveyObservation.objects.filter(obs_mjd__gt=recentmjd)
+		field_pk = survey_obs.values('survey_field').distinct()
+		survey_fields = SurveyField.objects.filter(pk__in = field_pk).select_related()
+		
+		for s in survey_fields:
+
+			sc = SkyCoord(s.ra_cen,s.dec_cen,unit=u.deg)
+
+			total = 10000
+			records_per_page = 10000
+			page = 1
+			sortBy = "firstmjd"
+			classearly = 19
+			pclassearly = 0.5
+
+			params = {
+				#"total": total,
+				"records_per_pages": records_per_page,
+				"page": page,
+				"sortBy": sortBy,
+				"query_parameters": {
+					"filters": {
+						"pclassearly": pclassearly,
+						"classearly": classearly,
+					},
+					"dates": {
+						"firstmjd": {
+							"min": date_to_mjd(datetime.datetime.utcnow())-3,
+							}
+						},
+					"coordinates": {
+						"ra": sc.ra.deg,
+						"dec": sc.dec.deg,
+						"sr": 1.65*3600
+						}
+					}
+				}
+			
+			client = AlerceAPI()
+			try:
+				result_set = client.query(params) #, format='pandas')
+			except:
+				continue
+			#import pdb; pdb.set_trace()
+			if not len(result_set): continue
+
+			transientdict,nsn = self.parse_data(result_set)
+			print('uploading %i transients'%nsn)
+			self.send_data(transientdict)
+			
+			#import pdb; pdb.set_trace()
+
+	def send_data(self,TransientUploadDict):
+
+		TransientUploadDict['noupdatestatus'] = True
+		self.UploadTransients(TransientUploadDict)
+
+	def UploadTransients(self,TransientUploadDict):
+
+		url = '%s'%self.options.dburl.replace('/api','/add_transient')
+		r = requests.post(url = url, data = json.dumps(TransientUploadDict),
+						  auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
+
+		try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
+		except: print(r.text)
+		print("Process done.")
+		
+	def parse_data(self,result_set):
+		client = AlerceAPI()
+		
+		try:
+			transientdict = {}
+			obj,ra,dec = [],[],[]
+			nsn = 0
+			for i,s in enumerate(result_set):
+				print(s['oid'])
+				sc = SkyCoord(s['meanra'],s['meandec'],unit=u.deg)
+				try:
+					ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
+				except:
+					ps_prob = None
+
+				mw_ebv = float('%.3f'%(sfd(sc)*0.86))
+
+				if s['oid'] not in transientdict.keys():
+					tdict = {'name':s['oid'],
+							 'status':'New',
+							 'ra':s['meanra'],
+							 'dec':s['meandec'],
+							 'obs_group':'ZTF',
+							 'tags':['YSE'],
+							 'disc_date':mjd_to_date(s['firstmjd']),
+							 'mw_ebv':mw_ebv,
+							 'point_source_probability':ps_prob}
+					obj += [s['oid']]
+					ra += [s['meanra']]
+					dec += [s['meandec']]
+
+					PhotUploadAll = {"mjdmatchmin":0.01,
+									 "clobber":False}
+					photometrydict = {'instrument':'ZTF-Cam',
+									  'obs_group':'ZTF',
+									  'photdata':{}}
+
+				else:
+					tdict = transientdict[s['oid']]
+					if s['firstmjd'] < date_to_mjd(tdict['disc_date']):
+						tdict['disc_date'] = mjd_to_date(s['firstmjd'])
+
+					PhotUploadAll = transientdict[s['oid']]['transientphotometry']
+					photometrydict = PhotUploadAll['ZTF']
+
+				SN_det = client.get_detections(s['oid']) #, format='pandas')
+				filtdict = {1: 'g', 2: 'r'}
+				for p in SN_det:
+					flux = 10**(-0.4*(p['magpsf']-27.5))
+					flux_err = np.log(10)*0.4*flux*p['sigmapsf']
+
+					phot_upload_dict = {'obs_date':mjd_to_date(p['mjd']),
+										'band':'%s-ZTF'%filtdict[p['fid']],
+										'groups':[],
+										'mag':p['magpsf'],
+										'mag_err':p['sigmapsf'],
+										'flux':flux,
+										'flux_err':flux_err,
+										'data_quality':0,
+										'forced':0,
+										'flux_zero_point':27.5,
+										# might need to fix this later
+										'discovery_point':0, #disc_point,
+										'diffim':1}
+					photometrydict['photdata']['%s_%i'%(mjd_to_date(p['mjd']),i)] = phot_upload_dict
+
+				PhotUploadAll['ZTF'] = photometrydict
+				transientdict[s['oid']] = tdict
+				transientdict[s['oid']]['transientphotometry'] = PhotUploadAll
+
+				nsn += 1
+
+				#if s['properties']['ztf_object_id'] == 'ZTF18abrfjdh':
+				#	import pdb; pdb.set_trace()
+				#if s['properties']['passband'] == 'R' and s['properties']['ztf_object_id'] == 'ZTF18abrfjdh':
+				#	import pdb; pdb.set_trace()
+		except Exception as e:
+			print(e)
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			print(exc_tb.tb_lineno)
+
+		print(nsn)
+		return transientdict,nsn
+
+	def add_options(self, parser=None, usage=None, config=None):
+		import optparse
+		if parser == None:
+			parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
+
+		# The basics
+		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
+		parser.add_option('--clobber', default=False, action="store_true",
+						  help='clobber output file')
+		parser.add_option('-s','--settingsfile', default=None, type="string",
+						  help='settings file (login/password info)')
+		parser.add_option('--status', default='New', type="string",
+						  help='transient status to enter in YS_PZ')
+		parser.add_option('--max_days', default=7, type="float",
+						  help='grab photometry/objects from the last x days')
+
+		if config:
+			parser.add_option('--dblogin', default=config.get('main','dblogin'), type="string",
+							  help='database login, if post=True (default=%default)')
+			parser.add_option('--dbemail', default=config.get('main','dbemail'), type="string",
+							  help='database login, if post=True (default=%default)')
+			parser.add_option('--dbpassword', default=config.get('main','dbpassword'), type="string",
+							  help='database password, if post=True (default=%default)')
+			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
+							  help='URL to POST transients to a database (default=%default)')
+
+			parser.add_option('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type="string",
+							  help='SMTP login (default=%default)')
+			parser.add_option('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type="string",
+							  help='SMTP host (default=%default)')
+			parser.add_option('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type="string",
+							  help='SMTP port (default=%default)')
+
 		else:
 			pass
 

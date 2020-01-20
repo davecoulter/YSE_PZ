@@ -26,9 +26,13 @@ class UserQuery(BaseModel):
 
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
 	query = models.ForeignKey(Query, null=True, blank=True, on_delete=models.CASCADE)
+	python_query = models.CharField(max_length=64, null=True, blank=True)
 
 	def __str__(self):
-		return '%s %s: %s'%(self.user.first_name,self.user.last_name,self.query.title)
+		if self.query:
+			return '%s %s: %s'%(self.user.first_name,self.user.last_name,self.query.title)
+		else:
+			return '%s %s: %s'%(self.user.first_name,self.user.last_name,self.python_query)
 
 class UserTelescopeToFollow(BaseModel):
 
