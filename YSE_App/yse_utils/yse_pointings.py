@@ -201,7 +201,7 @@ def yse_pointing_plot(request,field_name,snid):
 	ax.set_ylabel(r'$\delta$',fontsize=15)
 	
 	response=HttpResponse(content_type='image/png')
-	canvas.print_jpg(response)
+	canvas.print_png(response)
 	return response
 
 def adjust_yse_pointings(request,field_name,snid):
@@ -274,7 +274,7 @@ def adjust_yse_pointings_plot(request,field_name,snid):
 	ax.set_ylabel(r'$\delta$',fontsize=15)
 	
 	response=HttpResponse(content_type='image/png')
-	canvas.print_jpg(response)
+	canvas.print_png(response)
 	return response
 
 def adjust_yse_pointings_base(field_name,snid):
