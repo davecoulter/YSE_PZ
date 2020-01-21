@@ -116,6 +116,12 @@ class AddClassicalResourceFormView(FormView):
 			instance.save() #update_fields=['created_by','modified_by']
 			instance.groups.set(Group.objects.filter(name='YSE'))
 			instance.save()
+
+
+			obsdatedict = {'created_by':self.request.user,'modified_by':self.request.user,
+						   'resource':instance,'night_type':ClassicalNightType.objects.filter(name='Full')[0],
+						   'obs_date':form.cleaned_data['observing_date']}
+			ClassicalObservingDate.objects.create(**obsdatedict)
 			
 			print(form.cleaned_data)
 
