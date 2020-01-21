@@ -43,6 +43,11 @@ class SurveyFieldViewSet(viewsets.ReadOnlyModelViewSet):
 	serializer_class = SurveyFieldSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+class SurveyFieldMSBViewSet(viewsets.ReadOnlyModelViewSet):
+	queryset = SurveyFieldMSB.objects.all()
+	serializer_class = SurveyFieldSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
 ### `Transient` Filter Set ###
 class SurveyObsFilter(django_filters.FilterSet):
 	status_in = django_filters.BaseInFilter(name="status__name")#, lookup_expr='in')

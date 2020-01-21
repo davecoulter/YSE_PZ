@@ -625,7 +625,7 @@ class AlerceZTF(CronJobBase):
 							 'ra':s['meanra'],
 							 'dec':s['meandec'],
 							 'obs_group':'ZTF',
-							 'tags':['YSE'],
+							 'tags':['ZTF in YSE Fields'],
 							 'disc_date':mjd_to_date(s['firstmjd']),
 							 'mw_ebv':mw_ebv,
 							 'point_source_probability':ps_prob}

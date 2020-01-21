@@ -72,6 +72,7 @@ urlpatterns = [
 		data_utils.get_new_transients_box, name='get_new_transients_box'),
 	url(r'^download_data/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_data, name='download_data'),
 	url(r'^download_photometry/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_photometry, name='download_photometry'),
+	url(r'^download_bulk_photometry/(?P<query_title>[a-zA-Z0-9_-]+)/$', views.download_bulk_photometry, name='download_bulk_photometry'),
 	url(r'^download_target_list/(?P<telescope>[a-zA-Z0-9_-]+)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.download_target_list, name='download_target_list'),
 	url(r'^download_targets_and_finders/(?P<telescope>[a-zA-Z0-9_-]+)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.download_targets_and_finders, name='download_targets_and_finders'),
 	url(r'^upload_spectrum/', views.upload_spectrum, name='upload_spectrum'),

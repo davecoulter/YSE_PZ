@@ -34,6 +34,60 @@ class SurveyFieldSerializer(serializers.HyperlinkedModelSerializer):
 
 		return instance
 
+class SurveyFieldMSBSerializer(serializers.HyperlinkedModelSerializer):
+	obs_group = serializers.HyperlinkedRelatedField(queryset=ObservationGroup.objects.all(), view_name='observationgroup-detail')
+	survey_fields = serializers.HyperlinkedRelatedField(queryset=SurveyField.objects.all(), many=True, view_name='surveyfield-detail')
+
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+
+	class Meta:
+		model = SurveyField
+		fields = "__all__"
+
+	def create(self, validated_data):
+
+		survey_fields_exist = 'survey_fields' in validated_data.keys()
+		survey_fields = None
+		if survey_fields_exist:
+			survey_fields = validated_data.pop('survey_fields')
+
+		surveyfieldmsb = SurveyFieldMSB.objects.create(**validated_data)
+		surveyfieldmsb.save()
+
+		if survey_fields_exist:
+			for field in survey_fields:
+				survey_field_result = SurveyField.objects.filter(pk=tag.id)
+				if survey_field_result.exists():
+					s = survey_field_result.first()
+					surveyfieldmsb.tags.add(s)
+
+			surveyfieldmsb.save()
+		
+		return surveyfieldmsb
+
+	def update(self, instance, validated_data):
+		instance.obs_group = validated_data.get('obs_group', instance.obs_group)
+		instance.name = validated_data.get('name', instance.name)
+
+		if 'survey_fields' in validated_data.keys():
+			# Disassociate existing `Transient Tags`
+			survey_fields = instance.survey_fields.all()
+			for field in survey_fields:
+				instance.survey_fields.remove(field)
+
+			survey_fields = validated_data.pop('tags')
+			for field in survey_fields:
+				survey_field_result = SurveyField.objects.filter(pk=tag.id)
+				if survey_field_result.exists():
+					s = survey_field_result.first()
+					instance.tags.add(s)
+		
+		instance.save()
+
+		return instance
+
+	
 class SurveyObservationSerializer(serializers.HyperlinkedModelSerializer):
 	survey_field = serializers.HyperlinkedRelatedField(queryset=SurveyField.objects.all(), view_name='surveyfield-detail')
 	status = serializers.HyperlinkedRelatedField(queryset=TaskStatus.objects.all(), view_name='taskstatus-detail')
