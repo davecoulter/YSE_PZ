@@ -14,6 +14,7 @@ import numpy as np
 import os
 from astropy.coordinates import SkyCoord
 import astropy.units as u
+import sys
 
 def split_band(band,exp_name):
 	if re.match('o[0-9][0-9][0-9][0-9]g[0-9][0-9][0-9][0-9]o',exp_name):
@@ -67,7 +68,9 @@ class SurveyObs(CronJobBase):
 			uploaddict = self.process_emails()
 		except Exception as e:
 			print(e)
-
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			print('line number %i'%exc_tb.tb_lineno)
+			
 		if uploaddict is not None: self.upload(uploaddict)
 		
 	def process_emails(self):

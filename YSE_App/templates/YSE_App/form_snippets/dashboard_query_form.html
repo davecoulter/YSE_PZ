@@ -13,8 +13,16 @@
 				{% endfor %}
 				<div class="col-xs-6">
 					<div class="form-group">
+						<label>SQL</label>
 						<!--<label>Query</label>-->
 						{% render_field form.query class+="form-control select2" style+="width: 100%;" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Python Function</label>
+						<!--<label>Query</label>-->
+						{% render_field form.python_query class+="form-control select2" style+="width: 100%;" %}
 					</div>
 				</div>
                 <div class="col-xs-6">

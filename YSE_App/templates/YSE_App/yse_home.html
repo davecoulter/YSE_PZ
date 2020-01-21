@@ -235,6 +235,27 @@
     <!-- /.box-body -->
     <div class="box-footer">
     </div>
+        <div class="box-header with-border" id="{{ztf_transient_table.1}}"> <!--id="{{followup_table.2}}">-->
+          <h3 class="box-title">ZTF Transients In/Near YSE Fields</h3><span style="float:right;"><a href="{% url 'transient_summary' 'ZTF_YSE_Transients' %}"><h3 class="box-title">Summary View</h3></a></span>
+          <!--<p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient_table.2 }}</h3><span style="float:right;"><a href="{% url 'transient_summary' transient_table.2 %}"><h3 class="box-title">Summary View</h3></a></span></p>-->
+          </div>
+          <div align='right'>
+            {% if ztf_transient_table.2 %}
+          <form action="" method="get" class="form form-inline">
+          {% bootstrap_form ztf_transient_table.2.form layout='inline' %}
+          {% with "#"|add:ztf_transient_table.1 as link %}
+          {% bootstrap_button 'filter' %}&ensp;&nbsp;
+          {% endwith %}
+          </form>
+          {% endif %}
+        </div>
+        <div class="box-body">
+          {% render_table ztf_transient_table.0 %}
+
+        </div>
+    <!-- /.box-body -->
+    <div class="box-footer">
+    </div>
     <!-- /.box-footer-->
   </div>
     <!-- /.box-body -->

@@ -1,0 +1,100 @@
+{% extends 'YSE_App/base.html' %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
+{% block content %}
+
+<!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>
+	Current and Suggested Pointings for {{ztf_field.field_id}} that include {{transient.name}} ({{transient.CoordString.0}}, {{transient.CoordString.1}})
+      </h1>
+      <ol class="breadcrumb">
+        <li><i class="fa fa-dashboard"></i> Home</li>
+      </ol>
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+      <img src="{% url 'adjust_yse_pointings_plot' ztf_field transient.name %}" width='480' alt='' /><br>
+
+
+      <!-- Default box -->
+      <div class="row">
+      <div class="box">
+        <div class="box-body">
+          <table id="pointing_tbl" class="table table-bordered table-hover">
+	    <thead>
+	      <tr>
+		<th>ID</th>
+		<th>RA</th>
+		<th>Dec</th>
+		<th>RA Offset</th>
+		<th>Dec Offset</th>
+	      </tr>
+	    </thead>
+            <tbody>
+	      {% for p in pointings %}
+	      <tr>
+		<td>{{ p.0 }}</td>
+		<td>{{ p.1 }} </td>
+		<td>{{ p.2 }} </td>
+		<td>{{p.3}}</td>
+		<td>{{p.4}}</td>
+	      </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer">
+        </div>
+        <!-- /.box-footer-->
+      </div>
+    </div>
+      <!-- /.box -->
+<div class="row">
+  <!-- Default box -->
+  {% for transient_cat in transient_categories %}
+
+<div class="box" id="{{transient_cat.4}}">
+  <div class="box-header with-border">
+    <h3 class="box-title">
+      {% if transient_cat.1 in pointing_names %}
+      <form id="{{ transient_cat.4 }}" action="{% url 'yse_msb_change' transient_cat.1 transient_field_name transient.name new_pointing.5 new_pointing.6 %}" method="post" style="margin: 0; padding: 0;">
+          &nbsp;<button type="submit" class="fa fa-trash-o fa-border">Remove {{transient_cat.1}} and Add {{transient.name}}</button>
+      </form>
+      {% else %}
+      <form id="{{ transient_cat.4 }}" action="{% url 'yse_msb_change' transient_field_name transient_cat.1 transient.name transient_cat.5 transient_cat.6 %}" method="post" style="margin: 0; padding: 0;">
+          &nbsp;<button type="submit" class="fa fa-trash-o fa-border">Remove {{transient.name}} and Add {{transient_cat.1}}</button>
+      </form>
+      {% endif %}
+  </div>
+    <div align='right'>
+      {% if transient_cat.3 %}
+      <form action="" method="get" class="form form-inline">
+        {% bootstrap_form transient_cat.3.form layout='inline' %}
+        {% with "#"|add:transient_cat.2 as link %}
+        {% bootstrap_button 'filter' %}&ensp;&nbsp;
+        {% endwith %}
+      </form>
+      {% endif %}
+    </div>
+    <div class="box-body">
+
+      {% render_table transient_cat.0 %}
+
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer">
+    </div>
+    {% endfor %}
+    <!-- /.box-footer-->
+  </div>
+</div>
+      </div>
+    </section>
+
+
+    
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends 'YSE_App/base.html' %}
+{% load transient_detail_extras %}
+{% load dashboard_extras %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
+{% load static %}
+
+{% block content %}
+
+<!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>
+        YSE Survey Planning
+      </h1>
+      <ol class="breadcrumb">
+        <li><i class="fa fa-dashboard"></i> Home</li>
+      </ol>
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+
+  <div class="row">
+    <div class="col-xs-12">
+      <div class="box">
+      <!-- Default box -->
+          
+    <!-- /.box-footer-->
+      <div class="box-header with-border" id="{{transient_rising_table.1}}"> <!--id="{{followup_table.2}}">-->
+          <h3 class="box-title">Rising Transients</h3>
+          <!--<p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient_table.2 }}</h3><span style="float:right;"><a href="{% url 'transient_summary' transient_table.2 %}"><h3 class="box-title">Summary View</h3></a></span></p>-->
+          </div>
+          <div align='right'>
+            {% if transient_rising_table.2 %}
+          <form action="" method="get" class="form form-inline">
+          {% bootstrap_form transient_rising_table.2.form layout='inline' %}
+          {% with "#"|add:transient_rising_table.1 as link %}
+          {% bootstrap_button 'filter' %}&ensp;&nbsp;
+          {% endwith %}
+          </form>
+          {% endif %}
+        </div>
+        <div class="box-body">
+          {% render_table transient_rising_table.0 %}
+
+        </div>
+    <!-- /.box-body -->
+    <div class="box-footer">
+    </div>
+
+    
+      </div>
+    </div>
+  </div>
+
+    <div class="row">
+    <div class="col-xs-12">
+      <div class="box">
+      <!-- Default box -->
+          
+    <!-- /.box-footer-->
+      <div class="box-header with-border" id="{{transient_good_table.1}}"> <!--id="{{followup_table.2}}">-->
+          <h3 class="box-title">Interesting Transients</h3>
+          <!--<p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient_table.2 }}</h3><span style="float:right;"><a href="{% url 'transient_summary' transient_table.2 %}"><h3 class="box-title">Summary View</h3></a></span></p>-->
+          </div>
+          <div align='right'>
+            {% if transient_good_table.2 %}
+          <form action="" method="get" class="form form-inline">
+          {% bootstrap_form transient_good_table.2.form layout='inline' %}
+          {% with "#"|add:transient_good_table.1 as link %}
+          {% bootstrap_button 'filter' %}&ensp;&nbsp;
+          {% endwith %}
+          </form>
+          {% endif %}
+        </div>
+        <div class="box-body">
+          {% render_table transient_good_table.0 %}
+
+        </div>
+    <!-- /.box-body -->
+    <div class="box-footer">
+    </div>
+
+    <div class="row">
+    <div class="col-xs-12">
+      <div class="box">
+      <!-- Default box -->
+          
+    <!-- /.box-footer-->
+      <div class="box-header with-border" id="{{transient_nearby_table.1}}"> <!--id="{{followup_table.2}}">-->
+          <h3 class="box-title">Transients with 15 Degrees of Existing Fields</h3>
+          <!--<p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient_table.2 }}</h3><span style="float:right;"><a href="{% url 'transient_summary' transient_table.2 %}"><h3 class="box-title">Summary View</h3></a></span></p>-->
+          </div>
+          <div align='right'>
+            {% if transient_nearby_table.2 %}
+          <form action="" method="get" class="form form-inline">
+          {% bootstrap_form transient_nearby_table.2.form layout='inline' %}
+          {% with "#"|add:transient_nearby_table.1 as link %}
+          {% bootstrap_button 'filter' %}&ensp;&nbsp;
+          {% endwith %}
+          </form>
+          {% endif %}
+        </div>
+        <div class="box-body">
+          {% render_table transient_nearby_table.0 %}
+
+        </div>
+    <!-- /.box-body -->
+    <div class="box-footer">
+    </div>
+    
+      </div>
+    </div>
+  </div>
+</section>
+    <!-- /.box-footer-->
+  
+  <!-- /.box -->
+    
+{% endblock %}
+
+
+{% block scripts %}
+  <script src="{% static 'YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+  <script src="{% static 'YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+  <script type="text/javascript" src="https://mpld3.github.io/js/d3.v3.min.js"></script>
+  <script type="text/javascript" src="https://mpld3.github.io/js/mpld3.v0.3.1.dev1.js"></script>
+  <script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-1.3.4.min.js"></script>
+  <script src="{% static 'YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js' %}"></script>
+
+  <script type='text/javascript'>
+    {% if anchor %}
+      $(document).ready(function(){
+        window.location = '#{{ anchor }}'
+      });
+    {% endif %}
+  </script>
+{% endblock %}

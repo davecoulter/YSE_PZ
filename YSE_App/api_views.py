@@ -43,6 +43,11 @@ class SurveyFieldViewSet(viewsets.ReadOnlyModelViewSet):
 	serializer_class = SurveyFieldSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+class SurveyFieldMSBViewSet(viewsets.ReadOnlyModelViewSet):
+	queryset = SurveyFieldMSB.objects.all()
+	serializer_class = SurveyFieldSerializer
+	permission_classes = (permissions.IsAuthenticated,)
+
 ### `Transient` Filter Set ###
 class SurveyObsFilter(django_filters.FilterSet):
 	status_in = django_filters.BaseInFilter(name="status__name")#, lookup_expr='in')
@@ -372,6 +377,7 @@ class TransientFilter(django_filters.FilterSet):
 	ra_lte = django_filters.Filter(name="ra", lookup_expr='lte')
 	dec_gte = django_filters.Filter(name="dec", lookup_expr='gte')
 	dec_lte = django_filters.Filter(name="dec", lookup_expr='lte')
+	tag_in = django_filters.BaseInFilter(name="tags__name")
 	
 	class Meta:
 		model = Transient

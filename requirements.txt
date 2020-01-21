@@ -79,3 +79,5 @@ sncosmo
 photutils
 extinction
 antares-client
+#git+git://github.com/sciserver/SciScript-Python@master
+alerce

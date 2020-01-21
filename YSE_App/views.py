@@ -13,6 +13,9 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models.functions import Lower
 from django.db import connection,connections
 from django.shortcuts import redirect
+import zipfile
+from io import BytesIO
+
 
 from astropy.utils import iers
 iers.conf.auto_download = False
@@ -36,7 +39,8 @@ from astroplan import moon_illumination
 from astropy.time import Time
 
 from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable
-from .queries.yse_python_queries import rising_transient_queryset,fastrising_transient_queryset
+from .queries.yse_python_queries import *
+from .queries import yse_python_queries
 import django_tables2 as tables
 from django_tables2 import RequestConfig
 from .basicauth import *
@@ -162,20 +166,29 @@ def personaldashboard(request):
 	queries = UserQuery.objects.filter(user = request.user)
 	tables = []
 	for q in queries:
-		if 'yse_app_transient' not in q.query.sql.lower(): continue
-		if 'name' not in q.query.sql.lower(): continue
-		if not q.query.sql.lower().startswith('select'): continue
-		cursor = connections['explorer'].cursor()
-		cursor.execute(q.query.sql.replace('%','%%'), ())
-		transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
-		cursor.close()
+		if q.query:
+			if 'yse_app_transient' not in q.query.sql.lower(): continue
+			if 'name' not in q.query.sql.lower(): continue
+			if not q.query.sql.lower().startswith('select'): continue
+			cursor = connections['explorer'].cursor()
+			cursor.execute(q.query.sql.replace('%','%%'), ())
+			transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+			cursor.close()
 
-		transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.query.title.replace(' ',''))
-		table = TransientTable(transientfilter.qs,prefix=q.query.title.replace(' ',''))
-		RequestConfig(request, paginate={'per_page': 10}).configure(table)
-		tables += [(table,q.query.title,q.query.title.replace(' ',''),transientfilter,q.id)]
+			transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.query.title.replace(' ',''))
+			table = TransientTable(transientfilter.qs,prefix=q.query.title.replace(' ',''))
+			RequestConfig(request, paginate={'per_page': 10}).configure(table)
+			tables += [(table,q.query.title,q.query.title.replace(' ',''),transientfilter,q.id)]
 
-		
+		elif q.python_query:
+			transients = getattr(yse_python_queries,q.python_query)()
+
+			transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.python_query)
+			table = TransientTable(transientfilter.qs,prefix=q.python_query)
+			RequestConfig(request, paginate={'per_page': 10}).configure(table)
+			tables += [(table,q.python_query,q.python_query,transientfilter,q.id)]
+
+			
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-')[0]
 	else: anchor = ''
@@ -219,16 +232,22 @@ def transient_summary(request,status_or_query_name,
 	if len(status) == 1:
 		transients = Transient.objects.filter(status=status[0]).order_by('-disc_date')
 	else:
-		#import pdb; pdb.set_trace()
-		query = Query.objects.filter(title=unquote(status_or_query_name))[0]
-		if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
-		if 'name' not in query.sql.lower(): return Http404('Invalid Query')
-		if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
-		cursor = connections['explorer'].cursor()
-		cursor.execute(query.sql.replace('%','%%'), ())
-		transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
-		cursor.close()
-		
+		query = Query.objects.filter(title=unquote(status_or_query_name))
+		if len(query):
+			query = query[0]
+			if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
+			if 'name' not in query.sql.lower(): return Http404('Invalid Query')
+			if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
+			cursor = connections['explorer'].cursor()
+			cursor.execute(query.sql.replace('%','%%'), ())
+			transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+			cursor.close()
+		else:
+			query = UserQuery.objects.filter(python_query = unquote(status_or_query_name))
+			if not len(query): return Http404('Invalid Query')
+			query = query[0]
+			transients = getattr(yse_python_queries,query.python_query)()
+			
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-')[0]
 	else: anchor = ''
@@ -419,6 +438,12 @@ def yse_home(request):
 	table = YSEFullTransientTable(transientfilter.qs,prefix='yse')
 	RequestConfig(request, paginate={'per_page': 10}).configure(table)
 
+	ztftransients = Transient.objects.filter(tags__name='ZTF in YSE Fields').filter(~Q(status__name='Ignore')).order_by('-disc_date')
+	ztftransientfilter = TransientFilter(request.GET, queryset=ztftransients,prefix='yseztf')
+	ztftable = YSEFullTransientTable(ztftransientfilter.qs,prefix='yseztf')
+	RequestConfig(request, paginate={'per_page': 10}).configure(ztftable)
+
+	
 	transients_follow = Transient.objects.filter(tags__name='YSE').order_by('-disc_date').filter(Q(status__name='FollowupRequested') | Q(status__name='Following'))
 	transientfilter_follow = TransientFilter(request.GET, queryset=transients_follow,prefix='yse_follow')
 	table_follow = YSETransientTable(transientfilter_follow.qs,prefix='yse_follow')
@@ -450,7 +475,7 @@ def yse_home(request):
 		filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
 	field_pk = survey_obs.values('survey_field').distinct()
-	survey_fields_tonight = SurveyField.objects.filter(pk__in = field_pk).select_related()
+	survey_fields_tonight = SurveyField.objects.filter(pk__in = field_pk).filter(~Q(obs_group__name='ZTF')).select_related()
 
 	ut_obs_date = (datetime.datetime.utcnow()).strftime('%Y-%m-%d 00:00:00')
 	time = Time(ut_obs_date, format='iso')
@@ -464,7 +489,7 @@ def yse_home(request):
 		filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
 		filter(survey_field__instrument__name__startswith = 'GPC').select_related()
 	field_pk = survey_obs.values('survey_field').distinct()
-	survey_fields_last_night = SurveyField.objects.filter(pk__in = field_pk).select_related()
+	survey_fields_last_night = SurveyField.objects.filter(pk__in = field_pk).filter(~Q(obs_group__name='ZTF')).select_related()
 	
 	
 	nowdate = datetime.datetime.utcnow()
@@ -479,6 +504,7 @@ def yse_home(request):
 			   'date_start': datetime.datetime.now().__str__().split()[0],
 			   'date_end': (datetime.datetime.now()+datetime.timedelta(1)).__str__().split()[0],
 			   'transient_table':(table,'yse',transientfilter),
+			   'ztf_transient_table':(ztftable,'ztfyse',ztftransientfilter),
 			   'transient_follow_table':(table_follow,'yse_follow',transientfilter_follow),
 			   'transient_rising_table':(table_rising,'yserise',risingtransientfilter),
 			   'transient_fastrising_table':(table_fastrising,'ysefastrise',fastrisingtransientfilter),
@@ -510,8 +536,8 @@ def yse_observing_calendar(request):
 
 	#import pdb; pdb.set_trace()
 	todaydate = dateutil.parser.parse(datetime.datetime.today().strftime('%Y-%m-%d 00:00:00'))
-	base = todaydate-datetime.timedelta(10)
-	date_list = [base + datetime.timedelta(days=x) for x in range(20)]
+	base = todaydate-datetime.timedelta(30)
+	date_list = [base + datetime.timedelta(days=x) for x in range(40)]
 	obstuple = ()
 	colors = ['#dd4b39', 
 			  '#f39c12', 
@@ -795,7 +821,7 @@ def transient_detail(request, slug):
 
 		date = datetime.datetime.now(tz=pytz.utc)
 		date_format='%m/%d/%Y %H:%M:%S'
-
+		
 		spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id)
 		context = {
 			'transient':transient_obj,
@@ -996,6 +1022,107 @@ def download_photometry(request, slug):
 	response['Content-Disposition'] = 'attachment; filename=%s' % '%s_data.snana.txt'%slug
 
 	return response
+
+@csrf_exempt
+@login_or_basic_auth_required
+def download_bulk_photometry(request, query_title):
+
+	if 'HTTP_AUTHORIZATION' in request.META.keys():
+		auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+		credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+		username, password = credentials.split(':', 1)
+		user = auth.authenticate(username=username, password=password)
+	else:
+		user = request.user
+
+
+	query = Query.objects.filter(title=unquote(query_title))
+	if len(query):
+		cursor = connections['explorer'].cursor()
+		cursor.execute(query[0].sql.replace('%','%%'), ())
+		transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+		cursor.close()
+
+	elif getattr(yse_python_queries,query_title):
+		transients = getattr(yse_python_queries,query_title)()
+
+	s = BytesIO()
+	archive = zipfile.ZipFile(s, 'w', zipfile.ZIP_DEFLATED)
+	for transient in transients:
+		
+		content = ""
+
+		data = {transient.name:{'transient':{},'host':{},'photometry':{},'spectra':{}}}
+		data[transient.name]['transient'] = json.loads(serializers.serialize("json", Transient.objects.filter(name=transient.name), use_natural_foreign_keys=True))
+		for k in data[transient.name]['transient'][0]['fields'].keys():
+			if k not in ['created_by','modified_by','candidate_hosts']:
+				content += "# %s: %s\n"%(k.upper(),data[transient.name]['transient'][0]['fields'][k])
+
+		content += "\n"
+		content += "MJD,FLT,FLUXCAL,FLUXCALERR,MAG,MAGERR,TELESCOPE,INSTRUMENT\n"
+		linefmt =  "%.3f,%s,%.3f,%.3f,%.3f,%.3f,%s,%s\n"
+
+
+		# Get photometry by user & transient
+		authorized_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient.id)
+		if len(authorized_phot):
+			data[transient.name]['photometry'] = json.loads(serializers.serialize("json", authorized_phot,use_natural_foreign_keys=True))
+
+			# Get data points
+			for p,pd in zip(authorized_phot,range(len(data[transient.name]['photometry']))):
+
+				telescope = data[transient.name]['photometry'][pd]['fields']['instrument'].split(' - ')[0]
+				instrument = data[transient.name]['photometry'][pd]['fields']['instrument'].split(' - ')[1]
+
+				photdata = PhotometryService.GetAuthorizedTransientPhotData_ByPhotometry(user, p.id, includeBadData=True).order_by('obs_date')
+				data[transient.name]['photometry'][pd]['data'] = json.loads(serializers.serialize("json", photdata, use_natural_foreign_keys=True))
+
+				for d in data[transient.name]['photometry'][pd]['data']:
+					mjd = date_to_mjd(d['fields']['obs_date'])
+					if d['fields']['flux'] and d['fields']['flux_zero_point'] and not d['fields']['mag']:
+						if d['fields']['flux_err']: flux_err = d['fields']['flux_err']
+						else: flux_err = 0
+
+						flux = d['fields']['flux']*10**(0.4*(d['fields']['flux_zero_point']-27.5))
+						flux_err = flux_err*10**(0.4*(d['fields']['flux_zero_point']-27.5))
+						mag = -2.5*np.log10(flux)+27.5
+						mag_err = 2.5/np.log(10)*flux_err/flux
+
+						content += linefmt%(
+							mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,mag,mag_err,telescope,instrument)
+
+					elif not d['fields']['flux'] and d['fields']['mag']:
+						if d['fields']['mag_err']: mag_err = d['fields']['mag_err']
+						else: mag_err = 0
+
+						flux = 10**(-0.4*(d['fields']['mag']-27.5))
+						flux_err = 0.4*np.log(10)*flux*mag_err
+
+						content += linefmt%(
+							mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,telescope,instrument)
+
+					elif d['fields']['flux'] and d['fields']['flux_zero_point'] and d['fields']['mag']:
+						if d['fields']['flux_err']: flux_err = d['fields']['flux_err']
+						else: flux_err = 0
+						if d['fields']['mag_err']: mag_err = d['fields']['mag_err']
+						else: mag_err = 0
+
+						flux = d['fields']['flux']*10**(0.4*(d['fields']['flux_zero_point']-27.5))
+						flux_err = flux_err*10**(0.4*(d['fields']['flux_zero_point']-27.5))
+
+						content += linefmt%(
+							mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,telescope,instrument)
+
+					else:
+						continue
+
+		archive.writestr('%s.csv'%transient.name,content)
+
+	archive.close()
+	response = HttpResponse(s.getvalue(), content_type='application/x-zip-compressed')
+	response['Content-Disposition'] = 'attachment; filename=YSEPZ_transient_photometry.zip'
+	return response
+
 
 @csrf_exempt
 @login_or_basic_auth_required
