@@ -97,7 +97,7 @@ class Transient(BaseModel):
 						Q(dec_cen__lt = self.dec+dec_offset.degree)))
 
 		if len(sf): 
-			so = SurveyObservation.objects.filter(survey_field__field_id=sf[0].field_id).order_by('-obs_mjd')
+			so = SurveyObservation.objects.filter(survey_field__field_id=sf[0].field_id).filter(obs_mjd__isnull=False).order_by('-obs_mjd')
 			if len(so):
 				time_since_last_obs = date_to_mjd(datetime.datetime.utcnow())-so[0].obs_mjd
 			else:
