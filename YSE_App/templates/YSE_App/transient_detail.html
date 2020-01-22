@@ -191,7 +191,11 @@
 												<p class="text-muted">
 													{% with transient.LikelyYSEField as ysefield %}
 													{% if ysefield.0 %}
-													{{ ysefield.0 }}, obs. {{ ysefield.3|floatformat:1 }} days ago
+														{% if ysefield.3 %}
+															{{ ysefield.0 }}, obs. {{ ysefield.3|floatformat:1 }} days ago
+														{% else %}
+															{{ ysefield.0}}, not observed
+														{% endif %}
 													{% else %}
 													None
 													{% endif %}
