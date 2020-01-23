@@ -244,7 +244,7 @@ class SpectrumUploadForm(ModelForm):
 		'OSIRIS','FLOYDS-N','FLOYDS-S','NIRC2',
 		'NIRSPEC','NIRES','KCWI','ESI',
 		'DEIMOS','OSIRIS','MOSFIRE','LRIS',
-		'HIRES','GMOS','Goodman','KAST','WiFeS']
+		'HIRES','GMOS','Goodman','KAST','WiFeS','LCO-duPont']
 	instrument = forms.ModelChoiceField(Instrument.objects.filter(Q(name__in=spec_instruments)))
 	#import pdb; pdb.set_trace()
 	class Meta:
