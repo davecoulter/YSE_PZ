@@ -983,7 +983,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
 		result, fitted_model = sncosmo.fit_lc(
 			data, model, fitparams,
-			bounds={'t0':(salt2mjd[flux == np.max(flux)]-10, salt2mjd[flux == np.max(flux)]+10),
+			bounds={'t0':(min(np.atleast_1d(salt2mjd[flux == np.max(flux)]))-10, max(np.atleast_1d(salt2mjd[flux == np.max(flux)]))+10),
 					'z':(0.0,0.7),'x1':(-3,3),'c':(-0.3,0.3)})	# bounds on parameters (if any)
 		
 		count = 0
