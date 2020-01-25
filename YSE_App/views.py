@@ -368,19 +368,22 @@ def calendar(request):
 @login_required
 def yse_oncall_calendar(request):
 	all_dates = YSEOnCallDate.objects.all()
+	users = all_dates.order_by('-on_call_date').values_list('user__username',flat=True).distinct()
+
 	colors = ['#dd4b39', 
-				'#f39c12', 
-				'#00c0ef', 
-				'#0073b7', 
-				'#f012be', 
-				'#3c8dbc',
-				'#00a65a',
-				'#d2d6de',
-				'#001f3f']
+			  '#f39c12', 
+			  '#00c0ef', 
+			  '#0073b7', 
+			  '#f012be', 
+			  '#3c8dbc',
+			  '#00a65a',
+			  '#d2d6de',
+			  '#001f3f']
 
 	user_colors = {}
-	for i, u in enumerate(User.objects.all().exclude(username='admin')):
-		user_colors[u.username] = colors[i % len(colors)]
+	for i, u in enumerate(users): #User.objects.all().exclude(username='admin').order_by()):
+		#user_colors[u.username] = colors[i % len(colors)]
+		user_colors[u] = colors[i % len(colors)]
 	oncall_form = OncallForm()
 		
 	context = {
