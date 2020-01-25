@@ -450,7 +450,7 @@ def yse_home(request):
 	transients_follow = Transient.objects.filter(tags__name='YSE').order_by('-disc_date').filter(Q(status__name='FollowupRequested') | Q(status__name='Following'))
 	transientfilter_follow = TransientFilter(request.GET, queryset=transients_follow,prefix='yse_follow')
 	table_follow = YSETransientTable(transientfilter_follow.qs,prefix='yse_follow')
-	RequestConfig(request, paginate={'per_page': 10}).configure(table)
+	RequestConfig(request, paginate={'per_page': 10}).configure(table_follow)
 
 	#obsnights = view_utils.get_obs_nights_happening_soon(request.user)
 	obsnights = ObservingResourceService.GetAuthorizedClassicalResource_ByUser(request.user).\
