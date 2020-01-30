@@ -217,7 +217,7 @@ def adjust_yse_pointings(request,field_name,snid):
 	
 	tables = []
 	for p,n in zip(all_pointings,all_pointing_names):
-		transients = sne_in_yse_field(n)
+		transients = sne_in_yse_field_with_ignore(n)
 
 		transientfilter = TransientFilter(request.GET, queryset=transients,prefix=n.replace('.',''))
 		table = TransientTable(transientfilter.qs,prefix=n.replace('.',''))

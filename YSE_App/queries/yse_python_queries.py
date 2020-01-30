@@ -235,3 +235,31 @@ HAVING sep < 3.3
 	qs = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(~Q(status__name='Ignore')).filter(name__in=(x[0] for x in cursor))
 
 	return qs
+
+def sne_in_yse_field_with_ignore(field_id):
+
+	qs = None
+	survey_field = SurveyField.objects.filter(field_id=field_id)[0]
+
+	d = survey_field.dec_cen*np.pi/180
+	width_corr = 1.65/np.abs(np.cos(d))
+	#radius = ((ra-s.survey_field.ra_cen)**2. + (dec-s.survey_field.dec_cen)**2.)**(1/2.)
+
+	ra_offset = cd.Angle(width_corr, unit=u.deg)
+	dec_offset = cd.Angle(15, unit=u.deg)
+
+	query= """SELECT t.name, ACOS(SIN(t.dec*3.14159/180)*SIN(%s*3.14159/180)+COS(t.dec*3.14159/180)*COS(%s*3.14159/180)*COS((t.ra-%s)*3.14159/180))*180/3.14159 as sep
+FROM YSE_App_transient t
+WHERE t.ra > %s AND t.ra < %s AND t.dec > %s AND t.dec < %s
+HAVING sep < 3.3
+""" % (
+	survey_field.dec_cen, survey_field.dec_cen, survey_field.ra_cen,
+	survey_field.ra_cen-ra_offset.degree,survey_field.ra_cen+ra_offset.degree,
+	survey_field.dec_cen-dec_offset.degree,survey_field.dec_cen+dec_offset.degree)
+	cursor = connections['explorer'].cursor()
+	cursor.execute(query, ())
+
+	qs = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(name__in=(x[0] for x in cursor))
+
+	return qs
+
