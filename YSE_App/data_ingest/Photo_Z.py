@@ -74,8 +74,6 @@ class YSE(CronJobBase):
 
 			Ra = np.array(RA)
 			Dec = np.array(DEC)
-			np.save('yse_Ra.npy',Ra)
-			np.save('yse_Dec.npy',Dec)
 			N = len(Ra)#gives size of query array
 			Q = N//1000#decompose the length of transients needing classification
 
