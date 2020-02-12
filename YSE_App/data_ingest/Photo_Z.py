@@ -186,8 +186,8 @@ class YSE(CronJobBase):
 			for t,pz in zip(transients,return_me):
 				if pz != pz: continue
 				host = t.host
-				#host.photo_z = pz
-				#host.save()
+				host.photo_z = pz
+				host.save()
 				tz += [host.redshift]
 				mpz += [pz]
 			plt.plot(tz,mpz,'.',alpha=0.02)
