@@ -96,7 +96,7 @@ query_test = {
 
 class AntaresZTF(CronJobBase):
 
-	RUN_EVERY_MINS = 0.1
+	RUN_EVERY_MINS = 30
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.Query_ZTF.AntaresZTF'
@@ -132,23 +132,23 @@ class AntaresZTF(CronJobBase):
 		print('Antares -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
 	def main(self):
-		
+
 		recentmjd = date_to_mjd(datetime.datetime.utcnow() - datetime.timedelta(7))
 		survey_obs = SurveyObservation.objects.filter(obs_mjd__gt=recentmjd)
 		field_pk = survey_obs.values('survey_field').distinct()
 		survey_fields = SurveyField.objects.filter(pk__in = field_pk).select_related()
-		
+		print(survey_fields)
 		for s in survey_fields:
 
-			width_corr = 3.1/np.abs(np.cos(s.dec_cen))
+			width_corr = 1.55/np.abs(np.cos(s.dec_cen*np.pi/180))
 			ra_offset = Angle(width_corr/2., unit=u.deg)
-			dec_offset = Angle(3.1/2., unit=u.deg)
+			dec_offset = Angle(1.55/2., unit=u.deg)
 			sc = SkyCoord(s.ra_cen,s.dec_cen,unit=u.deg)
 			ra_min = sc.ra - ra_offset
 			ra_max = sc.ra + ra_offset
 			dec_min = sc.dec - dec_offset
 			dec_max = sc.dec + dec_offset
-			
+
 			query = query_template.copy()
 			query['query']['bool']['must'][0]['range']['ra']['gte'] = ra_min.deg
 			query['query']['bool']['must'][0]['range']['ra']['lte'] = ra_max.deg
@@ -161,8 +161,6 @@ class AntaresZTF(CronJobBase):
 			transientdict,nsn = self.parse_data(result_set)
 			print('uploading %i transients'%nsn)
 			self.send_data(transientdict)
-			
-			import pdb; pdb.set_trace()
 
 	def send_data(self,TransientUploadDict):
 
@@ -184,8 +182,9 @@ class AntaresZTF(CronJobBase):
 		obj,ra,dec = [],[],[]
 		nsn = 0
 		for i,s in enumerate(result_set):
-			if 'astrorapid_skipped' in s['properties'].keys(): continue
-			
+			#if 'astrorapid_skipped' in s['properties'].keys(): continue
+			if 'streams' not in s.keys() or 'yse_candidate_test' not in s["streams"]: continue
+				
 			sc = SkyCoord(s['properties']['ztf_ra'],s['properties']['ztf_dec'],unit=u.deg)
 			try:
 				ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
@@ -200,7 +199,7 @@ class AntaresZTF(CronJobBase):
 						 'ra':s['properties']['ztf_ra'],
 						 'dec':s['properties']['ztf_dec'],
 						 'obs_group':'ZTF',
-						 'tags':['ZTF'],
+						 'tags':['ZTF in YSE Fields'],
 						 'disc_date':mjd_to_date(s['properties']['ztf_jd']-2400000.5),
 						 'mw_ebv':mw_ebv,
 						 'point_source_probability':ps_prob}
@@ -572,20 +571,18 @@ class AlerceZTF(CronJobBase):
 						}
 					}
 				}
-			
+
 			client = AlerceAPI()
 			try:
 				result_set = client.query(params) #, format='pandas')
 			except:
 				continue
-			#import pdb; pdb.set_trace()
+
 			if not len(result_set): continue
 
 			transientdict,nsn = self.parse_data(result_set)
 			print('uploading %i transients'%nsn)
 			self.send_data(transientdict)
-			
-			#import pdb; pdb.set_trace()
 
 	def send_data(self,TransientUploadDict):
 

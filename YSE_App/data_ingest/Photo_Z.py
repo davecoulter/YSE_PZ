@@ -18,12 +18,13 @@ from SciServer import Authentication, CasJobs
 
 class YSE(CronJobBase):
 
-	RUN_EVERY_MINS = 10
+	RUN_EVERY_MINS = 0.1
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.Photo_Z.YSE'
 
-	def do(self,user='awe2',password='StandardPassword',search=1,path_to_model='YSE_App/data_ingest/YSE_DNN_photoZ_model_315.hdf5'):
+	def do(self,user='awe2',password='StandardPassword',search=1,
+		   path_to_model='YSE_DNN_photoZ_model_315.hdf5',debug=True):
 		"""
 		Predicts photometric redshifts from RA and DEC points in SDSS
 
@@ -150,7 +151,7 @@ class YSE(CronJobBase):
 
 			keras.backend.clear_session()
 			model = create_model(learning_rate = 1e-3)#couldve been anything for this, just gonna predict
-			model.load_weights(path_to_model)
+			model.load_weights('%s/%s'%(djangoSettings.STATIC_ROOT,path_to_model))
 			
 			#Need to deal with NANs now since many objects are outside the SDSS footprint, later models will learn to deal with this
 			#ideas: need to retain a mask of where the nans are in the row
@@ -186,16 +187,19 @@ class YSE(CronJobBase):
 			for t,pz in zip(transients,return_me):
 				if pz != pz: continue
 				host = t.host
-				host.photo_z = pz
-				host.save()
+				# hard-coded to avoid the limits of the training
+				if pz < 0.4:
+					host.photo_z = pz
+					host.save()
 				tz += [host.redshift]
 				mpz += [pz]
-			plt.plot(tz,mpz,'.',alpha=0.02)
-			plt.xlim(-0.01,0.7)
-			plt.ylim(-0.01,0.7)
-			plt.ylabel('Photo Z')
-			plt.xlabel('true Z')
-			plt.savefig('test.png')
+			if debug:
+				plt.plot(tz,mpz,'.',alpha=0.02)
+				plt.xlim(-0.01,0.7)
+				plt.ylim(-0.01,0.7)
+				plt.ylabel('Photo Z')
+				plt.xlabel('true Z')
+				plt.savefig('test.png')
 
 			print('time taken with upload:', datetime.datetime.utcnow() - nowdate)
 		except Exception as e:

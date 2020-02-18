@@ -273,6 +273,7 @@
 										{% endif %}
 									</div>
 									<div class="box-body">
+										<div class="row">
 										<div class="col-xs-4">
 											<div class="form-group">
 												<strong>Host Name</strong>
@@ -318,8 +319,29 @@
 												</p>
 											</div>
 										</div>
+									</div>
+									<div class="row">
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Photo-z</strong>
+												<p class="text-muted">
+													{% if transient.host %}
+														{% if transient.host.photo_z %}
+															{{ transient.host.photo_z|floatformat:3 }} 
+
+															{% if transient.host.photo_z_err %}
+																+/- {{ transient.host.photo_z_err }}
+															{% endif %}
+														{% endif %}
+													{% else %}
+														Unknown
+													{% endif %}
+												</p>
+										</div>
+									</div>
+
 										<!--<div class="box-body">-->
-											<div class="col-xs-12">
+											<div class="col-xs-4">
 												<div class="form-group">
 													<strong>Transient sep from likely host</strong>
 													<p class="text-muted">
@@ -331,7 +353,8 @@
 													</p>
 												</div>
 											</div>
-										
+										</div>
+									
 
 										<!-- Start 2 column -->
 										<div class="col-xs-12">

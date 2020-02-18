@@ -488,7 +488,7 @@ def view_yse_fields(request):
 	def map_survey_fields(f,metric_value=1.0):
 		sc = SkyCoord(f.ra_cen,f.dec_cen,unit=u.deg)
 		
-		width_corr = 1.65/np.abs(np.cos(f.dec_cen))
+		width_corr = 1.65/np.abs(np.cos(f.dec_cen*np.pi/180.))
 		ra_offset = Angle(width_corr, unit=u.deg)
 		dec_offset = Angle(1.65, unit=u.deg)
 		PS_SW = SkyCoord(sc.ra - ra_offset, sc.dec - dec_offset)
@@ -1032,7 +1032,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 def spectrumplot(request, transient_id):
 	tstart = time.time()
 	transient = Transient.objects.get(pk=transient_id)
-	spectrum = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id)
+	spectrum = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True)
 
 	if not len(spectrum):
 		return django.http.HttpResponse('')
@@ -1044,15 +1044,19 @@ def spectrumplot(request, transient_id):
 		return django.http.HttpResponse('')
 
 	#figure is a function in the bokeh module
-	ax=figure(plot_width=240,plot_height=240,sizing_mode='stretch_both')
 	#HELLO
 	wave,flux = [],[]
 	for s in spec:
 		wave += [s.wavelength]
 		flux += [s.flux]
+	bottom = np.percentile(flux,5)*0.5; top = np.percentile(flux,95)*1.3
+	if np.percentile(flux,2) < 0:
+		bottom = np.percentile(flux,2)*1.5
+	ax=figure(plot_width=240,plot_height=240,sizing_mode='stretch_both',
+			  y_range=(bottom, top))
 	ax.line(np.sort(wave),np.array(flux)[np.argsort(wave)],color='black')
 
-	ax.title.text = "%s, %s, %s, Phase: %s"%(transient.name,spectrum.obs_date.strftime('%m/%d/%Y'),spectrum.instrument,spectrum.spec_phase)
+	ax.title.text = "%s, %s, %s, Phase: %s, DQ: %s"%(transient.name,spectrum.obs_date.strftime('%m/%d/%Y'),spectrum.instrument,spectrum.spec_phase,spectrum.data_quality)
 	ax.xaxis.axis_label = r'Wavelength (Angstrom)'
 	ax.yaxis.axis_label = 'Flux'
 	g = file_html(ax,CDN,"spectrum plot")
@@ -1069,7 +1073,7 @@ def spectrumplotsingle(request, transient_id, spec_id):
 	tstart = time.time()
 	print(transient_id,spec_id)
 	transient = Transient.objects.get(pk=transient_id)
-	spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id)
+	spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True)
 	spectrum = spectra.filter(id=spec_id)
 	
 	if not len(spectrum):
@@ -1081,15 +1085,19 @@ def spectrumplotsingle(request, transient_id, spec_id):
 	if not len(spec):
 		return django.http.HttpResponse('')
 
-	ax=figure(plot_width=240,plot_height=240,sizing_mode='stretch_both')
-
 	wave,flux = [],[]
 	for s in spec:
 		wave += [s.wavelength]
 		flux += [s.flux]
+	bottom = np.percentile(flux,5)*0.5; top = np.percentile(flux,95)*1.3
+	if np.percentile(flux,2) < 0:
+		bottom = np.percentile(flux,2)*1.5
+
+	ax=figure(plot_width=240,plot_height=240,sizing_mode='stretch_both',
+			  y_range=(bottom, top))
 	ax.line(np.sort(wave),np.array(flux)[np.argsort(wave)],color='black')
 		
-	ax.title.text = "%s, %s, %s, Phase: %s"%(transient.name,spectrum.obs_date.strftime('%m/%d/%Y'),spectrum.instrument,spectrum.spec_phase)
+	ax.title.text = "%s, %s, %s, Phase: %s, DQ: %s"%(transient.name,spectrum.obs_date.strftime('%m/%d/%Y'),spectrum.instrument,spectrum.spec_phase,spectrum.data_quality)
 	ax.xaxis.axis_label = r'Wavelength (Angstrom)'
 	ax.yaxis.axis_label = 'Flux'
 	g = file_html(ax,CDN,"my plot")

@@ -231,6 +231,14 @@ class SpectrumUploadForm(ModelForm):
 										Q(name='TESS') | Q(name='YSE') |
 										Q(name='UCSC') |
 										Q(name='Other')))
+	data_quality = forms.ModelChoiceField(
+		DataQuality.objects.filter(Q(name='Quicklook')),required=False)
+
+	qs = [(i['name'], i['name']) for i in Group.objects.all().values('name').distinct().order_by('name')]
+	permissions = forms.MultipleChoiceField(
+			choices=qs,
+			required=False)
+	
 	spec_instruments = [
 		'SED-Machine','P200-TSPEC',
 		'LFC','DBSP','lay - MIKE','lay - LDSS-3',

@@ -299,10 +299,10 @@ class QUB(CronJobBase):
 			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
 			
 			#transientdict['transientphotometry'] = photometrydict
-		#import pdb; pdb.set_trace()
+
 		#scall = SkyCoord(ra,dec,unit=u.deg) #summary['ra_psf'],summary['dec_psf']
 		#transientdict = self.getZTFPhotometry(transientdict,obj,scall)
-		#import pdb; pdb.set_trace()
+
 		return transientdict,nsn
 
 	def getZTFPhotometry(self,ra,dec):
@@ -403,7 +403,6 @@ class QUB(CronJobBase):
 
 		except Exception as e:
 			print(e)
-			#import pdb; pdb.set_trace()
 						
 	def UploadTransients(self,TransientUploadDict):
 
@@ -637,8 +636,6 @@ class YSE(CronJobBase):
 				photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
 				if photometrydict_ztf is not None:
 					PhotUploadAll['ZTF'] = photometrydict_ztf
-				#if s['local_designation'] == '10AYSEaaj':
-				#	import pdb; pdb.set_trace()
 
 				nsn += 1
 			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
