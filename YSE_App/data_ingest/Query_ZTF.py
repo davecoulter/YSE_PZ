@@ -106,12 +106,12 @@ class AntaresZTF(CronJobBase):
 		tstart = time.time()
 		
 		parser = self.add_options(usage='')
-		options,  args = parser.parse_args()
+		options,  args = parser.parse_known_args()
 
 		config = configparser.ConfigParser()
 		config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
 		parser = self.add_options(usage='',config=config)
-		options,  args = parser.parse_args()
+		options,  args = parser.parse_known_args()
 		self.options = options
 
 		try:
@@ -253,36 +253,36 @@ class AntaresZTF(CronJobBase):
 		return transientdict,nsn
 
 	def add_options(self, parser=None, usage=None, config=None):
-		import optparse
+		import argparse
 		if parser == None:
-			parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
+			parser = argparse.ArgumentParser(usage=usage, conflict_handler="resolve")
 
 		# The basics
-		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
-		parser.add_option('--clobber', default=False, action="store_true",
+		parser.add_argument('-v', '--verbose', action="count", dest="verbose",default=1)
+		parser.add_argument('--clobber', default=False, action="store_true",
 						  help='clobber output file')
-		parser.add_option('-s','--settingsfile', default=None, type="string",
+		parser.add_argument('-s','--settingsfile', default=None, type=str,
 						  help='settings file (login/password info)')
-		parser.add_option('--status', default='New', type="string",
+		parser.add_argument('--status', default='New', type=str,
 						  help='transient status to enter in YS_PZ')
-		parser.add_option('--max_days', default=7, type="float",
+		parser.add_argument('--max_days', default=7, type="float",
 						  help='grab photometry/objects from the last x days')
 
 		if config:
-			parser.add_option('--dblogin', default=config.get('main','dblogin'), type="string",
+			parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbemail', default=config.get('main','dbemail'), type="string",
+			parser.add_argument('--dbemail', default=config.get('main','dbemail'), type=str,
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbpassword', default=config.get('main','dbpassword'), type="string",
+			parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
 							  help='database password, if post=True (default=%default)')
-			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
+			parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
 							  help='URL to POST transients to a database (default=%default)')
 
-			parser.add_option('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type="string",
+			parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
 							  help='SMTP login (default=%default)')
-			parser.add_option('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type="string",
+			parser.add_argument('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type=str,
 							  help='SMTP host (default=%default)')
-			parser.add_option('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type="string",
+			parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
 							  help='SMTP port (default=%default)')
 
 		else:

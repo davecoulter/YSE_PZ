@@ -182,34 +182,34 @@ class SurveyObs(CronJobBase):
 		print("upload finished.")
 		
 	def add_options(self, parser=None, usage=None, config=None):
-		import optparse
+		import argparse
 		if parser == None:
-			parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
+			parser = argparse.ArgumentParser(usage=usage, conflict_handler="resolve")
 
 		# The basics
-		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
-		parser.add_option('--clobber', default=False, action="store_true",
+		parser.add_argument('-v', '--verbose', action="count", dest="verbose",default=1)
+		parser.add_argument('--clobber', default=False, action="store_true",
 						  help='clobber output file')
-		#parser.add_option('-s','--settingsfile', default=None, type="string",
+		#parser.add_option('-s','--settingsfile', default=None, type=str,
 		#				  help='settings file (login/password info)')
 
 		if config:
-			parser.add_option('--dblogin', default=config.get('main','dblogin'), type="string",
+			parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbemail', default=config.get('main','dbemail'), type="string",
+			parser.add_argument('--dbemail', default=config.get('main','dbemail'), type=str,
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbpassword', default=config.get('main','dbpassword'), type="string",
+			parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
 							  help='database password, if post=True (default=%default)')
-			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
+			parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
 							  help='URL to POST transients to a database (default=%default)')
 
-			parser.add_option('--SMTP_LOGIN', default=config.get('YSE_SMTP_provider','SMTP_LOGIN'), type="string",
+			parser.add_argument('--SMTP_LOGIN', default=config.get('YSE_SMTP_provider','SMTP_LOGIN'), type=str,
 							  help='SMTP login (default=%default)')
-			parser.add_option('--SMTP_PASSWORD', default=config.get('YSE_SMTP_provider','SMTP_PASSWORD'), type="string",
+			parser.add_argument('--SMTP_PASSWORD', default=config.get('YSE_SMTP_provider','SMTP_PASSWORD'), type=str,
 							  help='SMTP password (default=%default)')
-			parser.add_option('--SMTP_HOST', default=config.get('YSE_SMTP_provider','SMTP_HOST'), type="string",
+			parser.add_argument('--SMTP_HOST', default=config.get('YSE_SMTP_provider','SMTP_HOST'), type=str,
 							  help='SMTP host (default=%default)')
-			parser.add_option('--SMTP_PORT', default=config.get('YSE_SMTP_provider','SMTP_PORT'), type="string",
+			parser.add_argument('--SMTP_PORT', default=config.get('YSE_SMTP_provider','SMTP_PORT'), type=str,
 							  help='SMTP port (default=%default)')
 
 		return parser
