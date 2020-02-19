@@ -16,7 +16,7 @@ from SciServer import Authentication, CasJobs
 
 #import last because something else uses 'Q'
 
-class YSE(CronJobBase):
+class Photo_Z(CronJobBase):
 
 	RUN_EVERY_MINS = 30
 
