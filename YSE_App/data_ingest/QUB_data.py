@@ -109,12 +109,12 @@ class QUB(CronJobBase):
 		# some convoluted syntax here, making it so param file is not required
 
 		parser = self.add_options(usage=usagestring)
-		options,  args = parser.parse_args()
+		options,  args = parser.parse_known_args()
 
 		config = configparser.ConfigParser()
 		config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
 		parser = self.add_options(usage=usagestring,config=config)
-		options,  args = parser.parse_args()
+		options,  args = parser.parse_known_args()
 		self.options = options
 		#tnsproc.hostmatchrad = options.hostmatchrad
 
@@ -431,12 +431,12 @@ class YSE(CronJobBase):
 		# some convoluted syntax here, making it so param file is not required
 		try:
 			parser = self.add_options(usage=usagestring)
-			options,  args = parser.parse_args()
+			options,  args = parser.parse_known_args()
 
 			config = configparser.ConfigParser()
 			config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
 			parser = self.add_options(usage=usagestring,config=config)
-			options,  args = parser.parse_args()
+			options,  args = parser.parse_known_args()
 			self.options = options
 
 			nsn = self.main()
@@ -855,13 +855,13 @@ if __name__ == """__main__""":
 	# read in the options from the param file and the command line
 	# some convoluted syntax here, making it so param file is not required
 	parser = qub.add_options(usage=usagestring)
-	options,  args = parser.parse_args()
+	options,  args = parser.parse_known_args()
 	if options.settingsfile:
 		config = configparser.ConfigParser()
 		config.read(options.settingsfile)
 	else: config=None
 	parser = qub.add_options(usage=usagestring,config=config)
-	options,  args = parser.parse_args()
+	options,  args = parser.parse_known_args()
 	qub.options = options
 	#tnsproc.hostmatchrad = options.hostmatchrad
 
