@@ -47,7 +47,10 @@ class AddTransientFollowupFormView(FormView):
 			instance = form.save(commit=False)
 			instance.created_by = self.request.user
 			instance.modified_by = self.request.user
-
+			if instance.classical_resource:
+				instance.valid_start = instance.classical_resource.begin_date_valid
+				instance.valid_stop = instance.classical_resource.end_date_valid
+				
 			instance.save() #update_fields=['created_by','modified_by']
 
 			if form.cleaned_data['comment']:
@@ -71,8 +74,13 @@ class AddTransientFollowupFormView(FormView):
 			if instance.queued_resource:
 				data_dict['queued_resource'] = str(instance.queued_resource)
 
-			data_dict['valid_start'] = form.cleaned_data['valid_start']
-			data_dict['valid_stop'] = form.cleaned_data['valid_stop']
+			if instance.classical_resource:
+				data_dict['valid_start'] = instance.classical_resource.begin_date_valid
+				data_dict['valid_stop'] = instance.classical_resource.end_date_valid
+			else:
+				data_dict['valid_start'] = form.cleaned_data['valid_start']
+				data_dict['valid_stop'] = form.cleaned_data['valid_stop']
+
 			data_dict['spec_priority'] = form.cleaned_data['spec_priority']
 			data_dict['phot_priority'] = form.cleaned_data['phot_priority']
 			data_dict['offset_star_ra'] = form.cleaned_data['offset_star_ra']

@@ -13,6 +13,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models.functions import Lower
 from django.db import connection,connections
 from django.shortcuts import redirect
+from django.db.models import Count, Value, Max, Min
 import zipfile
 from io import BytesIO
 
@@ -219,9 +220,9 @@ def transient_summary(request,status_or_query_name,
 	transient_status_ignore = TransientStatus.objects.get(name="Ignore")
 
 	#all_simple_followups = SimpleTransientSpecRequest.objects.all()
-	
+
 	#transients_with_followup = SimpleTransientFollowupRequest.objects.all().values('transient__name').distinct()
-	
+
 	from django.utils import timezone
 	transient_followup_form = TransientFollowupForm()
 	transient_followup_form.fields["too_resource"].queryset = view_utils.get_authorized_too_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
@@ -247,6 +248,38 @@ def transient_summary(request,status_or_query_name,
 			if not len(query): return Http404('Invalid Query')
 			query = query[0]
 			transients = getattr(yse_python_queries,query.python_query)()
+
+	if 'sort' in request.GET.keys():
+		if request.GET['sort'] == 'last_obs_date' or request.GET['sort'] == '-last_obs_date':
+			if request.GET['sort'] == '-last_obs_date': is_descending = True
+			else: is_descending = False
+			
+			all_phot = TransientPhotometry.objects.values('transient').filter(transient__in = transients)
+			phot_ids = all_phot.values('id')
+		
+			phot_data_query = Q(transientphotometry__id__in=phot_ids)
+			transients = transients.annotate(
+				recent_magdate=Max('transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
+			).order_by(('-' if is_descending else '') + 'recent_magdate')
+			
+		elif request.GET['sort'] == 'last_mag' or request.GET['sort'] == '-last_mag':
+			raw_query = """
+SELECT pd.mag
+   FROM YSE_App_transient t, YSE_App_transientphotdata pd, YSE_App_transientphotometry p
+   WHERE pd.photometry_id = p.id AND
+   YSE_App_transient.id = t.id AND
+   pd.id = (
+         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+         ORDER BY pd2.obs_date DESC
+         LIMIT 1
+     )
+"""
+			if request.GET['sort'] == '-last_mag': is_descending = True
+			else: is_descending = False
+			transients = transients.annotate(last_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'last_mag')
+		else:
+			transients = transients.order_by(request.GET['sort'])
 			
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-')[0]
@@ -457,7 +490,7 @@ def yse_home(request):
 		filter(begin_date_valid__lte=datetime.datetime.utcnow()+datetime.timedelta(5)).\
 		filter(begin_date_valid__gte=datetime.datetime.utcnow()-datetime.timedelta(1)).\
 		select_related().order_by('begin_date_valid')
-
+	#import pdb; pdb.set_trace()
 	too_resources = view_utils.get_too_resources(request.user)
 	all_transient_statuses = TransientStatus.objects.all()
 
@@ -825,7 +858,7 @@ def transient_detail(request, slug):
 		date = datetime.datetime.now(tz=pytz.utc)
 		date_format='%m/%d/%Y %H:%M:%S'
 		
-		spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id)
+		spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True)
 		context = {
 			'transient':transient_obj,
 			'followups':followups,
@@ -1148,6 +1181,9 @@ def upload_spectrum(request):
 			
 			if form.data['spec_phase']:
 				specdict['spec_phase'] = form.data['spec_phase']
+			if form.data['data_quality']:
+				specdict['data_quality'] = DataQuality.objects.get(pk=form.data['data_quality'])
+			
 			if not len(tspec):
 				tspec = TransientSpectrum.objects.create(**specdict)
 			else:
@@ -1155,6 +1191,11 @@ def upload_spectrum(request):
 				tspec = tspec[0]
 			tspec.save()
 
+			if form.data['permissions']:
+				for p in form.cleaned_data['permissions']:
+					tspec.groups.add(Group.objects.filter(name=p)[0])
+				tspec.save()
+			
 			existingspec = TransientSpecData.objects.filter(spectrum=tspec)
 			if len(existingspec):
 				for e in existingspec: e.delete()

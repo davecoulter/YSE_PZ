@@ -25,6 +25,61 @@
 {% endblock %}
 
 {% block content %}
+<div class="box-body">
+    <div class="row">
+        <div class="col-xs-3">
+          <div class="box box-default">
+            <div class="box-header with-border">
+              <h3>Sort By Ascending</h3>
+            </div>
+            <div class="box-body">
+          <!--<div class="col-xs-6">-->
+            <div class="form-group">
+              <a class="btn btn-block btn-primary" href="?sort=name">Name</a>
+              <a class="btn btn-block btn-primary" href="?sort=ra">RA</a>
+              <a class="btn btn-block btn-primary" href="?sort=dec">Dec</a>
+              <a class="btn btn-block btn-primary" href="?sort=disc_date">Disc. Date</a>
+              <a class="btn btn-block btn-primary" href="?sort=last_mag">Last Mag</a>
+              <a class="btn btn-block btn-primary" href="?sort=last_obs_date">Last Obs. Date</a>
+              <a class="btn btn-block btn-primary" href="?sort=mw_ebv">MW E(B-V)</a>
+              <a class="btn btn-block btn-primary" href="?sort=obs_group__name">Obs. Group</a>
+              <a class="btn btn-block btn-primary" href="?sort=best_spec_class__name">Spec. Class.</a>
+              <a class="btn btn-block btn-primary" href="?sort=redshift">Redshift</a>
+              <a class="btn btn-block btn-primary" href="?sort=point_source_probability">PS Score</a>
+              <a class="btn btn-block btn-primary" href="?sort=status">Status</a>
+            </div>
+      <!--</div>-->
+          </div>
+      </div>
+    </div>
+    <div class="col-xs-3">
+          <div class="box box-default">
+            <div class="box-header with-border">
+              <h3>Sort By Descending</h3>
+            </div>
+            <div class="box-body">
+          <!--<div class="col-xs-6">-->
+            <div class="form-group">
+              <a class="btn btn-block btn-primary" href="?sort=-name">Name</a>
+              <a class="btn btn-block btn-primary" href="?sort=-ra">RA</a>
+              <a class="btn btn-block btn-primary" href="?sort=-dec">Dec</a>
+              <a class="btn btn-block btn-primary" href="?sort=-disc_date">Disc. Date</a>
+              <a class="btn btn-block btn-primary" href="?sort=-last_mag">Last Mag</a>
+              <a class="btn btn-block btn-primary" href="?sort=-last_obs_date">Last Obs. Date</a>
+              <a class="btn btn-block btn-primary" href="?sort=-mw_ebv">MW E(B-V)</a>
+              <a class="btn btn-block btn-primary" href="?sort=-obs_group__name">Obs. Group</a>
+              <a class="btn btn-block btn-primary" href="?sort=-best_spec_class__name">Spec. Class.</a>
+              <a class="btn btn-block btn-primary" href="?sort=-redshift">Redshift</a>
+              <a class="btn btn-block btn-primary" href="?sort=-point_source_probability">PS Score</a>
+              <a class="btn btn-block btn-primary" href="?sort=-status">Status</a>
+            </div>
+      <!--</div>-->
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+
   <!-- Default box -->
   {% include page_template %}
     <!-- /.box-footer-->

@@ -44,8 +44,20 @@
 				</div>
 				<div class="col-xs-6">
 					<div class="form-group">
+						<label>Data Quality</label>
+						{% render_field form.data_quality class+="form-control" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
 						<label for="{{ form.obs_date.id_for_label }}">Date Obs. (UT)</label>
 						<input type="datetime-local" class="form-control pull-right" id="obs_date" name="obs_date" required_id="id_obs_date">
+					</div>
+				</div>
+				<div class="col-xs-12">
+					<div class="form-group">
+						<label>Permissions</label>
+						{% render_field form.permissions class+="form-control" %}
 					</div>
 				</div>
 				<div class="col-xs-12">

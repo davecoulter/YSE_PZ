@@ -2,8 +2,8 @@ import requests,re
 
 def tess_obs(ra, dec, discovery_jd):
 
-	before_leeway = 20	 # Days of leeway before date
-	after_leeway = 100	 # Days of leeway after date
+	before_leeway = 10	 # Days of leeway before date
+	after_leeway = 30	 # Days of leeway after date
 	tess_date = [
 		2458324.5,2458352.5,2458381.5,2458409.5,2458437.5,2458463.5,
 		2458490.5,2458516.5,2458542.5,2458568.5,2458595.5,2458624.5,

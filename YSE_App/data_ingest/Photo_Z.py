@@ -2,26 +2,17 @@ from django_cron import CronJobBase, Schedule
 from YSE_App.models.transient_models import *
 from YSE_App.common.alert import sendemail
 from django.conf import settings as djangoSettings
-#from YSE_App.common.utilities import GetSexigesimalString
-#from YSE_App.common.alert import IsK2Pixel, SendTransientAlert
-#from YSE_App.common.thacher_transient_search import thacher_transient_search
-#from YSE_App.common.tess_obs import tess_obs
-#from YSE_App.common.utilities import date_to_mjd
-#from YSE_App import *
-
-#from .models import *
-#from .serializers import *
 import datetime
-
 import numpy as np
 import pandas as pd
 import os
 import pickle
-
 import sys
-
-from sklearn.ensemble import RandomForestRegressor
+import tensorflow as tf
+from tensorflow import keras
+import matplotlib.pyplot as plt
 from SciServer import Authentication, CasJobs
+
 
 #import last because something else uses 'Q'
 
@@ -32,7 +23,8 @@ class YSE(CronJobBase):
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.Photo_Z.YSE'
 
-	def do(self,user='awe2',password='StandardPassword',search=1,path_to_model='%s/RF_model.sav'%djangoSettings.STATIC_ROOT):
+	def do(self,user='awe2',password='StandardPassword',search=1,
+		   path_to_model='YSE_DNN_photoZ_model_315.hdf5',debug=True):
 		"""
 		Predicts photometric redshifts from RA and DEC points in SDSS
 
@@ -63,13 +55,12 @@ class YSE(CronJobBase):
 			from django.db.models import Q #HAS To Remain Here, I dunno why
 			print('Entered the photo_z cron')		
 			#save time b/c the other cron jobs print a time for completion
-
+			
 			transients = (Transient.objects.filter(Q(host__photo_z__isnull=True) & Q(host__isnull=False)))
 
-			#print('Number of test transients:', len(transients))
 			RA=[] #Needs to be list b/c don't know how many hosts are None
 			DEC=[]
-			outer_mask = [] #create an integer index mask that we will place values into because some hosts dont have a RA and DEC assigned 
+			outer_mask = [] #create an integer index mask that we will place values into because some transients don't have a host, even when they make it past the filter????
 			transients_withhost = []
 			
 			for i,transient_obj in enumerate(transients):
@@ -84,7 +75,6 @@ class YSE(CronJobBase):
 
 			Ra = np.array(RA)
 			Dec = np.array(DEC)
-
 			N = len(Ra)#gives size of query array
 			Q = N//1000#decompose the length of transients needing classification
 
@@ -101,7 +91,7 @@ class YSE(CronJobBase):
 
 				hold=[] #a list for holding the strings that I want to place into an sql query
 				for val in range(len(Ra_batch)):
-					string = '({},{},{}),|'.format(str(val),str(Ra[val]),str(Dec[val]))
+					string = '({},{},{}),|'.format(str(val),str(Ra_batch[val]),str(Dec_batch[val]))
 					hold.append(string)
 
 				#Now construct the full query
@@ -111,26 +101,58 @@ class YSE(CronJobBase):
 				#there is a comma that needs to be deleted from the last entry for syntax to work
 				sql = sql[0:(len(sql)-2)] + '|'
 				#append the rest to it
-				sql = sql + "SELECT|p.u,p.g,p.r,p.i,p.z|FROM #UPLOAD as U|OUTER APPLY dbo.fGetNearestObjEq((U.up_ra),(U.up_dec),{}) as N|LEFT JOIN Galaxy AS p ON N.objid=p.objid".format(str(search))
+				sql = sql + "SELECT|p.objID,p.u,p.g,p.r,p.i,p.z,p.extinction_u,p.extinction_g,p.extinction_r,p.extinction_i,p.extinction_z,p.petroRad_u,p.petroRad_g,p.petroRad_r,p.petroRad_i,p.petroRad_z,p.petroR50_r,p.petroR90_r|FROM #UPLOAD as U|OUTER APPLY dbo.fGetNearestObjEq((U.up_ra),(U.up_dec),{}) as N|LEFT JOIN PhotoObjAll AS p ON N.objid=p.objID".format(str(search))
 				#change all | to new line: when we change to Unix system will need to change this new line 
 				sql = sql.replace('|','\n')
 				#login, change to some other credentials later
 				Authentication.login('awe2','StandardPassword')
-				job = CasJobs.executeQuery(sql,'DR15','pandas') #this lines sends and retrieves the result
+				job = CasJobs.executeQuery(sql,'DR12','pandas') #this line sends and retrieves the result
+				
 				print('Query {} of {} complete'.format(j+1,Q))
-				job['u-g']= job['u'].values - job['g'].values
-				job['g-r']= job['g'].values - job['r'].values
-				job['r-i']= job['r'].values - job['i'].values
-				job['i-z']= job['i'].values - job['z'].values
-				job['u_over_z']= job['u'].values / job['z'].values
+				print(np.shape(job.values))
+				job['dered_u'] = job['u'].values - job['extinction_u'].values
+				job['dered_g'] = job['g'].values - job['extinction_g'].values
+				job['dered_r'] = job['r'].values - job['extinction_r'].values
+				job['dered_i'] = job['i'].values - job['extinction_i'].values
+				job['dered_z'] = job['z'].values - job['extinction_z'].values
+				
+				job['u-g']= job['dered_u'].values - job['dered_g'].values
+				job['g-r']= job['dered_g'].values - job['dered_r'].values
+				job['r-i']= job['dered_r'].values - job['dered_i'].values
+				job['i-z']= job['dered_i'].values - job['dered_z'].values
+				job['u_over_z']= job['dered_u'].values / job['dered_z'].values
+				
+				job['C'] = job['petroR90_r'].values/job['petroR50_r'].values
 				total_job.append(job)
-
+				#print('length of total job :',len(total_job)) 
 			print('left the query loop')
 			query_result = pd.concat(total_job)
 			#now feed to a RF model for prediction
-			X = query_result.values
-			#load the model, will need to change the path later
-			model = pickle.load(open(path_to_model, 'rb'))
+			#query_result['fake']=np.zeros((len(query_result['dered_u'].values)))
+			X = query_result[['dered_u','dered_g','dered_r','dered_i','dered_z','u-g','g-r','r-i','i-z','u_over_z','petroRad_u','petroRad_g','petroRad_r','petroRad_i','petroRad_z','petroR50_r','petroR90_r','C']].values
+			#define and load in the model
+			def create_model(learning_rate):
+    
+				model = keras.Sequential([])
+				model.add(keras.layers.Dense(input_shape=(18,),units=18,activation=keras.activations.linear)) #tried relu
+				#model.add(keras.layers.Dropout(rate=0.1))
+				model.add(keras.layers.Dense(units=18,activation=tf.nn.relu)) 
+				#model.add(keras.layers.Dropout(rate=0.1))
+				model.add(keras.layers.Dense(units=18,activation=tf.nn.relu))
+				#model.add(keras.layers.Dropout(rate=0.1))
+				model.add(keras.layers.Dense(units=18,activation=tf.nn.relu)) #tf.nn.relu
+				#model.add(keras.layers.Dropout(rate=0.1))
+				model.add(keras.layers.Dense(units=315,activation=keras.activations.softmax))
+				
+				#RMS = keras.optimizers.RMSprop(learning_rate=learning_rate)
+				adam = keras.optimizers.Adam(lr=learning_rate)
+				model.compile(optimizer=adam, loss='categorical_crossentropy') 
+				return(model)
+
+			keras.backend.clear_session()
+			model = create_model(learning_rate = 1e-3)#couldve been anything for this, just gonna predict
+			model.load_weights('%s/%s'%(djangoSettings.STATIC_ROOT,path_to_model))
+			
 			#Need to deal with NANs now since many objects are outside the SDSS footprint, later models will learn to deal with this
 			#ideas: need to retain a mask of where the nans are in the row
 			mask = np.invert((query_result.isna().any(1).values)) #true was inside SDSS footprint
@@ -139,32 +161,45 @@ class YSE(CronJobBase):
 			for i,val in enumerate(mask):
 				if val == True:
 					indices.append(i)
-			predictions = model.predict((X[mask,:]))
+			
+			#predict on data that is not NAN
+			predictions = model.predict(X[mask,:], verbose=2)
+			np.save('YSE_predictions.npy',predictions)
+			n_classes=315
+			redshift_bin_middles = np.array(np.array(range(n_classes)) * 0.7/n_classes + 0.7/(n_classes*2))
+			def expected_values(Out,bins=redshift_bin_middles):
+				Y = np.empty((np.shape(Out)[0]))
+				for i in range(np.shape(Out)[0]):
+					Y[i] = np.sum(bins * Out[i,:])
+				return(Y)
+			predictions=expected_values(predictions)
+			#print(np.shape(predictions))
+			#print(N)
 			#make nan array with size of what user asked for
 			return_me = np.ones(N)*np.nan
 			#now replace nan with the predictions in order
 			return_me[indices] = predictions
-			#something is wrong here!, line works inside a try statement but not outside. raises no error for some reason...?
 			return_me_outer = np.ones(N_outer) * np.nan
 			return_me_outer[outer_mask] = return_me
-			#print('debug: made it here')
 			print('time taken:', datetime.datetime.utcnow() - nowdate)
-			print('uploading now')
+			#print('uploading now')
 			tz,mpz = [],[]
 			for t,pz in zip(transients,return_me):
 				if pz != pz: continue
-				#print('1')
 				host = t.host
-				#print('2')
-				#import pdb; pdb.set_trace()
-				host.photo_z = pz
-				#print('3')
-				host.save()
-				#print('4')
+				# hard-coded to avoid the limits of the training
+				if pz < 0.4:
+					host.photo_z = pz
+					host.save()
 				tz += [host.redshift]
 				mpz += [pz]
-			plt.plot(tz,mpz,'.')
-			plt.savefig('test.png')
+			if debug:
+				plt.plot(tz,mpz,'.',alpha=0.02)
+				plt.xlim(-0.01,0.7)
+				plt.ylim(-0.01,0.7)
+				plt.ylabel('Photo Z')
+				plt.xlabel('true Z')
+				plt.savefig('test.png')
 
 			print('time taken with upload:', datetime.datetime.utcnow() - nowdate)
 		except Exception as e:
