@@ -53,6 +53,10 @@ class AddTransientFollowupFormView(FormView):
 				
 			instance.save() #update_fields=['created_by','modified_by']
 
+			if instance.transient.status.name in ['New','Watch','Ignore']:
+				instance.transient.status = TransientStatus.objects.filter(name='FollowupRequested')[0]
+				instance.transient.save()
+			
 			if form.cleaned_data['comment']:
 				log = Log(transient_followup=TransientFollowup.objects.get(id=instance.id),
 						  comment=form.cleaned_data['comment'])
