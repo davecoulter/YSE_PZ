@@ -55,7 +55,8 @@ py2bokeh_symboldict = {"^":"triangle",
 					   "*":"asterisk",
 					   "D":"diamond",
 					   "d":"diamond",
-					   "o":"circle"}
+					   "o":"circle",
+		                           "h":"hex"}
 
 def get_recent_phot_for_host(user, host_id=None):
 	allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
