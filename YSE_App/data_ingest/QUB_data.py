@@ -12,7 +12,7 @@ import numpy as np
 import coreapi
 from django_cron import CronJobBase, Schedule
 from django.conf import settings as djangoSettings
-import optparse
+import argparse
 import configparser
 import os
 import shutil
@@ -137,51 +137,51 @@ class QUB(CronJobBase):
 
 
 	def add_options(self, parser=None, usage=None, config=None):
-		import optparse
+		import argparse
 		if parser == None:
-			parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
+			parser = argparse.ArgumentParser(usage=usage, conflict_handler="resolve")
 
 		# The basics
-		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
-		parser.add_option('--clobber', default=False, action="store_true",
+		parser.add_argument('-v', '--verbose', action="count", dest="verbose",default=1)
+		parser.add_argument('--clobber', default=False, action="store_true",
 						  help='clobber output file')
-		parser.add_option('-s','--settingsfile', default=None, type="string",
+		parser.add_argument('-s','--settingsfile', default=None, type="string",
 						  help='settings file (login/password info)')
-		parser.add_option('--status', default='New', type="string",
+		parser.add_argument('--status', default='New', type="string",
 						  help='transient status to enter in YS_PZ')
-		parser.add_option('--max_days', default=7, type="float",
+		parser.add_argument('--max_days', default=7, type="float",
 						  help='grab photometry/objects from the last x days')
 
 		if config:
-			parser.add_option('--dblogin', default=config.get('main','dblogin'), type="string",
+			parser.add_argument('--dblogin', default=config.get('main','dblogin'), type="string",
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbemail', default=config.get('main','dbemail'), type="string",
+			parser.add_argument('--dbemail', default=config.get('main','dbemail'), type="string",
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbpassword', default=config.get('main','dbpassword'), type="string",
+			parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type="string",
 							  help='database password, if post=True (default=%default)')
-			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
+			parser.add_argument('--dburl', default=config.get('main','dburl'), type="string",
 							  help='URL to POST transients to a database (default=%default)')
-			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
+			parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type="string",
 							  help='ZTF URL (default=%default)')
-			parser.add_option('--STATIC', default=config.get('site_settings','STATIC'), type="string",
+			parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type="string",
 							  help='static directory (default=%default)')
-			parser.add_option('--qubuser', default=config.get('main','qubuser'), type="string",
+			parser.add_argument('--qubuser', default=config.get('main','qubuser'), type="string",
 							  help='QUB database username (default=%default)')
-			parser.add_option('--qubpass', default=config.get('main','qubpass'), type="string",
+			parser.add_argument('--qubpass', default=config.get('main','qubpass'), type="string",
 							  help='QUB database password (default=%default)')
-			parser.add_option('--psstlink_summary', default=config.get('main','psstlink_summary'), type="string",
+			parser.add_argument('--psstlink_summary', default=config.get('main','psstlink_summary'), type="string",
 							  help='PSST summary CSV (default=%default)')
-			parser.add_option('--psstlink_lc', default=config.get('main','psstlink_lc'), type="string",
+			parser.add_argument('--psstlink_lc', default=config.get('main','psstlink_lc'), type="string",
 							  help='PSST lightcurve CSV (default=%default)')
-			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
+			parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type="string",
 							  help='ZTF URL (default=%default)')
 
 			
-			parser.add_option('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type="string",
+			parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type="string",
 							  help='SMTP login (default=%default)')
-			parser.add_option('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type="string",
+			parser.add_argument('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type="string",
 							  help='SMTP host (default=%default)')
-			parser.add_option('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type="string",
+			parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type="string",
 							  help='SMTP port (default=%default)')
 		else:
 			pass
@@ -457,55 +457,55 @@ class YSE(CronJobBase):
 
 
 	def add_options(self, parser=None, usage=None, config=None):
-		import optparse
+		import argparse
 		if parser == None:
-			parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
+			parser = argparse.ArgumentParser(usage=usage, conflict_handler="resolve")
 
 		# The basics
-		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
-		parser.add_option('--clobber', default=False, action="store_true",
+		parser.add_argument('-v', '--verbose', action="count", dest="verbose",default=1)
+		parser.add_argument('--clobber', default=False, action="store_true",
 						  help='clobber output file')
-		parser.add_option('-s','--settingsfile', default=None, type="string",
+		parser.add_argument('-s','--settingsfile', default=None, type="string",
 						  help='settings file (login/password info)')
-		parser.add_option('--status', default='New', type="string",
+		parser.add_argument('--status', default='New', type="string",
 						  help='transient status to enter in YS_PZ')
-		parser.add_option('--max_days', default=7, type="float",
+		parser.add_argument('--max_days', default=7, type="float",
 						  help='grab photometry/objects from the last x days')
 
 		if config:
-			parser.add_option('--dblogin', default=config.get('main','dblogin'), type="string",
+			parser.add_argument('--dblogin', default=config.get('main','dblogin'), type="string",
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbemail', default=config.get('main','dbemail'), type="string",
+			parser.add_argument('--dbemail', default=config.get('main','dbemail'), type="string",
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbpassword', default=config.get('main','dbpassword'), type="string",
+			parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type="string",
 							  help='database password, if post=True (default=%default)')
-			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
+			parser.add_argument('--dburl', default=config.get('main','dburl'), type="string",
 							  help='URL to POST transients to a database (default=%default)')
-			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
+			parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type="string",
 							  help='ZTF URL (default=%default)')
-			parser.add_option('--STATIC', default=config.get('site_settings','STATIC'), type="string",
+			parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type="string",
 							  help='static directory (default=%default)')
-			parser.add_option('--qubuser', default=config.get('main','qubuser'), type="string",
+			parser.add_argument('--qubuser', default=config.get('main','qubuser'), type="string",
 							  help='QUB database username (default=%default)')
-			parser.add_option('--qubpass', default=config.get('main','qubpass'), type="string",
+			parser.add_argument('--qubpass', default=config.get('main','qubpass'), type="string",
 							  help='QUB database password (default=%default)')
-			parser.add_option('--yselink_summary', default=config.get('main','yselink_summary'), type="string",
+			parser.add_argument('--yselink_summary', default=config.get('main','yselink_summary'), type="string",
 							  help='YSE summary CSV (default=%default)')
-			parser.add_option('--yselink_lc', default=config.get('main','yselink_lc'), type="string",
+			parser.add_argument('--yselink_lc', default=config.get('main','yselink_lc'), type="string",
 							  help='YSE lightcurve CSV (default=%default)')
-			parser.add_option('--yselink_genericsummary', default=config.get('main','yselink_genericsummary'), type="string",
+			parser.add_argument('--yselink_genericsummary', default=config.get('main','yselink_genericsummary'), type="string",
 							  help='YSE summary CSV for possible candidates (default=%default)')
-			parser.add_option('--yselink_genericlc', default=config.get('main','yselink_genericlc'), type="string",
+			parser.add_argument('--yselink_genericlc', default=config.get('main','yselink_genericlc'), type="string",
 							  help='YSE lightcurve CSV for possible candidates (default=%default)')
-			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
+			parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type="string",
 							  help='ZTF URL (default=%default)')
 
 			
-			parser.add_option('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type="string",
+			parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type="string",
 							  help='SMTP login (default=%default)')
-			parser.add_option('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type="string",
+			parser.add_argument('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type="string",
 							  help='SMTP host (default=%default)')
-			parser.add_option('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type="string",
+			parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type="string",
 							  help='SMTP port (default=%default)')
 		else:
 			pass
@@ -844,7 +844,7 @@ def get(url,json_list,api_key):
 	
 if __name__ == """__main__""":
 
-	import optparse
+	import argparse
 	import configparser
 
 	usagestring = "TNS_Synopsis.py <options>"
