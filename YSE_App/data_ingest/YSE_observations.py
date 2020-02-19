@@ -54,13 +54,13 @@ class SurveyObs(CronJobBase):
 
 	def do(self):
 		parser = self.add_options(usage='')
-		options,  args = parser.parse_args()
+		options,  args = parser.parse_known_args()
 		try:
 			config = configparser.ConfigParser()
 			config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
 
 			parser = self.add_options(usage='',config=config)
-			options,  args = parser.parse_args()
+			options,  args = parser.parse_known_args()
 			self.options = options
 
 			if os.path.exists('%s/surveyfields.txt'%djangoSettings.STATIC_ROOT):
