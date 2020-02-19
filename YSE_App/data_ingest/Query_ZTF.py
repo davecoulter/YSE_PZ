@@ -133,7 +133,7 @@ class AntaresZTF(CronJobBase):
 
 	def main(self):
 
-		recentmjd = date_to_mjd(datetime.datetime.utcnow() - datetime.timedelta(7))
+		recentmjd = date_to_mjd(datetime.datetime.utcnow() - datetime.timedelta(4))
 		survey_obs = SurveyObservation.objects.filter(obs_mjd__gt=recentmjd)
 		field_pk = survey_obs.values('survey_field').distinct()
 		survey_fields = SurveyField.objects.filter(pk__in = field_pk).select_related()

@@ -18,7 +18,7 @@ from SciServer import Authentication, CasJobs
 
 class YSE(CronJobBase):
 
-	RUN_EVERY_MINS = 0.1
+	RUN_EVERY_MINS = 30
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.Photo_Z.YSE'
