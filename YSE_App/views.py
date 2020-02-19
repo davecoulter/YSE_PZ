@@ -642,6 +642,7 @@ def observing_night(request, telescope, obs_date):
 		'followup_table':table,
 		'anchor':anchor,
 		'all_followup_statuses':FollowupStatus.objects.all(),
+		'all_transient_statuses':TransientStatus.objects.all(),
 		'follow_requests': follow_requests,
 		'telescope':telescope.replace('_',' '),
 		'obs_date':obs_date,

@@ -109,6 +109,53 @@ $(document).ready(function(){
       $('.transientStatusChange').on('click', function(event){
         var status_id = $(this).attr('data-status_id')
         var transient_id = $(this).attr('transient_id')
+        var url_target = "{% url 'transient-detail' -1 %}".replace('-1', transient_id);
+        var status_target = "{% url 'transientstatus-list' %}" + status_id + "/";
+        
+        var base_url = window.location.protocol + "//" + window.location.hostname
+        var port = window.location.port
+        var api_url = base_url + url_target
+        var status_url = base_url + status_target
+
+        if (port != "") {
+          api_url = base_url + ":" + port + url_target
+          status_url = base_url + ":" + port + status_target
+        }
+        
+        var putData = { "status": status_url }
+
+        $.ajax({
+          type: "PATCH",
+          url: api_url,
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+          data: putData,
+          success: function(data, textStatus, jqXHR) {
+            if (jqXHR.status == 200 && textStatus == "success") {
+
+              var tokens = data.status.split("/")
+              var status_name = tokens[tokens.length-2]
+              //alert("hi "+status_name+" hi");
+              var button_id = "#"+transient_id+"_status_name"
+              $(button_id).text(status_name)
+              {#alert(textStatus)#}
+            } else {
+              transientStatusChangeErr()
+            }
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown) {
+            transientStatusChangeErr()
+            {#alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));#}
+          }
+        });
+        event.preventDefault();
+      });
+      function followupStatusChangeErr() {
+        alert("Followup Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
+      }
+
+      $('.followupStatusChange').on('click', function(event){
+        var status_id = $(this).attr('data-status_id')
+        var transient_id = $(this).attr('transient_id')
         var url_target = "{% url 'transientfollowup-detail' -1 %}".replace('-1', transient_id);
         var status_target = "{% url 'followupstatus-list' %}" + status_id + "/";
         
