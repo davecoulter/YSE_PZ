@@ -1,7 +1,7 @@
 # utils for generating webpage views
 import django
 from django.http import HttpResponse,JsonResponse
-from django.shortcuts import render, get_object_or_404, render_to_response
+from django.shortcuts import render, get_object_or_404, render
 import copy
 from .models import *
 from django.db import models
