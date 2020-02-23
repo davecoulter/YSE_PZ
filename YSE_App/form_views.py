@@ -50,7 +50,7 @@ class AddTransientFollowupFormView(FormView):
 			if instance.classical_resource:
 				instance.valid_start = instance.classical_resource.begin_date_valid
 				instance.valid_stop = instance.classical_resource.end_date_valid
-				
+			
 			instance.save() #update_fields=['created_by','modified_by']
 
 			if instance.transient.status.name in ['New','Watch','Ignore']:

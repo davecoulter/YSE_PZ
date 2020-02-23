@@ -614,7 +614,9 @@ def observing_night(request, telescope, obs_date):
 
 	# get follow requests for telescope/date
 	classical_obs_date = ClassicalObservingDate.objects.filter(obs_date__startswith = obs_date).filter(resource__telescope__name = telescope.replace('_',' ')).select_related()
-	follow_requests = TransientFollowup.objects.filter(classical_resource = classical_obs_date[0].resource).filter(valid_start__lte = classical_obs_date[0].obs_date).filter(valid_stop__gte = classical_obs_date[0].obs_date).select_related()
+	follow_requests = TransientFollowup.objects.filter(classical_resource = classical_obs_date[0].resource).\
+		filter(valid_start__lte = classical_obs_date[0].obs_date).\
+		filter(valid_stop__gte = classical_obs_date[0].obs_date).select_related()
 
 	followuptransientfilter = FollowupFilter(request.GET, queryset=follow_requests,prefix=telescope)
 		
