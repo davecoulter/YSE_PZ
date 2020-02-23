@@ -134,5 +134,5 @@ class rapid_classify_cron(CronJobBase):
 			print('successfully finished classifying with RAPID')
 
 		except Exception as e:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            print("""Photo-z cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno))
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			print("""Photo-z cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno))
