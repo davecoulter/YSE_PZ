@@ -148,7 +148,11 @@
               allDay         : true,
               backgroundColor: '{{ telescope_colors|get_item:date.resource.telescope.name }}',
               borderColor    : '{{ telescope_colors|get_item:date.resource.telescope.name }}',
-              url: "{% url 'observing_night' date.resource.telescope|replace_space date.obs_date|date:'Y-m-d' %}"
+              {% if date.resource.principal_investigator %}
+              url: "{% url 'observing_night' date.resource.telescope|replace_space date.obs_date|date:'Y-m-d' date.resource.principal_investigator.name %}"
+              {% else %}
+              url: "{% url 'observing_night' date.resource.telescope|replace_space date.obs_date|date:'Y-m-d' None %}"
+              {% endif %}
             },
         {% endfor %}
       ],

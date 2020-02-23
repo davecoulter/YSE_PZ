@@ -52,7 +52,7 @@ urlpatterns = [
 		yse_views.yse_msb_change, name='yse_msb_change'),
 
     url(r'^yse_oncall_calendar/$', views.yse_oncall_calendar, name='yse_oncall_calendar'),
-    url(r'^observing_night/(?P<telescope>.*)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.observing_night, name='observing_night'),
+    url(r'^observing_night/(?P<telescope>.*)/(?P<obs_date>[a-zA-Z0-9_-]+)/(?P<pi_name>.*)$', views.observing_night, name='observing_night'),
     #url(r'^survey_observing_calendar/$', views.survey_observing_calendar, name='survey_observing_calendar'),
     url(r'^yse_observing_night/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.yse_observing_night, name='yse_observing_night'),
     url(r'^view_yse_fields/$', view_utils.view_yse_fields, name='view_yse_fields'),
