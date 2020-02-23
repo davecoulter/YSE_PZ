@@ -280,7 +280,7 @@
 												<p class="text-muted">
 													{% if transient.host %}
 														{% if transient.host.name %}
-															{{ transient.host.name }}
+															{{ transient.host.name|slice:':25' }}
 														{% endif %}
 													{% else %}
 														Unknown
