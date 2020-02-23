@@ -546,7 +546,18 @@ class YSE(CronJobBase):
 			
 			for i,s in enumerate(summary):
 				if nowmjd - s['mjd_obs'] > self.options.max_days: continue
+				
+				# forced photometry, doesn't work yet
+				#r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'],
+				#				 auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+				#if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
+				#try:
+				#	lc_forced = at.Table.read(r.text, format='ascii', delimiter=' ')
+				#	has_forced_phot = True
+				#except:
+				#	has_forced_phot = False
 
+				
 				sc = SkyCoord(s['ra_psf'],s['dec_psf'],unit=u.deg)
 				try:
 					ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
@@ -576,7 +587,20 @@ class YSE(CronJobBase):
 					postage_stamp_file_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target'])
 					postage_stamp_ref_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref'])
 					postage_stamp_diff_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff'])
-					
+
+				if type(s['sherlock_specz']) == np.ma.core.MaskedConstant:
+					redshift = None
+				else:
+					redshift = s['sherlock_specz']
+
+				if type(s['sherlock_object_id']) == np.ma.core.MaskedConstant:
+					hostdict = {}
+				else:
+					hostdict = {'name':s['sherlock_object_id'],
+								'ra':s['sherlock_host_ra'],
+								'dec':s['sherlock_host_dec'],
+								'redshift':redshift}
+				
 				tdict = {'name':s['local_designation'],
 						 'ra':s['ra_psf'],
 						 'dec':s['dec_psf'],
@@ -589,7 +613,7 @@ class YSE(CronJobBase):
 						 'postage_stamp_diff_fits':postage_stamp_diff_fits,
 						 'status':status,
 						 'context_class':s['sherlockClassification'].replace('UNCLEAR','Unknown'),
-						 #'host':s['host'],
+						 'host':hostdict,
 						 'tags':['YSE'],
 						 'disc_date':s['followup_flag_date'], #mjd_to_date(s['mjd_obs']),
 						 'mw_ebv':mw_ebv,
@@ -615,6 +639,27 @@ class YSE(CronJobBase):
 						flux_err = 0
 					else:
 						mag_err = l['psf_inst_mag_sig']
+
+					# forced photometry, doesn't work yet
+					#if has_forced_phot:
+					#	iForced = np.where(np.abs(l['mjd_obs']-lc_forced['mjd']) < 1e-5)[0]
+					#	if len(iForced):						
+					#		phot_upload_dict = {'obs_date':mjd_to_date(lc_forced[iForced]['mjd']),
+					#							'band':lc_forced[iForced]['filter'],
+					#							'groups':'YSE',
+					#							'mag':lc_forced[iForced]['cal_psf_mag'],
+					#							'mag_err':lc_forced[iForced]['psf_inst_mag_sig'],
+					#							'flux':lc_forced[iForced]['psf_inst_flux']*10**(0.4*(27.5-lc_forced[iForced]['zero_pt'])),
+					#							'flux_err':lc_forced[iForced]['psf_inst_flux_sig']*10**(0.4*(27.5-lc_forced[iForced]['zero_pt'])),
+					#							'data_quality':0,
+					#							'forced':0,
+					#							'flux_zero_point':27.5,
+					#							'discovery_point':disc_point,
+					#							'diffim':1}
+					#		has_forced_phot_single = True
+					#	else: has_forced_phot_single = False
+					#if not has_forced_phot or not has_forced_phot_single:
+					
 					phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
 										'band':l['filter'],
 										'groups':'YSE',
@@ -627,6 +672,7 @@ class YSE(CronJobBase):
 										'flux_zero_point':27.5,
 										'discovery_point':disc_point,
 										'diffim':1}
+
 					photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
 
 				PhotUploadAll['PS1'] = photometrydict
@@ -636,8 +682,10 @@ class YSE(CronJobBase):
 				photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
 				if photometrydict_ztf is not None:
 					PhotUploadAll['ZTF'] = photometrydict_ztf
-
+				print(s['local_designation'])
 				nsn += 1
+				if nsn > 5: break
+		import pdb; pdb.set_trace()
 			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
 			
 			#transientdict['transientphotometry'] = photometrydict

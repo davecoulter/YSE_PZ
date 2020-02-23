@@ -378,7 +378,8 @@ class TransientFilter(django_filters.FilterSet):
 	dec_gte = django_filters.Filter(name="dec", lookup_expr='gte')
 	dec_lte = django_filters.Filter(name="dec", lookup_expr='lte')
 	tag_in = django_filters.BaseInFilter(name="tags__name")
-	
+	name = django_filters.Filter(name="name")
+
 	class Meta:
 		model = Transient
 		fields = ('created_date','modified_date')

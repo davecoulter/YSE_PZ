@@ -77,6 +77,7 @@ SELECT pd.mag
          LIMIT 1
      )
 """
+
 	nearby_transients = nearby_transients.annotate(recent_mag=RawSQL(recent_mag_raw_query,())).filter(~Q(tags__name='YSE'))
 
 	days_from_disc_query = """SELECT DATEDIFF(curdate(), t.disc_date) as days_since_disc

@@ -37,6 +37,7 @@ from collections import OrderedDict
 import mastrequests
 from astropy.io import ascii
 from itertools import islice
+from astropy.cosmology import FlatLambdaCDM
 
 reg_obj = "https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -394,8 +395,10 @@ class processTNS():
 		for s,si,so,sog in zip(specfiles,specinst,specobsdate,specobsgroup):
 			Spectrum = {}
 			SpecData = {}
-			os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
-			dlfile = wget.download(unquote(s))
+			os.system('rm spec_tns_upload.txt')
+			try:
+				dlfile = requests.get(s).text
+			except: continue
 			fout = open('spec_tns_upload.txt','w')
 			print('# wavelength flux',file=fout)
 			print('# instrument %s'%si,file=fout)
@@ -403,10 +406,10 @@ class processTNS():
 			print('# obs_group %s'%sog,file=fout)
 			print('# ra %s'%sc.ra.deg,file=fout)
 			print('# dec %s'%sc.dec.deg,file=fout)
-			fin = open(dlfile,'r')
-			for line in fin:
+			#fin = open(dlfile,'r')
+			for line in dlfile.split('\n',''):
 				print(line.replace('\n',''),file=fout)
-			fout.close()
+			#fout.close()
 			fin = open('spec_tns_upload.txt')
 			count = 0
 			for line in fin:
@@ -454,7 +457,7 @@ class processTNS():
 									'flux_err':None}
 						SpecData[w] = SpecDict
 
-			os.system('rm %s spec_tns_upload.txt'%s.split('/')[-1])
+			os.system('rm spec_tns_upload.txt')
 			Spectrum['specdata'] = SpecData
 			Spectrum['instrument'] = si
 			Spectrum['obs_date'] = so
@@ -522,8 +525,9 @@ class processTNS():
 											 galaxy_decs,galaxy_seps,galaxy_mags,
 											 galaxy_z_times_seps):
 			if gzs == np.min(galaxy_z_times_seps):
-				hostdict = {'name':name,'ra':ra,'dec':dec,'redshift':z}
-
+				cosmo = FlatLambdaCDM(70,0.3)
+				if sep*60/cosmo.arcsec_per_kpc_proper(z).value < 100:
+					hostdict = {'name':name,'ra':ra,'dec':dec,'redshift':z}
 			hostcoords += 'ra=%.7f, dec=%.7f\n'%(ra,dec)
 
 		return hostdict,hostcoords
