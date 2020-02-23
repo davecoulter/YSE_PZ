@@ -130,7 +130,7 @@ def do(debug=False):
 
 
 class rapid_classify_cron(CronJobBase):
-	RUN_EVERY_MINS = 0.1
+	RUN_EVERY_MINS = 120
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.rapid.rapid_classify.rapid_classify_cron'	 # a unique code
