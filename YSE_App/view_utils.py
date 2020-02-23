@@ -645,9 +645,10 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 				plotmethod = getattr(ax, 'triangle')
 		else:
 			plotmethod = getattr(ax, 'triangle')
-			
-		p = plotmethod(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
-				   color=color,size=7, muted_alpha=0.2)#,legend='%s - %s'%(
+		try:	
+			p = plotmethod(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
+						   color=color,size=7, muted_alpha=0.2)#,legend='%s - %s'%(
+		except: raise RuntimeError(bsym)
 					   #b.instrument.telescope.name,b.name))
 		#legend_it.append(('%s - %s'%(b.instrument.telescope.name,b.name), [p]))
 		if len(upperlimbandstr) and len(upperlimmjd[upperlimbandstr == bs]):
