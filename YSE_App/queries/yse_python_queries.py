@@ -166,11 +166,14 @@ def sne_in_last_nights_fields():
 					 Q(dec__gt = s.survey_field.dec_cen-dec_offset.degree) &
 					 Q(dec__lt = s.survey_field.dec_cen+dec_offset.degree))]
 
-	query_full = qs_list[0]
-	for q in qs_list[1:]:
-		query_full = np.bitwise_or(query_full,q)
-	qs_final = qs.filter(query_full)
-
+	if len(qs_list):
+		query_full = qs_list[0]
+		for q in qs_list[1:]:
+			query_full = np.bitwise_or(query_full,q)
+		qs_final = qs.filter(query_full)
+	else:
+		qs_final = Transient.objects.none()
+	
 	return qs_final
 
 @python_query_reg
