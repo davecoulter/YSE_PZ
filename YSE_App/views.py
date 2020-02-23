@@ -970,9 +970,10 @@ def download_data(request, slug):
 		data[transient[0].name]['spectra'] = json.loads(serializers.serialize("json", authorized_spectra, use_natural_foreign_keys=True))
 
 		for s,sd in zip(authorized_spectra,range(len(data[transient[0].name]['spectra']))):
-			specdata = SpectraService.GetAuthorizedHostSpecData_BySpectrum(user, s.id, includeBadData=True)
+			specdata = SpectraService.GetAuthorizedTransientSpecData_BySpectrum(user, s.id, includeBadData=True)
 			if specdata:
-				data[transient[0].name]['spectra'][sd]['data'] = json.loads(serializers.serialize("json", specdata, use_natural_foreign_keys=True))
+				data[transient[0].name]['spectra'][sd]['data'] = \
+					json.loads(serializers.serialize("json", specdata, use_natural_foreign_keys=True))
 
 	response = JsonResponse(data)
 	response['Content-Disposition'] = 'attachment; filename=%s' % '%s_data.json'%slug
