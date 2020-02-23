@@ -684,8 +684,7 @@ class YSE(CronJobBase):
 					PhotUploadAll['ZTF'] = photometrydict_ztf
 				print(s['local_designation'])
 				nsn += 1
-				if nsn > 5: break
-		import pdb; pdb.set_trace()
+
 			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
 			
 			#transientdict['transientphotometry'] = photometrydict
