@@ -49,6 +49,7 @@ from matplotlib.dates import DateFormatter
 from matplotlib import rcParams
 import healpy as hp
 
+
 py2bokeh_symboldict = {"^":"triangle",
 					   "+":"cross",
 					   "s":"square",
