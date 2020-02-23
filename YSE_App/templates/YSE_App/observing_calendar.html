@@ -139,7 +139,11 @@
       events: [
         {% for date in all_dates %}
             {
+              {% if date.resource.principal_investigator %}
+              title          : '{{ date.resource.telescope.name }}, PI: {{ date.resource.principal_investigator.name }}',
+              {% else %}
               title          : '{{ date.resource.telescope.name }}',
+              {% endif %}
               start          : new Date({{ date.obs_date.date.year }}, {{ date.obs_date.month|add:"-1" }}, {{ date.obs_date.day }}),
               allDay         : true,
               backgroundColor: '{{ telescope_colors|get_item:date.resource.telescope.name }}',
