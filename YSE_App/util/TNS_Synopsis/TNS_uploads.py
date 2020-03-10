@@ -379,8 +379,8 @@ class processTNS():
 		keyslist = ['ra','dec','instrument','rlap','obs_date','redshift',
 					'redshift_err','redshift_quality','spectrum_notes',
 					'obs_group','groups','spec_phase','snid','data_quality']
-		requiredkeyslist = ['ra','dec','instrument','obs_date','obs_group','snid']
-
+		requiredkeyslist = ['instrument','obs_date','obs_group','snid']
+		# 'ra','dec',
 		for i in range(len(jd['spectra'])):
 			spec = jd['spectra'][i]
 			specinst = np.append(specinst,spec['instrument']['name'])
