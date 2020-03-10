@@ -394,7 +394,6 @@ class processTNS():
 			specfiles = np.append(specfiles,spec['asciifile'])
 		
 		for s,si,so,sog in zip(specfiles,specinst,specobsdate,specobsgroup):
-			try:
 			Spectrum = {}
 			SpecData = {}
 			os.system('rm spec_tns_upload.txt')
