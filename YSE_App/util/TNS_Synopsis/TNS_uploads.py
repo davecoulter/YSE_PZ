@@ -379,8 +379,8 @@ class processTNS():
 		keyslist = ['ra','dec','instrument','rlap','obs_date','redshift',
 					'redshift_err','redshift_quality','spectrum_notes',
 					'obs_group','groups','spec_phase','snid','data_quality']
-		requiredkeyslist = ['instrument','obs_date','obs_group','snid']
-		# 'ra','dec',
+		requiredkeyslist = ['ra','dec','instrument','obs_date','obs_group','snid']
+
 		for i in range(len(jd['spectra'])):
 			spec = jd['spectra'][i]
 			specinst = np.append(specinst,spec['instrument']['name'])
@@ -710,10 +710,12 @@ class processTNS():
 				if jd:
 					photdict,nondetectdate,nondetectmaglim,nondetectfilt,nondetectins = \
 						self.getTNSPhotometry(jd,PhotUploadAll=photdict)
-					specdict = self.getTNSSpectra(jd,sc)
-					transientdict['transientphotometry'] = photdict
-					transientdict['transientspectra'] = specdict
-
+					try:
+						transientdict['transientphotometry'] = photdict
+						specdict = self.getTNSSpectra(jd,sc)
+						transientdict['transientspectra'] = specdict
+					except: continue
+						
 					if nondetectdate: transientdict['non_detect_date'] = nondetectdate
 					if nondetectmaglim: transientdict['non_detect_limit'] = nondetectmaglim
 					if nondetectfilt: transientdict['non_detect_band'] =  nondetectfilt
