@@ -38,6 +38,7 @@ import mastrequests
 from astropy.io import ascii
 from itertools import islice
 from astropy.cosmology import FlatLambdaCDM
+import sys
 
 reg_obj = "https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -391,8 +392,9 @@ class processTNS():
 			else:
 				specobsgroup = np.append(specobsgroup,'Unknown')
 			specfiles = np.append(specfiles,spec['asciifile'])
-
+		
 		for s,si,so,sog in zip(specfiles,specinst,specobsdate,specobsgroup):
+			try:
 			Spectrum = {}
 			SpecData = {}
 			os.system('rm spec_tns_upload.txt')
@@ -406,10 +408,8 @@ class processTNS():
 			print('# obs_group %s'%sog,file=fout)
 			print('# ra %s'%sc.ra.deg,file=fout)
 			print('# dec %s'%sc.dec.deg,file=fout)
-			#fin = open(dlfile,'r')
-			for line in dlfile.split('\n',''):
+			for line in dlfile.split('\n'):
 				print(line.replace('\n',''),file=fout)
-			#fout.close()
 			fin = open('spec_tns_upload.txt')
 			count = 0
 			for line in fin:
@@ -463,6 +463,7 @@ class processTNS():
 			Spectrum['obs_date'] = so
 			Spectrum['obs_group'] = re.sub(r'[^\x00-\x7f]',r'',sog)
 			SpecDictAll[s] = Spectrum
+					  
 		return SpecDictAll
 
 	def getNEDData(self,jd,sc,ned_table):
@@ -718,7 +719,9 @@ class processTNS():
 					if nondetectmaglim: transientdict['non_detect_limit'] = nondetectmaglim
 					if nondetectfilt: transientdict['non_detect_band'] =  nondetectfilt
 					if nondetectfilt: transientdict['non_detect_instrument'] =	nondetectins
-			except: pass
+			except Exception as e:
+				exc_type, exc_obj, exc_tb = sys.exc_info()
+				raise RuntimeError('error %s at line number %s'%(e,exc_tb.tb_lineno))
 
 			try:
 				if doNED:
@@ -726,14 +729,13 @@ class processTNS():
 					transientdict['host'] = hostdict
 					transientdict['candidate_hosts'] = hostcoords
 			except: pass
-
 			#try:
 			#	phot_ps1dr2 = self.get_PS_DR2_data(sc)
 			#	if phot_ps1dr2 is not None:
 			#		transientdict['transientphotometry']['PS1DR2'] = phot_ps1dr2
 			#except:
 			#	pass
-	
+
 			TransientUploadDict[obj] = transientdict
 			if not j % 10:
 				TransientUploadDict['noupdatestatus'] = self.noupdatestatus
@@ -883,6 +885,7 @@ if __name__ == "__main__":
 		else:
 			nsn = tnsproc.ProcessTNSEmails()
 	except Exception as e:
+		exc_type, exc_obj, exc_tb = sys.exc_info()
 		nsn = 0
 		from django.conf import settings as djangoSettings
 		smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
@@ -890,9 +893,9 @@ if __name__ == "__main__":
 		subject = "TNS Transient Upload Failure"
 		print("Sending error email")
 		html_msg = "Alert : YSE_PZ Failed to upload transients\n"
-		html_msg += "Error : %s"
+		html_msg += "Error : %s at line number %s"
 		sendemail(from_addr, options.dbemail, subject,
-				  html_msg%(e),
+				  html_msg%(e,exc_tb.tb_lineno),
 				  options.SMTP_LOGIN, options.dbpassword, smtpserver)
 
 	print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
