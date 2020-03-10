@@ -710,19 +710,18 @@ class processTNS():
 				if jd:
 					photdict,nondetectdate,nondetectmaglim,nondetectfilt,nondetectins = \
 						self.getTNSPhotometry(jd,PhotUploadAll=photdict)
-					try:
-						transientdict['transientphotometry'] = photdict
-						specdict = self.getTNSSpectra(jd,sc)
-						transientdict['transientspectra'] = specdict
-					except: continue
+					transientdict['transientphotometry'] = photdict
+					specdict = self.getTNSSpectra(jd,sc)
+					transientdict['transientspectra'] = specdict
 						
 					if nondetectdate: transientdict['non_detect_date'] = nondetectdate
 					if nondetectmaglim: transientdict['non_detect_limit'] = nondetectmaglim
 					if nondetectfilt: transientdict['non_detect_band'] =  nondetectfilt
 					if nondetectfilt: transientdict['non_detect_instrument'] =	nondetectins
 			except Exception as e:
-				exc_type, exc_obj, exc_tb = sys.exc_info()
-				raise RuntimeError('error %s at line number %s'%(e,exc_tb.tb_lineno))
+				pass
+				#exc_type, exc_obj, exc_tb = sys.exc_info()
+				#raise RuntimeError('error %s at line number %s'%(e,exc_tb.tb_lineno))
 
 			try:
 				if doNED:
