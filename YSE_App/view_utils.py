@@ -568,7 +568,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 		if p.data_quality:
 			continue			
 		
-		if p.mag:
+		if (p.flux and p.mag and p.flux/p.flux_err > 3) or p.mag:
 			if p.discovery_point:
 				limmjd = dbmjd-30
 				
@@ -797,7 +797,6 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		return django.http.HttpResponse('')
 
 	#ax=figure()
-	ax=figure(plot_width=240,plot_height=240,sizing_mode='stretch_both')
 	
 	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
@@ -815,7 +814,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		if p.data_quality:
 			continue			
 		
-		if p.mag:
+		if (p.flux and p.mag and p.flux/p.flux_err > 3) or p.mag:
 			if p.discovery_point:
 				limmjd = dbmjd-30
 				
@@ -877,6 +876,9 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	allbandsym = np.append(bandsym,[None]*len(upperlimbandcolor))
 	bandunq,idx = np.unique(allbandstr,return_index=True)
 
+	ax=figure(plot_width=240,plot_height=240+10*len(bandunq),sizing_mode='stretch_both')
+
+	
 	legend_it = []
 	for bs,b,bc,bsym in zip(bandunq,allband[idx],allbandcolor[idx],allbandsym[idx]):
 		if bc != 'None' and bc: color = bc
