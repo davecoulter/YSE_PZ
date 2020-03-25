@@ -603,7 +603,7 @@ class YSE(CronJobBase):
 				if type(s['sherlock_object_id']) == np.ma.core.MaskedConstant:
 					hostdict = {}
 				else:
-					hostdict = {'name':s['sherlock_object_id'],
+					hostdict = {'name':s['sherlock_object_id'][:64],
 								'ra':s['sherlock_host_ra'],
 								'dec':s['sherlock_host_dec'],
 								'redshift':redshift}
