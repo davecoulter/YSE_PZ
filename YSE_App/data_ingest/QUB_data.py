@@ -421,7 +421,7 @@ class QUB(CronJobBase):
 
 class YSE(CronJobBase):
 
-	RUN_EVERY_MINS = 0.1
+	RUN_EVERY_MINS = 30
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.QUB_data.QUB'
@@ -474,7 +474,7 @@ class YSE(CronJobBase):
 						  help='settings file (login/password info)')
 		parser.add_argument('--status', default='New', type=str,
 						  help='transient status to enter in YS_PZ')
-		parser.add_argument('--max_days', default=34, type=float,
+		parser.add_argument('--max_days', default=7, type=float,
 						  help='grab photometry/objects from the last x days')
 
 		if config:
@@ -629,7 +629,7 @@ class YSE(CronJobBase):
 				obj += [s['local_designation']]
 				ra += [s['ra_psf']]
 				dec += [s['dec_psf']]
-				print('hack!  clobbering')
+
 				PhotUploadAll = {"mjdmatchmin":0.01,
 								 "clobber":self.options.clobber}
 				photometrydict = {'instrument':'GPC1',
