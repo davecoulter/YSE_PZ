@@ -63,7 +63,7 @@ FROM YSE_App_transient t WHERE YSE_App_transient.id = t.id"""
 	RequestConfig(request, paginate={'per_page': 10}).configure(table_good)
 
 	# transients w/i 15 deg of existing fields
-	nearby_transients = sne_15deg_from_yse()
+	nearby_transients = sne_15deg_from_yse() #qs_start=rising_transients)
 
 	recent_mag_raw_query = """
 SELECT pd.mag
@@ -83,7 +83,7 @@ SELECT pd.mag
 	days_from_disc_query = """SELECT DATEDIFF(curdate(), t.disc_date) as days_since_disc
 FROM YSE_App_transient t WHERE YSE_App_transient.id = t.id"""
 	nearby_transients = nearby_transients.annotate(days_since_disc=RawSQL(days_from_disc_query,()))
-	
+
 	nearbytransientfilter = RisingTransientFilter(request.GET, queryset=nearby_transients,prefix='ysenearby')
 	table_nearby = AdjustFieldTransientTable(nearbytransientfilter.qs,prefix='ysenearby')
 	RequestConfig(request, paginate={'per_page': 10}).configure(table_nearby)

@@ -8,6 +8,7 @@
 	<link rel="stylesheet" href="//aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.css" />
 	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/select2/dist/css/select2.min.css' %}">
 	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
+
 {% endblock %}
 	
 <!-- Content Header (Page header) -->
@@ -454,6 +455,13 @@
 													<a class="btn btn-block btn-primary" href="https://mars.lco.global/?sort_value=jd&sort_order=desc&cone={{transient.ra}}%2C{{transient.dec}}%2C0.0014" target="_blank">ZTF Cone Search</a>
 												</div>
 											</div>
+											{% if transient.postage_stamp_file %}
+											<div class="col-xs-6">
+												<div class="form-group">
+													<a class="btn btn-block btn-primary" href="https://star.pst.qub.ac.uk/sne/ps1yse/psdb/candidate/{{qub_candidate}}/" target="_blank">QUB</a>
+												</div>
+											</div>
+											{% endif %}
 										</div>
 									</div>
 								<!--<div class="col-xs-13">-->
@@ -524,16 +532,21 @@
 								</div>
 								<div class="col-xs-12">
 									<div class="col-xs-6">
-										<div class="box box-default box-solid">
-													<div class="box-header with-border">
-														<strong>Available Tags</strong>
-													</div>
-													<div id="external-events" class="box-body">
-														{% for tag in all_transient_tags %}
-															<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
-														{% endfor %}
+										<div class="box box-default box-solid collapsed-box">
+											<div class="box-header with-border" data-widget="collapse" type="button" class="btn btn-box-tool">
+												<button id="add_too_resource_btn" class="btn btn-box-tool" style="height: 30px;"><h3 class="box-title">Available Tags</h3></button>
+												<div class="box-tools pull-right">
+													<button id="add_too_resource_btn" class="btn btn-box-tool"><i class="fa fa-plus"></i></button>
+												</div>
+											</div>
+													<div id="external-events" class="box-body collapsed-box">
+													<!--<div class="followupbox box box-primary collapsed-box">-->
+															{% for tag in all_transient_tags %}
+																<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
+															{% endfor %}
 													</div>
 												</div>
+												
 
 												<div class="box box-default box-solid">
 													<div class="box-header with-border">
@@ -565,6 +578,15 @@
 														{% for tag in assigned_transient_tags %}
 															<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
 														{% endfor %}
+													</div>
+												</div>
+											</div>
+											<div class="col-xs-6">
+												<div id="del-associated-event" class="box box-default box-solid">
+													<div class="box-header with-border">
+														<strong>Remove Associated Tag</strong>
+													</div>
+													<div class="box-body" id="del-associated-events-list">
 													</div>
 												</div>
 											</div>
@@ -945,6 +967,7 @@
 			}
 
 			init_events($('#external-events div.external-event'))
+			init_events($('#associated-events div.external-event'))
 
 			// Make target canvas draggable
 			$("#associated-events").droppable({
@@ -963,6 +986,63 @@
 					var tag_urls = []
 					for (i=0; i< tag_ids.length; i++) {
 						tag_urls.push(base_url + "{% url 'transienttag-list' %}" + tag_ids[i] + "/")
+					}
+
+					var transient_target = "{% url 'transient-detail' transient.id %}"
+					var api_url = base_url + transient_target
+
+					var patchData = { "tags": tag_urls }
+					var jsonData = JSON.stringify(patchData)
+
+					$.ajax({
+						type: "PATCH",
+						url: api_url,
+						csrfmiddlewaretoken: "{{ csrf_token }}",
+						data: jsonData,
+						contentType: "application/json; charset=utf-8",
+ 						dataType: "json",
+						success: function(data, textStatus, jqXHR) {
+							if (textStatus == "success") {
+
+							} else {
+								alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+							}
+						},
+						error: function(XMLHttpRequest, textStatus, errorThrown) {
+							// alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+							alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));
+						}
+					});
+
+				}
+			});
+			$("#del-associated-event").droppable({
+				drop:function(e,source){
+
+					$("#del-associated-events-list").append(source.draggable);
+					// Now, get all associated events and PATCH transient with them
+					var tag_ids = $("#associated-events-list").children("div").map(function() {return $(this).attr("data-tag_id")})
+					var del_tag_ids = $("#del-associated-events-list").children("div").map(function() {return $(this).attr("data-tag_id")})
+					//alert(typeof del_tag_ids)
+					var base_url = window.location.protocol + "//" + window.location.hostname
+					var port = window.location.port
+					if (port != "") {
+						base_url = base_url + ":" + port
+					}
+
+					var tag_urls = []
+					for (i=0; i< tag_ids.length; i++) {
+						var in_del_tags = false
+						for (j=0; j< del_tag_ids.length; j++){
+							if (del_tag_ids[j] == tag_ids[i]){
+								//alert(del_tag_ids,tag_ids[i])
+								//if (Object.keys(del_tag_ids).includes(Object.keys(tag_ids[i])) == false) {
+								in_del_tags = true
+							}
+						}
+						if (in_del_tags == false){
+							tag_urls.push(base_url + "{% url 'transienttag-list' %}" + tag_ids[i] + "/")
+						}
 					}
 
 					var transient_target = "{% url 'transient-detail' transient.id %}"

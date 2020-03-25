@@ -70,6 +70,7 @@ urlpatterns = [
 		data_utils.get_rising_transients_box, name='get_rising_transients_box'),
 	url(r'^get_new_transients_box/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<ra_width>\d+\.?\d*)/(?P<dec_width>\d+\.?\d*)/$', 
 		data_utils.get_new_transients_box, name='get_new_transients_box'),
+	url(r'^query_api/(?P<query_name>.*)/$',data_utils.query_api, name='query_api'),
 	url(r'^download_data/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_data, name='download_data'),
 	url(r'^download_photometry/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_photometry, name='download_photometry'),
 	url(r'^download_bulk_photometry/(?P<query_title>[a-zA-Z0-9_-]+)/$', views.download_bulk_photometry, name='download_bulk_photometry'),

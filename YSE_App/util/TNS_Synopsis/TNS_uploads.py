@@ -191,7 +191,9 @@ class processTNS():
 
 		if jd:
 			TransientDict['disc_date'] = jd['discoverydate']
-			TransientDict['obs_group'] = jd['discovery_data_source']['group_name']
+			TransientDict['obs_group'] = jd['reporting_group']['group_name']
+			#jd['discovery_data_source']['group_name']
+
 			if not TransientDict['obs_group']:
 				TransientDict['obs_group'] = 'Unknown'
 			z = jd['redshift']
@@ -479,13 +481,13 @@ class processTNS():
 				radius += 1
 				print("NED exception: %s" % e.args)
 
-		galaxy_names = []
-		galaxy_zs = []
-		galaxy_seps = []
-		galaxies_with_z = []
-		galaxy_ras = []
-		galaxy_decs = []
-		galaxy_mags = []
+		galaxy_names,noz_galaxy_names = [],[]
+		galaxy_zs,noz_galaxy_zs = [],[]
+		galaxy_seps,noz_galaxy_seps = [],[]
+		galaxies_with_z,noz_galaxies_with_z = [],[]
+		galaxy_ras,noz_galaxy_ras = [],[]
+		galaxy_decs,noz_galaxy_decs = [],[]
+		galaxy_mags,noz_galaxy_mags = [],[]
 		if ned_table is not None:
 			print("NED Matches: %s" % len(ned_table))
 
@@ -505,6 +507,14 @@ class processTNS():
 					galaxy_ras.append(galaxies[l]["RA"])
 					galaxy_decs.append(galaxies[l]["DEC"])
 					galaxy_mags.append(galaxies[l]["Magnitude and Filter"])
+
+				noz_galaxies_with_z.append(galaxies[l])
+				noz_galaxy_names.append(galaxies[l]["Object Name"])
+				noz_galaxy_zs.append(galaxies[l]["Redshift"])
+				noz_galaxy_seps.append(galaxies[l]["Separation"])
+				noz_galaxy_ras.append(galaxies[l]["RA"])
+				noz_galaxy_decs.append(galaxies[l]["DEC"])
+				noz_galaxy_mags.append(galaxies[l]["Magnitude and Filter"])
 
 			print("Galaxies with z: %s" % len(galaxies_with_z))
 			# Get Dust in LoS for each galaxy with z
@@ -530,6 +540,13 @@ class processTNS():
 					hostdict = {'name':name,'ra':ra,'dec':dec,'redshift':z}
 			hostcoords += 'ra=%.7f, dec=%.7f\n'%(ra,dec)
 
+		# if this didn't work, let's get the nearest potential host
+		if 'name' not in hostdict.keys():
+			for z,name,ra,dec,sep,mag in zip(noz_galaxy_zs,noz_galaxy_names,noz_galaxy_ras,
+											 noz_galaxy_decs,noz_galaxy_seps,noz_galaxy_mags):
+				if sep == np.min(noz_galaxy_seps):
+					hostdict = {'name':name,'ra':ra,'dec':dec,'redshift':None}
+			
 		return hostdict,hostcoords
 
 	def UpdateFromTNS(self):

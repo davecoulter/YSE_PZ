@@ -903,7 +903,9 @@ def transient_detail(request, slug):
 			context['first_filter'] = firstphotdata.band
 			context['first_magdate'] = firstphotdata.obs_date
 			context['allphotdata']=allphotdata
-
+		if transient_obj.postage_stamp_file:
+			context['qub_candidate'] = transient_obj.postage_stamp_file.split('/')[-1].split('_')[0]
+			
 		return render(request,
 			'YSE_App/transient_detail.html',
 			context)

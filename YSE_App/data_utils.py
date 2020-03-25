@@ -29,6 +29,7 @@ from .common.utilities import getRADecBox
 from django.db.models import Q
 from .queries.yse_python_queries import *
 import sys
+from urllib.parse import unquote
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -258,8 +259,7 @@ def add_transient(request):
 					Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
 					Q(disc_date__gte=dateutil.parser.parse(transient['disc_date'])-datetime.timedelta(365)) &
 					Q(disc_date__lte=dateutil.parser.parse(transient['disc_date'])+datetime.timedelta(365)))
-				#if transient['name'] == '10AYSEaaj':
-				#	import pdb; pdb.set_trace()
+
 				if len(dbtransient):
 					#dbtransient = dbtransient[0]
 					obs_group = ObservationGroup.objects.get(name=transient['obs_group'])
@@ -273,14 +273,12 @@ def add_transient(request):
 						dbtransient[0].slug = transient['name']
 						dbtransient[0].save()
 					else:
-						#import pdb; pdb.set_trace()
 						alt_transients = AlternateTransientNames.objects.filter(name=transient['name'])
 						if not len(alt_transients):
 							AlternateTransientNames.objects.create(
 								transient=dbtransient[0],obs_group=obs_group,name=transient['name'],
 								created_by_id=user.id,modified_by_id=user.id)
 						transientdict['name'] = dbtransient[0].name
-						#dbtransient[0].save()
 
 					if 'noupdatestatus' in transient_data.keys() and not transient_data['noupdatestatus']:
 						if dbtransient[0].status.name == 'Ignore':
@@ -345,7 +343,6 @@ def add_transient(request):
 			#sendsms(from_addr, phone_email, subject, txt_msg%transient['name'],
 			#		 djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
 
-	#import pdb; pdb.set_trace()
 	Transient.objects.bulk_create(transient_entries)
 	for t in transient_entries:
 		dbt = Transient.objects.get(name=t.name)
@@ -398,7 +395,7 @@ def add_transient(request):
 		if not len(dbtransient):
 			dbtransient = AlternateTransientNames.objects.filter(name=transient['name'])[0].transient
 		else: dbtransient = dbtransient[0]
-		
+
 		if 'transientphotometry' in transientkeys:
 			# do photometry
 			response,transientphot = add_transient_phot_util(
@@ -408,7 +405,6 @@ def add_transient(request):
 	
 	TransientPhotometry.objects.bulk_create(photdata_entries)
 	return_dict = {"message":"success"}
-
 	return JsonResponse(return_dict)
 
 @csrf_exempt
@@ -672,7 +668,6 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
 			transientphot_entries += [transientphot]
 		else: transientphot = transientphot[0]
 		existingphot = TransientPhotData.objects.filter(photometry=transientphot)
-
 		if do_photdata:
 			for k in photometry['photdata']:
 				p = photometry['photdata'][k]
@@ -1160,7 +1155,37 @@ def get_new_transients_box(request, ra, dec, ra_width, dec_width):
 
 	return JsonResponse(return_dict)
 
+@csrf_exempt
+@login_or_basic_auth_required
+def query_api(request,query_name):
 
+	query = Query.objects.filter(title=unquote(query_name))
+	if len(query):
+		query = query[0]
+		if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
+		if 'name' not in query.sql.lower(): return Http404('Invalid Query')
+		if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
+		cursor = connections['explorer'].cursor()
+		cursor.execute(query.sql.replace('%','%%'), ())
+		transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+		cursor.close()
+	else:
+		query = UserQuery.objects.filter(python_query = unquote(query_name))
+		if not len(query): return Http404('Invalid Query')
+		query = query[0]
+		transients = getattr(yse_python_queries,query.python_query)()
+
+	serialized_transients = []
+	for t in transients:
+		serialized_transients.append(
+			{"transient_ra":t.ra,"transient_dec":t.dec,
+			 "transient_name":t.name,"transient_id":t.id}
+		)
+
+	return_dict = {"transients":serialized_transients }
+		
+	return JsonResponse(return_dict)
+	
 def getRADecBox(ra,dec,size=None,dec_size=None):
 	if not dec_size:
 		RAboxsize = DECboxsize = size

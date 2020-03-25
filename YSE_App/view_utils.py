@@ -17,10 +17,10 @@ from django.urls import reverse
 from django.views.generic import TemplateView
 import random
 import bokeh
-from bokeh.plotting import figure
+from bokeh.plotting import figure,ColumnDataSource
 from bokeh.resources import CDN
 from bokeh.embed import file_html
-from bokeh.models import Range1d,Span,LinearAxis,Label,Title
+from bokeh.models import Range1d,Span,LinearAxis,Label,Title,HoverTool
 from bokeh.core.properties import FontSizeSpec
 from .data import PhotometryService, SpectraService, ObservingResourceService
 from .serializers import *
@@ -813,7 +813,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		if p.flux and np.abs(p.flux) > 1e10: continue
 		if p.data_quality:
 			continue			
-		
+
 		if (p.flux and p.mag and p.flux/p.flux_err > 3) or (not p.flux and p.mag):
 			if p.discovery_point:
 				limmjd = dbmjd-30
@@ -876,7 +876,11 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	allbandsym = np.append(bandsym,[None]*len(upperlimbandcolor))
 	bandunq,idx = np.unique(allbandstr,return_index=True)
 
-	ax=figure(plot_width=240,plot_height=240+10*len(bandunq),sizing_mode='stretch_both')
+	TOOLTIPS = [
+		('mag','$y'),
+		('band','@band'),
+		('date','@date')]
+	ax=figure(plot_width=240,plot_height=240,sizing_mode='scale_width')#,tooltips=TOOLTIPS)#'stretch_both')
 
 	
 	legend_it = []
@@ -894,14 +898,33 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 				plotmethod = getattr(ax, 'triangle')
 		else:
 			plotmethod = getattr(ax, 'triangle')
+		if bsym != 'asterisk': size=7
+		else: size=20
 			
-		p = plotmethod(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
-				   color=color,size=7, muted_alpha=0.2)#,legend='%s - %s'%(
+		source = ColumnDataSource(data=dict(x=mjd[bandstr == bs].tolist(),
+											y=mag[bandstr == bs].tolist(),
+											date=date[bandstr == bs].tolist(),
+											band=[bs.replace('Band: ','')]*len(mjd[bandstr == bs].tolist())))
+		#import pdb; pdb.set_trace()
+		p = plotmethod('x','y',source=source, #mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
+				   color=color,size=size, muted_alpha=0.2)#,legend='%s - %s'%(
 					   #b.instrument.telescope.name,b.name))
+		g1_hover = HoverTool(renderers=[p],
+							 tooltips=TOOLTIPS,toggleable=False)
+		ax.add_tools(g1_hover)
+
 		#legend_it.append(('%s - %s'%(b.instrument.telescope.name,b.name), [p]))
 		if len(upperlimbandstr) and len(upperlimmjd[upperlimbandstr == bs]):
-			p = ax.inverted_triangle(upperlimmjd[upperlimbandstr == bs].tolist(),upperlimmag[upperlimbandstr == bs].tolist(),
-									 color=color,size=7,muted_alpha=0.2)
+			source = ColumnDataSource(data=dict(x=upperlimmjd[upperlimbandstr == bs].tolist(),
+												y=upperlimmag[upperlimbandstr == bs].tolist(),
+												date=upperlimdate[upperlimbandstr == bs].tolist(),
+												band=[bs.replace('Band: ','')]*len(upperlimmjd[upperlimbandstr == bs].tolist())))
+			p = ax.inverted_triangle('x','y',source=source,
+									 color=color,size=5,muted_alpha=0.2)
+			g1_hover = HoverTool(renderers=[p],
+								 tooltips=TOOLTIPS,toggleable=False)
+			ax.add_tools(g1_hover)
+
 			#,legend='%s - %s'%(b.instrument.telescope.name,b.name)
 			
 		err_xs,err_ys = [],[]
@@ -909,6 +932,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 			err_xs.append((x, x))
 			err_ys.append((y - yerr, y + yerr))
 		ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)#, legend='%s - %s'%(
+
 		legend_it.append(('%s - %s'%(b.instrument.telescope.name,b.name), [p]))
 		#b.instrument.telescope.name,b.name))
 		#legend_it.append(('%s - %s'%(b.instrument.telescope.name,b.name), [p]))
@@ -920,14 +944,14 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 				 line_width=3)
 	ax.add_layout(vline)
 	from bokeh.models import Legend
-	legend = Legend(items=legend_it, location="bottom_right")
+	legend = Legend(items=legend_it) #, location=(0,-500)) #location="bottom_right")
 	legend.click_policy="mute"
 	legend.label_height = 1
 	legend.glyph_height = 20
-
-	ax.add_layout(legend)
 	
-	ax.legend.location = 'bottom_right'
+	ax.add_layout(legend, 'below')
+	
+	#ax.legend.location = 'bottom_center'
 	
 	#ax.legend.label_text_font_size = "4pt"#FontSizeSpec("10")
 	#ax.legend.click_policy="hide"
@@ -949,9 +973,9 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		ax.extra_x_ranges = {"dateax": Range1d(np.min(mjd)-10,np.max(mjd)+10)}
 		ax.add_layout(LinearAxis(x_range_name="dateax"), 'above')
 		#ax.legend()
-	ax.plot_height = 400
-	ax.plot_width = 500
-
+	ax.plot_height = 400+10*len(bandunq)
+	ax.plot_width = 400
+	#import pdb; pdb.set_trace()
 	majorticks = []; overridedict = {}
 	mjdrange = range(int(np.min(mjd)-100),int(np.max(mjd)+100))
 	times = Time(mjdrange,format='mjd')
@@ -1005,7 +1029,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 			if bs in bandpassdict.keys() and bandpassdict[bs] in salt2band:
 				salt2flux = fitted_model.bandflux(bandpassdict[bs], plotmjd, zp=27.5,zpsys=zpsys[bandpassdict[bs] == salt2band][0])
 				ax.line(plotmjd,-2.5*np.log10(salt2flux)+27.5,color=color)
-
+				
 		lcphase = today-result['parameters'][1]
 		if lcphase > 0: lcphase = '+%.1f'%(lcphase)
 		else: lcphase = '%.1f'%(lcphase)
@@ -1069,8 +1093,6 @@ def spectrumplot(request, transient_id):
 	return HttpResponse(g.replace('width: 90%','width: 100%'))
 
 def spectrumplotsingle(request, transient_id, spec_id):
-
-	#import pdb; pdb.set_trace()
 	
 	#transient_id = request.GET.get('transient_id')
 	#spec_id = request.GET.get('spec_id')

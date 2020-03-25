@@ -177,9 +177,10 @@ def sne_in_last_nights_fields():
 	return qs_final
 
 @python_query_reg
-def sne_15deg_from_yse():
+def sne_15deg_from_yse(qs_start=None):
 
-	survey_obs = SurveyObservation.objects.filter(obs_mjd__gte=date_to_mjd(datetime.datetime.utcnow()-datetime.timedelta(14)))
+	survey_obs = SurveyObservation.objects.filter(Q(obs_mjd__gte=date_to_mjd(datetime.datetime.utcnow()-datetime.timedelta(14))) |
+												  Q(mjd_requested__gte=date_to_mjd(datetime.datetime.utcnow()-datetime.timedelta(14))))
 	done_list = []
 	qs = Transient.objects.none()
 	for s in survey_obs:
@@ -206,7 +207,10 @@ HAVING sep < 15
 		#if qs is None:
 		#	qs = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(~Q(tags__name='YSE')).filter(~Q(status__name='Ignore')).filter(name__in=(x[0] for x in cursor))
 		#else:
-		qs_single = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(~Q(tags__name='YSE')).filter(~Q(status__name='Ignore')).filter(name__in=(x[0] for x in cursor))
+		if qs_start is None:
+			qs_single = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(~Q(tags__name='YSE')).filter(~Q(status__name='Ignore')).filter(name__in=(x[0] for x in cursor))
+		else:
+			qs_single = qs_start.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(~Q(tags__name='YSE')).filter(~Q(status__name='Ignore')).filter(name__in=(x[0] for x in cursor))
 		qs = qs | qs_single
 		cursor.close()
 

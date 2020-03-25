@@ -3,7 +3,7 @@ import requests
 import urllib
 import json
 import time
-from requests.auth import HTTPBasicAuth
+from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 import astropy.table as at
 from astropy.coordinates import SkyCoord
 import astropy.units as u
@@ -34,6 +34,11 @@ run:
 import dustmaps
 import dustmaps.sfd
 dustmaps.sfd.fetch()""")
+
+def fluxToMicroJansky(adu, exptime, zp):
+    factor = 10**(-0.4*(zp-23.9))
+    uJy = adu/exptime*factor
+    return uJy
 
 def getRADecBox(ra,dec,size=None):
 	RAboxsize = DECboxsize = size
@@ -416,7 +421,7 @@ class QUB(CronJobBase):
 
 class YSE(CronJobBase):
 
-	RUN_EVERY_MINS = 30
+	RUN_EVERY_MINS = 0.1
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.QUB_data.QUB'
@@ -469,7 +474,7 @@ class YSE(CronJobBase):
 						  help='settings file (login/password info)')
 		parser.add_argument('--status', default='New', type=str,
 						  help='transient status to enter in YS_PZ')
-		parser.add_argument('--max_days', default=7, type=float,
+		parser.add_argument('--max_days', default=34, type=float,
 						  help='grab photometry/objects from the last x days')
 
 		if config:
@@ -543,19 +548,21 @@ class YSE(CronJobBase):
 			if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
 			try: lc = at.Table.read(r.text, format='ascii', delimiter='|')
 			except: continue
-			
+
 			for i,s in enumerate(summary):
 				if nowmjd - s['mjd_obs'] > self.options.max_days: continue
-				
-				# forced photometry, doesn't work yet
-				#r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'],
-				#				 auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
-				#if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
-				#try:
-				#	lc_forced = at.Table.read(r.text, format='ascii', delimiter=' ')
-				#	has_forced_phot = True
-				#except:
-				#	has_forced_phot = False
+				#if s['local_designation'].lower() != '10cysebdy' or type(s['local_designation']) == np.ma.core.MaskedConstant: continue
+				# forced photometry
+				r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id']) #,
+				#				 auth=HTTPDigestAuth(self.options.qubuser,self.options.qubpass))
+
+				if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
+				try:
+					lc_forced = at.Table.read(r.text, format='ascii', delimiter=' ')
+					if len(lc_forced): has_forced_phot = True
+					else: has_forced_phot = False
+				except:
+					has_forced_phot = False
 
 				
 				sc = SkyCoord(s['ra_psf'],s['dec_psf'],unit=u.deg)
@@ -622,13 +629,39 @@ class YSE(CronJobBase):
 				obj += [s['local_designation']]
 				ra += [s['ra_psf']]
 				dec += [s['dec_psf']]
-
+				print('hack!  clobbering')
 				PhotUploadAll = {"mjdmatchmin":0.01,
 								 "clobber":self.options.clobber}
 				photometrydict = {'instrument':'GPC1',
 								  'obs_group':'YSE',
 								  'photdata':{}}
+				if has_forced_phot:
+					for j,lf in enumerate(lc_forced[np.argsort(lc_forced['mjd'])]):
+						if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-lf['mjd']) < 1: disc_point = 1
+						else: disc_point = 0
+						
+						if lf['cal_psf_mag'] == 'None':
+							forced_mag,forced_mag_err = None,None
+						else:
+							forced_mag,forced_mag_err = lf['cal_psf_mag'],lf['psf_inst_mag_sig']
+
+						phot_upload_dict = {'obs_date':mjd_to_date(lf['mjd']),
+											'band':lf['filter'],
+											'groups':'YSE',
+											'mag':forced_mag,
+											'mag_err':forced_mag_err,
+											'flux':fluxToMicroJansky(lf['psf_inst_flux'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
+											'flux_err':fluxToMicroJansky(lf['psf_inst_flux_sig'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
+											'data_quality':0,
+											'forced':0,
+											'flux_zero_point':27.5,
+											'discovery_point':disc_point,
+											'diffim':1}
+						photometrydict['photdata']['%s_%i'%(mjd_to_date(lf['mjd']),j)] = phot_upload_dict
+
+						
 				for j,l in enumerate(lc[iLC][np.argsort(lc['mjd_obs'][iLC])]):
+					if has_forced_phot and np.min(np.abs(lc_forced['mjd']-l['mjd_obs'])) < 0.01: continue
 					if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-l['mjd_obs']) < 1: disc_point = 1
 					else: disc_point = 0
 
@@ -641,25 +674,6 @@ class YSE(CronJobBase):
 						mag_err = l['psf_inst_mag_sig']
 
 					# forced photometry, doesn't work yet
-					#if has_forced_phot:
-					#	iForced = np.where(np.abs(l['mjd_obs']-lc_forced['mjd']) < 1e-5)[0]
-					#	if len(iForced):						
-					#		phot_upload_dict = {'obs_date':mjd_to_date(lc_forced[iForced]['mjd']),
-					#							'band':lc_forced[iForced]['filter'],
-					#							'groups':'YSE',
-					#							'mag':lc_forced[iForced]['cal_psf_mag'],
-					#							'mag_err':lc_forced[iForced]['psf_inst_mag_sig'],
-					#							'flux':lc_forced[iForced]['psf_inst_flux']*10**(0.4*(27.5-lc_forced[iForced]['zero_pt'])),
-					#							'flux_err':lc_forced[iForced]['psf_inst_flux_sig']*10**(0.4*(27.5-lc_forced[iForced]['zero_pt'])),
-					#							'data_quality':0,
-					#							'forced':0,
-					#							'flux_zero_point':27.5,
-					#							'discovery_point':disc_point,
-					#							'diffim':1}
-					#		has_forced_phot_single = True
-					#	else: has_forced_phot_single = False
-					#if not has_forced_phot or not has_forced_phot_single:
-					
 					phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
 										'band':l['filter'],
 										'groups':'YSE',
@@ -674,7 +688,7 @@ class YSE(CronJobBase):
 										'diffim':1}
 
 					photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
-
+					
 				PhotUploadAll['PS1'] = photometrydict
 				transientdict[s['local_designation']] = tdict
 				transientdict[s['local_designation']]['transientphotometry'] = PhotUploadAll

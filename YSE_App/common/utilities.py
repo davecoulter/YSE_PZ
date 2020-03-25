@@ -42,14 +42,14 @@ def getSeparation(ra1_decimal,dec1_decimal,
 def GetSexigesimalString(ra_decimal, dec_decimal):
 	c = SkyCoord(ra_decimal,dec_decimal,unit=(u.deg, u.deg))
 	ra = c.ra.hms
-	dec = c.dec.dms
-
+	#dec = c.dec.dms
+	dec = np.array(c.dec.to_string(precision=2).replace('d',':').replace('m',':').replace('s','').split(':')).astype(float)
 	ra_string = "%02d:%02d:%05.2f" % (ra[0],ra[1],ra[2])
 	if dec[0] >= 0:
 		dec_string = "+%02d:%02d:%05.2f" % (dec[0],np.abs(dec[1]),np.abs(dec[2]))
 	else:
 		dec_string = "%03d:%02d:%05.2f" % (dec[0],np.abs(dec[1]),np.abs(dec[2]))
-		
+
 	# Python has a -0.0 object. If the deg is this (because object lies < 60 min south), the string formatter will drop the negative sign
 	if c.dec < 0.0 and dec[0] == 0.0:
 		dec_string = "-00:%02d:%05.2f" % (np.abs(dec[1]),np.abs(dec[2]))

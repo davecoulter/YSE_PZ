@@ -85,10 +85,10 @@ class Transient(BaseModel):
 
 	def LikelyYSEField(self):
 		d = self.dec*np.pi/180
-		width_corr = 3.3/np.abs(np.cos(d))
+		width_corr = 3.4/np.abs(np.cos(d))
 		# Define the tile offsets:
 		ra_offset = cd.Angle(width_corr/2., unit=u.deg)
-		dec_offset = cd.Angle(3.3/2., unit=u.deg)
+		dec_offset = cd.Angle(3.4/2., unit=u.deg)
 
 		sf = SurveyField.objects.filter(~Q(obs_group__name='ZTF')).\
 				filter((Q(ra_cen__gt = self.ra-ra_offset.degree) &
