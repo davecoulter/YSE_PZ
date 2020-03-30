@@ -103,21 +103,24 @@ class AntaresZTF(CronJobBase):
 	
 	def do(self):
 
-		tstart = time.time()
-		
-		parser = self.add_options(usage='')
-		options,  args = parser.parse_known_args()
-
-		config = configparser.ConfigParser()
-		config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
-		parser = self.add_options(usage='',config=config)
-		options,  args = parser.parse_known_args()
-		self.options = options
-
 		try:
+			tstart = time.time()
+		
+			parser = self.add_options(usage='')
+			options,  args = parser.parse_known_args()
+
+			config = configparser.ConfigParser()
+			config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+			parser = self.add_options(usage='',config=config)
+			options,  args = parser.parse_known_args()
+			self.options = options
+
+
 			self.main()
 		except Exception as e:
 			print(e)
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			print("""Antares cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno))
 			nsn = 0
 			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
 			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
@@ -265,7 +268,7 @@ class AntaresZTF(CronJobBase):
 						  help='settings file (login/password info)')
 		parser.add_argument('--status', default='New', type=str,
 						  help='transient status to enter in YS_PZ')
-		parser.add_argument('--max_days', default=7, type="float",
+		parser.add_argument('--max_days', default=7, type=float,
 						  help='grab photometry/objects from the last x days')
 
 		if config:
