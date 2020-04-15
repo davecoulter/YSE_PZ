@@ -519,19 +519,6 @@ class YSE(CronJobBase):
 		return(parser)
 
 	def main(self):
-		transientdict,nsn = self.parse_data()
-		print('uploading %i transients'%nsn)
-		self.send_data(transientdict)
-		self.copy_stamps(transientdict)
-		return nsn
-		
-	def parse_data(self):
-		# today's date
-		nowmjd = Time.now().mjd
-
-		transientdict = {}
-		obj,ra,dec = [],[],[]
-		nsn = 0
 
 		for yselink_summary, yselink_lc, namecol in zip([self.options.yselink_summary,self.options.yselink_genericsummary],
 														[self.options.yselink_lc,self.options.yselink_genericlc],
@@ -549,155 +536,176 @@ class YSE(CronJobBase):
 			try: lc = at.Table.read(r.text, format='ascii', delimiter='|')
 			except: continue
 
-			for i,s in enumerate(summary):
-				if nowmjd - s['mjd_obs'] > self.options.max_days: continue
-				#if s['local_designation'].lower() != '10cysebdy' or type(s['local_designation']) == np.ma.core.MaskedConstant: continue
-				# forced photometry
-				r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id']) #,
-				#				 auth=HTTPDigestAuth(self.options.qubuser,self.options.qubpass))
+			nsn = 0
+			nsn_single = 50
+			
+			while nsn_single == 50:
 
-				if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
-				try:
-					lc_forced = at.Table.read(r.text, format='ascii', delimiter=' ')
-					if len(lc_forced): has_forced_phot = True
-					else: has_forced_phot = False
-				except:
-					has_forced_phot = False
-
+				transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=50)
+				print('uploading %i transients'%nsn_single)
+				self.send_data(transientdict)
+				self.copy_stamps(transientdict)
+				nsn += 50
 				
-				sc = SkyCoord(s['ra_psf'],s['dec_psf'],unit=u.deg)
-				try:
-					ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
-				except:
-					ps_prob = None
+		return nsn
+		
+	def parse_data(self,summary,lc,transient_idx=0,max_transients=None):
+		# today's date
+		nowmjd = Time.now().mjd
 
-				mw_ebv = float('%.3f'%(sfd(sc)*0.86))
+		transientdict = {}
+		obj,ra,dec = [],[],[]
+		nsn = 0
 
-				iLC = (lc['local_designation'] == s['local_designation']) & (nowmjd - lc['mjd_obs'] < self.options.max_days)
+		for i,s in enumerate(summary[transient_idx:transient_idx+max_transients]):
+			if nowmjd - s['mjd_obs'] > self.options.max_days: continue
+			#if s['local_designation'].lower() != '10cysebdy' or type(s['local_designation']) == np.ma.core.MaskedConstant: continue
+			# forced photometry
+			r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id']) #,
+			#				 auth=HTTPDigestAuth(self.options.qubuser,self.options.qubpass))
 
-				if nowmjd - Time('%s 00:00:00'%s['followup_flag_date'],format='iso',scale='utc').mjd > self.options.max_days:
-					status = 'Ignore'
-				else:
-					status = self.options.status
+			if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
+			try:
+				lc_forced = at.Table.read(r.text, format='ascii', delimiter=' ')
+				if len(lc_forced): has_forced_phot = True
+				else: has_forced_phot = False
+			except:
+				has_forced_phot = False
 
-				if type(s['target']) == np.ma.core.MaskedConstant:
-					postage_stamp_file = ''
-					postage_stamp_ref = ''
-					postage_stamp_diff = ''
-					postage_stamp_file_fits = ''
-					postage_stamp_ref_fits = ''
-					postage_stamp_diff_fits = ''
-				else:
-					postage_stamp_file = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target'])
-					postage_stamp_ref = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref'])
-					postage_stamp_diff = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff'])
-					postage_stamp_file_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target'])
-					postage_stamp_ref_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref'])
-					postage_stamp_diff_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff'])
 
-				if type(s['sherlock_specz']) == np.ma.core.MaskedConstant:
-					redshift = None
-				else:
-					redshift = s['sherlock_specz']
+			sc = SkyCoord(s['ra_psf'],s['dec_psf'],unit=u.deg)
+			try:
+				ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
+			except:
+				ps_prob = None
 
-				if type(s['sherlock_object_id']) == np.ma.core.MaskedConstant:
-					hostdict = {}
-				else:
-					hostdict = {'name':s['sherlock_object_id'][:64],
-								'ra':s['sherlock_host_ra'],
-								'dec':s['sherlock_host_dec'],
-								'redshift':redshift}
-				
-				tdict = {'name':s['local_designation'],
-						 'ra':s['ra_psf'],
-						 'dec':s['dec_psf'],
-						 'obs_group':'YSE',
-						 'postage_stamp_file':postage_stamp_file,
-						 'postage_stamp_ref':postage_stamp_ref,
-						 'postage_stamp_diff':postage_stamp_diff,
-						 'postage_stamp_file_fits':postage_stamp_file_fits,
-						 'postage_stamp_ref_fits':postage_stamp_ref_fits,
-						 'postage_stamp_diff_fits':postage_stamp_diff_fits,
-						 'status':status,
-						 'context_class':s['sherlockClassification'].replace('UNCLEAR','Unknown'),
-						 'host':hostdict,
-						 'tags':['YSE'],
-						 'disc_date':s['followup_flag_date'], #mjd_to_date(s['mjd_obs']),
-						 'mw_ebv':mw_ebv,
-						 'point_source_probability':ps_prob}
+			mw_ebv = float('%.3f'%(sfd(sc)*0.86))
 
-				obj += [s['local_designation']]
-				ra += [s['ra_psf']]
-				dec += [s['dec_psf']]
+			iLC = (lc['local_designation'] == s['local_designation']) & (nowmjd - lc['mjd_obs'] < self.options.max_days)
 
-				PhotUploadAll = {"mjdmatchmin":0.01,
-								 "clobber":self.options.clobber}
-				photometrydict = {'instrument':'GPC1',
-								  'obs_group':'YSE',
-								  'photdata':{}}
-				if has_forced_phot:
-					for j,lf in enumerate(lc_forced[np.argsort(lc_forced['mjd'])]):
-						if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-lf['mjd']) < 1: disc_point = 1
-						else: disc_point = 0
-						
-						if lf['cal_psf_mag'] == 'None':
-							forced_mag,forced_mag_err = None,None
-						else:
-							forced_mag,forced_mag_err = lf['cal_psf_mag'],lf['psf_inst_mag_sig']
+			if nowmjd - Time('%s 00:00:00'%s['followup_flag_date'],format='iso',scale='utc').mjd > self.options.max_days:
+				status = 'Ignore'
+			else:
+				status = self.options.status
 
-						phot_upload_dict = {'obs_date':mjd_to_date(lf['mjd']),
-											'band':lf['filter'],
-											'groups':'YSE',
-											'mag':forced_mag,
-											'mag_err':forced_mag_err,
-											'flux':fluxToMicroJansky(lf['psf_inst_flux'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
-											'flux_err':fluxToMicroJansky(lf['psf_inst_flux_sig'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
-											'data_quality':0,
-											'forced':0,
-											'flux_zero_point':27.5,
-											'discovery_point':disc_point,
-											'diffim':1}
-						photometrydict['photdata']['%s_%i'%(mjd_to_date(lf['mjd']),j)] = phot_upload_dict
+			if type(s['target']) == np.ma.core.MaskedConstant:
+				postage_stamp_file = ''
+				postage_stamp_ref = ''
+				postage_stamp_diff = ''
+				postage_stamp_file_fits = ''
+				postage_stamp_ref_fits = ''
+				postage_stamp_diff_fits = ''
+			else:
+				postage_stamp_file = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target'])
+				postage_stamp_ref = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref'])
+				postage_stamp_diff = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff'])
+				postage_stamp_file_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target'])
+				postage_stamp_ref_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref'])
+				postage_stamp_diff_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff'])
 
-						
-				for j,l in enumerate(lc[iLC][np.argsort(lc['mjd_obs'][iLC])]):
-					if has_forced_phot and np.min(np.abs(lc_forced['mjd']-l['mjd_obs'])) < 0.01: continue
-					if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-l['mjd_obs']) < 1: disc_point = 1
+			if type(s['sherlock_specz']) == np.ma.core.MaskedConstant:
+				redshift = None
+			else:
+				redshift = s['sherlock_specz']
+
+			if type(s['sherlock_object_id']) == np.ma.core.MaskedConstant:
+				hostdict = {}
+			else:
+				hostdict = {'name':s['sherlock_object_id'][:64],
+							'ra':s['sherlock_host_ra'],
+							'dec':s['sherlock_host_dec'],
+							'redshift':redshift}
+
+			tdict = {'name':s['local_designation'],
+					 'ra':s['ra_psf'],
+					 'dec':s['dec_psf'],
+					 'obs_group':'YSE',
+					 'postage_stamp_file':postage_stamp_file,
+					 'postage_stamp_ref':postage_stamp_ref,
+					 'postage_stamp_diff':postage_stamp_diff,
+					 'postage_stamp_file_fits':postage_stamp_file_fits,
+					 'postage_stamp_ref_fits':postage_stamp_ref_fits,
+					 'postage_stamp_diff_fits':postage_stamp_diff_fits,
+					 'status':status,
+					 'context_class':s['sherlockClassification'].replace('UNCLEAR','Unknown'),
+					 'host':hostdict,
+					 'tags':['YSE'],
+					 'disc_date':s['followup_flag_date'], #mjd_to_date(s['mjd_obs']),
+					 'mw_ebv':mw_ebv,
+					 'point_source_probability':ps_prob}
+
+			obj += [s['local_designation']]
+			ra += [s['ra_psf']]
+			dec += [s['dec_psf']]
+
+			PhotUploadAll = {"mjdmatchmin":0.01,
+							 "clobber":self.options.clobber}
+			photometrydict = {'instrument':'GPC1',
+							  'obs_group':'YSE',
+							  'photdata':{}}
+			if has_forced_phot:
+				for j,lf in enumerate(lc_forced[np.argsort(lc_forced['mjd'])]):
+					if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-lf['mjd']) < 1: disc_point = 1
 					else: disc_point = 0
 
-					flux = 10**(-0.4*(l['cal_psf_mag']-27.5))
-					flux_err = np.log(10)*0.4*flux*l['psf_inst_mag_sig']
-					if type(l['psf_inst_mag_sig']) == np.ma.core.MaskedConstant:
-						mag_err = 0
-						flux_err = 0
+					if lf['cal_psf_mag'] == 'None':
+						forced_mag,forced_mag_err = None,None
 					else:
-						mag_err = l['psf_inst_mag_sig']
+						forced_mag,forced_mag_err = lf['cal_psf_mag'],lf['psf_inst_mag_sig']
 
-					# forced photometry, doesn't work yet
-					phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
-										'band':l['filter'],
+					phot_upload_dict = {'obs_date':mjd_to_date(lf['mjd']),
+										'band':lf['filter'],
 										'groups':'YSE',
-										'mag':l['cal_psf_mag'],
-										'mag_err':mag_err,
-										'flux':flux,
-										'flux_err':flux_err,
+										'mag':forced_mag,
+										'mag_err':forced_mag_err,
+										'flux':fluxToMicroJansky(lf['psf_inst_flux'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
+										'flux_err':fluxToMicroJansky(lf['psf_inst_flux_sig'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
 										'data_quality':0,
 										'forced':0,
 										'flux_zero_point':27.5,
 										'discovery_point':disc_point,
 										'diffim':1}
+					photometrydict['photdata']['%s_%i'%(mjd_to_date(lf['mjd']),j)] = phot_upload_dict
 
-					photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
-					
-				PhotUploadAll['PS1'] = photometrydict
-				transientdict[s['local_designation']] = tdict
-				transientdict[s['local_designation']]['transientphotometry'] = PhotUploadAll
 
-				photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
-				if photometrydict_ztf is not None:
-					PhotUploadAll['ZTF'] = photometrydict_ztf
-				print(s['local_designation'])
-				nsn += 1
+			for j,l in enumerate(lc[iLC][np.argsort(lc['mjd_obs'][iLC])]):
+				if has_forced_phot and np.min(np.abs(lc_forced['mjd']-l['mjd_obs'])) < 0.01: continue
+				if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-l['mjd_obs']) < 1: disc_point = 1
+				else: disc_point = 0
+
+				flux = 10**(-0.4*(l['cal_psf_mag']-27.5))
+				flux_err = np.log(10)*0.4*flux*l['psf_inst_mag_sig']
+				if type(l['psf_inst_mag_sig']) == np.ma.core.MaskedConstant:
+					mag_err = 0
+					flux_err = 0
+				else:
+					mag_err = l['psf_inst_mag_sig']
+
+				# forced photometry, doesn't work yet
+				phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
+									'band':l['filter'],
+									'groups':'YSE',
+									'mag':l['cal_psf_mag'],
+									'mag_err':mag_err,
+									'flux':flux,
+									'flux_err':flux_err,
+									'data_quality':0,
+									'forced':0,
+									'flux_zero_point':27.5,
+									'discovery_point':disc_point,
+									'diffim':1}
+
+				photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
+
+			PhotUploadAll['PS1'] = photometrydict
+			transientdict[s['local_designation']] = tdict
+			transientdict[s['local_designation']]['transientphotometry'] = PhotUploadAll
+
+			photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+			if photometrydict_ztf is not None:
+				PhotUploadAll['ZTF'] = photometrydict_ztf
+			print(s['local_designation'])
+			nsn += 1
 
 			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
 			
