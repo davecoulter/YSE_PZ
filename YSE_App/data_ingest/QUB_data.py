@@ -474,7 +474,7 @@ class YSE(CronJobBase):
 						  help='settings file (login/password info)')
 		parser.add_argument('--status', default='New', type=str,
 						  help='transient status to enter in YS_PZ')
-		parser.add_argument('--max_days', default=7, type=float,
+		parser.add_argument('--max_days', default=1, type=float,
 						  help='grab photometry/objects from the last x days')
 
 		if config:
@@ -558,7 +558,9 @@ class YSE(CronJobBase):
 		nsn = 0
 
 		for i,s in enumerate(summary[transient_idx:transient_idx+max_transients]):
-			if nowmjd - s['mjd_obs'] > self.options.max_days: continue
+			if nowmjd - s['mjd_obs'] > self.options.max_days:
+				nsn += 1
+				continue
 			#if s['local_designation'].lower() != '10cysebdy' or type(s['local_designation']) == np.ma.core.MaskedConstant: continue
 			# forced photometry
 			r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id']) #,
