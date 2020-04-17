@@ -47,6 +47,9 @@ class Transient(BaseModel):
 	dec = models.FloatField()
 
 	# Optional
+	ra_err = models.FloatField(null=True, blank=True)
+	dec_err = models.FloatField(null=True, blank=True)
+
 	disc_date = models.DateTimeField(null=True, blank=True)
 	candidate_hosts = models.TextField(null=True, blank=True) # A string field to hold n hosts -- if we don't quite know which is the correct one
 	redshift = models.FloatField(null=True, blank=True)
@@ -70,6 +73,10 @@ class Transient(BaseModel):
 
 	slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
 	
+	has_hst = models.NullBooleanField(null=True, blank=True)
+	has_spitzer = models.NullBooleanField(null=True, blank=True)
+	has_chandra = models.NullBooleanField(null=True, blank=True)
+
 	def CoordString(self):
 		return GetSexigesimalString(self.ra, self.dec)
 
