@@ -57,14 +57,6 @@ class hstImages():
         table=Observations.query_region(self.coord,
             radius=self.options['radius'])
 
-        #print(table)
-        #test=table[table['obs_collection']=='HLA']
-        #print(np.unique(test['filters']))
-        #print(np.unique(test['instrument_name']))
-
-
-        #print(np.unique(table['obs_collection']))
-
         # HST-specific masks
         filmask = [table['filters'] == good
               for good in options['mask']['filters']]
