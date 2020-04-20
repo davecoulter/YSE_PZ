@@ -173,7 +173,6 @@ class ForcedPhot(CronJobBase):
 	
 	def do(self):
 		self.debug = False
-		import pdb; pdb.set_trace()
 		
 		try:
 			tstart = time.time()
