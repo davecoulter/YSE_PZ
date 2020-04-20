@@ -19,6 +19,7 @@ import shutil
 import tempfile
 import os
 import json
+import sys
 
 default_stamp_header = fits.Header()
 default_stamp_header['XTENSION'] = 'BINTABLE'         
@@ -157,7 +158,7 @@ def parse_mdc(mdc_text):
 			
 	return mdc
 			
-class ForcedPhot:
+class ForcedPhot(CronJobBase):
 
 	RUN_EVERY_MINS = 30
 
@@ -165,13 +166,15 @@ class ForcedPhot:
 	code = 'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhot'
 
 	def __init__(self):
-
+		
 		self.debug = False
 		if self.debug:
 			print('debug mode enabled')
 	
 	def do(self):
-
+		self.debug = False
+		import pdb; pdb.set_trace()
+		
 		try:
 			tstart = time.time()
 		
