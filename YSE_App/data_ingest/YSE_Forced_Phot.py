@@ -339,7 +339,7 @@ class ForcedPhot(CronJobBase):
 		
 		stack_request_name = self.stamp_request(
 			transient_list,ra_list,dec_list,[],[],stack_id_list)
-		print('submitted stack request {stack_request_name}'.format(stack_request_name))
+		print('submitted stack request {}'.format(stack_request_name))
 		
 		# submit the stack jobs
 		tstart = time.time()
