@@ -20,6 +20,9 @@ import tempfile
 import os
 import json
 import sys
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
 
 default_stamp_header = fits.Header()
 default_stamp_header['XTENSION'] = 'BINTABLE'         
@@ -117,6 +120,28 @@ default_forcedphot_header['STAGE']    = 'WSdiff  '
 default_forcedphot_header['EMAIL']    = 'yse@qub.ac.uk'
 
 from astropy.visualization import PercentileInterval, AsinhStretch
+
+def sendemail(from_addr, to_addr,
+			  subject, message,
+			  login, password, smtpserver, cc_addr=None):
+
+	print("Preparing email")
+
+	msg = MIMEMultipart('alternative')
+	msg['Subject'] = subject
+	msg['From'] = from_addr
+	msg['To'] = to_addr
+	payload = MIMEText(message, 'html')
+	msg.attach(payload)
+
+	with smtplib.SMTP(smtpserver) as server:
+		try:
+			server.starttls()
+			server.login(login, password)
+			resp = server.sendmail(from_addr, [to_addr], msg.as_string())
+			print("Send success")
+		except:
+			print("Send fail")
 
 def fits_to_png(ff,outfile,log=False):
 	plt.clf()
