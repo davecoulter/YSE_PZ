@@ -388,7 +388,7 @@ class ForcedPhot:
 						os.makedirs(outdir)
 
 					filename = img_dict[k][img_key_in][i].split('/')[-1]
-					outfile = f"{outdir}/{filename}"
+					outfile = "{}/{}".format(outdir,filename)
 					
 					fits_response = session.get(img_dict[k][img_key_in][i],stream=True)
 					with open(outfile,'wb') as fout:
