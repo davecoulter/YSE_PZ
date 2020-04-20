@@ -5,3 +5,6 @@ YSE_PZ/static/
 .idea/
 __pycache__/
 *~
+YSE_App/static/YSE_App/images/stamps/*
+node_modules/*
+*snana.dat
