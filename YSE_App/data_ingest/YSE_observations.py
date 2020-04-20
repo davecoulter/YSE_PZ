@@ -32,6 +32,8 @@ def split_survey_field(survey_field):
 #				'airmass','image_id']
 # email key: (data model key, function name that transforms)
 ingest_keys_map = {'exp_name':('image_id',None),
+				   'diff_id':('diff_id',None),
+				   'warp_id':('warp_id',None),
 				   'dateobs':('obs_mjd',date_to_mjd),
 				   'exp_time':('exposure_time',None),
 				   'filter':('photometric_band',split_band),

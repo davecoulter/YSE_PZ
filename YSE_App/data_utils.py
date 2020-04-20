@@ -710,7 +710,17 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
 									e.band = band
 									e.modified_by_id = user.id
 									e.save()
+								if 'diffimg' in p.keys():
+									existing_diff = TransientDiffImage.objects.filter(phot_data=e)
+									p['diffimg']['created_by_id'] = user.id
+									p['diffimg']['modified_by_id'] = user.id
+									p['diffimg']['phot_data_id'] = e.id
+									if not len(existing_diff):
+										TransientDiffImage.objects.create(**p['diffimg'])
+									else:
+										existing_diff.update(**p['diffimg'])
 
+									
 				if not obsExists:
 					if p['data_quality']:
 						dq = DataQuality.objects.filter(name=p['data_quality'])
@@ -718,7 +728,7 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
 							dq = DataQuality.objects.filter(name='Bad')
 						dq = dq[0]
 					else: dq = None
-					TransientPhotData.objects.create(
+					e = TransientPhotData.objects.create(
 						obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
 						mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
 						diffim=p['diffim'],
@@ -726,7 +736,12 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
 						flux_zero_point=p['flux_zero_point'],
 						discovery_point=p['discovery_point'],band=band,
 						created_by_id=user.id,modified_by_id=user.id)
-
+					if 'diffimg' in p.keys():
+						p['diffimg']['created_by_id'] = user.id
+						p['diffimg']['modified_by_id'] = user.id
+						p['diffimg']['phot_data_id'] = e.id
+						TransientDiffImage.objects.create(**p['diffimg'])
+						
 	return_dict = {"message":"successfully added phot data"}
 	return JsonResponse(return_dict),transientphot_entries
 

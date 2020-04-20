@@ -22,36 +22,8 @@ function onMouseDown(event) {
     }
 }
 
-
-function telescope_color(telescope){
-    telescope = telescope.toUpperCase();
-    switch (telescope){
-        case 'SWOPE':
-            color = '#0000FF';
-            break;
-        case 'THACHER':
-            color = '#00FF00';
-            break;
-        case 'ANDICAM':
-            color = 'Red';
-            break;
-        case 'NICKEL':
-            color = '#E660FC';
-            break;
-        case 'SOAR':
-            color = '#f4bf42';
-            break;
-        case 'SINISTRO':
-            color = '#ef3edd';
-            break;
-    }
-    return color;
-}
-
-
-
 // functions for drawing fields
-function paper_draw_field(verts,rowID,rowState,telescope) {
+function paper_draw_field(verts,rowID,rowState) {
 
     var observed = rowState.toString().toLowerCase().trim() === 'true';
     //var rectangle = new Rectangle(new Point(verts[0]), new Point(verts[1]));
@@ -62,7 +34,7 @@ function paper_draw_field(verts,rowID,rowState,telescope) {
     });
     path.name = 'F_'+rowID.toString();
     path.strokeCap = 'square';
-    var telColor = telescope_color(telescope);
+    var telColor = '#3182bd';
     var obsOpacity = 0.7
 
 
@@ -81,10 +53,10 @@ function paper_draw_field(verts,rowID,rowState,telescope) {
 
 }
 
-function paper_update_field(rowID,rowState,telescope) {
+function paper_update_field(rowID,rowState) {
     var observed = rowState.toString().toLowerCase().trim() === 'true';
     var path = globals.globalPaths[rowID];
-    var telColor = telescope_color(telescope);
+    var telColor = '#3182bd';
     var obsOpacity = 0.7
 
     if (observed) {

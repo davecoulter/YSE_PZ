@@ -253,7 +253,7 @@ def sne_in_yse_field_with_ignore(field_id):
 	#radius = ((ra-s.survey_field.ra_cen)**2. + (dec-s.survey_field.dec_cen)**2.)**(1/2.)
 
 	ra_offset = cd.Angle(width_corr, unit=u.deg)
-	dec_offset = cd.Angle(15, unit=u.deg)
+	dec_offset = cd.Angle(1.65, unit=u.deg)
 
 	query= """SELECT t.name, ACOS(SIN(t.dec*3.14159/180)*SIN(%s*3.14159/180)+COS(t.dec*3.14159/180)*COS(%s*3.14159/180)*COS((t.ra-%s)*3.14159/180))*180/3.14159 as sep
 FROM YSE_App_transient t

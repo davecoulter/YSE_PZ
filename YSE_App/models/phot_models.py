@@ -94,6 +94,11 @@ class TransientPhotData(PhotData):
 		time = Time(self.obs_date,scale='utc')
 		return time.mjd
 
+	def mag_lim(self):
+		if self.flux and self.flux_err and self.flux_zero_point:
+			return -2.5*np.log10(self.flux+3*self.flux_err)+self.flux_zero_point
+		else: return None
+
 class HostPhotData(PhotData):
 	# Entity relationships ###
 	# Required
@@ -115,6 +120,23 @@ class Image(BaseModel):
 	sky_rms = models.FloatField(null=True, blank=True)
 	dcmp_file = models.TextField(null=True, blank=True)
 
+class DiffImage(BaseModel):
+	class Meta:
+		abstract = True
+
+	postage_stamp_file = models.CharField(max_length=512, null=True, blank=True)
+	postage_stamp_ref = models.CharField(max_length=512, null=True, blank=True)
+	postage_stamp_diff = models.CharField(max_length=512, null=True, blank=True)
+	postage_stamp_file_fits = models.CharField(max_length=512, null=True, blank=True)
+	postage_stamp_ref_fits = models.CharField(max_length=512, null=True, blank=True)
+	postage_stamp_diff_fits = models.CharField(max_length=512, null=True, blank=True)
+		
+	diff_zero_point = models.FloatField(null=True, blank=True)
+	diff_zero_point_err = models.FloatField(null=True, blank=True)
+	diff_sky = models.FloatField(null=True, blank=True)
+	diff_sky_rms = models.FloatField(null=True, blank=True)
+	diff_dcmp_file = models.TextField(null=True, blank=True)
+	
 class TransientImage(Image):
 	### Entity relationships ###
 	# Required
@@ -123,6 +145,16 @@ class TransientImage(Image):
 	def __str__(self):
 		return 'Img: %s - %s' % (self.phot_data.photometry.transient.name, self.phot_data.obs_date.strftime('%m/%d/%Y'))
 
+class TransientDiffImage(DiffImage):
+	### Entity relationships ###
+	# Required
+	phot_data = models.ForeignKey(TransientPhotData, on_delete=models.CASCADE)
+	valid_pixels = models.NullBooleanField(null=True, blank=True)
+
+	def __str__(self):
+		return 'Img: %s - %s' % (self.phot_data.photometry.transient.name, self.phot_data.obs_date.strftime('%m/%d/%Y'))
+
+	
 class HostImage(Image):
 	### Entity relationships ###
 	# Required

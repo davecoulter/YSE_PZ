@@ -470,16 +470,33 @@
 											<h3 class="box-title">Spectrum</h3>
 										</div>
 										{% if all_transient_spectra.count > 1 %}
-										&ensp;&nbsp;<div class="btn-group">
-											<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-												Select from {{ all_transient_spectra.count }} Spectra<span class="caret"></span>
-											</button>
+										<div class="btn-group">
+											<div class="col-xs-12">
+												<div class="col-xs-6">
+													<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+														Select from {{ all_transient_spectra.count }} Spectra<span class="caret"></span>
+													</button>
+												</div>
+												<div class="col-xs-6">
+													<button style="margin-bottom:5px" type="button" class="btn btn-block btn-primary" data-toggle="dropdown" onclick="window.open('{% url 'download_spectra' transient.slug %}')">
+													Download {{ all_transient_spectra.count }} Spectra
+													</button>
+												</div>
+											</div>
 											<ul class="dropdown-menu">
 												{% for spec in all_transient_spectra %}
 													<li><a spec_plot-id="{{ spec.id }}" class="specPlotChange" href="#">{{ spec }} - {{ spec.instrument.name }}</a></li>
 												{% endfor %}
 											</ul>
 										</div>
+										{% elif all_transient_spectra.count == 1 %}
+											&ensp;&nbsp;<div class="btn-group">
+
+												<button style="margin-bottom:5px" type="button" class="btn btn-block btn-primary" data-toggle="dropdown" onclick="window.open('{% url 'download_spectra' transient.slug %}')">
+													Download {{ all_transient_spectra.count }} Spectra
+												</button>
+
+											</div>
 										{% endif %}
 										<div class="box-body" id="specplot"></div>
 										<p></p>
@@ -812,29 +829,123 @@
 										<input class="btn btn-block btn-primary" type="button" value="Download All Data" onclick="window.open('{% url 'download_data' transient.slug %}')">
 									</div>
 						<h4>Photometry for {{transient.name}}</h4>
+						<div class="col-xs-13">
+							<div class="box box-primary">
+								<div class="box-header">
+									<h3 class="box-title">Photometry (Flux Units)</h3>
+								</div>
+								&ensp;&nbsp;<div class="btn-group">
+									<button style="margin-bottom:5px;" type="button" class="plotSALT2flux" id="salt2fluxplot">
+									Show SALT2 Fit</span>
+									</button>
+									</div>
+								<td><button type="button" class="plotFlux">Show Flux Plot</button></td>
+								<div class="box-body" id="lcfluxplot"></div>
+							</div>
+						</div>
 
+						{% if diff_images %}
+						<div class="col-xs-13">
+							<div class="box box-primary">
+								<div class="box-header">
+									<h3 class="box-title">Forced Photometry and Difference Imaging</h3>
+								</div>
+							<div class="box-body">
 						<table class="table table-bordered table-striped">
-												<thead>
-													<tr>
-														<th>Date</th>
-														<th>Mag</th>
-														<th>Mag Error</th>
-														<th>Filter</th>
-														<th>Instrument</th>
-													</tr>
-												</thead>
-												<tbody>
-												{%for allphot in allphotdata%}
-													<tr>
-														<td>{{allphot.obs_date|date:"M d, Y H:i:s"}}</td>
-														<td>{{allphot.mag}}</td>
-														<td>{{allphot.mag_err}}</td>
-														<td>{{allphot.band.name}}</td>
-														<td>{{allphot.band.instrument.name}}</td>
-													<tr/>
-												{%endfor%}
-												</tbody>
-											</table>
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>Flux</th>
+									<th>Flux Error</th>
+									<th>Mag</th>
+									<th>Mag Error</th>
+									<th>Mag Lim</th>
+									<th>Filter</th>
+									<th>Instrument</th>
+									<th>Warp</th>
+									<th>Template</th>
+									<th>Diff</th>
+								</tr>
+							</thead>
+							<tbody>
+							{%for diff in diff_images%}
+								<tr>
+									<td>{{diff.phot_data.obs_date|date:"M d, Y H:i:s"}}</td>
+									<td>{{diff.phot_data.flux|floatformat:3}}</td>
+									<td>{{diff.phot_data.flux_err|floatformat:3}}</td>
+									<td>{{diff.phot_data.mag|floatformat:3}}</td>
+									<td>{{diff.phot_data.mag_err|floatformat:3}}</td>
+									<td>{{diff.phot_data.mag_lim|floatformat:3}}</td>
+									<td>{{diff.phot_data.band.name}}</td>
+									<td>{{diff.phot_data.band.instrument.name}}</td>
+									<td>
+									 {% if diff.valid_pixels %}
+										{% static "" as baseUrl %}
+                 						{% with "YSE_App/images/stamps/"|add:diff.postage_stamp_file as stampfile %}
+                						{% with "YSE_App/images/stamps/"|add:diff.postage_stamp_file_fits as stampfitsfile %}
+                  						<a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
+ 						                {% endwith %}
+					                    {% endwith %}
+					                    {% else %}
+					                    No Valid Pixels
+					                    {% endif %}
+					                </td>
+					                <td>
+					                	{% if diff.valid_pixels %}
+										{% static "" as baseUrl %}
+                 						{% with "YSE_App/images/stamps/"|add:diff.postage_stamp_ref as stampfile %}
+                						{% with "YSE_App/images/stamps/"|add:diff.postage_stamp_ref_fits as stampfitsfile %}
+                  						<a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
+ 						                {% endwith %}
+					                    {% endwith %}
+					                    {% else %}
+					                    No Valid Pixels
+					                    {% endif %}
+					                </td>
+					                <td>
+					                	{% if diff.valid_pixels %}
+										{% static "" as baseUrl %}
+                 						{% with "YSE_App/images/stamps/"|add:diff.postage_stamp_diff as stampfile %}
+                						{% with "YSE_App/images/stamps/"|add:diff.postage_stamp_diff_fits as stampfitsfile %}
+                  						<a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
+ 						                {% endwith %}
+					                    {% endwith %}
+					                    {% else %}
+					                    No Valid Pixels
+					                    {% endif %}
+					                </td>
+								</tr>
+							{%endfor%}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+
+						{% endif %}
+						<table class="table table-bordered table-striped">
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>Mag</th>
+									<th>Mag Error</th>
+									<th>Filter</th>
+									<th>Instrument</th>
+								</tr>
+							</thead>
+							<tbody>
+							{%for allphot in allphotdata%}
+								<tr>
+									<td>{{allphot.obs_date|date:"M d, Y H:i:s"}}</td>
+									<td>{{allphot.mag}}</td>
+									<td>{{allphot.mag_err}}</td>
+									<td>{{allphot.band.name}}</td>
+									<td>{{allphot.band.instrument.name}}</td>
+								<tr/>
+							{%endfor%}
+							</tbody>
+						</table>
 
 					</div>
 					<div class="tab-pane" id="spectra_tab">
@@ -1396,6 +1507,44 @@
 	  					$(".plotSALT2").html("Show SALT2 Fit");
 	  				});
 				}
+			});
+
+			$('.plotSALT2flux').on('click', function(event){
+				//var spec_id = $(this).attr('spec_plot-id')
+				//var transient_id = {{transient.id}}		
+				var buttontext = $("#salt2fluxplot").html();
+				var mybutton = "hi";
+				//$(".plotSALT2").html(buttontext);
+				//$(".plotSALT2").html("Hide SALT2 Fit");
+				if (buttontext.indexOf("Show") > -1){
+					url = "{% url 'salt2fluxplot' transient.id 1 %}";
+					$.get(url).done(function(htmlresponse){
+						var lastNode = $("#lcfluxplot").children().last();
+	        	    	lastNode.prev().remove();
+
+						var rows = $("#lcfluxplot");
+	  					$(rows).html(htmlresponse);
+
+	  					$(".plotSALT2flux").html("Hide SALT2 Fit");
+	  				});
+	  			} else {
+	  				url = "{% url 'salt2fluxplot' transient.id 0 %}";
+					$.get(url).done(function(htmlresponse){
+						var lastNode = $("#lcfluxplot").children().last();
+	        			lastNode.prev().remove();
+
+						var rows = $("#lcfluxplot");
+	  					$(rows).html(htmlresponse);
+
+	  					$(".plotSALT2flux").html("Show SALT2 Fit");
+	  				});
+				}
+			});
+
+			$('.plotFlux').on('click', function(event){
+				$.get("{% url 'lightcurveplot_flux' transient.id %}").done(function(htmlresponse){
+	  				$("#lcfluxplot").html(htmlresponse);
+			  	});
 			});
 
 			$('.plotAirmass').on('click', function(event){

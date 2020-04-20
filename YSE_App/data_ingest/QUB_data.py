@@ -655,6 +655,7 @@ class YSE(CronJobBase):
 					else:
 						forced_mag,forced_mag_err = lf['cal_psf_mag'],lf['psf_inst_mag_sig']
 
+					# forced photometry
 					phot_upload_dict = {'obs_date':mjd_to_date(lf['mjd']),
 										'band':lf['filter'],
 										'groups':'YSE',
@@ -663,7 +664,7 @@ class YSE(CronJobBase):
 										'flux':fluxToMicroJansky(lf['psf_inst_flux'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
 										'flux_err':fluxToMicroJansky(lf['psf_inst_flux_sig'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
 										'data_quality':0,
-										'forced':0,
+										'forced':1,
 										'flux_zero_point':27.5,
 										'discovery_point':disc_point,
 										'diffim':1}
@@ -683,7 +684,7 @@ class YSE(CronJobBase):
 				else:
 					mag_err = l['psf_inst_mag_sig']
 
-				# forced photometry, doesn't work yet
+				# unforced photometry
 				phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
 									'band':l['filter'],
 									'groups':'YSE',
@@ -817,7 +818,7 @@ class YSE(CronJobBase):
 		except Exception as e:
 			print(e)
 			#import pdb; pdb.set_trace()
-						
+
 	def UploadTransients(self,TransientUploadDict):
 
 		url = '%s'%self.options.dburl.replace('/api','/add_transient')
@@ -828,7 +829,7 @@ class YSE(CronJobBase):
 		except: print(r.text)
 		print("Process done.")
 
-		
+
 def jd_to_date(jd):
 	time = Time(jd,scale='utc',format='jd')
 	return time.isot

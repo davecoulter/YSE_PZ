@@ -887,7 +887,8 @@ def transient_detail(request, slug):
 			'all_transient_spectra': spectra,
 			'gw_candidate':gwcand,
 			'gw_images':gwimages,
-			'spectrum_upload_form':spectrum_upload_form,				  
+			'spectrum_upload_form':spectrum_upload_form,
+			'diff_images':TransientDiffImage.objects.filter(phot_data__photometry__transient__name=transient_obj.name)
 		}
 
 		if transient_followup_form.fields["valid_start"].initial:
@@ -1168,6 +1169,53 @@ def download_bulk_photometry(request, query_title):
 	response['Content-Disposition'] = 'attachment; filename=YSEPZ_transient_photometry.zip'
 	return response
 
+@csrf_exempt
+@login_or_basic_auth_required
+def download_spectra(request, slug):
+
+	if 'HTTP_AUTHORIZATION' in request.META.keys():
+		auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+		credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+		username, password = credentials.split(':', 1)
+		user = auth.authenticate(username=username, password=password)
+	else:
+		user = request.user
+
+
+	transient = Transient.objects.get(slug=slug)
+	
+	st = BytesIO()
+	archive = zipfile.ZipFile(st, 'w', zipfile.ZIP_DEFLATED)
+	authorized_spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(user, transient.id, includeBadData=True)
+	if len(authorized_spectra):
+
+		for s in authorized_spectra:
+			content = ""
+			data = {}
+			#data['spectra'] = json.loads(serializers.serialize("json", s, use_natural_foreign_keys=True))
+			#import pdb; pdb.set_trace()
+			for k in s.__dict__.keys(): #data['spectra'].keys():
+				if k not in ['_state', 'id', 'created_by_id', 'created_date', 'modified_by_id', 'modified_date']:
+					content += "# %s: %s\n"%(k.upper(),s.__dict__[k])
+			
+			specdata = SpectraService.GetAuthorizedTransientSpecData_BySpectrum(user, s.id, includeBadData=True)
+			if specdata:
+				content += "\n"
+				content += "wavelength,flux,fluxerr\n"
+				linefmt =  "%.3f,%8.5e,%8.5e\n"
+
+				for sd in specdata.order_by('wavelength'):
+					if sd.flux_err:
+						content += linefmt%(sd.wavelength,sd.flux,sd.flux_err)
+					else:
+						content += linefmt%(sd.wavelength,sd.flux,-99)
+
+				archive.writestr('%s-%s-%s.csv'%(transient.name,s.instrument.name,s.obs_date.isoformat().split('T')[0]),content)
+
+	archive.close()
+	response = HttpResponse(st.getvalue(), content_type='application/x-zip-compressed')
+	response['Content-Disposition'] = 'attachment; filename=%s_spectra.zip'%transient.name
+	return response
 
 @csrf_exempt
 @login_or_basic_auth_required
