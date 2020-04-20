@@ -288,7 +288,7 @@ class ForcedPhot:
 					mjd_list += [s.obs_mjd]
 					filt_list += [s.photometric_band.name]
 		nt = len(np.unique(transient_list))
-		print(f'{nt} transients to upload!')
+		print('{} transients to upload!'.format(nt))
 		if nt == 0: return 0
 		print('trying to upload transients:')
 		for t in np.unique(transient_list):
@@ -296,11 +296,11 @@ class ForcedPhot:
 
 		stamp_request_name = self.stamp_request(
 			transient_list,ra_list,dec_list,diff_id_list,warp_id_list,[])
-		print(f'submitted stamp request {stamp_request_name}')
+		print('submitted stamp request {}'.format(stamp_request_name))
 
 		phot_request_names = self.forcedphot_request(
 			transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list)
-		print(f'submitted phot requests:')
+		print('submitted phot requests:')
 		for prn in phot_request_names: print(prn)
 
 		print('jobs were submitted, waiting up to 10 minutes for them to finish')
@@ -337,7 +337,7 @@ class ForcedPhot:
 		
 		stack_request_name = self.stamp_request(
 			transient_list,ra_list,dec_list,[],[],stack_id_list)
-		print(f'submitted stack request {stack_request_name}')
+		print('submitted stack request {stack_request_name}'.format(stack_request_name))
 		
 		# submit the stack jobs
 		tstart = time.time()
@@ -397,8 +397,8 @@ class ForcedPhot:
 					ff = fits.open(outfile)
 					if 'diff' in img_key_in: fits_to_png(ff,outfile.replace('fits','png'),log=False)
 					else: fits_to_png(ff,outfile.replace('fits','png'),log=True)
-					img_dict[k][img_key_out] += [outfile.replace(f'{basedir}/','')]
-					img_dict[k][img_key_out+'_png'] += [outfile.replace(f'{basedir}/','').replace('.fits','.png')]
+					img_dict[k][img_key_out] += [outfile.replace('{}/'.format(basedir),'')]
+					img_dict[k][img_key_out+'_png'] += [outfile.replace('{}/'.format(basedir),'').replace('.fits','.png')]
 					
 		return img_dict
 					
@@ -515,18 +515,18 @@ class ForcedPhot:
 		phot_dict = {}
 		for request_name in request_names:
 			phot_link = 'http://datastore.ipp.ifa.hawaii.edu/pstampresults/'
-			phot_results_link = f'{phot_link}/{request_name}/'
+			phot_results_link = '{}/{}/'.format(phot_link,request_name)
 
 			phot_page = requests.get(url=phot_results_link)
 			if phot_page.status_code != 200:
-				raise RuntimeError(f'results page {phot_results_link} does not exist')
+				raise RuntimeError('results page {} does not exist'.format(phot_results_link))
 
 
 			tree = html.fromstring(phot_page.content)
 			fitsfiles = tree.xpath('//a/text()')
 			for f in fitsfiles:
 				if 'detectability' in f:
-					phot_fits_link = f'{phot_link}/{request_name}/{f}'
+					phot_fits_link = '{}/{}/{}'.format(phot_link,request_name,f)
 					fits_response = requests.get(url=phot_fits_link,stream=True)
 
 					# this is a pain but it seems necessary
@@ -586,12 +586,12 @@ class ForcedPhot:
 	def get_stamps(self,request_name,transient_list):
 
 		stamp_link = 'http://datastore.ipp.ifa.hawaii.edu/yse-pstamp-results/'
-		stamp_results_link = f'{stamp_link}/{request_name}/results.mdc'
-		stamp_fitsfile_link = f'{stamp_link}/{request_name}/'
+		stamp_results_link = '{}/{}/results.mdc'.format(stamp_link,request_name)
+		stamp_fitsfile_link = '{}/{}/'.format(stamp_link,request_name)
 		
 		stamps_page = requests.get(url=stamp_results_link)
 		if stamps_page.status_code != 200:
-			raise RuntimeError(f'results page {stamp_results_link} does not exist')
+			raise RuntimeError('results page {} does not exist'.format(stamp_results_link))
 		
 		mdc_stamps = parse_mdc(stamps_page.text)
 
@@ -602,7 +602,7 @@ class ForcedPhot:
 
 		for k in mdc_stamps.keys():
 			if 'SUCCESS' not in mdc_stamps[k]['ERROR_STR'] and 'NO_VALID_PIXELS' not in mdc_stamps[k]['ERROR_STR']:
-				raise RuntimeError(f'part of job {request_name} failed!')
+				raise RuntimeError('part of job {} failed!'.format(request_name))
 			img_name,img_type,transient,mjd,img_id,img_filter = \
 				mdc_stamps[k]['IMG_NAME'],mdc_stamps[k]['IMG_TYPE'],mdc_stamps[k]['COMMENT'].split('.')[-1],\
 				float(mdc_stamps[k]['MJD_OBS']),mdc_stamps[k]['ID'],mdc_stamps[k]['FILTER'].split('.')[0]
@@ -613,21 +613,21 @@ class ForcedPhot:
 										 'warp_image_filter':[],'diff_image_filter':[],'stack_image_filter':[]}
 			if 'NO_VALID_PIXELS' not in mdc_stamps[k]['ERROR_STR']:
 				if img_type == 'warp':
-					image_dict[transient]['warp_image_link'] += [f'{stamp_fitsfile_link}/{img_name}']
+					image_dict[transient]['warp_image_link'] += ['{}/{}'.format(stamp_fitsfile_link,img_name)]
 					image_dict[transient]['warp_image_id'] += [img_id]
 					image_dict[transient]['warp_image_mjd'] += [mjd]
 					image_dict[transient]['warp_image_filter'] += [img_filter]
 				elif img_type == 'diff':
-					image_dict[transient]['diff_image_link'] += [f'{stamp_fitsfile_link}/{img_name}']
+					image_dict[transient]['diff_image_link'] += ['{}/{}'.format(stamp_fitsfile_link,img_name)]
 					image_dict[transient]['diff_image_id'] += [img_id]
 					image_dict[transient]['diff_image_mjd'] += [mjd]
 					image_dict[transient]['diff_image_filter'] += [img_filter]
 				elif img_type == 'stack':
-					image_dict[transient]['stack_image_link'] += [f'{stamp_fitsfile_link}/{img_name}']
+					image_dict[transient]['stack_image_link'] += ['{}/{}'.format(stamp_fitsfile_link,img_name)]
 					image_dict[transient]['stack_image_id'] += [img_id]
 					image_dict[transient]['stack_image_mjd'] += [mjd]
 					image_dict[transient]['stack_image_filter'] += [img_filter]
-				else: raise RuntimeError(f'image type {img_type} not found')
+				else: raise RuntimeError('image type {} not found'.format(img_type))
 			else:
 				if img_type == 'warp':
 					image_dict[transient]['warp_image_link'] += [None]
@@ -644,7 +644,7 @@ class ForcedPhot:
 					image_dict[transient]['stack_image_id'] += [img_id]
 					image_dict[transient]['stack_image_mjd'] += [mjd]
 					image_dict[transient]['stack_image_filter'] += [img_filter]
-				else: raise RuntimeError(f'image type {img_type} not found')
+				else: raise RuntimeError('image type {} not found'.format(img_type))
 
 		return image_dict
 
@@ -761,7 +761,7 @@ class ForcedPhot:
 				zip(transient_list[transient_list == snid_unq],ra_list[transient_list == snid_unq],dec_list[transient_list == snid_unq],
 					mjd_list[transient_list == snid_unq],filt_list[transient_list == snid_unq],diff_id_list[transient_list == snid_unq]):
 				if diff_id is None: continue
-				data.add_row((f'forcedphot_ysebot_{count}',ra,dec,ra,dec,filt,mjd,diff_id) )
+				data.add_row(('forcedphot_ysebot_{}'.format(count),ra,dec,ra,dec,filt,mjd,diff_id) )
 				count += 1
 			
 			#if len(data) == 0:
@@ -785,7 +785,7 @@ class ForcedPhot:
 				self.submit_to_ipp(s)
 				request_names += [request_name]
 			else:
-				print(f'warning : no diff IDs for transient {snid_unq}')
+				print('warning : no diff IDs for transient {}'.format(snid_unq))
 				
 		return request_names
 
