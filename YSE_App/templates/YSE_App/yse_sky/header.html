@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    {% load staticfiles %}
+    <meta name="viewport" content = "width=device-width, initial-scale=1.0"/>
+    <style type="text/css">
+            html,
+            body {height:100%},
+            .tab { margin-left: 40px; }
+            canvas {background-color: #F0F8FF; 
+                    height: {{ viewContent.fov_y_pixels }}px; 
+                    width: {{ viewContent.fov_x_pixels }}px; 
+                    outline: 2px solid black;}
+            /*canvas {height: 500px; width: 500px; outline: 2px solid black;}*/
+
+            /* The switch - the box around the slider */
+            .switch {
+              position: relative;
+              display: inline-block;
+              width: 30px;
+              height: 17px;
+            }
+
+            /* Hide default HTML checkbox */
+            .switch input {
+              opacity: 0;
+              width: 0;
+              height: 0;
+            }
+
+            /* The slider */
+            .slider {
+              position: absolute;
+              cursor: pointer;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background-color: #ccc;
+              -webkit-transition: .4s;
+              transition: .4s;
+            }
+
+            .slider:before {
+              position: absolute;
+              content: "";
+              height: 13px;
+              width: 13px;
+              left: 2px;
+              bottom: 2px;
+              background-color: white;
+              -webkit-transition: .4s;
+              transition: .4s;
+            }
+
+            input:checked + .slider {
+              background-color: #2196F3;
+            }
+
+            input:focus + .slider {
+              box-shadow: 0 0 0px #2196F3;
+            }
+
+            input:checked + .slider:before {
+              -webkit-transform: translateX(13px);
+              -ms-transform: translateX(13px);
+              transform: translateX(13px);
+            }
+
+            /* Rounded sliders */
+            .slider.round {
+              border-radius: 17px;
+            }
+
+            .slider.round:before {
+              border-radius: 50%;
+            }
+
+
+            form#scheduleForm ul{
+                list-style-type: none;
+                white-space: nowrap;
+            }
+            form#scheduleForm li{
+                margin-left: -50px;
+                display: inline;
+                float: left;
+                padding-right: 60px;
+                list-style-type: none;
+            }
+
+            .githubbutton {
+                position: relative;
+                overflow: visible;
+                display: inline-block;
+                padding: 0.5em 1em;
+                border: 1px solid #d4d4d4;
+                margin: 0;
+                text-decoration: none;
+                text-align: center;
+                text-shadow: 1px 1px 0 #fff;
+                font:11px/normal sans-serif;
+                color: #333;
+                white-space: nowrap;
+                cursor: pointer;
+                outline: none;
+                background-color: #ececec;
+                background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#f4f4f4), to(#ececec));
+                background-image: -moz-linear-gradient(#f4f4f4, #ececec);
+                background-image: -ms-linear-gradient(#f4f4f4, #ececec);
+                background-image: -o-linear-gradient(#f4f4f4, #ececec);
+                background-image: linear-gradient(#f4f4f4, #ececec);
+                -moz-background-clip: padding; /* for Firefox 3.6 */
+                background-clip: padding-box;
+                border-radius: 0.2em;
+                /* IE hacks */
+                zoom: 1;
+                *display: inline;
+            }
+            .githubbutton.pill {
+                border-radius: 50em;
+            }
+
+    </style>
+
+        <!-- Load jquery -->    
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" 
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" 
+            crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
+    <!--  Load bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+
+
+    <!-- Load the cookie stuff -->    
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+    <!-- Load the Paper.js library -->
+    <script src=https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.0/paper-full.min.js ></script>
+        <!-- Load my paperscript, don't worry about caching-->
+    <script type="text/paperscript" src="{% static 'YSE_App/js/paperBasic.js' %}" canvas="myCanvas"></script>
+    <!-- Load my js, don't worry about caching; disabled for now because ajax urls...-->
+    <!-- <script type="text/javascript" src="{% static 'gw_assessor/js/main.js' %}"></script> -->
+            <!-- Load popper -->    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" 
+            integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" 
+            crossorigin="anonymous"></script>
+
+    <!-- Aladin -->
+    <link rel="stylesheet" href="//aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.css" />
+    <script type="text/javascript" src="//aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.js" charset="utf-8"></script>
+
+    <script type="text/javascript" >
+        // this is gross and pollutes the global scope
+        // but I think it's necessary for paperscript
+        // to see the verts to draw
+        window.globals = {
+            paper_draw_field: function() {},
+            paper_update_field: function() {},
+            paper_draw_background: function() {},
+
+            globalPaths: {}
+        }
+
+        // ajax setup stuff
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+
+        var csrftoken = Cookies.get('csrftoken');
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+             if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                 xhr.setRequestHeader("X-CSRFToken", csrftoken);
+             }
+            }
+        });
+
+
+
+
+
+        // Drawing functions
+
+        // launch a view to update the DB and the toggled state of this field
+        function toggleTargetField(rowID,rowState) {
+            var request_data = rowID+'_'+rowState
+
+            // get the current span ID from the inputs
+            idStr = `${rowID} ${rowState}`;
+
+            $.ajax({
+                type : 'POST', // this is changing the DB
+                url: "{% url 'toggle_field' %}",
+                data: {'rowID':rowID,'rowState':rowState},
+                dataType: 'json',
+                success : function(retData) {
+
+                    // NOTE: all these subsequent changes apply to the DOM only
+                    // (i.e., you cannot modify the html source you see in the browser)
+
+                    // update the document to reflect the new state
+                    // create the new state variables (i.e. post-toggle)
+                    newRowState = retData.newState;
+                    newIDStr = `${rowID} ${newRowState}`;
+                    newOnClickStr = `toggleTargetField('${rowID}', '${newRowState}')`;
+                    checkboxID = `checkbox ${rowID}`;
+                    if (newRowState.toString().toLowerCase().trim() === 'true') {
+                         newCheckboxOutterHtml = `<input id="${checkboxID}" type="checkbox" checked/>`;
+                     } else {
+                         newCheckboxOutterHtml = `<input id="${checkboxID}" type="checkbox"/>`;
+                     }
+
+                    // update the span ID and the onclick attributes
+                    document.getElementById(idStr).setAttribute("id",newIDStr);
+                    document.getElementById(newIDStr).setAttribute("onClick",newOnClickStr);
+
+                    // update the checked attribute of the slider
+                    // https://www.w3.org/TR/html/infrastructure.html#boolean-attribute
+                    // The values "true" and "false" are not allowed on boolean attributes.
+                    // To represent a false value, the attribute has to be omitted altogether.
+                    document.getElementById(checkboxID).outerHTML = newCheckboxOutterHtml;
+
+                    // now send the command to update the canvas art
+                    updateField(rowID,newRowState);
+                }
+            })
+        }
+
+        // launch a view to update the DB and the toggled state of this field
+        function toggleFieldSet(rowID,rowState) {
+            var request_data = rowID+'_'+rowState
+
+            // get the current span ID from the inputs
+            idStr = `${rowID} ${rowState}`;
+
+            $.ajax({
+                type : 'POST', // this is changing the DB
+                url: "{% url 'toggle_fieldset' %}",
+                data: {'rowID':rowID,'rowState':rowState},
+                dataType: 'json',
+                success : function(retData) {
+
+                    // NOTE: all these subsequent changes apply to the DOM only
+                    // (i.e., you cannot modify the html source you see in the browser)
+
+                    // update the document to reflect the new state
+                    // create the new state variables (i.e. post-toggle)
+                    newRowState = retData.newState;
+                    newIDStr = `${rowID} ${newRowState}`;
+                    newOnClickStr = `toggleFieldSet('${rowID}', '${newRowState}')`;
+                    checkboxID = `checkbox ${rowID}`;
+                    if (newRowState.toString().toLowerCase().trim() === 'true') {
+                         newCheckboxOutterHtml = `<input id="${checkboxID}" type="checkbox" checked/>`;
+                     } else {
+                         newCheckboxOutterHtml = `<input id="${checkboxID}" type="checkbox"/>`;
+                     }
+
+                    // update the span ID and the onclick attributes
+                    document.getElementById(idStr).setAttribute("id",newIDStr);
+                    document.getElementById(newIDStr).setAttribute("onClick",newOnClickStr);
+
+                    // update the checked attribute of the slider
+                    // https://www.w3.org/TR/html/infrastructure.html#boolean-attribute
+                    // The values "true" and "false" are not allowed on boolean attributes.
+                    // To represent a false value, the attribute has to be omitted altogether.
+                    document.getElementById(checkboxID).outerHTML = newCheckboxOutterHtml;
+                }
+            })
+        }
+
+
+
+
+
+        // toggle the field fill on the canvas
+        function updateField(rowID,rowState) {
+            // get the verts
+            $.ajax({
+                type : 'POST', // this could just be a GET...just generating verts
+                url: "{% url 'get_fieldmsb_verts' %}",
+                data: {'rowID':rowID},
+                success : function(retData) {
+                    // now send the paperscript to draw the field (only if we got verts)
+                    // if we got verts, that means it's on the canvas and update-able
+                    //if (!isEmpty(retData)) {
+                    //    globals.paper_update_field(rowID,rowState);
+                    //}
+                    if (!isEmpty(retData)) {
+                        // turn this into arrays
+                        var resArr = JSON.parse(retData);
+                        for (i = 0; i < resArr[0].length; i++) {
+                            globals.paper_update_field(resArr[0][i],resArr[1][i],'#3182bd')
+                        }
+                    }
+                }
+            })
+        }
+
+        // fetch all sliders on the page, initialize them on the canvas
+        function initDraw() {
+
+            globals.paper_draw_background();
+
+            // get the fields in the canvas FOV
+            $.ajax({
+                type : 'POST',
+                url: "{% url 'init_draw_fields' %}",
+                data: "json",
+                success : function(retData) {
+                    // now send the paperscript to draw the field (only if we got verts)
+                    if (!isEmpty(retData)) {
+                        // turn this into arrays
+                        var resArr = JSON.parse(retData);
+                        for (i = 0; i < resArr[0].length; i++) {
+                            initDrawSingleField(resArr[0][i],resArr[1][i])
+                        }
+                    }
+                }
+            })
+
+            var query = "{{query_name}}";
+
+            $.ajax({
+                type : 'POST',
+                url: "{% url 'init_draw_transients' %}",
+                data: {"transients":query },
+                dataType: "json",
+                success : function(retData) {
+                    // now send the paperscript to draw the field (only if we got verts)
+                    if (!isEmpty(retData)) {
+                        // turn this into arrays
+                        var resArr = retData; //JSON.parse(retData);
+                        for (i = 0; i < resArr[0].length; i++) {
+                            initDrawSingleSN(resArr[0][i],resArr[1][i])
+                        }
+                    }
+                }
+            })
+
+        }
+
+
+        // do the initial draw on the canvas for this field
+        function initDrawSingleField(rowID,rowState) {
+
+            // now get the verts
+            $.ajax({
+                type : 'POST',
+                url: "{% url 'get_field_verts' %}",
+                data: {'rowID': rowID},
+                success : function(retData) {
+                    // now send the paperscript to draw the field (only if we got verts)
+                    if (!isEmpty(retData)) {
+                        globals.paper_draw_field(retData,rowID,rowState,'#3182bd');
+                    }
+                }
+            })
+        }
+
+        // do the initial draw on the canvas for this field
+        function initDrawSingleSN(rowID,rowState) {
+
+            // now get the verts
+            $.ajax({
+                type : 'POST',
+                url: "{% url 'get_sn_verts' %}",
+                data: {'rowID': rowID},
+                success : function(retData) {
+                    // now send the paperscript to draw the field (only if we got verts)
+                    if (!isEmpty(retData)) {
+                        globals.paper_draw_field(retData,rowID,rowState,'#fdae6b');
+                    }
+                }
+            })
+        }
+
+        // link to the detail page
+        function field_clicked(rowID) {
+            //window.location.href = '/detailField/'+rowID.toString().trim();
+            window.open( "{{ viewContent.VIR_DIR }}/detailField/" + rowID.toString().trim() + "/",'_blank');
+        }
+
+
+        function isEmpty(obj) {
+            for(var key in obj) {
+                if(obj.hasOwnProperty(key))
+                    return false;
+            }
+            return true;
+        }
+    </script>
+
+    <!-- Now link up the buttons with JS actions -->
+    <script type="text/javascript" > 
+
+        //connect the buttons to their functions
+        window.onload = function() {
+
+            // draw the fields and the contours onload
+
+            initDraw();
+            setInterval(function() {
+                        document.getElementById('backgroundSky').setAttribute('src', aladin.getViewDataURL());
+                     }, 1000);
+
+        }
+    </script>
+
+</head>
+
+
+<!--
+<body class="body" style="background-color:#f6f6f6">
+-->
+<body class="body" style="background-color:#fcfcfc">
+
+    <!-- Youser info -->
+    <div class="container mt-3">
+        <div class="row justify-content-end">
+            <div class="col-auto">
+                <p>Hi {{ viewContent.user }}
+                <a href="{{ viewContent.VIR_DIR }}/logout/" class="githubbutton pill">Logout</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    <!-- Title -->
+    <div class="container">
+        <br>
+        <center>
+            <h3>YSE Sky: Targeting and Field Selection</h3>
+        </center>
+    </div>
+
+    
+{% block content %}
+{% endblock %}
+
+<!-- Close the main body and page -->
+
+<!-- Background canvas image -->
+<!-- Hidden aladin-lite div to run the instance -->
+<div id="aladin-lite-div" style="width:{{ viewContent.fov_x_pixels }}px;
+                                 height:{{ viewContent.fov_y_pixels }}px;
+                                 display:none;"></div>
+<script type="text/javascript">
+    //create an aladin instance, update the hidden image source every second
+    var aladin = A.aladin('#aladin-lite-div',
+                    {survey: "P/DSS2/color",
+                     target: "{{ viewContent.fov_raCenter }} {{ viewContent.fov_decCenter }}",
+                     fov: "{{ viewContent.fov_width }}",
+                     showReticle:false});
+    aladin.getBaseImageLayer().getColorMap().reverse();
+</script>
+
+<!-- Hidden image that will get mapped onto the canvas via paper.js -->
+<img id="backgroundSky" style="width:{{ viewContent.fov_x_pixels }}px;
+                               height:{{ viewContent.fov_y_pixels }}px;
+                               display:none;"></img>
+</body>
+</html>
