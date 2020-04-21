@@ -1623,8 +1623,9 @@ def get_legacy_image(request,transient_id):
 	jpegurl = "http://legacysurvey.org/viewer/jpeg-cutout?ra=%.7f&dec=%.7f&pixscale=0.27&bands=grz"%(
 		t.ra,t.dec)
 
-	fitsurl = "http://legacysurvey.org/viewer/fits-cutout?ra=%.7f&dec=%.7f&layer=dr8&pixscale=0.27&bands=grz"%(
-		t.ra,t.dec)
+	#fitsurl = "http://legacysurvey.org/viewer/fits-cutout?ra=%.7f&dec=%.7f&layer=dr8&pixscale=0.27&bands=grz"%(
+	#	t.ra,t.dec)
+	fitsurl = "http://legacysurvey.org/viewer?ra=%.7f&dec=%.7f"%(t.ra,t.dec)
 	
 	print(jpegurl,fitsurl)
 	jpegurldict = {"jpegurl":jpegurl,
