@@ -95,7 +95,7 @@ default_forcedphot_header['NAXIS1']   = 84
 default_forcedphot_header['NAXIS2']   = 8
 default_forcedphot_header['PCOUNT']   = 0
 default_forcedphot_header['GCOUNT']   = 1
-default_forcedphot_header['TFIELDS']  = 8
+default_forcedphot_header['TFIELDS']  = 9
 default_forcedphot_header['TTYPE1']   = 'ROWNUM  '
 default_forcedphot_header['TFORM1']   = '20A     '
 default_forcedphot_header['TTYPE2']   = 'RA1_DEG '
@@ -112,6 +112,8 @@ default_forcedphot_header['TTYPE7']   = 'MJD-OBS '
 default_forcedphot_header['TFORM7']   = 'D       '
 default_forcedphot_header['TTYPE8']   = 'FPA_ID  '
 default_forcedphot_header['TFORM8']   = 'J       '
+default_forcedphot_header['TTYPE9']   = 'COMPONENT'
+default_forcedphot_header['TFORM9']   = '64A     '
 default_forcedphot_header['EXTNAME']  = 'MOPS_DETECTABILITY_QUERY'
 default_forcedphot_header['QUERY_ID'] = 'yse.meh_det_test200410'
 default_forcedphot_header['EXTVER']   = '2       '
@@ -120,28 +122,6 @@ default_forcedphot_header['STAGE']    = 'WSdiff  '
 default_forcedphot_header['EMAIL']    = 'yse@qub.ac.uk'
 
 from astropy.visualization import PercentileInterval, AsinhStretch
-
-def sendemail(from_addr, to_addr,
-			  subject, message,
-			  login, password, smtpserver, cc_addr=None):
-
-	print("Preparing email")
-
-	msg = MIMEMultipart('alternative')
-	msg['Subject'] = subject
-	msg['From'] = from_addr
-	msg['To'] = to_addr
-	payload = MIMEText(message, 'html')
-	msg.attach(payload)
-
-	with smtplib.SMTP(smtpserver) as server:
-		try:
-			server.starttls()
-			server.login(login, password)
-			resp = server.sendmail(from_addr, [to_addr], msg.as_string())
-			print("Send success")
-		except:
-			print("Send fail")
 
 def fits_to_png(ff,outfile,log=False):
 	plt.clf()
@@ -289,12 +269,11 @@ class ForcedPhot(CronJobBase):
 		min_date = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.options.max_time_minutes)
 		nowmjd = date_to_mjd(datetime.datetime.utcnow())
 		transients = Transient.objects.filter(created_date__gte=min_date).filter(~Q(tags__name='YSE')).order_by('-created_date')
-
+		
 		# candidate survey images
 		survey_images = SurveyObservation.objects.filter(status__name='Successful').\
 			filter(obs_mjd__gt=nowmjd-self.options.max_days_yseimage).filter(diff_id__isnull=False)
 
-		
 		transient_list,ra_list,dec_list,diff_id_list,warp_id_list,mjd_list,filt_list = \
 			[],[],[],[],[],[],[]
 		for t in transients:
@@ -321,12 +300,12 @@ class ForcedPhot(CronJobBase):
 		for t in np.unique(transient_list):
 			print(t)
 
-		stamp_request_name = self.stamp_request(
+		stamp_request_name,skycelldict = self.stamp_request(
 			transient_list,ra_list,dec_list,diff_id_list,warp_id_list,[])
 		print('submitted stamp request {}'.format(stamp_request_name))
 
 		phot_request_names = self.forcedphot_request(
-			transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list)
+			transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list,skycelldict)
 		print('submitted phot requests:')
 		for prn in phot_request_names: print(prn)
 
@@ -361,9 +340,9 @@ class ForcedPhot(CronJobBase):
 				ra_list += [r]
 				dec_list += [d]
 				transient_list += [t]
-		
-		stack_request_name = self.stamp_request(
-			transient_list,ra_list,dec_list,[],[],stack_id_list)
+
+		stack_request_name,skycelldict = self.stamp_request(
+			transient_list,ra_list,dec_list,[],[],stack_id_list,skycelldict=skycelldict)
 		print('submitted stack request {}'.format(stack_request_name))
 		
 		# submit the stack jobs
@@ -709,7 +688,7 @@ class ForcedPhot(CronJobBase):
 		
 	def stamp_request(
 			self,transient_list,ra_list,dec_list,diff_id_list,
-			warp_id_list,stack_id_list,width=300,height=300):
+			warp_id_list,stack_id_list,width=300,height=300,skycelldict=None):
 
 		assert len(transient_list) == len(warp_id_list) or \
 			len(transient_list) == len(diff_id_list) or \
@@ -729,15 +708,18 @@ class ForcedPhot(CronJobBase):
 							   'S16','>f8','>f8','S64'))
 
 		transients_unq,idx = np.unique(transient_list,return_index=True)
-		skycells = np.array([])
-		for snid,ra,dec in zip(transient_list[idx],ra_list[idx],dec_list[idx]):
-			skycells = np.append(skycells,'skycell.'+getskycell(ra,dec)[0])
+		if skycelldict is None:
+			skycelldict = {}
+			skycells = np.array([])
+			for snid,ra,dec in zip(transient_list[idx],ra_list[idx],dec_list[idx]):
+				skycells = np.append(skycells,'skycell.'+getskycell(ra,dec)[0])
+				skycelldict[snid] = skycells[-1]
 		
 		count = 1
 		for snid,ra,dec,diff_id in \
 			zip(transient_list,ra_list,dec_list,diff_id_list):
 			if diff_id is None: continue
-			skycell_str = skycells[transients_unq == snid]
+			skycell_str = skycelldict[snid]
 			data.add_row((count,'gpc1','null','null','stamp',2049,'byid','diff',diff_id,'RINGS.V3',
 						  skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'diff.for.%s'%snid) )
 			count += 1
@@ -745,7 +727,7 @@ class ForcedPhot(CronJobBase):
 		for snid,ra,dec,warp_id in \
 			zip(transient_list,ra_list,dec_list,warp_id_list):
 			if warp_id is None: continue
-			skycell_str = skycells[transients_unq == snid]
+			skycell_str = skycelldict[snid]
 			data.add_row((count,'gpc1','null','null','stamp',2049,'byid','warp',warp_id,'RINGS.V3',
 						  skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'warp.for.%s'%snid) )
 			count += 1
@@ -753,11 +735,11 @@ class ForcedPhot(CronJobBase):
 		for snid,ra,dec,stack_id in \
 			zip(transient_list,ra_list,dec_list,stack_id_list):
 			if stack_id is None: continue
-			skycell_str = skycells[transients_unq == snid]
+			skycell_str = skycelldict[snid]
 			data.add_row((count,'gpc1','null','null','stamp',2049,'byid','stack',stack_id,'RINGS.V3',
 						  skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'stack.for.%s'%snid) )
 			count += 1
-			
+
 		hdr = default_stamp_header.copy()
 		request_name = 'YSE-stamp.%i'%(time.time())
 		hdr['REQ_NAME'] = request_name
@@ -767,12 +749,12 @@ class ForcedPhot(CronJobBase):
 		ff.writeto(s, overwrite=True)
 		if self.debug:
 			ff.writeto('stampimg.fits',overwrite=True)
-		
+
 		self.submit_to_ipp(s)
 		
-		return request_name
+		return request_name,skycelldict
 
-	def forcedphot_request(self,transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list):
+	def forcedphot_request(self,transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list,skycelldict):
 
 		transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list = \
 			np.atleast_1d(np.asarray(transient_list)),np.atleast_1d(np.asarray(ra_list)),\
@@ -782,13 +764,13 @@ class ForcedPhot(CronJobBase):
 		request_names = []
 		count = 0
 		for snid_unq in np.unique(transient_list):
-			data = at.Table(names=('ROWNUM','RA1_DEG','DEC1_DEG','RA2_DEG','DEC2_DEG','FILTER','MJD-OBS','FPA_ID'),
-							dtype=('S20','>f8','>f8','>f8','>f8','S20','>f8','>i4'))
+			data = at.Table(names=('ROWNUM','RA1_DEG','DEC1_DEG','RA2_DEG','DEC2_DEG','FILTER','MJD-OBS','FPA_ID','COMPONENT_ID'),
+							dtype=('S20','>f8','>f8','>f8','>f8','S20','>f8','>i4','S64'))
 			for snid,ra,dec,mjd,filt,diff_id in \
 				zip(transient_list[transient_list == snid_unq],ra_list[transient_list == snid_unq],dec_list[transient_list == snid_unq],
 					mjd_list[transient_list == snid_unq],filt_list[transient_list == snid_unq],diff_id_list[transient_list == snid_unq]):
 				if diff_id is None: continue
-				data.add_row(('forcedphot_ysebot_{}'.format(count),ra,dec,ra,dec,filt,mjd,diff_id) )
+				data.add_row(('forcedphot_ysebot_{}'.format(count),ra,dec,ra,dec,filt,mjd,diff_id,skycelldict[snid_unq]) )
 				count += 1
 			
 			#if len(data) == 0:
@@ -834,6 +816,29 @@ class ForcedPhot(CronJobBase):
 		if type(filename_or_obj) == str: files = {'filename':open(filename,'rb')}
 		else: files = {'filename':filename_or_obj.getvalue()}
 		page = session.post(stampurl, files=files)
+
+def sendemail(from_addr, to_addr,
+			  subject, message,
+			  login, password, smtpserver, cc_addr=None):
+
+	print("Preparing email")
+
+	msg = MIMEMultipart('alternative')
+	msg['Subject'] = subject
+	msg['From'] = from_addr
+	msg['To'] = to_addr
+	payload = MIMEText(message, 'html')
+	msg.attach(payload)
+	
+	with smtplib.SMTP(smtpserver) as server:
+		try:
+			server.starttls()
+			server.login(login, password)
+			resp = server.sendmail(from_addr, [to_addr], msg.as_string())
+			print("Send success")
+		except:
+			print("Send fail")
+
 		
 if __name__ == "__main__":
 	fp = ForcedPhot()
