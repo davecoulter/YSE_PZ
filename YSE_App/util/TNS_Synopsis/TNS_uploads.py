@@ -188,18 +188,22 @@ class processTNS():
 				has_hst = True
 			else:
 				has_hst = False
+		except: has_hst = None
+		try:
 			chr=chandra_query.chandraImages(sc.ra.deg,sc.dec.deg,'Object')
 			chr.search_chandra_database()
 			if chr.n_obsid > 0:
 				has_chandra = True
 			else:
 				has_chandra = False
+		except: has_chandra = None
+		try:
 			if spitzer_query.get_bool_from_coord(t.ra,t.dec):
 				has_spitzer = True
 			else:
 				has_spitzer = False
 		except:
-			has_hst,has_chandra,has_spitzer = None,None,None
+			has_spitzer = None
 
 		TransientDict = {'name':obj,
 						 'slug':obj,
