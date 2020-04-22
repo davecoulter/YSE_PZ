@@ -39,6 +39,7 @@ from astropy.io import ascii
 from itertools import islice
 from astropy.cosmology import FlatLambdaCDM
 import sys
+import mast_query,chandra_query,spitzer_query
 
 reg_obj = "https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -179,6 +180,27 @@ class processTNS():
 		except:
 			ps_prob = None
 
+		# get space archival data
+		try:
+			hst=mast_query.hstImages(sc.ra.deg,sc.dec.deg,'Object')
+			hst.getObstable()
+			if hst.Nimages > 0:
+				has_hst = True
+			else:
+				has_hst = False
+			chr=chandra_query.chandraImages(sc.ra.deg,sc.dec.deg,'Object')
+			chr.search_chandra_database()
+			if chr.n_obsid > 0:
+				has_chandra = True
+			else:
+				has_chandra = False
+			if spitzer_query.get_bool_from_coord(t.ra,t.dec):
+				has_spitzer = True
+			else:
+				has_spitzer = False
+		except:
+			has_hst,has_chandra,has_spitzer = None,None,None
+
 		TransientDict = {'name':obj,
 						 'slug':obj,
 						 'ra':sc.ra.deg,
@@ -187,6 +209,9 @@ class processTNS():
 						 'mw_ebv':ebv,
 						 'status':status,
 						 'point_source_probability':ps_prob,
+						 'has_hst':has_hst,
+						 'has_chandra':has_chandra,
+						 'has_spitzer':has_spitzer,
 						 'tags':[]}
 
 		if jd:
