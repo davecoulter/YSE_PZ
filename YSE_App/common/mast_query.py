@@ -73,15 +73,19 @@ class hstImages():
         mask = [all(l) for l in zip(filmask,expmask,obsmask,detmask)]
         self.obstable = table[mask]
 
-        self.obstable['t_min']=np.around(self.obstable['t_min'], decimals=4)
-        self.obstable['t_max']=np.around(self.obstable['t_max'], decimals=4)
+        self.Nimages=0
+        if self.obstable:
+          if len(self.obstable)>0:
 
-        self.obstable.sort('obs_collection')
+            self.obstable['t_min']=np.around(self.obstable['t_min'], decimals=4)
+            self.obstable['t_max']=np.around(self.obstable['t_max'], decimals=4)
 
-        self.obstable = unique(self.obstable, keys=['t_min'], keep='last')
-        self.obstable = unique(self.obstable, keys=['t_max'], keep='last')
+            self.obstable.sort('obs_collection')
 
-        self.Nimages=len(self.obstable)
+            self.obstable = unique(self.obstable, keys=['t_min'], keep='last')
+            self.obstable = unique(self.obstable, keys=['t_max'], keep='last')
+
+            self.Nimages=len(self.obstable)
 
     def getJPGurl(self):
         if len(self.obstable) == 0:
@@ -97,13 +101,7 @@ class hstImages():
 ## TEST TEST TEST
 if __name__=='__main__':
     startTime = datetime.now()
-    if (len(sys.argv) < 3):
-        print("Must define RA and DEC in command line!!!")
-        sys.exit(1)
-
-    ra=sys.argv[1]
-    dec=sys.argv[2]
-    hst=hstImages(ra,dec,'Object')
+    hst=hstImages(199.8674542,-13.7236833,'Object')
     hst.getObstable()
     hst.getJPGurl()
     print("I found",hst.Nimages,"HST images of",hst.object,"located at coordinates",hst.ra,hst.dec)
