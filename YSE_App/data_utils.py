@@ -304,7 +304,6 @@ def add_transient(request):
 							tagobj = TransientTag.objects.get(name=tag)
 							dbtransient[0].tags.add(tagobj)
 							dbtransient[0].save()
-
 				else:
 					dbtransient = Transient(**transientdict)
 					
@@ -324,6 +323,12 @@ def add_transient(request):
 					transientdict['postage_stamp_diff_fits'] = dbtransient[0].postage_stamp_diff_fits
 
 				dbtransient.update(**transientdict)
+				if 'tags' in transientkeys:
+					for tag in transient['tags']:
+						tagobj = TransientTag.objects.get(name=tag)
+						dbtransient[0].tags.add(tagobj)
+						dbtransient[0].save()
+
 				dbtransient = dbtransient[0]
 
 			#print('saved transient in %.1f sec'%(t4-t3))

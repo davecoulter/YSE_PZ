@@ -424,7 +424,7 @@ class ForcedPhot(CronJobBase):
 
 			tdict[k] = {'name':k,
 						'obs_group':'YSE',
-						'tags':['YSE']}
+						'tags':['YSE','YSE Forced Phot']}
 
 			for i in range(len(img_dict[k]['diff_image_id'])):
 
