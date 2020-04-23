@@ -266,7 +266,7 @@ class ForcedPhot(CronJobBase):
 	def main(self):
 
 		# candidate transients
-		min_date = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.options.max_time_minutes)
+		min_date = datetime.datetime.utcnow() - datetime.timedelta(minutesself.options.max_time_minutes)
 		nowmjd = date_to_mjd(datetime.datetime.utcnow())
 		transients = Transient.objects.filter(created_date__gte=min_date).filter(~Q(tags__name='YSE')).order_by('-created_date')
 		
@@ -277,7 +277,7 @@ class ForcedPhot(CronJobBase):
 		transient_list,ra_list,dec_list,diff_id_list,warp_id_list,mjd_list,filt_list = \
 			[],[],[],[],[],[],[]
 		for t in transients:
-			
+
 			sit = survey_images.filter(Q(survey_field__ra_cen__gt=t.ra-1.55) | Q(survey_field__ra_cen__lt=t.ra+1.55) |
 									   Q(survey_field__dec_cen__gt=t.dec-1.55) | Q(survey_field__dec_cen__lt=t.dec+1.55))
 
@@ -423,8 +423,8 @@ class ForcedPhot(CronJobBase):
 							  'photdata':{}}
 
 			tdict[k] = {'name':k,
-						'obs_group':'YSE',
-						'tags':['YSE','YSE Forced Phot']}
+						#'obs_group':'YSE',
+						'tags':['YSE Forced Phot']}
 
 			for i in range(len(img_dict[k]['diff_image_id'])):
 
@@ -607,7 +607,8 @@ class ForcedPhot(CronJobBase):
 		image_dict = {}
 
 		for k in mdc_stamps.keys():
-			if 'SUCCESS' not in mdc_stamps[k]['ERROR_STR'] and 'NO_VALID_PIXELS' not in mdc_stamps[k]['ERROR_STR']:
+			if 'SUCCESS' not in mdc_stamps[k]['ERROR_STR'] and 'NO_VALID_PIXELS' not in mdc_stamps[k]['ERROR_STR'] and\
+			   'PSTAMP_NO_IMAGE_MATCH' not in mdc_stamps[k]['ERROR_STR']:
 				raise RuntimeError('part of job {} failed!'.format(request_name))
 			img_name,img_type,transient,mjd,img_id,img_filter = \
 				mdc_stamps[k]['IMG_NAME'],mdc_stamps[k]['IMG_TYPE'],mdc_stamps[k]['COMMENT'].split('.')[-1],\
@@ -617,7 +618,7 @@ class ForcedPhot(CronJobBase):
 										 'warp_image_id':[],'diff_image_id':[],'stack_image_id':[],
 										 'warp_image_mjd':[],'diff_image_mjd':[],'stack_image_mjd':[],
 										 'warp_image_filter':[],'diff_image_filter':[],'stack_image_filter':[]}
-			if 'NO_VALID_PIXELS' not in mdc_stamps[k]['ERROR_STR']:
+			if 'NO_VALID_PIXELS' not in mdc_stamps[k]['ERROR_STR'] and 'PSTAMP_NO_IMAGE_MATCH' not in mdc_stamps[k]['ERROR_STR']:
 				if img_type == 'warp':
 					image_dict[transient]['warp_image_link'] += ['{}/{}'.format(stamp_fitsfile_link,img_name)]
 					image_dict[transient]['warp_image_id'] += [img_id]
@@ -751,7 +752,6 @@ class ForcedPhot(CronJobBase):
 			ff.writeto('stampimg.fits',overwrite=True)
 
 		self.submit_to_ipp(s)
-		
 		return request_name,skycelldict
 
 	def forcedphot_request(self,transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list,skycelldict):

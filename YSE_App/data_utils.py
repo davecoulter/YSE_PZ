@@ -325,9 +325,10 @@ def add_transient(request):
 				dbtransient.update(**transientdict)
 				if 'tags' in transientkeys:
 					for tag in transient['tags']:
-						tagobj = TransientTag.objects.get(name=tag)
-						dbtransient[0].tags.add(tagobj)
-						dbtransient[0].save()
+						if not len(dbtransient[0].tags.filter(name=tag)):
+							tagobj = TransientTag.objects.get(name=tag)
+							dbtransient[0].tags.add(tagobj)
+							dbtransient[0].save()
 
 				dbtransient = dbtransient[0]
 
