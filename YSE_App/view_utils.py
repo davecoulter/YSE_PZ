@@ -49,6 +49,31 @@ from matplotlib.dates import DateFormatter
 from matplotlib import rcParams
 import healpy as hp
 
+from django.db import connection, reset_queries
+import time
+import functools
+
+def query_debugger(func):
+
+	@functools.wraps(func)
+	def inner_func(*args, **kwargs):
+
+		reset_queries()
+		
+		start_queries = len(connection.queries)
+
+		start = time.perf_counter()
+		result = func(*args, **kwargs)
+		end = time.perf_counter()
+
+		end_queries = len(connection.queries)
+
+		print(f"Function : {func.__name__}")
+		print(f"Number of Queries : {end_queries - start_queries}")
+		print(f"Finished in : {(end - start):.2f}s")
+		return result
+
+	return inner_func
 
 py2bokeh_symboldict = {"^":"triangle",
 					   "+":"cross",
@@ -57,7 +82,7 @@ py2bokeh_symboldict = {"^":"triangle",
 					   "D":"diamond",
 					   "d":"diamond",
 					   "o":"circle",
-		                           "h":"hex"}
+								   "h":"hex"}
 
 def get_recent_phot_for_host(user, host_id=None):
 	allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
@@ -396,7 +421,7 @@ class finder(TemplateView):
 def airmassplot(request, transient_id, obs_id, telescope_id):
 	#font = {'family' : 'normal',
 	#		'weight' : 'normal',
-	#		'size'   : 2}
+	#		'size'	 : 2}
 	#matplotlib.rc('font', **font)
 
 	#rcParams['figure.figsize'] = (2,2)
@@ -549,7 +574,8 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 	tstart = time.time()
 
 	transient = Transient.objects.get(pk=transient_id)
-	photdata = get_all_phot_for_transient(request.user, transient_id).select_related()
+	photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
+		'created_by', 'modified_by', 'band', 'unit', 'data_quality', 'photometry','band__instrument','band__instrument__telescope')
 
 	if not photdata:
 		return django.http.HttpResponse('')
@@ -563,7 +589,6 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
-	#import pdb; pdb.set_trace()
 	
 	for p in photdata:
 		#dbflux,dbfluxerr,dbobsdate,dbmag,dbmagerr,dbdata_quality,dbdiscovery_point = \
@@ -797,11 +822,10 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	tstart = time.time()
 
 	transient = Transient.objects.get(pk=transient_id)
-	photdata = get_all_phot_for_transient(request.user, transient_id).select_related()
+	photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
+		'created_by', 'modified_by', 'band', 'unit', 'data_quality', 'photometry','band__instrument','band__instrument__telescope')
 	if not photdata:
 		return django.http.HttpResponse('')
-
-	#ax=figure()
 	
 	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
@@ -910,7 +934,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 											y=mag[bandstr == bs].tolist(),
 											date=date[bandstr == bs].tolist(),
 											band=[bs.replace('Band: ','')]*len(mjd[bandstr == bs].tolist())))
-		#import pdb; pdb.set_trace()
+
 		p = plotmethod('x','y',source=source, #mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
 				   color=color,size=size, muted_alpha=0.2)#,legend='%s - %s'%(
 					   #b.instrument.telescope.name,b.name))
@@ -980,7 +1004,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		#ax.legend()
 	ax.plot_height = 400+20*len(bandunq)
 	ax.plot_width = 400
-	#import pdb; pdb.set_trace()
+
 	majorticks = []; overridedict = {}
 	mjdrange = range(int(np.min(mjd)-100),int(np.max(mjd)+100))
 	times = Time(mjdrange,format='mjd')
@@ -1068,7 +1092,8 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 	tstart = time.time()
 
 	transient = Transient.objects.get(pk=transient_id)
-	photdata = get_all_phot_for_transient(request.user, transient_id).select_related()
+	photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
+		'created_by', 'modified_by', 'band', 'unit', 'data_quality', 'photometry','band__instrument','band__instrument__telescope')
 	if not photdata:
 		return django.http.HttpResponse('')
 
