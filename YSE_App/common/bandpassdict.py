@@ -79,5 +79,14 @@ bandpassdict = {'Band: Direct/4Kx4K - B':'bessellb',
 				'Band: Sinistro - gp':'sdssg',
 				'Band: PIXIS - ip':'sdssi',
 				'Band: PIXIS - rp':'sdssr',
-				'Band: PIXIS - gp':'sdssg'}
+				'Band: PIXIS - gp':'sdssg',
+				'Band: ACP - g':'sdssg',
+				'Band: ACP - r':'sdssr',
+				'Band: ACP - i':'sdssi',
+				#'Band: ACP - z':'sdssz',
+				'Band: ACP - V': 'bessellv',
+				'Band: UVOT - V': 'bessellv',
+				'Band: UVOT - B': 'bessellb',
+				'Band: UVOT - U': 'bessellux'}
 #				'Band: Gaia-Photometric - Other-'}
+
