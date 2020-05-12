@@ -270,7 +270,7 @@ class ForcedPhot(CronJobBase):
 		# candidate transients
 		min_date = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.options.max_time_minutes)
 		nowmjd = date_to_mjd(datetime.datetime.utcnow())
-		transient_name = '2020jfo'
+
 		if transient_name is None:
 			transients = Transient.objects.filter(
 				created_date__gte=min_date).filter(~Q(tags__name='YSE')).order_by('-created_date')

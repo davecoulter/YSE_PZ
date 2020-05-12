@@ -229,16 +229,15 @@ class AntaresZTF(CronJobBase):
 				antareslink = '{}/loci/{}/catalog-matches'.format(self.options.antaresapi,s['locus_id'])
 				r = requests.get(antareslink)
 				data = json.loads(r.text)
-				try:
-					for k in _allowed_galaxy_catalogs.keys():
-						if k in data['result'].keys():
-							hostdict = {'name':k+'_'+str(data['result'][k][0][_allowed_galaxy_catalogs[k]['name_key']]),
-										'ra':data['result'][k][0][_allowed_galaxy_catalogs[k]['ra_key']],
-										'dec':data['result'][k][0][_allowed_galaxy_catalogs[k]['dec_key']]}
-							if _allowed_galaxy_catalogs[k]['redshift_key'] is not None:
-								hostdict['redshift'] = data['result'][k][0][_allowed_galaxy_catalogs[k]['redshift_key']]
-				except:
-					import pdb; pdb.set_trace()
+				
+				for k in _allowed_galaxy_catalogs.keys():
+					if k in data['result'].keys():
+						hostdict = {'name':k+'_'+str(data['result'][k][0][_allowed_galaxy_catalogs[k]['name_key']]),
+									'ra':data['result'][k][0][_allowed_galaxy_catalogs[k]['ra_key']],
+									'dec':data['result'][k][0][_allowed_galaxy_catalogs[k]['dec_key']]}
+						if _allowed_galaxy_catalogs[k]['redshift_key'] is not None:
+							hostdict['redshift'] = data['result'][k][0][_allowed_galaxy_catalogs[k]['redshift_key']]
+				
 			else:
 				hostdict = {}
 				continue
@@ -323,7 +322,7 @@ class AntaresZTF(CronJobBase):
 						  help='settings file (login/password info)')
 		parser.add_argument('--status', default='New', type=str,
 						  help='transient status to enter in YS_PZ')
-		parser.add_argument('--max_days', default=13, type=float,
+		parser.add_argument('--max_days', default=7, type=float,
 						  help='grab photometry/objects from the last x days')
 
 		if config:
