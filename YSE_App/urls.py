@@ -85,6 +85,8 @@ urlpatterns = [
 	url(r'^get_new_transients_box/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<ra_width>\d+\.?\d*)/(?P<dec_width>\d+\.?\d*)/$', 
 		data_utils.get_new_transients_box, name='get_new_transients_box'),
 	url(r'^query_api/(?P<query_name>.*)/$',data_utils.query_api, name='query_api'),
+	url(r'^change_status_for_query/(?P<query_id>[a-zA-Z0-9_-]+)/(?P<status_id>[a-zA-Z0-9_-]+)$', 
+		views.change_status_for_query, name='change_status_for_query'),
 	url(r'^download_data/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_data, name='download_data'),
 	url(r'^download_spectra/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_spectra, name='download_spectra'),
 	url(r'^download_photometry/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_photometry, name='download_photometry'),

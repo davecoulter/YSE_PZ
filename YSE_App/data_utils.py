@@ -136,6 +136,7 @@ def add_yse_survey_obs(request):
 		
 		surveykeys = survey.keys()
 		for surveykey in surveykeys:
+			if surveykey in ['ra_cen','dec_cen']: continue
 			if not isinstance(SurveyObservation._meta.get_field(surveykey), ForeignKey):
 				surveydict[surveykey] = survey[surveykey]
 			else:
@@ -143,7 +144,24 @@ def add_yse_survey_obs(request):
 				if surveykey == 'photometric_band':
 					fk = fkmodel.objects.filter(name=survey[surveykey].split('-')[1]).filter(instrument__name=survey[surveykey].split('-')[0])
 				elif surveykey == 'survey_field':
-					fk = fkmodel.objects.filter(field_id=survey[surveykey])
+					#fk = fkmodel.objects.filter(field_id=survey[surveykey])
+					#import pdb; pdb.set_trace()
+					fk = fkmodel.objects.filter(Q(ra_cen__gt=float(survey['ra_cen'])-0.1) & Q(ra_cen__lt=float(survey['ra_cen'])+0.1) &
+												Q(dec_cen__gt=float(survey['dec_cen'])-0.1) & Q(dec_cen__lt=float(survey['dec_cen'])+0.1))
+					if not len(fk):
+						fk = fkmodel.objects.filter(field_id=survey[surveykey])
+						fk_edit = fk[0]
+						fk_edit.ra_cen = survey['ra_cen']
+						fk_edit.dec_cen = survey['dec_cen']
+						fk_edit.save()
+					if not len(fk):
+						try: ztf_id = survey[surveykey].split('.')[0]
+						except: ztf_id = None
+						fk = fkmodel.objects.create(
+							field_id=survey[surveykey],ra_cen=survey['ra_cen'],dec_cen=survey['dec_cen'],
+							instrument=Instrument.objects.get(name='GPC1'),created_by_id=user.id,
+							modified_by_id=user.id,active=1,width_deg=3.1,
+							height_deg=3.1,ztf_field_id=ztf_id,cadence=3)
 				else: fk = fkmodel.objects.filter(name=survey[surveykey])
 				if not len(fk):
 					print("Sending email to: %s" % user.username)
@@ -161,6 +179,7 @@ def add_yse_survey_obs(request):
 				obs_mjd__gt=float(surveydict['obs_mjd'])-0.01).filter(
 					obs_mjd__lt=float(surveydict['obs_mjd'])+0.01).filter(
 						photometric_band=surveydict['photometric_band'])
+
 		if not len(dbsurveyfield):
 			# obs MJD on same night - probably need to get rise/set times
 			# to do this right

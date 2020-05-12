@@ -97,7 +97,8 @@ def get_recent_phot_for_host(user, host_id=None):
 		return(None)
 
 def get_all_phot_for_transient(user, transient_id=None):
-	photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id)
+	photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(
+		user, transient_id, includeBadData=True)
 	return(photdata)
 
 def get_recent_phot_for_transient(user, transient_id=None):
@@ -575,19 +576,20 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 
 	transient = Transient.objects.get(pk=transient_id)
 	photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
-		'created_by', 'modified_by', 'band', 'unit', 'data_quality', 'photometry','band__instrument','band__instrument__telescope')
+		'created_by', 'modified_by', 'band', 'unit', 'data_quality',
+		'photometry','band__instrument','band__instrument__telescope')
 
 	if not photdata:
 		return django.http.HttpResponse('')
 
 	ax=figure(plot_width=240,plot_height=240,sizing_mode='stretch_both')
 
-	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym = \
+	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym,data_quality = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
-		np.array([]),np.array([]),np.array([])
-	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor = \
-		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+		np.array([]),np.array([]),np.array([]),np.array([])
+	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor,upperlimdataquality = \
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
 	
 	for p in photdata:
@@ -595,8 +597,8 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 		#	p.flux,p.flux_err,p.obs_date,p.mag,p.mag_err,p.data_quality,p.discovery_point
 		dbmjd = date_to_mjd(p.obs_date)
 		if p.flux and np.abs(p.flux) > 1e10: continue
-		if p.data_quality:
-			continue			
+		#if p.data_quality:
+		#	continue			
 		
 		if (p.flux and p.mag and p.flux/p.flux_err > 3) or (not p.flux and p.mag):
 			if p.discovery_point:
@@ -605,6 +607,8 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 			mjd = np.append(mjd,[dbmjd])
 			date = np.append(date,[p.obs_date.strftime('%m/%d/%Y')])
 			mag = np.append(mag,[p.mag])
+			if p.data_quality is None: data_quality = np.append(data_quality,['Good'])
+			else: data_quality = np.append(data_quality,[p.data_quality.name])
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
 			else: magerr = np.append(magerr,0)
 			bandstr = np.append(bandstr,str(p.band))
@@ -632,6 +636,8 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 			upperlimbandstr = np.append(upperlimbandstr,str(p.band))
 			upperlimband = np.append(upperlimband,p.band)
 			upperlimbandcolor = np.append(upperlimbandcolor,p.band.disp_color)
+			if p.data_quality is None: upperlimdataquality = np.append(upperlimdataquality,['Good'])
+			else: upperlimdataquality = np.append(upperlimdataquality,[p.data_quality.name])
 			if salt2:
 				if str(p.band) in bandpassdict.keys():
 					salt2mjd = np.append(salt2mjd,[dbmjd])
@@ -648,7 +654,8 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 		upperlimbandstr = np.append(upperlimbandstr,str(transient.non_detect_band))
 		upperlimband = np.append(upperlimband,transient.non_detect_band)
 		upperlimbandcolor = np.append(upperlimbandcolor,transient.non_detect_band.disp_color)
-		
+		upperlimdataquality = np.append(upperlimdataquality,'Good')
+
 	#ax.title.text = "%s"%transient.name
 	#colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
 	#			 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
@@ -823,16 +830,17 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
 	transient = Transient.objects.get(pk=transient_id)
 	photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
-		'created_by', 'modified_by', 'band', 'unit', 'data_quality', 'photometry','band__instrument','band__instrument__telescope')
+		'created_by', 'modified_by', 'band', 'unit', 'data_quality', 'photometry',
+		'band__instrument','band__instrument__telescope')
 	if not photdata:
 		return django.http.HttpResponse('')
 	
-	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym = \
+	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym,data_quality = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
-		np.array([]),np.array([]),np.array([])
-	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor = \
-		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+		np.array([]),np.array([]),np.array([]),np.array([])
+	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor,upperlimdataquality = \
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
 
 	for p in photdata:
@@ -840,8 +848,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		#	p.flux,p.flux_err,p.obs_date,p.mag,p.mag_err,p.data_quality,p.discovery_point
 		dbmjd = date_to_mjd(p.obs_date)
 		if p.flux and np.abs(p.flux) > 1e10: continue
-		if p.data_quality:
-			continue			
+		#if p.data_quality:
+		#	continue			
 
 		if (p.flux and p.mag and p.flux/p.flux_err > 3) or (not p.flux and p.mag):
 			if p.discovery_point:
@@ -850,6 +858,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 			mjd = np.append(mjd,[dbmjd])
 			date = np.append(date,[p.obs_date.strftime('%m/%d/%Y')])
 			mag = np.append(mag,[p.mag])
+			if p.data_quality is None: data_quality = np.append(data_quality,['Good'])
+			else: data_quality = np.append(data_quality,[p.data_quality.name])
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
 			else: magerr = np.append(magerr,0)
 			bandstr = np.append(bandstr,str(p.band))
@@ -877,6 +887,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 			upperlimbandstr = np.append(upperlimbandstr,str(p.band))
 			upperlimband = np.append(upperlimband,p.band)
 			upperlimbandcolor = np.append(upperlimbandcolor,p.band.disp_color)
+			if p.data_quality is None: upperlimdataquality = np.append(upperlimdataquality,['Good'])
+			else: upperlimdataquality = np.append(upperlimdataquality,[p.data_quality.name])
 			if salt2:
 				if str(p.band) in bandpassdict.keys():
 					salt2mjd = np.append(salt2mjd,[dbmjd])
@@ -893,6 +905,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		upperlimbandstr = np.append(upperlimbandstr,str(transient.non_detect_band))
 		upperlimband = np.append(upperlimband,transient.non_detect_band)
 		upperlimbandcolor = np.append(upperlimbandcolor,transient.non_detect_band.disp_color)
+		upperlimdataquality = np.append(upperlimdataquality,'Good')
 		
 	#ax.title.text = "%s"%transient.name
 	#colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
@@ -908,7 +921,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	TOOLTIPS = [
 		('mag','$y'),
 		('band','@band'),
-		('date','@date')]
+		('date','@date'),
+		('dq','@data_quality')]
 	ax=figure(plot_width=240,plot_height=240,sizing_mode='scale_width')#,tooltips=TOOLTIPS)#'stretch_both')
 
 	
@@ -933,6 +947,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		source = ColumnDataSource(data=dict(x=mjd[bandstr == bs].tolist(),
 											y=mag[bandstr == bs].tolist(),
 											date=date[bandstr == bs].tolist(),
+											data_quality=data_quality[bandstr == bs].tolist(),
 											band=[bs.replace('Band: ','')]*len(mjd[bandstr == bs].tolist())))
 
 		p = plotmethod('x','y',source=source, #mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
@@ -947,6 +962,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 			source = ColumnDataSource(data=dict(x=upperlimmjd[upperlimbandstr == bs].tolist(),
 												y=upperlimmag[upperlimbandstr == bs].tolist(),
 												date=upperlimdate[upperlimbandstr == bs].tolist(),
+												data_quality=upperlimdataquality[upperlimbandstr == bs].tolist(),
 												band=[bs.replace('Band: ','')]*len(upperlimmjd[upperlimbandstr == bs].tolist())))
 			p = ax.inverted_triangle('x','y',source=source,
 									 color=color,size=5,muted_alpha=0.2)
@@ -1039,25 +1055,28 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		zp = np.array([27.5]*len(salt2band))
 		data = Table([salt2mjd,salt2band,flux,fluxerr,zp,zpsys],names=['mjd','band','flux','fluxerr','zp','zpsys'],meta={'t0':salt2mjd[flux == np.max(flux)]})
 
-		result, fitted_model = sncosmo.fit_lc(
-			data, model, fitparams,
-			bounds={'t0':(min(np.atleast_1d(salt2mjd[flux == np.max(flux)]))-10, max(np.atleast_1d(salt2mjd[flux == np.max(flux)]))+10),
-					'z':(0.0,0.7),'x1':(-3,3),'c':(-0.3,0.3)})	# bounds on parameters (if any)
-		
-		count = 0
-		plotmjd = np.arange(result['parameters'][1]-20,result['parameters'][1]+50,0.5)
-		bandunq,idx = np.unique(bandstr,return_index=True)
-		for bs,b,bc in zip(bandunq,band[idx],bandcolor[idx]):
-			if bc != 'None' and bc:
-				color = bc
-			else:
-				coloridx = count % len(np.unique(colorlist))
-				color = colorlist[coloridx]
-				count += 1
-				
-			if bs in bandpassdict.keys() and bandpassdict[bs] in salt2band:
-				salt2flux = fitted_model.bandflux(bandpassdict[bs], plotmjd, zp=27.5,zpsys=zpsys[bandpassdict[bs] == salt2band][0])
-				ax.line(plotmjd,-2.5*np.log10(salt2flux)+27.5,color=color)
+		pkguess = np.atleast_1d(salt2mjd[flux/fluxerr > 3][flux[flux/fluxerr > 3] == np.max(flux[flux/fluxerr > 3])])
+		if len(pkguess):
+			pkguess = pkguess[0]
+			result, fitted_model = sncosmo.fit_lc(
+				data, model, fitparams,
+				bounds={'t0':(pkguess-10, pkguess+10),
+						'z':(0.0,0.7),'x1':(-3,3),'c':(-0.3,0.3)})	# bounds on parameters (if any)
+
+			count = 0
+			plotmjd = np.arange(result['parameters'][1]-20,result['parameters'][1]+50,0.5)
+			bandunq,idx = np.unique(bandstr,return_index=True)
+			for bs,b,bc in zip(bandunq,band[idx],bandcolor[idx]):
+				if bc != 'None' and bc:
+					color = bc
+				else:
+					coloridx = count % len(np.unique(colorlist))
+					color = colorlist[coloridx]
+					count += 1
+
+				if bs in bandpassdict.keys() and bandpassdict[bs] in salt2band:
+					salt2flux = fitted_model.bandflux(bandpassdict[bs], plotmjd, zp=27.5,zpsys=zpsys[bandpassdict[bs] == salt2band][0])
+					ax.line(plotmjd,-2.5*np.log10(salt2flux)+27.5,color=color)
 				
 		lcphase = today-result['parameters'][1]
 		if lcphase > 0: lcphase = '+%.1f'%(lcphase)
@@ -1093,16 +1112,18 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 
 	transient = Transient.objects.get(pk=transient_id)
 	photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
-		'created_by', 'modified_by', 'band', 'unit', 'data_quality', 'photometry','band__instrument','band__instrument__telescope')
+		'created_by', 'modified_by', 'band', 'unit', 'data_quality', 'photometry',
+		'band__instrument','band__instrument__telescope')
 	if not photdata:
 		return django.http.HttpResponse('')
 
 	#ax=figure()
 	
-	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,salt2flux,salt2fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym = \
+	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,salt2flux,salt2fluxerr,\
+		zpsys,salt2band,band,bandstr,bandcolor,bandsym,data_quality = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
-		np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
@@ -1110,8 +1131,8 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 	for p in photdata:
 		dbmjd = date_to_mjd(p.obs_date)
 		if p.flux and np.abs(p.flux) > 1e10: continue
-		if p.data_quality:
-			continue			
+		#if p.data_quality:
+		#	continue			
 
 		if (p.flux and p.mag) or (not p.flux and p.mag):
 			if p.discovery_point:
@@ -1120,6 +1141,8 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 			mjd = np.append(mjd,[dbmjd])
 			date = np.append(date,[p.obs_date.strftime('%m/%d/%Y')])
 			mag = np.append(mag,[p.mag])
+			if p.data_quality is None: data_quality = np.append(data_quality,['Good'])
+			else: data_quality = np.append(data_quality,[p.data_quality.name])
 			if not p.flux or not p.flux_err:
 				flux = np.append(flux,10**(-0.4*(p.mag-27.5)))
 				if p.mag_err: mag_err = p.mag_err
@@ -1181,9 +1204,10 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 	bandunq,idx = np.unique(allbandstr,return_index=True)
 
 	TOOLTIPS = [
-		('flux','$y'),
+		('mag','$y'),
 		('band','@band'),
-		('date','@date')]
+		('date','@date'),
+		('dq','@data_quality')]
 	ax=figure(plot_width=240,plot_height=240,sizing_mode='scale_width')#,tooltips=TOOLTIPS)#'stretch_both')
 
 	
@@ -1208,6 +1232,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 		source = ColumnDataSource(data=dict(x=mjd[bandstr == bs].tolist(),
 											y=flux[bandstr == bs].tolist(),
 											date=date[bandstr == bs].tolist(),
+											data_quality=data_quality[bandstr == bs].tolist(),
 											band=[bs.replace('Band: ','')]*len(mjd[bandstr == bs].tolist())))
 
 		p = plotmethod('x','y',source=source,

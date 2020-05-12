@@ -205,6 +205,19 @@
 												<br>
 											</div>
 										</div>
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Real/Bogus Score</strong>
+												<p class="text-muted">
+													{% if transient.real_bogus_score %}
+													{{ transient.real_bogus_score }}
+													{% else %}
+													None
+													{% endif %}
+												</p>
+												<br>
+											</div>
+										</div>
 										<div class="col-xs-12">
 											<hr>
 											<h4>Photometric Summary</h4>
@@ -932,6 +945,7 @@
 									<th>Mag Error</th>
 									<th>Filter</th>
 									<th>Instrument</th>
+									<th>DQ</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -942,6 +956,7 @@
 									<td>{{allphot.mag_err}}</td>
 									<td>{{allphot.band.name}}</td>
 									<td>{{allphot.band.instrument.name}}</td>
+									<td>{{allphot.data_quality}}</td>
 								<tr/>
 							{%endfor%}
 							</tbody>

@@ -72,6 +72,8 @@ class Transient(BaseModel):
 	point_source_probability = models.FloatField(null=True, blank=True)
 
 	slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
+
+	real_bogus_score = models.FloatField(null=True, blank=True)
 	
 	has_hst = models.NullBooleanField(null=True, blank=True)
 	has_spitzer = models.NullBooleanField(null=True, blank=True)

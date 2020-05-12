@@ -34,12 +34,16 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib
 from collections import OrderedDict
-import mastrequests
+from YSE_App.util.TNS_Synopsis import mastrequests
 from astropy.io import ascii
 from itertools import islice
 from astropy.cosmology import FlatLambdaCDM
 import sys
-import mast_query,chandra_query,spitzer_query
+from YSE_App.common import mast_query,chandra_query,spitzer_query
+from django_cron import CronJobBase, Schedule
+from django.conf import settings as djangoSettings
+import argparse, configparser
+import signal
 
 reg_obj = "https://wis-tns.weizmann.ac.il/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -76,95 +80,96 @@ def get_ps_score(RA, DEC):
 		print('PS_SCORE: %.3f' %output)
 
 	return output
-
-class processTNS():
+	
+class processTNS:
+	
 	def __init__(self):
 		self.verbose = None
 
 	def add_options(self, parser=None, usage=None, config=None):
-		import optparse
+
 		if parser == None:
-			parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
+			parser = argparse.ArgumentParser(usage=usage, conflict_handler="resolve")
 
 		# The basics
-		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
-		parser.add_option('--clobber', default=False, action="store_true",
-						  help='clobber output file')
-		parser.add_option('-s','--settingsfile', default=None, type="string",
-						  help='settings file (login/password info)')
-		parser.add_option('--status', default='New', type="string",
-						  help='transient status to enter in YS_PZ')
-		parser.add_option('--noupdatestatus', default=False, action="store_true",
-						  help='if set, don\'t promote ignore -> new when uploading')
-		parser.add_option('--update', default=False, action="store_true",
-						  help='if set, scrape TNS pages to update events already in YSE_PZ')
-		parser.add_option('--updatefromZTF', default=False, action="store_true",
-						  help='if set, update photometry from ZTF')
-		parser.add_option('--redoned', default=False, action="store_true",
-						  help='if set, repeat NED search to find host matches (slow-ish)')
-		parser.add_option('--nedradius', default=5, type='float',
-						  help='NED search radius, in arcmin')
-		parser.add_option('--ndays', default=None, type='int',
-						  help='number of days before today update events')
+		parser.add_argument('-v', '--verbose', action="count", dest="verbose",default=1)
+		parser.add_argument('--clobber', default=False, action="store_true",
+							help='clobber output file')
+		parser.add_argument('-s','--settingsfile', default=None, type=str,
+							help='settings file (login/password info)')
+		parser.add_argument('--status', default='New', type=str,
+							help='transient status to enter in YS_PZ')
+		parser.add_argument('--noupdatestatus', default=False, action="store_true",
+							help='if set, don\'t promote ignore -> new when uploading')
+		parser.add_argument('--update', default=False, action="store_true",
+							help='if set, scrape TNS pages to update events already in YSE_PZ')
+		parser.add_argument('--updatefromZTF', default=False, action="store_true",
+							help='if set, update photometry from ZTF')
+		parser.add_argument('--redoned', default=False, action="store_true",
+							help='if set, repeat NED search to find host matches (slow-ish)')
+		parser.add_argument('--nedradius', default=5, type=float,
+							help='NED search radius, in arcmin')
+		parser.add_argument('--ndays', default=None, type=int,
+							help='number of days before today update events')
 
 		if config:
-			parser.add_option('--login', default=config.get('main','login'), type="string",
-							  help='gmail login (default=%default)')
-			parser.add_option('--password', default=config.get('main','password'), type="string",
-							  help='gmail password (default=%default)')
-			parser.add_option('--dblogin', default=config.get('main','dblogin'), type="string",
-							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbemail', default=config.get('main','dbemail'), type="string",
-							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbpassword', default=config.get('main','dbpassword'), type="string",
-							  help='database password, if post=True (default=%default)')
-			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
-							  help='URL to POST transients to a database (default=%default)')
-			parser.add_option('--tnsapi', default=config.get('main','tnsapi'), type="string",
-							  help='TNS API URL (default=%default)')
-			parser.add_option('--tnsapikey', default=config.get('main','tnsapikey'), type="string",
-							  help='TNS API key (default=%default)')
-			parser.add_option('--hostmatchrad', default=config.get('main','hostmatchrad'), type="float",
-							  help='matching radius for hosts (arcmin) (default=%default)')
-			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
-							  help='ZTF URL (default=%default)')
+			parser.add_argument('--login', default=config.get('main','login'), type=str,
+								help='gmail login (default=%default)')
+			parser.add_argument('--password', default=config.get('main','password'), type=str,
+								help='gmail password (default=%default)')
+			parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
+								help='database login, if post=True (default=%default)')
+			parser.add_argument('--dbemail', default=config.get('main','dbemail'), type=str,
+								help='database login, if post=True (default=%default)')
+			parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
+								help='database password, if post=True (default=%default)')
+			parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
+								help='URL to POST transients to a database (default=%default)')
+			parser.add_argument('--tnsapi', default=config.get('main','tnsapi'), type=str,
+								help='TNS API URL (default=%default)')
+			parser.add_argument('--tnsapikey', default=config.get('main','tnsapikey'), type=str,
+								help='TNS API key (default=%default)')
+			parser.add_argument('--hostmatchrad', default=config.get('main','hostmatchrad'), type=float,
+								help='matching radius for hosts (arcmin) (default=%default)')
+			parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
+								help='ZTF URL (default=%default)')
 
-			parser.add_option('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type="string",
-							  help='SMTP login (default=%default)')
-			parser.add_option('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type="string",
-							  help='SMTP host (default=%default)')
-			parser.add_option('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type="string",
-							  help='SMTP port (default=%default)')
+			parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
+								help='SMTP login (default=%default)')
+			parser.add_argument('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type=str,
+								help='SMTP host (default=%default)')
+			parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
+								help='SMTP port (default=%default)')
 
 		else:
-			parser.add_option('--login', default="", type="string",
-							  help='gmail login (default=%default)')
-			parser.add_option('--password', default="", type="string",
-							  help='gmail password (default=%default)')
-			parser.add_option('--dblogin', default="", type="string",
-							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbemail', default="", type="string",
-							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbpassword', default="", type="string",
-							  help='database password, if post=True (default=%default)')
-			parser.add_option('--url', default="", type="string",
-							  help='URL to POST transients to a database (default=%default)')
-			parser.add_option('--hostmatchrad', default=0.001, type="float",
-							  help='matching radius for hosts (arcmin) (default=%default)')
-			parser.add_option('--tnsapi', default="", type="string",
-							  help='TNS API URL (default=%default)')
-			parser.add_option('--tnsapikey', default="", type="string",
-							  help='TNS API key (default=%default)')
-			parser.add_option('--ztfurl', default="", type="string",
-							  help='ZTF URL (default=%default)')
+			parser.add_argument('--login', default="", type=str,
+								help='gmail login (default=%default)')
+			parser.add_argument('--password', default="", type=str,
+								help='gmail password (default=%default)')
+			parser.add_argument('--dblogin', default="", type=str,
+								help='database login, if post=True (default=%default)')
+			parser.add_argument('--dbemail', default="", type=str,
+								help='database login, if post=True (default=%default)')
+			parser.add_argument('--dbpassword', default="", type=str,
+								help='database password, if post=True (default=%default)')
+			parser.add_argument('--url', default="", type=str,
+								help='URL to POST transients to a database (default=%default)')
+			parser.add_argument('--hostmatchrad', default=0.001, type=float,
+								help='matching radius for hosts (arcmin) (default=%default)')
+			parser.add_argument('--tnsapi', default="", type=str,
+								help='TNS API URL (default=%default)')
+			parser.add_argument('--tnsapikey', default="", type=str,
+								help='TNS API key (default=%default)')
+			parser.add_argument('--ztfurl', default="", type=str,
+								help='ZTF URL (default=%default)')
 
-			parser.add_option('--SMTP_LOGIN', default='', type="string",
-							  help='SMTP login (default=%default)')
-			parser.add_option('--SMTP_HOST', default='', type="string",
-							  help='SMTP host (default=%default)')
-			parser.add_option('--SMTP_PORT', default='', type="string",
-							  help='SMTP port (default=%default)')
-
+			parser.add_argument('--SMTP_LOGIN', default='', type=str,
+								help='SMTP login (default=%default)')
+			parser.add_argument('--SMTP_HOST', default='', type=str,
+								help='SMTP host (default=%default)')
+			parser.add_argument('--SMTP_PORT', default='', type=str,
+								help='SMTP port (default=%default)')
+			
 
 		return(parser)
 
@@ -578,14 +583,14 @@ class processTNS():
 			
 		return hostdict,hostcoords
 
-	def UpdateFromTNS(self):
+	def UpdateFromTNS(self,ndays=None,allowed_statuses=['New','Following','Watch','FollowupRequested']):
 
-		if options.ndays:
+		if ndays:
 			date_format = '%Y-%m-%d'
-			datemin = (datetime.now() - timedelta(days=options.ndays)).strftime(date_format)
+			datemin = (datetime.now() - timedelta(days=ndays)).strftime(date_format)
 			argstring = 'created_date_gte=%s'%datemin
 		else:
-			argstring = 'status_in=New,Following,Watch,FollowupRequested'
+			argstring = 'status_in={}'.format(','.join(allowed_statuses))
 		offsetcount = 0
 
 		auth = coreapi.auth.BasicAuthentication(
@@ -698,18 +703,40 @@ class processTNS():
 
 		ebvall,nedtables = [],[]
 		ebvtstart = time.time()
+		ebv_timeout,ned_timeout = False,False
 		if doNED:
-			for sc in scall:
-				try:
-					ebvall += [float('%.3f'%sfd(sc)*0.86)]
-				except:
-					dust_table_l = IrsaDust.get_query_table(sc)
-					ebvall += [dust_table_l['ext SandF mean'][0]]
-				try:
-					ned_region_table = Ned.query_region(sc, radius=self.nedradius*u.arcmin, equinox='J2000.0')
-				except:
-					ned_region_table = None
-				nedtables += [ned_region_table]
+			def handler(signum, frame):
+				raise Exception("timeout!")
+			signal.signal(signal.SIGALRM, handler)
+			try:
+				signal.alarm(600)
+				ebvall = sfd(scall)*0.86
+				#for sc in scall:
+				#	try:
+				#		ebvall += [float('%.3f'%sfd(sc)*0.86)]
+				#	except:
+				#		dust_table_l = IrsaDust.get_query_table(sc)
+				#		ebvall += [dust_table_l['ext SandF mean'][0]]
+			except:
+				print('MW E(B-V) timeout!')
+				ebv_timeout = True
+
+			signal.signal(signal.SIGALRM, handler)				
+			try:
+				signal.alarm(600)
+				for sc in scall:
+					try:
+						ned_region_table = \
+							Ned.query_region(
+								sc, radius=self.nedradius*u.arcmin,
+								equinox='J2000.0')
+					except:
+						ned_region_table = None
+					nedtables += [ned_region_table]
+			except:
+				print('NED timeout!')
+				ned_timeout = True
+
 			print('E(B-V)/NED time: %.1f seconds'%(time.time()-ebvtstart))
 
 		tstart = time.time()
@@ -735,7 +762,13 @@ class processTNS():
 			if len(iobj) > 1: iobj = int(iobj[0])
 			else: iobj = int(iobj)
 
-			if doNED: sc,ebv,nedtable = scall[iobj],ebvall[iobj],nedtables[iobj]
+			if doNED:
+				sc = scall[iobj]
+				if not ned_timeout:
+					nedtable = nedtables[iobj]
+				else: nedtable = None
+				if not ebv_timeout: ebv = '%.3f'%ebvall[iobj]
+				else: ebv = None
 			else: sc = scall[iobj]; ebv = None; nedtable = None
 				
 			print("Object: %s\nRA: %s\nDEC: %s" % (obj,ras[iobj],decs[iobj]))
@@ -886,62 +919,192 @@ def get(url,json_list,api_key):
 	except Exception as e:
 		return [None,'Error message : \n'+str(e)]
 
-if __name__ == "__main__":
-	# execute only if run as a script
+class TNS_emails(CronJobBase):
 
-	import optparse
-	import configparser
+	RUN_EVERY_MINS = 3
 
-	usagestring = "TNS_Synopsis.py <options>"
+	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+	code = 'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_emails'
 
-	tstart = time.time()
-	tnsproc = processTNS()
+	def do(self):
 
-	# read in the options from the param file and the command line
-	# some convoluted syntax here, making it so param file is not required
-	parser = tnsproc.add_options(usage=usagestring)
-	options,  args = parser.parse_args()
-	if options.settingsfile:
+		# execute only if run as a script
+
+		usagestring = "TNS_Synopsis.py <options>"
+
+		tstart = time.time()
+		tnsproc = processTNS()
+
+		# read in the options from the param file and the command line
+		# some convoluted syntax here, making it so param file is not required
+		parser = tnsproc.add_options(usage=usagestring)
+		options,  args = parser.parse_known_args()
+		options.settingsfile = "%s/settings.ini"%djangoSettings.PROJECT_DIR
+
 		config = configparser.ConfigParser()
 		config.read(options.settingsfile)
-	else: config=None
-	parser = tnsproc.add_options(usage=usagestring,config=config)
-	options,  args = parser.parse_args()
-	tnsproc.hostmatchrad = options.hostmatchrad
 
-	tnsproc.login = options.login
-	tnsproc.password = options.password
-	tnsproc.dblogin = options.dblogin
-	tnsproc.dbpassword = options.dbpassword
-	tnsproc.dburl = options.dburl
-	tnsproc.status = options.status
-	tnsproc.settingsfile = options.settingsfile
-	tnsproc.clobber = options.clobber
-	tnsproc.noupdatestatus = options.noupdatestatus
-	tnsproc.redoned = options.redoned
-	tnsproc.nedradius = options.nedradius
-	tnsproc.tnsapi = options.tnsapi
-	tnsproc.tnsapikey = options.tnsapikey
-	tnsproc.ztfurl = options.ztfurl
+		parser = tnsproc.add_options(usage=usagestring,config=config)
+		options,  args = parser.parse_known_args()
+		tnsproc.hostmatchrad = options.hostmatchrad
 
-	try:
-		if options.update:
+		tnsproc.login = options.login
+		tnsproc.password = options.password
+		tnsproc.dblogin = options.dblogin
+		tnsproc.dbpassword = options.dbpassword
+		tnsproc.dburl = options.dburl
+		tnsproc.status = options.status
+		tnsproc.settingsfile = options.settingsfile
+		tnsproc.clobber = options.clobber
+		tnsproc.noupdatestatus = options.noupdatestatus
+		tnsproc.redoned = options.redoned
+		tnsproc.nedradius = options.nedradius
+		tnsproc.tnsapi = options.tnsapi
+		tnsproc.tnsapikey = options.tnsapikey
+		tnsproc.ztfurl = options.ztfurl
+		
+		try:
+			if options.update:
+				tnsproc.noupdatestatus = True
+				nsn = tnsproc.UpdateFromTNS()
+			else:
+				nsn = tnsproc.ProcessTNSEmails()
+		except Exception as e:
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			nsn = 0
+			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+			subject = "TNS Transient Upload Failure"
+			print("Sending error email")
+			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg += "Error : %s at line number %s"
+			sendemail(from_addr, options.dbemail, subject,
+					  html_msg%(e,exc_tb.tb_lineno),
+					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+
+		print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
+
+
+class TNS_updates(CronJobBase):
+
+	RUN_AT_TIMES = ['00:00', '08:00']
+
+	schedule = Schedule(run_at_times=RUN_AT_TIMES)
+	code = 'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_updates'
+
+	def do(self):
+
+		# execute only if run as a script
+
+		usagestring = "TNS_Synopsis.py <options>"
+
+		tstart = time.time()
+		tnsproc = processTNS()
+
+		# read in the options from the param file and the command line
+		# some convoluted syntax here, making it so param file is not required
+		parser = tnsproc.add_options(usage=usagestring)
+		options,  args = parser.parse_known_args()
+		options.settingsfile = "%s/settings.ini"%djangoSettings.PROJECT_DIR
+		
+		config = configparser.ConfigParser()
+		config.read(options.settingsfile)
+
+		parser = tnsproc.add_options(usage=usagestring,config=config)
+		options,  args = parser.parse_known_args()
+		tnsproc.hostmatchrad = options.hostmatchrad
+
+		tnsproc.login = options.login
+		tnsproc.password = options.password
+		tnsproc.dblogin = options.dblogin
+		tnsproc.dbpassword = options.dbpassword
+		tnsproc.dburl = options.dburl
+		tnsproc.status = options.status
+		tnsproc.settingsfile = options.settingsfile
+		tnsproc.clobber = options.clobber
+		tnsproc.noupdatestatus = options.noupdatestatus
+		tnsproc.redoned = True
+		tnsproc.nedradius = options.nedradius
+		tnsproc.tnsapi = options.tnsapi
+		tnsproc.tnsapikey = options.tnsapikey
+		tnsproc.ztfurl = options.ztfurl
+		#options.ndays=0.5
+		try:
 			tnsproc.noupdatestatus = True
-			nsn = tnsproc.UpdateFromTNS()
-		else:
-			nsn = tnsproc.ProcessTNSEmails()
-	except Exception as e:
-		exc_type, exc_obj, exc_tb = sys.exc_info()
-		nsn = 0
-		from django.conf import settings as djangoSettings
-		smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
-		from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-		subject = "TNS Transient Upload Failure"
-		print("Sending error email")
-		html_msg = "Alert : YSE_PZ Failed to upload transients\n"
-		html_msg += "Error : %s at line number %s"
-		sendemail(from_addr, options.dbemail, subject,
-				  html_msg%(e,exc_tb.tb_lineno),
-				  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+			nsn = tnsproc.UpdateFromTNS(ndays=options.ndays)
+		except Exception as e:
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			nsn = 0
+			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+			subject = "TNS Transient Upload Failure"
+			print("Sending error email")
+			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg += "Error : %s at line number %s"
+			sendemail(from_addr, options.dbemail, subject,
+					  html_msg%(e,exc_tb.tb_lineno),
+					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
 
-	print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
+		print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
+
+class TNS_Ignore_updates(CronJobBase):
+
+	RUN_EVERY_MINS = 4320
+	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+
+	code = 'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_Ignore_updates'
+
+	def do(self):
+
+		# execute only if run as a script
+
+		usagestring = "TNS_Synopsis.py <options>"
+
+		tstart = time.time()
+		tnsproc = processTNS()
+
+		# read in the options from the param file and the command line
+		# some convoluted syntax here, making it so param file is not required
+		parser = tnsproc.add_options(usage=usagestring)
+		options,  args = parser.parse_known_args()
+		options.settingsfile = "%s/settings.ini"%djangoSettings.PROJECT_DIR
+		
+		config = configparser.ConfigParser()
+		config.read(options.settingsfile)
+
+		parser = tnsproc.add_options(usage=usagestring,config=config)
+		options,  args = parser.parse_known_args()
+		tnsproc.hostmatchrad = options.hostmatchrad
+
+		tnsproc.login = options.login
+		tnsproc.password = options.password
+		tnsproc.dblogin = options.dblogin
+		tnsproc.dbpassword = options.dbpassword
+		tnsproc.dburl = options.dburl
+		tnsproc.status = options.status
+		tnsproc.settingsfile = options.settingsfile
+		tnsproc.clobber = options.clobber
+		tnsproc.noupdatestatus = options.noupdatestatus
+		tnsproc.redoned = True
+		tnsproc.nedradius = options.nedradius
+		tnsproc.tnsapi = options.tnsapi
+		tnsproc.tnsapikey = options.tnsapikey
+		tnsproc.ztfurl = options.ztfurl
+		try:
+			tnsproc.noupdatestatus = True
+			nsn = tnsproc.UpdateFromTNS(ndays=30,allowed_statuses=['Ignore'])
+		except Exception as e:
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			nsn = 0
+			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+			subject = "TNS Transient Upload Failure"
+			print("Sending error email")
+			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg += "Error : %s at line number %s"
+			sendemail(from_addr, options.dbemail, subject,
+					  html_msg%(e,exc_tb.tb_lineno),
+					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+
+		print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
+		

@@ -24,6 +24,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 
+#bad_flags = ['0x00001000','0x20000000','0x40000000','0x80000000']
+
 default_stamp_header = fits.Header()
 default_stamp_header['XTENSION'] = 'BINTABLE'         
 default_stamp_header['BITPIX']  = 8
@@ -224,7 +226,7 @@ class ForcedPhot(CronJobBase):
 						  help='look for transients created in the last x minutes (default=%default)')
 		parser.add_argument('--max_days_yseimage', default=7, type=str,
 						  help='look for YSE survey images in the last x days (default=%default)')
-
+		
 		if config:
 			parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
 								help='static directory (default=%default)')
@@ -263,13 +265,18 @@ class ForcedPhot(CronJobBase):
 
 		return(parser)
 		
-	def main(self):
+	def main(self,transient_name=None):
 
 		# candidate transients
 		min_date = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.options.max_time_minutes)
 		nowmjd = date_to_mjd(datetime.datetime.utcnow())
-		transients = Transient.objects.filter(created_date__gte=min_date).filter(~Q(tags__name='YSE')).order_by('-created_date')
-		
+		transient_name = '2020jfo'
+		if transient_name is None:
+			transients = Transient.objects.filter(
+				created_date__gte=min_date).filter(~Q(tags__name='YSE')).order_by('-created_date')
+		else:
+			transients = Transient.objects.filter(name=transient_name)
+
 		# candidate survey images
 		survey_images = SurveyObservation.objects.filter(status__name='Successful').\
 			filter(obs_mjd__gt=nowmjd-self.options.max_days_yseimage).filter(diff_id__isnull=False)
@@ -417,7 +424,7 @@ class ForcedPhot(CronJobBase):
 		for k in img_dict.keys():
 
 			PhotUploadAll = {"mjdmatchmin":0.0001,
-							 "clobber":self.options.clobber}
+							 "clobber":True}
 			photometrydict = {'instrument':'GPC1',
 							  'obs_group':'YSE',
 							  'photdata':{}}
@@ -493,7 +500,7 @@ class ForcedPhot(CronJobBase):
 										'diffimg':diffimgdict}
 				
 				photometrydict['photdata']['%s_%i'%(mjd_to_date(img_dict[k]['diff_image_mjd'][i]),i)] = phot_upload_dict
-			
+
 			PhotUploadAll['PS1'] = photometrydict
 			tdict[k]['transientphotometry'] = PhotUploadAll
 		self.send_data(tdict)
@@ -547,7 +554,18 @@ class ForcedPhot(CronJobBase):
 						filt = ff[0].header['FPA.FILTER'].split('.')[0]
 						flux = ff[1].data['PSF_INST_FLUX'][i]
 						flux_err = ff[1].data['PSF_INST_FLUX_SIG'][i]
-						if ff[1].data['FLAGS'][i] > 7: dq = 1
+						# http://svn.pan-starrs.ifa.hawaii.edu/trac/ipp/browser/trunk/psModules/src/objects/pmSourceMasks.h?order=name
+						# saturated, diff spike, ghost, off chip
+						#bad_flags = ['0x00001000','0x20000000','0x40000000','0x80000000']
+						# saturation, defect
+						#0x00000080, 0x00000800
+						if ff[1].data['PSF_QF'][i] < 0.9 or \
+						   (ff[1].data['FLAGS'][i] & 0x00001000) or \
+						   (ff[1].data['FLAGS'][i] & 0x20000000) or \
+						   (ff[1].data['FLAGS'][i] & 0x40000000) or \
+						   (ff[1].data['FLAGS'][i] & 0x80000000) or \
+						   (ff[1].data['FLAGS'][i] & 0x00000080) or \
+						   (ff[1].data['FLAGS'][i] & 0x00000800): dq = 1
 						else: dq = 0
 						stack_id = ff[0].header['PPSUB.REFERENCE'].split('.')[-3]
 						warp_id = ff[0].header['PPSUB.INPUT'].split('.')[3]
@@ -772,9 +790,6 @@ class ForcedPhot(CronJobBase):
 				if diff_id is None: continue
 				data.add_row(('forcedphot_ysebot_{}'.format(count),ra,dec,ra,dec,filt,mjd,diff_id,skycelldict[snid_unq]) )
 				count += 1
-			
-			#if len(data) == 0:
-			#	raise RuntimeError('can\'t find diff IDs!  make sure necessary data are being uploaded')
 
 			if len(data) > 0:
 				hdr = default_forcedphot_header.copy()

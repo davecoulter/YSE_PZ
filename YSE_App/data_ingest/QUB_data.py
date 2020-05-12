@@ -520,6 +520,7 @@ class YSE(CronJobBase):
 
 	def main(self):
 
+		nsn = 0
 		for yselink_summary, yselink_lc, namecol in zip([self.options.yselink_summary,self.options.yselink_genericsummary],
 														[self.options.yselink_lc,self.options.yselink_genericlc],
 														['ps1_designation','local_designation']):
@@ -540,7 +541,6 @@ class YSE(CronJobBase):
 			nsn_single = 50
 			
 			while nsn_single == 50:
-
 				transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=50)
 				print('uploading %i transients'%nsn_single)
 				self.send_data(transientdict)
@@ -561,8 +561,7 @@ class YSE(CronJobBase):
 			if nowmjd - s['mjd_obs'] > self.options.max_days:
 				nsn += 1
 				continue
-			#if s['local_designation'].lower() != '10cysebdy' or type(s['local_designation']) == np.ma.core.MaskedConstant: continue
-			# forced photometry
+
 			r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id']) #,
 			#				 auth=HTTPDigestAuth(self.options.qubuser,self.options.qubpass))
 
@@ -634,7 +633,8 @@ class YSE(CronJobBase):
 					 'tags':['YSE'],
 					 'disc_date':s['followup_flag_date'], #mjd_to_date(s['mjd_obs']),
 					 'mw_ebv':mw_ebv,
-					 'point_source_probability':ps_prob}
+					 'point_source_probability':ps_prob,
+					 'real_bogus_score':s['rb_factor_image']}
 
 			obj += [s['local_designation']]
 			ra += [s['ra_psf']]
@@ -709,13 +709,6 @@ class YSE(CronJobBase):
 				PhotUploadAll['ZTF'] = photometrydict_ztf
 			print(s['local_designation'])
 			nsn += 1
-
-			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
-			
-			#transientdict['transientphotometry'] = photometrydict
-
-		#scall = SkyCoord(ra,dec,unit=u.deg) #summary['ra_psf'],summary['dec_psf']
-		#transientdict = self.getZTFPhotometry(transientdict,obj,scall)
 
 		return transientdict,nsn
 
@@ -817,7 +810,6 @@ class YSE(CronJobBase):
 
 		except Exception as e:
 			print(e)
-			#import pdb; pdb.set_trace()
 
 	def UploadTransients(self,TransientUploadDict):
 

@@ -364,10 +364,20 @@ class AddSurveyObsFormView(FormView):
 					illum = moon_illumination(t)
 
 					# need to see what was observed in the previous obs w/ the same moon illumination
-					previous_obs = SurveyObservation.objects.filter(survey_field=s).\
-						filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').\
-						order_by('-mjd_requested').select_related()
+					# first have to grab the MSB associated with this observation, if it exists
+					# otherwise it's gonna schedule different filters for different pointings
+					previous_msb = SurveyFieldMSB.objects.filter(survey_fields__contains=s)
+					if len(previous_msb):
+						previous_field = previous_msb[0].survey_fields[0]
+						previous_obs = SurveyObservation.objects.filter(survey_field=previous_field).\
+							filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').\
+							order_by('-mjd_requested').select_related()
+					else:
+						previous_obs = SurveyObservation.objects.filter(survey_field=s).\
+							filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').\
+							order_by('-mjd_requested').select_related()
 
+					
 					def previous_obs_func(illum_min,illum_max):
 						filt = []
 						for p in previous_obs:

@@ -179,7 +179,7 @@ def personaldashboard(request):
 			transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.query.title.replace(' ',''))
 			table = TransientTable(transientfilter.qs,prefix=q.query.title.replace(' ',''))
 			RequestConfig(request, paginate={'per_page': 10}).configure(table)
-			tables += [(table,q.query.title,q.query.title.replace(' ',''),transientfilter,q.id)]
+			tables += [(table,q.query.title,q.query.title.replace(' ',''),transientfilter,q.id,len(transients))]
 
 		elif q.python_query:
 			transients = getattr(yse_python_queries,q.python_query)()
@@ -187,7 +187,7 @@ def personaldashboard(request):
 			transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.python_query)
 			table = TransientTable(transientfilter.qs,prefix=q.python_query)
 			RequestConfig(request, paginate={'per_page': 10}).configure(table)
-			tables += [(table,q.python_query,q.python_query,transientfilter,q.id)]
+			tables += [(table,q.python_query,q.python_query,transientfilter,q.id,len(transients))]
 
 			
 	if request.META['QUERY_STRING']:
@@ -1283,3 +1283,24 @@ def upload_spectrum(request):
 	return render(request, 'YSE_App/form_snippets/spectrum_upload_form.html', {
 		'form': form
 	})
+
+@csrf_exempt
+@login_or_basic_auth_required
+def change_status_for_query(request, query_id, status_id):
+
+	q = UserQuery.objects.get(pk=query_id)
+	if q.query:
+		cursor = connections['explorer'].cursor()
+		cursor.execute(q.query.sql.replace('%','%%'), ())
+		transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+		cursor.close()
+
+	elif q.python_query:
+		transients = getattr(yse_python_queries,q.python_query)()
+
+	new_status = TransientStatus.objects.get(pk=status_id)
+	for t in transients:
+		t.status = new_status
+		t.save()
+
+	return redirect('personaldashboard')

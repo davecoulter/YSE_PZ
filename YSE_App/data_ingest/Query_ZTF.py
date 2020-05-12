@@ -24,6 +24,9 @@ import sys
 from astropy.io import fits
 import astropy.table as at
 from YSE_App.util.skycells import getskycell
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
 
 try:
   from dustmaps.sfd import SFDQuery
@@ -89,7 +92,37 @@ query_test = {
     }
   }
 }
-		
+_allowed_galaxy_catalogs = {'sdss_gals':{'name_key':'Objid','ra_key':'ra','dec_key':'dec_','redshift_key':'z','priority':1},
+							'ned':{'name_key':'sid','ra_key':'RA_deg','dec_key':'DEC_deg','redshift_key':'Redshift_1','priority':2},
+							'veron_agn_qso':{'name_key':'sid','ra_key':'RAJ2000','dec_key':'DEJ2000','redshift_key':'z','priority':3},
+							'RC3':{'name_key':'id','ra_key':'ra','dec_key':'dec','redshift_key':None,'priority':4},
+							'2mass_psc':{'name_key':'sid','ra_key':'ra','dec_key':'decl','redshift_key':None,'priority':5},
+							'nyu_valueadded_gals':{'name_key':'sid','ra_key':'RA','dec_key':'DEC','redshift_key':None,'priority':6}}
+							#'french_post_starburst_gals':{'name_key':'Objid','ra_key':'ra','dec_key':dec,'redshift_key':z,'priority':5}}
+
+def sendemail(from_addr, to_addr,
+			  subject, message,
+			  login, password, smtpserver, cc_addr=None):
+
+	print("Preparing email")
+
+	msg = MIMEMultipart('alternative')
+	msg['Subject'] = subject
+	msg['From'] = from_addr
+	msg['To'] = to_addr
+	payload = MIMEText(message, 'html')
+	msg.attach(payload)
+	
+	with smtplib.SMTP(smtpserver) as server:
+		try:
+			server.starttls()
+			server.login(login, password)
+			resp = server.sendmail(from_addr, [to_addr], msg.as_string())
+			print("Send success")
+		except:
+			print("Send fail")
+
+							
 class AntaresZTF(CronJobBase):
 
 	RUN_EVERY_MINS = 30
@@ -112,7 +145,7 @@ class AntaresZTF(CronJobBase):
 			self.options = options
 
 
-			self.main()
+			nsn = self.main()
 		except Exception as e:
 			print(e)
 			exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -123,7 +156,7 @@ class AntaresZTF(CronJobBase):
 			subject = "QUB Transient Upload Failure"
 			print("Sending error email")
 			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
-			html_msg += "Error : %s"
+			html_msg += """Antares cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno)
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e),
 					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
@@ -132,10 +165,11 @@ class AntaresZTF(CronJobBase):
 
 	def main(self):
 
-		recentmjd = date_to_mjd(datetime.datetime.utcnow() - datetime.timedelta(4))
+		recentmjd = date_to_mjd(datetime.datetime.utcnow() - datetime.timedelta(self.options.max_days))
 		survey_obs = SurveyObservation.objects.filter(obs_mjd__gt=recentmjd)
 		field_pk = survey_obs.values('survey_field').distinct()
 		survey_fields = SurveyField.objects.filter(pk__in = field_pk).select_related()
+		nsn = 0
 		print(survey_fields)
 		for s in survey_fields:
 
@@ -159,7 +193,9 @@ class AntaresZTF(CronJobBase):
 			
 			transientdict,nsn = self.parse_data(result_set)
 			print('uploading %i transients'%nsn)
-			self.send_data(transientdict)
+			if nsn > 0: self.send_data(transientdict)
+
+		return nsn
 
 	def send_data(self,TransientUploadDict):
 
@@ -183,7 +219,29 @@ class AntaresZTF(CronJobBase):
 		for i,s in enumerate(result_set):
 			#if 'astrorapid_skipped' in s['properties'].keys(): continue
 			if 'streams' not in s.keys() or 'yse_candidate_test' not in s["streams"]: continue
-				
+
+			
+			#if s['properties']['ztf_object_id'] == 'ZTF20aaykvgb': import pdb; pdb.set_trace()
+			#print(s['properties']['snfilter_known_exgal'])
+			if s['properties']['snfilter_known_exgal'] == 1:
+				# name, ra, dec, redshift
+				print(s['properties']['ztf_object_id'])
+				antareslink = '{}/loci/{}/catalog-matches'.format(self.options.antaresapi,s['locus_id'])
+				r = requests.get(antareslink)
+				data = json.loads(r.text)
+				try:
+					for k in _allowed_galaxy_catalogs.keys():
+						if k in data['result'].keys():
+							hostdict = {'name':k+'_'+str(data['result'][k][0][_allowed_galaxy_catalogs[k]['name_key']]),
+										'ra':data['result'][k][0][_allowed_galaxy_catalogs[k]['ra_key']],
+										'dec':data['result'][k][0][_allowed_galaxy_catalogs[k]['dec_key']]}
+							if _allowed_galaxy_catalogs[k]['redshift_key'] is not None:
+								hostdict['redshift'] = data['result'][k][0][_allowed_galaxy_catalogs[k]['redshift_key']]
+				except:
+					import pdb; pdb.set_trace()
+			else:
+				hostdict = {}
+				continue
 			sc = SkyCoord(s['properties']['ztf_ra'],s['properties']['ztf_dec'],unit=u.deg)
 			try:
 				ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
@@ -201,7 +259,8 @@ class AntaresZTF(CronJobBase):
 						 'tags':['ZTF in YSE Fields'],
 						 'disc_date':mjd_to_date(s['properties']['ztf_jd']-2400000.5),
 						 'mw_ebv':mw_ebv,
-						 'point_source_probability':ps_prob}
+						 'point_source_probability':ps_prob,
+						 'host':hostdict}
 				obj += [s['properties']['ztf_object_id']]
 				ra += [s['properties']['ztf_ra']]
 				dec += [s['properties']['ztf_dec']]
@@ -264,7 +323,7 @@ class AntaresZTF(CronJobBase):
 						  help='settings file (login/password info)')
 		parser.add_argument('--status', default='New', type=str,
 						  help='transient status to enter in YS_PZ')
-		parser.add_argument('--max_days', default=7, type=float,
+		parser.add_argument('--max_days', default=13, type=float,
 						  help='grab photometry/objects from the last x days')
 
 		if config:
@@ -276,6 +335,8 @@ class AntaresZTF(CronJobBase):
 							  help='database password, if post=True (default=%default)')
 			parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
 							  help='URL to POST transients to a database (default=%default)')
+			parser.add_argument('--antaresapi', default=config.get('antares','antaresapi'), type=str,
+							  help='ANTARES API (default=%default)')
 
 			parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
 							  help='SMTP login (default=%default)')

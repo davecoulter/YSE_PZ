@@ -385,7 +385,7 @@ def adjust_yse_pointings_base(field_name,snid):
 		sep_list = []
 		for p in pointings:
 			sep = new_pointing.separation(p).deg
-			dra,ddeg = new_pointing.spherical_offsets_to(p)
+			dra,ddec = new_pointing.spherical_offsets_to(p)
 			sep_list += [sep]
 			if np.abs(dra.deg) < 3.1 and np.abs(ddec.deg) < 3.1:
 				good = False

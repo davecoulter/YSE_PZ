@@ -45,7 +45,9 @@ ingest_keys_map = {'exp_name':('image_id',None),
 				   'deteff':('mag_lim',None),
 				   'zpt_obs':('zpt_obs',None),
 				   'Ngood_diff_skycell':('n_good_skycell',None),
-				   'comment':('survey_field',split_survey_field)}
+				   'comment':('survey_field',split_survey_field),
+				   'radeg':('ra_cen',None),
+				   'decdeg':('dec_cen',None)}
 
 class SurveyObs(CronJobBase):
 
@@ -164,7 +166,8 @@ class SurveyObs(CronJobBase):
 								   'ra_cen':sc.ra.deg,
 								   'dec_cen':sc.dec.deg,
 								   'width_deg':3.1,
-								   'height_deg':3.1}
+								   'height_deg':3.1,
+								   'active':1}
 			
 		url = '%s'%self.options.dburl.replace('/api','/add_yse_survey_fields')
 		r = requests.post(url = url, data = json.dumps(SurveyUploadDict),
