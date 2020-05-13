@@ -100,7 +100,6 @@ def add_yse_survey_fields(request):
 			surveymsb.save()
 		elif len(surveymsb):
 			surveymsb = surveymsb[0]
-			import pdb; pdb.set_trace()
 			if surveymsb.survey_fields.count() < 6 and not len(surveymsb.survey_fields.filter(field_id=dbsurveyfield.field_id)):
 				surveymsb.survey_fields.add(dbsurveyfield)
 				surveymsb.save()
