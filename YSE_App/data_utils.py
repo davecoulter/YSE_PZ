@@ -84,10 +84,10 @@ def add_yse_survey_fields(request):
 			field_id=surveydict['field_id'])
 
 		# no clobbering for now
-		#if len(dbsurveyfield):
+		if len(dbsurveyfield):
 		#	dbsurveyfield.update(**surveydict)
-		#	dbsurveyfield = dbsurveyfield[0]
-		if not len(dbsurveyfield): #else:
+			dbsurveyfield = dbsurveyfield[0]
+		else:
 			dbsurveyfield = SurveyField.objects.create(**surveydict)
 			#survey_entries += [dbsurveyfield]
 
@@ -100,6 +100,7 @@ def add_yse_survey_fields(request):
 			surveymsb.save()
 		elif len(surveymsb):
 			surveymsb = surveymsb[0]
+			import pdb; pdb.set_trace()
 			if surveymsb.survey_fields.count() < 6 and not len(surveymsb.survey_fields.filter(field_id=dbsurveyfield.field_id)):
 				surveymsb.survey_fields.add(dbsurveyfield)
 				surveymsb.save()
