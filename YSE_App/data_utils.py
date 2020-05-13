@@ -82,11 +82,12 @@ def add_yse_survey_fields(request):
 
 		dbsurveyfield = SurveyField.objects.filter(
 			field_id=surveydict['field_id'])
-		
-		if len(dbsurveyfield):
-			dbsurveyfield.update(**surveydict)
-			dbsurveyfield = dbsurveyfield[0]
-		else:
+
+		# no clobbering for now
+		#if len(dbsurveyfield):
+		#	dbsurveyfield.update(**surveydict)
+		#	dbsurveyfield = dbsurveyfield[0]
+		if not len(dbsurveyfield): #else:
 			dbsurveyfield = SurveyField.objects.create(**surveydict)
 			#survey_entries += [dbsurveyfield]
 
