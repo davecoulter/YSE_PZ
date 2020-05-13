@@ -240,7 +240,7 @@ class AntaresZTF(CronJobBase):
 				
 			else:
 				hostdict = {}
-				continue
+
 			sc = SkyCoord(s['properties']['ztf_ra'],s['properties']['ztf_dec'],unit=u.deg)
 			try:
 				ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
