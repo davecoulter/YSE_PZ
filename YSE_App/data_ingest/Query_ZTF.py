@@ -225,7 +225,7 @@ class AntaresZTF(CronJobBase):
 			#print(s['properties']['snfilter_known_exgal'])
 			if s['properties']['snfilter_known_exgal'] == 1:
 				# name, ra, dec, redshift
-				print(s['properties']['ztf_object_id'])
+				# print(s['properties']['ztf_object_id'])
 				antareslink = '{}/loci/{}/catalog-matches'.format(self.options.antaresapi,s['locus_id'])
 				r = requests.get(antareslink)
 				data = json.loads(r.text)
