@@ -227,42 +227,45 @@ $(document).ready(function(){
       $('.transientQueryStatusChange').on('click', function(event){
         var status_name = $(this).attr('data-status_name')
         var n_transients = $(this).attr('data-n_transients')
-        var r = confirm("Really change "+n_transients+" transient statuses to "+status_name+" ?");
-        if (r == true) {
-          var status_id = $(this).attr('data-status_id')
-          var query_id = $(this).attr('data-query_id')
-          var url_target = "{% url 'change_status_for_query' -1 -2 %}".replace('-1', query_id).replace('-2', status_id);
+        var r1 = confirm("Really change "+n_transients+" transient statuses to "+status_name+" ?");
+        if (r1 == true) {
+          var r2 = confirm("REALLY change "+n_transients+" transient statuses to "+status_name+" ???");
+          if (r2 == true) {
+            var status_id = $(this).attr('data-status_id')
+            var query_id = $(this).attr('data-query_id')
+            var url_target = "{% url 'change_status_for_query' -1 -2 %}".replace('-1', query_id).replace('-2', status_id);
           
-          var base_url = window.location.protocol + "//" + window.location.hostname
-          var port = window.location.port
-          var api_url = base_url + url_target
+            var base_url = window.location.protocol + "//" + window.location.hostname
+            var port = window.location.port
+            var api_url = base_url + url_target
 
-          if (port != "") {
-            api_url = base_url + ":" + port + url_target
-          }
-
-          var putData = {}
-
-          $.ajax({
-            type: "PATCH",
-            url: api_url,
-            csrfmiddlewaretoken: "{{ csrf_token }}",
-            data: putData,
-            success: function(data, textStatus, jqXHR) {
-              if (jqXHR.status == 200 && textStatus == "success") {
-
-                location.reload();
-
-              } else {
-                transientStatusChangeErr()
-              }
-            },
-            error: function(XMLHttpRequest, textStatus, errorThrown) {
-              transientStatusChangeErr()
-              {#alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));#}
+            if (port != "") {
+              api_url = base_url + ":" + port + url_target
             }
+
+            var putData = {}
+
+            $.ajax({
+             type: "PATCH",
+              url: api_url,
+              csrfmiddlewaretoken: "{{ csrf_token }}",
+              data: putData,
+              success: function(data, textStatus, jqXHR) {
+                if (jqXHR.status == 200 && textStatus == "success") {
+
+                  location.reload();
+
+                } else {
+                  transientStatusChangeErr()
+                }
+              },
+              error: function(XMLHttpRequest, textStatus, errorThrown) {
+                transientStatusChangeErr()
+                {#alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));#}
+              }
           });
           event.preventDefault();
+          }
         }
       });
 
