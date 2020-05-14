@@ -225,10 +225,10 @@
 														<p class="text-muted">Lum. Dist. = {{ transient.redshift|DL }} Mpc</p>
 														<p class="text-muted">&mu; = {{ transient.redshift|distmod }}</p>
 													{% elif transient.host.redshift %}
-														<p class="text-muted">Lum. Dist. = {{ transient.host.redshift|DL }}</p>
+														<p class="text-muted">Lum. Dist. = {{ transient.host.redshift|DL }} Mpc</p>
 														<p class="text-muted">&mu; = {{ transient.host.redshift|distmod }}</p>
 													{% elif transient.host.photo_z %}
-														<p class="text-muted">Lum. Dist. = {{ transient.host.photo_z|DL }}</p>
+														<p class="text-muted">Lum. Dist. = {{ transient.host.photo_z|DL }} Mpc</p>
 														<p class="text-muted">&mu; = {{ transient.host.photo_z|distmod }}</p>
 													{% else %}
 														Unknown
