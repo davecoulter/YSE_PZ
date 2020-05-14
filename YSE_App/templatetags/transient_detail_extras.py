@@ -7,8 +7,18 @@ from astropy.time import Time
 import astropy.units as u
 from django import template
 from ..models import *
+from astropy.cosmology import FlatLambdaCDM
+cosmo = FlatLambdaCDM(70,0.3)
 
 register = template.Library()
+
+@register.filter(name='DL')
+def DL(redshift):
+	return '%.3f'%cosmo.luminosity_distance(redshift).value
+
+@register.filter(name='distmod')
+def distmod(redshift):
+	return '%.3f'%cosmo.distmod(redshift).value
 
 @register.filter(name='galcoords')
 def galcoords(coordstring):

@@ -218,6 +218,23 @@
 												<br>
 											</div>
 										</div>
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Best Distance</strong>
+													{% if transient.redshift %}
+														<p class="text-muted">Lum. Dist. = {{ transient.redshift|DL }} Mpc</p>
+														<p class="text-muted">&mu; = {{ transient.redshift|distmod }}</p>
+													{% elif transient.host.redshift %}
+														<p class="text-muted">Lum. Dist. = {{ transient.redshift|DL }}</p>
+														<p class="text-muted">&mu; = {{ transient.redshift|distmod }}</p>
+													{% elif transient.host.photo_z %}
+														<p class="text-muted">Lum. Dist. = {{ transient.redshift|DL }}</p>
+														<p class="text-muted">&mu; = {{ transient.redshift|distmod }}</p>
+													{% else %}
+														Unknown
+													{% endif %}
+											</div>
+										</div>
 										<div class="col-xs-12">
 											<hr>
 											<h4>Photometric Summary</h4>

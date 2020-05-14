@@ -39,6 +39,8 @@ import datetime
 from astroplan.plots import plot_airmass
 from astropy.utils import iers
 iers.conf.auto_download = False
+from astropy.cosmology import FlatLambdaCDM
+cosmo = FlatLambdaCDM(70,0.3)
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -82,7 +84,7 @@ py2bokeh_symboldict = {"^":"triangle",
 					   "D":"diamond",
 					   "d":"diamond",
 					   "o":"circle",
-								   "h":"hex"}
+					   "h":"hex"}
 
 def get_recent_phot_for_host(user, host_id=None):
 	allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
@@ -584,12 +586,12 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 
 	ax=figure(plot_width=240,plot_height=240,sizing_mode='stretch_both')
 
-	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym,data_quality = \
+	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym,data_quality,magsys = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
-		np.array([]),np.array([]),np.array([]),np.array([])
-	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor,upperlimdataquality = \
-		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor,upperlimdataquality,upperlimmagsys = \
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
 	
 	for p in photdata:
@@ -607,6 +609,8 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 			mjd = np.append(mjd,[dbmjd])
 			date = np.append(date,[p.obs_date.strftime('%m/%d/%Y')])
 			mag = np.append(mag,[p.mag])
+			if p.mag_sys is None: magsys = np.append(mag,['None'])
+			else: magsys = np.append(mag,[p.mag_sys])
 			if p.data_quality is None: data_quality = np.append(data_quality,['Good'])
 			else: data_quality = np.append(data_quality,[p.data_quality.name])
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
@@ -638,6 +642,9 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 			upperlimbandcolor = np.append(upperlimbandcolor,p.band.disp_color)
 			if p.data_quality is None: upperlimdataquality = np.append(upperlimdataquality,['Good'])
 			else: upperlimdataquality = np.append(upperlimdataquality,[p.data_quality.name])
+			if p.mag_sys is None: upperlimdataquality = np.append(upperlimmagsys,['None'])
+			else: upperlimmagsys = np.append(upperlimmagsys,[p.mag_sys])
+
 			if salt2:
 				if str(p.band) in bandpassdict.keys():
 					salt2mjd = np.append(salt2mjd,[dbmjd])
@@ -655,7 +662,8 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 		upperlimband = np.append(upperlimband,transient.non_detect_band)
 		upperlimbandcolor = np.append(upperlimbandcolor,transient.non_detect_band.disp_color)
 		upperlimdataquality = np.append(upperlimdataquality,'Good')
-
+		upperlimdatamagsys = np.append(upperlimmagsys,'None')
+		
 	#ax.title.text = "%s"%transient.name
 	#colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
 	#			 '#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
@@ -835,12 +843,12 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	if not photdata:
 		return django.http.HttpResponse('')
 	
-	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym,data_quality = \
+	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym,data_quality,magsys = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
-		np.array([]),np.array([]),np.array([]),np.array([])
-	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor,upperlimdataquality = \
-		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor,upperlimdataquality,upperlimmagsys = \
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
 
 	for p in photdata:
@@ -860,6 +868,9 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 			mag = np.append(mag,[p.mag])
 			if p.data_quality is None: data_quality = np.append(data_quality,['Good'])
 			else: data_quality = np.append(data_quality,[p.data_quality.name])
+			if p.mag_sys is None: magsys = np.append(magsys,['None'])
+			else: magsys = np.append(magsys,[p.mag_sys])
+
 			if p.mag_err: magerr = np.append(magerr,p.mag_err)
 			else: magerr = np.append(magerr,0)
 			bandstr = np.append(bandstr,str(p.band))
@@ -887,6 +898,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 			upperlimbandstr = np.append(upperlimbandstr,str(p.band))
 			upperlimband = np.append(upperlimband,p.band)
 			upperlimbandcolor = np.append(upperlimbandcolor,p.band.disp_color)
+			if p.mag_sys is None: upperlimmagsys = np.append(upperlimmagsys,'None')
+			else: upperlimmagsys = np.append(upperlimmagsys,p.mag_sys)
 			if p.data_quality is None: upperlimdataquality = np.append(upperlimdataquality,['Good'])
 			else: upperlimdataquality = np.append(upperlimdataquality,[p.data_quality.name])
 			if salt2:
@@ -906,6 +919,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		upperlimband = np.append(upperlimband,transient.non_detect_band)
 		upperlimbandcolor = np.append(upperlimbandcolor,transient.non_detect_band.disp_color)
 		upperlimdataquality = np.append(upperlimdataquality,'Good')
+		upperlimmagsys = np.append(upperlimmagsys,'None')
 		
 	#ax.title.text = "%s"%transient.name
 	#colorlist = ['#1f77b4','#ff7f0e','#2ca02c','#d62728',
@@ -922,7 +936,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		('mag','$y'),
 		('band','@band'),
 		('date','@date'),
-		('dq','@data_quality')]
+		('dq','@data_quality'),
+		('magsys','@magsys')]
 	ax=figure(plot_width=240,plot_height=240,sizing_mode='scale_width')#,tooltips=TOOLTIPS)#'stretch_both')
 
 	
@@ -948,6 +963,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 											y=mag[bandstr == bs].tolist(),
 											date=date[bandstr == bs].tolist(),
 											data_quality=data_quality[bandstr == bs].tolist(),
+											magsys=magsys[bandstr == bs].tolist(),
 											band=[bs.replace('Band: ','')]*len(mjd[bandstr == bs].tolist())))
 
 		p = plotmethod('x','y',source=source, #mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
@@ -963,6 +979,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 												y=upperlimmag[upperlimbandstr == bs].tolist(),
 												date=upperlimdate[upperlimbandstr == bs].tolist(),
 												data_quality=upperlimdataquality[upperlimbandstr == bs].tolist(),
+												magsys=upperlimmagsys[upperlimbandstr == bs].tolist(),
 												band=[bs.replace('Band: ','')]*len(upperlimmjd[upperlimbandstr == bs].tolist())))
 			p = ax.inverted_triangle('x','y',source=source,
 									 color=color,size=5,muted_alpha=0.2)
@@ -1043,6 +1060,18 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
 	ax.xaxis[0].ticker = majorticks
 	ax.xaxis[0].major_label_overrides = overridedict
+
+
+	# add absolute mag axis
+	if transient.redshift: z = transient.redshift
+	elif transient.host.redshift: z = transient.host.redshift
+	elif transient.host.photo_z: z = transient.host.photo_z
+	else: z = None
+	if z is not None:
+		mu = cosmo.distmod(z).value
+		ax.extra_y_ranges = {"Abs. Mag": Range1d(start=ax.y_range.start-mu, end=ax.y_range.end-mu)}
+		ax.add_layout(LinearAxis(y_range_name="Abs. Mag", axis_label="Abs. Mag"), 'right')
+
 	
 	if salt2:
 		model = sncosmo.Model(source='salt2')
@@ -1119,13 +1148,14 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 
 	#ax=figure()
 	
-	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,salt2flux,salt2fluxerr,\
+	mjd,salt2mjd,date,mag,magerr,magsys,flux,fluxerr,salt2flux,salt2fluxerr,\
 		zpsys,salt2band,band,bandstr,bandcolor,bandsym,data_quality = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
-		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
-	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor = \
-		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
+		np.array([]),np.array([])
+	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor,upperlimmagsys = \
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
 
 	for p in photdata:
@@ -1141,6 +1171,8 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 			mjd = np.append(mjd,[dbmjd])
 			date = np.append(date,[p.obs_date.strftime('%m/%d/%Y')])
 			mag = np.append(mag,[p.mag])
+			if p.mag_sys is None: magsys = np.append(magsys,['None'])
+			else: magsys = np.append(magsys,[p.mag_sys])
 			if p.data_quality is None: data_quality = np.append(data_quality,['Good'])
 			else: data_quality = np.append(data_quality,[p.data_quality.name])
 			if not p.flux or not p.flux_err:
@@ -1177,6 +1209,8 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 			upperlimmag = np.append(upperlimmag,[-2.5*np.log10(p.flux + 3*p.flux_err) + p.flux_zero_point])
 			upperlimbandstr = np.append(upperlimbandstr,str(p.band))
 			upperlimband = np.append(upperlimband,p.band)
+			if p.mag_sys is None: upperlimmagsys = np.append(upperlimmagsys,'None')
+			else: upperlimmagsys = np.append(upperlimmagsys,p.mag_sys)
 			upperlimbandcolor = np.append(upperlimbandcolor,p.band.disp_color)
 			if salt2:
 				if str(p.band) in bandpassdict.keys():
@@ -1191,6 +1225,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 		upperlimmjd = np.append(upperlimmjd,[date_to_mjd(transient.non_detect_date)])
 		upperlimdate = np.append(upperlimdate,[transient.non_detect_date.strftime('%m/%d/%Y')])
 		upperlimmag = np.append(upperlimmag,transient.non_detect_limit)
+		upperlimmagsys = np.append(upperlimmagsys,'None')
 		upperlimbandstr = np.append(upperlimbandstr,str(transient.non_detect_band))
 		upperlimband = np.append(upperlimband,transient.non_detect_band)
 		upperlimbandcolor = np.append(upperlimbandcolor,transient.non_detect_band.disp_color)
@@ -1207,9 +1242,10 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 		('mag','$y'),
 		('band','@band'),
 		('date','@date'),
-		('dq','@data_quality')]
+		('dq','@data_quality'),
+		('magsys','@magsys')]
 	ax=figure(plot_width=240,plot_height=240,sizing_mode='scale_width')#,tooltips=TOOLTIPS)#'stretch_both')
-
+	
 	
 	legend_it = []
 	for bs,b,bc,bsym in zip(bandunq,allband[idx],allbandcolor[idx],allbandsym[idx]):
@@ -1233,6 +1269,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 											y=flux[bandstr == bs].tolist(),
 											date=date[bandstr == bs].tolist(),
 											data_quality=data_quality[bandstr == bs].tolist(),
+											magsys=magsys[bandstr == bs].tolist(),
 											band=[bs.replace('Band: ','')]*len(mjd[bandstr == bs].tolist())))
 
 		p = plotmethod('x','y',source=source,
