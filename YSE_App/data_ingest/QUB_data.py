@@ -557,6 +557,8 @@ class YSE(CronJobBase):
 		obj,ra,dec = [],[],[]
 		nsn = 0
 
+		if '10CYSEbdd' not in summary[transient_idx:transient_idx+max_transients]['local_designation']:
+			return {},50
 		for i,s in enumerate(summary[transient_idx:transient_idx+max_transients]):
 			if nowmjd - s['mjd_obs'] > self.options.max_days:
 				nsn += 1
@@ -616,6 +618,10 @@ class YSE(CronJobBase):
 							'ra':s['sherlock_host_ra'],
 							'dec':s['sherlock_host_dec'],
 							'redshift':redshift}
+			if type(s['rb_factor_image']) == np.ma.core.MaskedConstant:
+				rb_factor = None
+			else:
+				rb_factor = s['rb_factor_image']
 
 			tdict = {'name':s['local_designation'],
 					 'ra':s['ra_psf'],
@@ -634,7 +640,7 @@ class YSE(CronJobBase):
 					 'disc_date':s['followup_flag_date'],
 					 'mw_ebv':mw_ebv,
 					 'point_source_probability':ps_prob,
-					 'real_bogus_score':s['rb_factor_image']}
+					 'real_bogus_score':rb_factor}
 
 			obj += [s['local_designation']]
 			ra += [s['ra_psf']]
