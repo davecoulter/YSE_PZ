@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from enum import Enum
 from astroquery.ned import Ned
+Ned.TIMEOUT = 5
 import astropy.units as u
 from astropy import coordinates
 import numpy as np
@@ -976,7 +977,7 @@ class TNS_emails(CronJobBase):
 			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
 			subject = "TNS Transient Upload Failure"
 			print("Sending error email")
-			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg = "Alert : YSE_PZ Failed to upload transients in TNS_uploads.TNS_emails() \n"
 			html_msg += "Error : %s at line number %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e,exc_tb.tb_lineno),
@@ -1039,7 +1040,7 @@ class TNS_updates(CronJobBase):
 			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
 			subject = "TNS Transient Upload Failure"
 			print("Sending error email")
-			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg = "Alert : YSE_PZ Failed to upload transients in TNS_uploads.TNS_updates()\n"
 			html_msg += "Error : %s at line number %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e,exc_tb.tb_lineno),
@@ -1100,7 +1101,7 @@ class TNS_Ignore_updates(CronJobBase):
 			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
 			subject = "TNS Transient Upload Failure"
 			print("Sending error email")
-			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg = "Alert : YSE_PZ Failed to upload transients in TNS_uploads.TNS_Ignore_Updates()\n"
 			html_msg += "Error : %s at line number %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e,exc_tb.tb_lineno),
