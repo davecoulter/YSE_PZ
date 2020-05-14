@@ -557,8 +557,8 @@ class YSE(CronJobBase):
 		obj,ra,dec = [],[],[]
 		nsn = 0
 
-		if '10CYSEbdd' not in summary[transient_idx:transient_idx+max_transients]['local_designation']:
-			return {},50
+		#if '10CYSEbdd' not in summary[transient_idx:transient_idx+max_transients]['local_designation']:
+		#	return {},50
 		for i,s in enumerate(summary[transient_idx:transient_idx+max_transients]):
 			if nowmjd - s['mjd_obs'] > self.options.max_days:
 				nsn += 1
