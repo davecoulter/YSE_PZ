@@ -820,12 +820,16 @@ class YSE(CronJobBase):
 	def UploadTransients(self,TransientUploadDict):
 
 		url = '%s'%self.options.dburl.replace('/api','/add_transient')
-		r = requests.post(url = url, data = json.dumps(TransientUploadDict),
-						  auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
+		try:
+			r = requests.post(url = url, data = json.dumps(TransientUploadDict),
+							  auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword),
+							  timeout=60)
+			try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
+			except: print(r.text)
+			print("Process done.")
 
-		try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
-		except: print(r.text)
-		print("Process done.")
+		except Exception as e:
+			print("Error: %s"%e)
 
 
 def jd_to_date(jd):
