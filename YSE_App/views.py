@@ -1005,8 +1005,8 @@ def download_photometry(request, slug):
 			content += "# %s: %s\n"%(k.upper(),data[transient[0].name]['transient'][0]['fields'][k])
 			
 	content += "\n"
-	content += "VARLIST:  MJD		 FLT  FLUXCAL	FLUXCALERR	  MAG	  MAGERR	 TELESCOPE	   INSTRUMENT\n"
-	linefmt =  "OBS:	  %.3f	%s	%.3f  %.3f	%.3f  %.3f	%s	%s\n"
+	content += "VARLIST:  MJD        FLT  FLUXCAL   FLUXCALERR    MAG     MAGERR     MAGSYS   TELESCOPE    INSTRUMENT\n"
+	linefmt =  "OBS:      %.3f  %s  %.3f  %.3f  %.3f  %.3f  %s  %s  %s\n"
 
 	
 	# Get photometry by user & transient
@@ -1035,7 +1035,7 @@ def download_photometry(request, slug):
 					mag_err = 2.5/np.log(10)*flux_err/flux
 					
 					content += linefmt%(
-						mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,mag,mag_err,telescope,instrument)
+						mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,mag,mag_err,d['fields']['mag_sys'],telescope,instrument)
 					
 				elif not d['fields']['flux'] and d['fields']['mag']:
 					if d['fields']['mag_err']: mag_err = d['fields']['mag_err']
@@ -1045,7 +1045,7 @@ def download_photometry(request, slug):
 					flux_err = 0.4*np.log(10)*flux*mag_err
 					
 					content += linefmt%(
-						mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,telescope,instrument)
+						mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,d['fields']['mag_sys'],telescope,instrument)
 					
 				elif d['fields']['flux'] and d['fields']['flux_zero_point'] and d['fields']['mag']:
 					if d['fields']['flux_err']: flux_err = d['fields']['flux_err']
@@ -1057,7 +1057,7 @@ def download_photometry(request, slug):
 					flux_err = flux_err*10**(0.4*(d['fields']['flux_zero_point']-27.5))
 
 					content += linefmt%(
-						mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,telescope,instrument)
+						mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,d['fields']['mag_sys'],telescope,instrument)
 					
 				else:
 					continue
@@ -1105,8 +1105,8 @@ def download_bulk_photometry(request, query_title):
 				content += "# %s: %s\n"%(k.upper(),data[transient.name]['transient'][0]['fields'][k])
 
 		content += "\n"
-		content += "MJD,FLT,FLUXCAL,FLUXCALERR,MAG,MAGERR,TELESCOPE,INSTRUMENT\n"
-		linefmt =  "%.3f,%s,%.3f,%.3f,%.3f,%.3f,%s,%s\n"
+		content += "MJD,FLT,FLUXCAL,FLUXCALERR,MAG,MAGERR,MAGSYS,TELESCOPE,INSTRUMENT\n"
+		linefmt =  "%.3f,%s,%.3f,%.3f,%.3f,%.3f,%s,%s,%s\n"
 
 
 		# Get photometry by user & transient
@@ -1135,7 +1135,7 @@ def download_bulk_photometry(request, query_title):
 						mag_err = 2.5/np.log(10)*flux_err/flux
 
 						content += linefmt%(
-							mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,mag,mag_err,telescope,instrument)
+							mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,mag,mag_err,d['fields']['mag_sys'],telescope,instrument)
 
 					elif not d['fields']['flux'] and d['fields']['mag']:
 						if d['fields']['mag_err']: mag_err = d['fields']['mag_err']
@@ -1145,7 +1145,7 @@ def download_bulk_photometry(request, query_title):
 						flux_err = 0.4*np.log(10)*flux*mag_err
 
 						content += linefmt%(
-							mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,telescope,instrument)
+							mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,d['fields']['mag_sys'],telescope,instrument)
 
 					elif d['fields']['flux'] and d['fields']['flux_zero_point'] and d['fields']['mag']:
 						if d['fields']['flux_err']: flux_err = d['fields']['flux_err']
@@ -1157,7 +1157,7 @@ def download_bulk_photometry(request, query_title):
 						flux_err = flux_err*10**(0.4*(d['fields']['flux_zero_point']-27.5))
 
 						content += linefmt%(
-							mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,telescope,instrument)
+							mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,d['fields']['mag_sys'],telescope,instrument)
 
 					else:
 						continue
