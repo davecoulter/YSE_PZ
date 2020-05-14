@@ -201,9 +201,9 @@ class ForcedPhot(CronJobBase):
 			nsn = 0
 			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
 			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-			subject = "QUB Transient Upload Failure"
+			subject = "YSE_PZ Forced Photometry Upload Failure"
 			print("Sending error email")
-			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg = "Alert : YSE_PZ Forced Photometry Failed to upload transients in YSE_Forced_Phot.py\n"
 			html_msg += "Error : %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e),

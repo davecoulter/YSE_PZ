@@ -132,7 +132,7 @@ class QUB(CronJobBase):
 			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
 			subject = "QUB Transient Upload Failure"
 			print("Sending error email")
-			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg = "Alert : YSE_PZ Failed to upload transients from PSST in QUB_data.py\n"
 			html_msg += "Error : %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e),
@@ -452,7 +452,7 @@ class YSE(CronJobBase):
 			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
 			subject = "QUB Transient Upload Failure"
 			print("Sending error email")
-			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg = "Alert : YSE_PZ Failed to upload transients from YSE in QUB_data.py\n"
 			html_msg += "Error : %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e),
