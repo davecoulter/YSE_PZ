@@ -631,7 +631,7 @@ class YSE(CronJobBase):
 					 'context_class':s['sherlockClassification'].replace('UNCLEAR','Unknown'),
 					 'host':hostdict,
 					 'tags':['YSE'],
-					 'disc_date':s['followup_flag_date'], #mjd_to_date(s['mjd_obs']),
+					 'disc_date':s['followup_flag_date'],
 					 'mw_ebv':mw_ebv,
 					 'point_source_probability':ps_prob,
 					 'real_bogus_score':s['rb_factor_image']}
