@@ -1064,8 +1064,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
 	# add absolute mag axis
 	if transient.redshift: z = transient.redshift
-	elif transient.host.redshift: z = transient.host.redshift
-	elif transient.host.photo_z: z = transient.host.photo_z
+	elif transient.host and transient.host.redshift: z = transient.host.redshift
+	elif transient.host and transient.host.photo_z: z = transient.host.photo_z
 	else: z = None
 	if z is not None:
 		mu = cosmo.distmod(z).value
