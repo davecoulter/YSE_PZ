@@ -584,7 +584,7 @@ class processTNS:
 			
 		return hostdict,hostcoords
 
-	def UpdateFromTNS(self,ndays=None,allowed_statuses=['New','Following','Watch','FollowupRequested']):
+	def UpdateFromTNS(self,ndays=None,allowed_statuses=['New','Following','Watch','FollowupRequested'],doTNS=True):
 
 		if ndays:
 			date_format = '%Y-%m-%d'
@@ -619,8 +619,8 @@ class processTNS:
 				objs.append(transient['name'])
 				ras.append(transient['ra'])
 				decs.append(transient['dec'])
-		if self.redoned: nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=True)
-		else: nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=False)
+		if self.redoned: nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=True,doTNS=doTNS)
+		else: nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=False,doTNS=doTNS)
 		return nsn
 
 	def ProcessTNSEmails(self):
@@ -692,11 +692,10 @@ class processTNS:
 		else: nsn = 0
 		return nsn
 
-	def GetAndUploadAllData(self,objs,ras,decs,doNED=True):
+	def GetAndUploadAllData(self,objs,ras,decs,doNED=True,doTNS=True):
 		TransientUploadDict = {}
-
 		assert len(ras) == len(decs)
-
+		
 		if type(ras[0]) == float:
 			scall = SkyCoord(ras,decs,frame="fk5",unit=u.deg)
 		else:
@@ -743,20 +742,27 @@ class processTNS:
 		tstart = time.time()
 		TNSData = []
 		json_data = []
+		total_objs = 0
 		for j in range(len(objs)):
-			TNSGetSingle = [("objname",objs[j]),
-							("photometry","1"),
-							("spectra","1")]
+			if objs[j].startswith('20'):
+				if doTNS:
+					TNSGetSingle = [("objname",objs[j]),
+									("photometry","1"),
+									("spectra","1")]
 
-			response=get(self.tnsapi, TNSGetSingle, self.tnsapikey)
-			json_data += [format_to_json(response.text)]
+					response=get(self.tnsapi, TNSGetSingle, self.tnsapikey)
+					json_data += [format_to_json(response.text)]
+					total_objs += 1
+				else:
+					json_data += [None]
+			else:
+				json_data += [None]
 		print(time.time()-tstart)
 
 		print('getting TNS content takes %.1f seconds'%(time.time()-tstart))
-
+		print('updating {} transients!'.format(len(objs)))
 		for j,jd in zip(range(len(objs)),json_data):
 			tallstart = time.time()
-
 			obj = objs[j]
 
 			iobj = np.where(obj == np.array(objs))[0]
@@ -777,10 +783,11 @@ class processTNS:
 			########################################################
 			# For Item in Email, Get NED
 			########################################################
-			if type(jd['data']['reply']['name']) == str:
-				jd = jd['data']['reply']
-			else:
-				jd = None
+			if jd is not None:
+				if type(jd['data']['reply']['name']) == str:
+					jd = jd['data']['reply']
+				else:
+					jd = None
 
 			transientdict = self.getTNSData(jd,obj,sc,ebv)
 			#try:
@@ -930,7 +937,7 @@ class TNS_emails(CronJobBase):
 	def do(self):
 
 		# execute only if run as a script
-
+		print("running TNS emails at {}".format(datetime.now().isoformat()))
 		usagestring = "TNS_Synopsis.py <options>"
 
 		tstart = time.time()
@@ -996,7 +1003,7 @@ class TNS_updates(CronJobBase):
 	def do(self):
 
 		# execute only if run as a script
-
+		print("running TNS updates at {}".format(datetime.now().isoformat()))
 		usagestring = "TNS_Synopsis.py <options>"
 
 		tstart = time.time()
@@ -1032,7 +1039,7 @@ class TNS_updates(CronJobBase):
 		#options.ndays=0.5
 		try:
 			tnsproc.noupdatestatus = True
-			nsn = tnsproc.UpdateFromTNS(ndays=options.ndays)
+			nsn = tnsproc.UpdateFromTNS(ndays=options.ndays,doTNS=False)
 		except Exception as e:
 			exc_type, exc_obj, exc_tb = sys.exc_info()
 			nsn = 0
@@ -1050,15 +1057,16 @@ class TNS_updates(CronJobBase):
 
 class TNS_Ignore_updates(CronJobBase):
 
+	RUN_AT_TIMES = ['00:00']
 	RUN_EVERY_MINS = 4320
-	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+	schedule = Schedule(run_every_mins=RUN_EVERY_MINS,run_at_times=RUN_AT_TIMES)
 
 	code = 'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_Ignore_updates'
 
 	def do(self):
 
 		# execute only if run as a script
-
+		print("running TNS updates for Ignore transients at {}".format(datetime.now().isoformat()))
 		usagestring = "TNS_Synopsis.py <options>"
 
 		tstart = time.time()
@@ -1093,7 +1101,7 @@ class TNS_Ignore_updates(CronJobBase):
 		tnsproc.ztfurl = options.ztfurl
 		try:
 			tnsproc.noupdatestatus = True
-			nsn = tnsproc.UpdateFromTNS(ndays=30,allowed_statuses=['Ignore'])
+			nsn = tnsproc.UpdateFromTNS(ndays=30,allowed_statuses=['Ignore'],doTNS=False)
 		except Exception as e:
 			exc_type, exc_obj, exc_tb = sys.exc_info()
 			nsn = 0
