@@ -667,7 +667,7 @@ class YSE(CronJobBase):
 					# forced photometry
 					phot_upload_dict = {'obs_date':mjd_to_date(lf['mjd']),
 										'band':lf['filter'],
-										'groups':'YSE',
+										'groups':['YSE'],
 										'mag':forced_mag,
 										'mag_err':forced_mag_err,
 										'flux':fluxToMicroJansky(lf['psf_inst_flux'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
