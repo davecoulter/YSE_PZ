@@ -539,7 +539,9 @@ class YSE(CronJobBase):
 
 			nsn = 0
 			nsn_single = 50
-			
+
+			nowmjd = Time.now().mjd
+			summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
 			while nsn_single == 50:
 				transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=50)
 				print('uploading %i transients'%nsn_single)
@@ -557,13 +559,14 @@ class YSE(CronJobBase):
 		obj,ra,dec = [],[],[]
 		nsn = 0
 
-		#if '10CYSEbdd' not in summary[transient_idx:transient_idx+max_transients]['local_designation']:
-		#	return {},50
 		for i,s in enumerate(summary[transient_idx:transient_idx+max_transients]):
-			if nowmjd - s['mjd_obs'] > self.options.max_days:
-				nsn += 1
-				continue
-
+			#if nowmjd - s['mjd_obs'] > self.options.max_days:
+			#	nsn += 1
+			#	continue
+			#print(s['local_designation'])
+			#if s['local_designation'] == '10EYSEdxa':
+			#	import pdb; pdb.set_trace()
+			
 			r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id']) #,
 			#				 auth=HTTPDigestAuth(self.options.qubuser,self.options.qubpass))
 
