@@ -1147,7 +1147,6 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 		return django.http.HttpResponse('')
 
 	#ax=figure()
-	
 	mjd,salt2mjd,date,mag,magerr,magsys,flux,fluxerr,salt2flux,salt2fluxerr,\
 		zpsys,salt2band,band,bandstr,bandcolor,bandsym,data_quality = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
@@ -1164,7 +1163,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 		#if p.data_quality:
 		#	continue			
 
-		if (p.flux and p.mag) or (not p.flux and p.mag):
+		if p.flux or (not p.flux and p.mag):
 			if p.discovery_point:
 				limmjd = dbmjd-30
 				
@@ -1245,7 +1244,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 		('dq','@data_quality'),
 		('magsys','@magsys')]
 	ax=figure(plot_width=240,plot_height=240,sizing_mode='scale_width')#,tooltips=TOOLTIPS)#'stretch_both')
-	
+
 	
 	legend_it = []
 	for bs,b,bc,bsym in zip(bandunq,allband[idx],allbandcolor[idx],allbandsym[idx]):
