@@ -1329,7 +1329,8 @@ class RisingTransientFilter(django_filters.FilterSet):
 	ra_max = django_filters.NumberFilter(name='ra',label='Max. RA (deg)',lookup_expr='lt')
 	dec_min = django_filters.NumberFilter(name='dec',label='Min. Dec (deg)',lookup_expr='gt')
 	dec_max = django_filters.NumberFilter(name='dec',label='Max. Dec (deg)',lookup_expr='lt')
-
+	ebv_max = django_filters.NumberFilter(name='mw_ebv',label='Max. MW E(B-V)',lookup_expr='lt')
+	
 	#recent_mag__gt = django_filters.NumberFilter(name='recent_mag', lookup_expr='recent_mag__gt')
 	#recent_mag__lt = django_filters.NumberFilter(name='recent_mag', lookup_expr='recent_mag__lt')
 	ex = django_filters.CharFilter(method='filter_ex',label='Search')
@@ -1339,7 +1340,7 @@ class RisingTransientFilter(django_filters.FilterSet):
 
 	class Meta:
 		model = Transient
-		fields = ['ex','recent_mag_lt','days_since_disc','ra_min','ra_max','dec_min','dec_max']
+		fields = ['ex','recent_mag_lt','days_since_disc','ra_min','ra_max','dec_min','dec_max','ebv_max']
 	
 	def filter_ex(self, qs, name, value):
 		if value:
