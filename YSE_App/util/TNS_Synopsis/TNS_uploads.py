@@ -688,7 +688,7 @@ class processTNS:
 			# Mark messages as "Seen"
 			result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')
 		if len(objs):
-			nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=False)
+			nsn = self.GetAndUploadAllData(objs,ras,decs)
 		else: nsn = 0
 		return nsn
 
