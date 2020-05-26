@@ -125,13 +125,13 @@ def sendemail(from_addr, to_addr,
 							
 class AntaresZTF(CronJobBase):
 
-	RUN_EVERY_MINS = 30
+	RUN_EVERY_MINS = 60
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.Query_ZTF.AntaresZTF'
 	
 	def do(self):
-
+		print("running ANTARES query at {}".format(datetime.datetime.now().isoformat()))
 		try:
 			tstart = time.time()
 		
