@@ -1039,7 +1039,7 @@ class TNS_updates(CronJobBase):
 		#options.ndays=0.5
 		try:
 			tnsproc.noupdatestatus = True
-			nsn = tnsproc.UpdateFromTNS(ndays=options.ndays,doTNS=False)
+			nsn = tnsproc.UpdateFromTNS(ndays=options.ndays,doTNS=True)
 		except Exception as e:
 			exc_type, exc_obj, exc_tb = sys.exc_info()
 			nsn = 0
