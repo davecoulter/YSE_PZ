@@ -688,7 +688,7 @@ class processTNS:
 			# Mark messages as "Seen"
 			result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')
 		if len(objs):
-			nsn = self.GetAndUploadAllData(objs,ras,decs)
+			nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=False)
 		else: nsn = 0
 		return nsn
 
@@ -805,8 +805,8 @@ class processTNS:
 					if nondetectmaglim: transientdict['non_detect_limit'] = nondetectmaglim
 					if nondetectfilt: transientdict['non_detect_band'] =  nondetectfilt
 					if nondetectfilt: transientdict['non_detect_instrument'] =	nondetectins
-			except Exception as e:
-				pass
+				elif photdict is not None: transientdict['transientphotometry'] = photdict
+			except Exception as e: pass
 				#exc_type, exc_obj, exc_tb = sys.exc_info()
 				#raise RuntimeError('error %s at line number %s'%(e,exc_tb.tb_lineno))
 
