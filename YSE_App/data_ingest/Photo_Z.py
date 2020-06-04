@@ -11,229 +11,234 @@ import sys
 import tensorflow as tf
 from tensorflow import keras
 import matplotlib.pyplot as plt
-from SciServer import Authentication, CasJobs
 
+import SciServer
+from SciServer import CasJobs
+from SciServer import SkyQuery
 
-#import last because something else uses 'Q'
-
-class Photo_Z(CronJobBase):
-
-	RUN_EVERY_MINS = 30
-
-	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
-	code = 'YSE_App.data_ingest.Photo_Z.YSE'
-
-	def do(self,user='awe2',password='StandardPassword',search=1,
-		   path_to_model='YSE_DNN_photoZ_model_315.hdf5',debug=True):
-		"""
-		Predicts photometric redshifts from RA and DEC points in SDSS
-
-		An outline of the algorithem is:
-
-		first pull from SDSS u,g,r,i,z magnitudes from SDSS; 
-			should be able to handle a list/array of RA and DEC
-
-		place u,g,r,i,z into a vector, append the derived information into the data array
-
-		predict the information from the model
-
-		return the predictions in the same order to the user
-
-		inputs:
-			Ra: list or array of len N, right ascensions of target galaxies in decimal degrees
-			Dec: list or array of len N, declination of target galaxies in decimal degrees
-			search: float, arcmin tolerance to search for the object in SDSS Catalogue
-			path_to_model: str, filepath to saved model for prediction
-		
-		Returns:
-			predictions: array of len N, photometric redshift of input galaxy
-
-		"""
-
-		try:
-			nowdate = datetime.datetime.utcnow() - datetime.timedelta(1)
-			from django.db.models import Q #HAS To Remain Here, I dunno why
-			print('Entered the photo_z cron')		
-			#save time b/c the other cron jobs print a time for completion
-			
-			transients = (Transient.objects.filter(Q(host__photo_z__isnull=True) & Q(host__isnull=False)))
-
-			RA=[] #Needs to be list b/c don't know how many hosts are None
-			DEC=[]
-			outer_mask = [] #create an integer index mask that we will place values into because some transients don't have a host, even when they make it past the filter????
-			transients_withhost = []
-			
-			for i,transient_obj in enumerate(transients):
-				if transient_obj.host != None:
-					RA.append(transient_obj.host.ra)
-					DEC.append(transient_obj.host.dec)
-					outer_mask.append(i) #provides integer index mask
-
-			outer_mask = np.array(outer_mask) #make that an array
-
-			N_outer = len(transients) #gives size of returned array
-
-			Ra = np.array(RA)
-			Dec = np.array(DEC)
-			N = len(Ra)#gives size of query array
-			Q = N//1000#decompose the length of transients needing classification
-
-			if N%1000 != 0: 
-				Q=Q+1 #catch remainder and start a new batch
-			total_job = [] #store all pandas job dataframes
-			for j in range(Q): #iterate over batches
-				if j == (Q-1):
-					Ra_batch = Ra[j*1000:((j+1)*1000 + N%1000)] #grab batch remainder
-					Dec_batch = Dec[j*1000:((j+1)*1000 + N%1000)]
-				else:
-					Ra_batch = Ra[j*1000:(j+1)*1000] #other wise grab batch of 1000
-					Dec_batch = Dec[j*1000:(j+1)*1000]
-
-				hold=[] #a list for holding the strings that I want to place into an sql query
-				for val in range(len(Ra_batch)):
-					string = '({},{},{}),|'.format(str(val),str(Ra_batch[val]),str(Dec_batch[val]))
-					hold.append(string)
-
-				#Now construct the full query
-				sql = "CREATE TABLE #UPLOAD(|id INT PRIMARY KEY,|up_ra FLOAT,|up_dec FLOAT|)|INSERT INTO #UPLOAD|	VALUES|"
-				for data in hold:
-					sql = sql + data
-				#there is a comma that needs to be deleted from the last entry for syntax to work
-				sql = sql[0:(len(sql)-2)] + '|'
-				#append the rest to it
-				sql = sql + "SELECT|p.objID,p.u,p.g,p.r,p.i,p.z,p.extinction_u,p.extinction_g,p.extinction_r,p.extinction_i,p.extinction_z,p.petroRad_u,p.petroRad_g,p.petroRad_r,p.petroRad_i,p.petroRad_z,p.petroR50_r,p.petroR90_r|FROM #UPLOAD as U|OUTER APPLY dbo.fGetNearestObjEq((U.up_ra),(U.up_dec),{}) as N|LEFT JOIN PhotoObjAll AS p ON N.objid=p.objID".format(str(search))
-				#change all | to new line: when we change to Unix system will need to change this new line 
-				sql = sql.replace('|','\n')
-				#login, change to some other credentials later
-				Authentication.login('awe2','StandardPassword')
-				job = CasJobs.executeQuery(sql,'DR12','pandas') #this line sends and retrieves the result
-				
-				print('Query {} of {} complete'.format(j+1,Q))
-				print(np.shape(job.values))
-				job['dered_u'] = job['u'].values - job['extinction_u'].values
-				job['dered_g'] = job['g'].values - job['extinction_g'].values
-				job['dered_r'] = job['r'].values - job['extinction_r'].values
-				job['dered_i'] = job['i'].values - job['extinction_i'].values
-				job['dered_z'] = job['z'].values - job['extinction_z'].values
-				
-				job['u-g']= job['dered_u'].values - job['dered_g'].values
-				job['g-r']= job['dered_g'].values - job['dered_r'].values
-				job['r-i']= job['dered_r'].values - job['dered_i'].values
-				job['i-z']= job['dered_i'].values - job['dered_z'].values
-				job['u_over_z']= job['dered_u'].values / job['dered_z'].values
-				
-				job['C'] = job['petroR90_r'].values/job['petroR50_r'].values
-				total_job.append(job)
-				#print('length of total job :',len(total_job)) 
-			print('left the query loop')
-			query_result = pd.concat(total_job)
-			#now feed to a RF model for prediction
-			#query_result['fake']=np.zeros((len(query_result['dered_u'].values)))
-			X = query_result[['dered_u','dered_g','dered_r','dered_i','dered_z','u-g','g-r','r-i','i-z','u_over_z','petroRad_u','petroRad_g','petroRad_r','petroRad_i','petroRad_z','petroR50_r','petroR90_r','C']].values
-			#define and load in the model
-			def create_model(learning_rate):
+def jobDescriber(jobDescription):
+    # Prints the results of the CasJobs job status functions in a human-readable manner
+    # Input: the python dictionary returned by getJobStatus(jobId) or waitForJob(jobId)
+    # Output: prints the dictionary to screen with readable formatting
+    import pandas
     
-				model = keras.Sequential([])
-				model.add(keras.layers.Dense(input_shape=(18,),units=18,activation=keras.activations.linear)) #tried relu
-				#model.add(keras.layers.Dropout(rate=0.1))
-				model.add(keras.layers.Dense(units=18,activation=tf.nn.relu)) 
-				#model.add(keras.layers.Dropout(rate=0.1))
-				model.add(keras.layers.Dense(units=18,activation=tf.nn.relu))
-				#model.add(keras.layers.Dropout(rate=0.1))
-				model.add(keras.layers.Dense(units=18,activation=tf.nn.relu)) #tf.nn.relu
-				#model.add(keras.layers.Dropout(rate=0.1))
-				model.add(keras.layers.Dense(units=315,activation=keras.activations.softmax))
-				
-				#RMS = keras.optimizers.RMSprop(learning_rate=learning_rate)
-				adam = keras.optimizers.Adam(lr=learning_rate)
-				model.compile(optimizer=adam, loss='categorical_crossentropy') 
-				return(model)
+    if (jobDescription["Status"] == 0):
+        status_word = 'Ready'
+    elif (jobDescription["Status"] == 1):
+        status_word = 'Started'
+    elif (jobDescription["Status"] == 2):
+        status_word = 'Cancelling'
+    elif (jobDescription["Status"] == 3):
+        status_word = 'Cancelled'
+    elif (jobDescription["Status"] == 4):
+        status_word = 'Failed'
+    elif (jobDescription["Status"] == 5):
+        status_word = 'Finished'
+    else:
+        status_word = 'Status not found!!!!!!!!!'
 
-			keras.backend.clear_session()
-			model = create_model(learning_rate = 1e-3)#couldve been anything for this, just gonna predict
-			model.load_weights('%s/%s'%(djangoSettings.STATIC_ROOT,path_to_model))
-			
-			#Need to deal with NANs now since many objects are outside the SDSS footprint, later models will learn to deal with this
-			#ideas: need to retain a mask of where the nans are in the row
-			mask = np.invert((query_result.isna().any(1).values)) #true was inside SDSS footprint
-			#also will want this mask in indices so we can insert the predicted data correctly
-			indices=[]
-			for i,val in enumerate(mask):
-				if val == True:
-					indices.append(i)
-			
-			#predict on data that is not NAN
-			posterior = model.predict(X[mask,:], verbose=2)
-			np.save('YSE_predictions.npy',predictions)
-			n_classes=315
-			redshift_bin_middles = np.array(np.array(range(n_classes)) * 0.7/n_classes + 0.7/(n_classes*2))
-			def expected_values(Out,bins=redshift_bin_middles):
-				Y = np.empty((np.shape(Out)[0]))
-				for i in range(np.shape(Out)[0]):
-					Y[i] = np.sum(bins * Out[i,:])
-				return(Y)
-			predictions=expected_values(posterior)
-			N_error=posterior.shape[0]
-			error=np.ones(N_error)
-			for i in N_error:
-				error[i]=np.std(np.random.choice(a=redshift_bin_middles,size=1000,p=posterior[i,:],replace=True))
-			#print(np.shape(predictions))
-			#print(N)
-			#make nan array with size of what user asked for
-			return_me_error=np.ones(N)*np.nan
-			return_me_posterior = np.ones((N,315))*np.nan
-			return_me = np.ones(N)*np.nan
-			#now replace nan with the predictions in order, fixing outside SDSS footprint
-			return_me_error[indices]=error
-			return_me_posterior[indices,:] = posterior
-			return_me[indices] = predictions
-			#now replace nan with predictions in order, fixing missing YSE information
-			return_me_outer_error=np.pnes(N_outer)*np.nan
-			return_me_outer_posterior=np.ones((N_outer,315))*np.nan
-			return_me_outer = np.ones(N_outer) * np.nan
-			
-			return_me_outer_posterior[outer_mask]=return_me_error
-			return_me_outer_posterior[outer_mask,:] = return_me_posterior
-			return_me_outer[outer_mask] = return_me
-			
-		
-			#return_me_outer_posterior is a discrete estimate of the posterior probability over the array
-			#redshift_bin_middles. Gautham found a good way of sampling the uncertainty, which assumes that
-			#there is NOT a bi-modal distribution in the posterior (users would have to check) and that the posterior
-			#is roughly a normal distribution: and excluding a fancier model that discriminates PDFs automatically, I think
-			#is the easiest and safest assumption to make, barring bimodal.
-			
-			#Another loop will need to be added below to store the posteriors in return_me_outer_posterior and the errrors
-			#in return_me_outer_errors to the correct locations, as already done in lines 211 to 216. The indexing is all
-			#the same, and you can skip any array that is already excluded because return_me_outer = nan. I've also set
-			#it up so that the reuturn_me_outer_error will be nan if return_me_outer is nan.
-			
-			print('time taken:', datetime.datetime.utcnow() - nowdate)
-			#print('uploading now')
-			tz,mpz = [],[]
-			for t,pz in zip(transients,return_me):
-				if pz != pz: continue
-				host = t.host
-				# hard-coded to avoid the limits of the training
-				if pz < 0.4:
-					host.photo_z = pz
-					#something like host.photo_z_error = error
-					#something like host.photo_z_posterior = posterior
-					host.save()
-				tz += [host.redshift]
-				mpz += [pz]
-			if debug:
-				plt.plot(tz,mpz,'.',alpha=0.02)
-				plt.xlim(-0.01,0.7)
-				plt.ylim(-0.01,0.7)
-				plt.ylabel('Photo Z')
-				plt.xlabel('true Z')
-				plt.savefig('test.png')
+    print('JobID: ', jobDescription['JobID'])
+    print('Status: ', status_word, ' (', jobDescription["Status"],')')
+    print('Target (context being searched): ', jobDescription['Target'])
+    print('Message: ', jobDescription['Message'])
+    print('Created_Table: ', jobDescription['Created_Table'])
+    print('Rows: ', jobDescription['Rows'])
+    wait = pandas.to_datetime(jobDescription['TimeStart']) - pandas.to_datetime(jobDescription['TimeSubmit'])
+    duration = pandas.to_datetime(jobDescription['TimeEnd']) - pandas.to_datetime(jobDescription['TimeStart'])
+    print('Wait time: ',wait.seconds,' seconds')
+    print('Query duration: ',duration.seconds, 'seconds')
 
-			print('time taken with upload:', datetime.datetime.utcnow() - nowdate)
-		except Exception as e:
-			exc_type, exc_obj, exc_tb = sys.exc_info()
-			print("""Photo-z cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno))
-			#html_msg = """Photo-z cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno)
-			#sendemail(from_addr, user.email, subject, html_msg,
-			#		  djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+class YSE(CronJobBase):
+
+    RUN_EVERY_MINS = 30
+
+    schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+    code = 'YSE_App.data_ingest.Photo_Z.YSE'
+
+    def do(self,user='awe2',password='StandardPassword',search=1,path_to_model='YSE_DNN_photoZ_model_315.hdf5',debug=True):
+        """
+        Predicts photometric redshifts from RA and DEC points in SDSS
+
+        An outline of the algorithem is:
+
+        first pull from SDSS u,g,r,i,z magnitudes from SDSS; 
+            should be able to handle a list/array of RA and DEC
+
+        place u,g,r,i,z into a vector, append the derived information into the data array
+
+        predict the information from the model
+
+        return the predictions in the same order to the user
+
+        inputs:
+            Ra: list or array of len N, right ascensions of target galaxies in decimal degrees
+            Dec: list or array of len N, declination of target galaxies in decimal degrees
+            search: float, arcmin tolerance to search for the object in SDSS Catalogue
+            path_to_model: str, filepath to saved model for prediction
+        
+        Returns:
+            predictions: array of len N, photometric redshift of input galaxy
+
+        """
+    
+        try:
+            nowdate = datetime.datetime.utcnow() - datetime.timedelta(1)
+            from django.db.models import Q #HAS To Remain Here, I dunno why
+            print('Entered the photo_z cron')        
+            #save time b/c the other cron jobs print a time for completion
+            
+            model_filepath = 'MLP_EBOSS_1.hdf5'
+            filter_filepath = 'MLP_EBOSS_BINARY_FILTER.hdf5'
+			
+			
+			
+            NB_BINS = 272 #filter has 2, model has 272
+            BATCH_SIZE = 64
+            ZMIN = 0.0
+            ZMAX = 0.6 #filter has 0.8
+            BIN_SIZE = (ZMAX - ZMIN) / NB_BINS
+            range_z = np.linspace(ZMIN, ZMAX, NB_BINS + 1)[:NB_BINS]
+            
+            transients = Transient.objects.filter(Q(host__isnull=False) & Q(host__photo_z_internal__isnull=True))
+            
+            my_index = np.array(range(0,len(transients))) #dummy index used in DF, then used to create a mapping from matched galaxies back to these hosts
+               
+            transient_dictionary = dict(zip(my_index,transients))
+                
+            RA = []
+            DEC = []
+            for i,T in enumerate(transients): #get rid of fake entries
+                if T.host.ra and T.host.dec:
+                    RA.append(T.host.ra)
+                    DEC.append(T.host.dec)
+                else:
+                    transient_dictionary.pop(i)
+                
+            DF_pre=pd.DataFrame()
+            DF_pre['myindex'] = list(transient_dictionary.keys())
+            DF_pre['RA'] = RA
+            DF_pre['DEC'] = DEC
+            
+            SciServer.Authentication.login(user,password)
+            
+            try:
+                SciServer.SkyQuery.dropTable('PTable1', datasetName='MyDB')
+                SciServer.SkyQuery.dropTable('PTable2', datasetName='MyDB')
+            except Exception as e:
+                print('tables are not in CAS MyDB, continuing')
+                print('if system says table is already in DB, contact Andrew Engel')
+                
+            SciServer.CasJobs.uploadPandasDataFrameToTable(DF_pre, 'PTable1', context='MyDB')
+            
+            
+            myquery = 'SELECT s.myindex, g.dered_u, g.dered_g, g.dered_r, g.dered_i, g.dered_z, '
+            myquery+= 'g.dered_u - g.dered_g as ug, g.dered_u - g.dered_r as ur, g.dered_u - g.dered_i as ui, g.dered_u - g.dered_z as uz, '
+            myquery+= 'g.dered_g - g.dered_r as gr, g.dered_g - g.dered_i as gi, g.dered_g - g.dered_z as gz, '
+            myquery+= 'g.dered_r - g.dered_i as ri, g.dered_r - g.dered_z as rz, g.dered_i - g.dered_z as iz, '
+            myquery+= 'g.dered_u / g.dered_z as u_over_z, g.petroR90_r/g.petroR50_r AS C '
+            myquery+= 'INTO MyDB.PTable2 '
+            myquery+= 'FROM MyDB.PTable1 s '
+            myquery+= 'CROSS APPLY dbo.fGetNearestObjEq(s.RA,s.DEC,1.0/60.0) AS nb '
+            myquery+= 'INNER JOIN Galaxy g ON g.objID = nb.objID'
+
+            jobID = CasJobs.submitJob(sql=myquery, context="DR16")
+
+            waited=SciServer.CasJobs.waitForJob(jobId=jobID)
+            
+            jobDescription = CasJobs.getJobStatus(jobID)
+    
+            jobDescriber(jobDescription)
+            
+            PhotoDF = SciServer.SkyQuery.getTable('PTable2', datasetName='MyDB', top=10)
+
+            #change this
+            PhotoDF.drop_duplicates(subset='#myindex',inplace=True) #neccessary to patch some bugs
+            PhotoDF.dropna(inplace=True)
+                        
+            cols=['dered_u', 'dered_g', 'dered_r', 'dered_i', 'dered_z', 'ug', 'ur', 'ui', 'uz', 'gr', 'gi', 'gz', 'ri', 'rz', 'iz', 'u_over_z', 'C']
+            X = PhotoDF[cols]
+            #Z = PhotoDF['REDSHIFT'].values
+            INDICES = PhotoDF['#myindex'].values
+            X = X.values
+            
+            def Filter():
+                IN = keras.layers.Input((17,))
+                dense1 = keras.layers.Dense(20,activation=keras.activations.tanh)(IN) #filter has 20, tanh
+                drop1 = keras.layers.Dropout(0.05)(dense1)
+                
+                dense2 = keras.layers.Dense(20,activation=keras.activations.tanh)(drop1) #filter has 20, tanh
+                drop2 = keras.layers.Dropout(0.05)(dense2) #0.1
+                
+                dense3 = keras.layers.Dense(20,activation=keras.activations.tanh)(drop2) #filter has 20, tanh
+                drop3 = keras.layers.Dropout(0.05)(dense3)
+                
+                dense4 = keras.layers.Dense(20,activation=keras.activations.tanh)(drop3) #filter has 20, tanh
+                drop4 = keras.layers.Dropout(0.05)(dense4)#0.1
+                
+                dense5 = keras.layers.Dense(2,activation=keras.activations.softmax)(drop4) #filter has 2
+                
+                model = keras.Model(inputs=[IN],outputs=[dense5])
+                return(model)
+            
+            def MLP():
+                IN = keras.layers.Input((17,))
+                dense1 = keras.layers.Dense(45,activation=keras.activations.relu)(IN) #filter has 20, tanh
+                drop1 = keras.layers.Dropout(0.05)(dense1)
+
+                dense2 = keras.layers.Dense(45,activation=keras.activations.relu)(drop1) #filter has 20, tanh
+                drop2 = keras.layers.Dropout(0.05)(dense2) #0.1
+
+                dense3 = keras.layers.Dense(45,activation=keras.activations.relu)(drop2) #filter has 20, tanh
+                drop3 = keras.layers.Dropout(0.05)(dense3)
+
+                dense4 = keras.layers.Dense(45,activation=keras.activations.relu)(drop3) #filter has 20, tanh
+                drop4 = keras.layers.Dropout(0.05)(dense4)#0.1
+
+                dense5 = keras.layers.Dense(NB_BINS,activation=keras.activations.softmax)(drop4) #filter has 2
+
+                model = keras.Model(inputs=[IN],outputs=[dense5])
+                return(model)
+            
+            Filter_model = Filter()
+            mymodel = MLP()
+            
+            Filter_model.load_weights('%s/%s'%(djangoSettings.STATIC_ROOT,filter_filepath))
+            
+            Filtered = Filter_model.predict(X)
+            p = 0.01 #results in 97percent true positives, 95percent true negatives...
+            
+            mymodel.load_weights('%s/%s'%(djangoSettings.STATIC_ROOT,model_filepath))
+            
+            posterior = mymodel.predict(X[Filtered[:,1] <= 0.01])
+            
+            point_estimates = np.sum(range_z*posterior,1)
+            
+            error=np.ones(len(point_estimates))
+            for i in range(len(point_estimates)):
+                error[i]=np.std(np.random.choice(a=range_z,size=1000,p=posterior[i,:],replace=True)) #this could be parallized i'm sure
+            
+            #now figure out which are filtered out, ez work
+            all_my_indices = PhotoDF['#myindex'].values
+            whats_left = all_my_indices[Filtered[:,1]<=0.01]
+                
+            #now I have an ordered list of whats_left, which are indices that can be used to match to hosts, and an ordered list of posteriors, 
+            #uncertainties, and their point estimates. place them into the model by looping over.
+            for i,value in enumerate(whats_left):
+                T = transient_dictionary[value]
+                T.host.photo_z_internal = point_estimates[i]
+                T.host.photo_z_err_internal = error[i]
+                #T.host.photo_z_posterior = posterior[i] #Gautham suggested we add it to the host model
+                #T.host.photo_z_source = 'YSE internal'
+                T.host.save() #takes a long time and then my query needs to be reset which is also a long time
+            
+            print('time taken with upload:', datetime.datetime.utcnow() - nowdate)
+            
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            print("""Photo-z cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno))
+            #html_msg = """Photo-z cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno)
+            #sendemail(from_addr, user.email, subject, html_msg,
+            #          djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+
+#IDK = YSE() #why is this suddenly neccessary???
+#IDK.do()
