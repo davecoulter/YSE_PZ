@@ -1045,14 +1045,27 @@ class ObsNightFollowupTable(tables.Table):
 	moon_angle = tables.Column(verbose_name='Moon Angle',orderable=False,accessor='transient.CoordString')
 	created_by = tables.Column(verbose_name='Added By',orderable=True,accessor='created_by')
 	comment = tables.Column(verbose_name='Comments',orderable=True,accessor='id')
+
+	transient_status_string = tables.TemplateColumn("""<div class="btn-group">
+<button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
+											<span id="{{ record.transient.id }}_status_name" class="dropbtn">{{ record.transient.status }}</span>
+										</button>
+										<ul class="dropdown-menu">
+											{% for status in all_transient_statuses %}
+    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.transient.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+											{% endfor %}
+										</ul>
+</div>""",
+										  verbose_name='Transient Status',orderable=True,order_by='status')
+
 	
-	status_string = tables.TemplateColumn("""<div class="btn-group">
+	followup_status_string = tables.TemplateColumn("""<div class="btn-group">
 <button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
 											<span id="{{ record.id }}_status_name" class="dropbtn">{{ record.status }}</span>
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_followup_statuses %}
-    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="followupStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -1066,7 +1079,7 @@ class ObsNightFollowupTable(tables.Table):
 	def __init__(self,*args, classical_obs_date=None, **kwargs):
 		super().__init__(*args, **kwargs)
 
-		self.base_columns['transient.status'].verbose_name = 'Transient Status'
+		#self.base_columns['transient.status'].verbose_name = 'Transient Status'
 		#self.base_columns['status'].verbose_name = 'Followup Status'
 
 		location = EarthLocation.from_geodetic(
@@ -1137,7 +1150,7 @@ SELECT pd.mag
 	class Meta:
 		model = TransientFollowup
 		fields = ('name_string','ra_string','dec_string','recent_mag',
-				  'rise_time','set_time','moon_angle','transient.status',
+				  'rise_time','set_time','moon_angle','transient_status_string',
 				  'created_by')
 		template_name='YSE_App/django-tables2/bootstrap.html'
 		attrs = {
@@ -1312,6 +1325,12 @@ class RisingTransientFilter(django_filters.FilterSet):
 	#name = django_filters.CharFilter(name='name',lookup_expr='icontains',method='filter_name')
 	recent_mag_lt = django_filters.NumberFilter(name='recent_mag',label='Max Recent Mag',lookup_expr='lt')
 	days_since_disc = django_filters.NumberFilter(name='days_since_disc',label='Max Days Since Disc',lookup_expr='lt')
+	ra_min = django_filters.NumberFilter(name='ra',label='Min. RA (deg)',lookup_expr='gt')
+	ra_max = django_filters.NumberFilter(name='ra',label='Max. RA (deg)',lookup_expr='lt')
+	dec_min = django_filters.NumberFilter(name='dec',label='Min. Dec (deg)',lookup_expr='gt')
+	dec_max = django_filters.NumberFilter(name='dec',label='Max. Dec (deg)',lookup_expr='lt')
+	ebv_max = django_filters.NumberFilter(name='mw_ebv',label='Max. MW E(B-V)',lookup_expr='lt')
+	
 	#recent_mag__gt = django_filters.NumberFilter(name='recent_mag', lookup_expr='recent_mag__gt')
 	#recent_mag__lt = django_filters.NumberFilter(name='recent_mag', lookup_expr='recent_mag__lt')
 	ex = django_filters.CharFilter(method='filter_ex',label='Search')
@@ -1321,7 +1340,7 @@ class RisingTransientFilter(django_filters.FilterSet):
 
 	class Meta:
 		model = Transient
-		fields = ['ex','recent_mag_lt','days_since_disc']
+		fields = ['ex','recent_mag_lt','days_since_disc','ra_min','ra_max','dec_min','dec_max','ebv_max']
 	
 	def filter_ex(self, qs, name, value):
 		if value:

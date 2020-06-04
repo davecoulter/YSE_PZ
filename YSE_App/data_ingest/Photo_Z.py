@@ -16,14 +16,15 @@ from SciServer import Authentication, CasJobs
 
 #import last because something else uses 'Q'
 
-class YSE(CronJobBase):
+class Photo_Z(CronJobBase):
 
-	RUN_EVERY_MINS = 10
+	RUN_EVERY_MINS = 30
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.Photo_Z.YSE'
 
-	def do(self,user='awe2',password='StandardPassword',search=1,path_to_model='YSE_App/data_ingest/YSE_DNN_photoZ_model_315.hdf5'):
+	def do(self,user='awe2',password='StandardPassword',search=1,
+		   path_to_model='YSE_DNN_photoZ_model_315.hdf5',debug=True):
 		"""
 		Predicts photometric redshifts from RA and DEC points in SDSS
 
@@ -150,7 +151,7 @@ class YSE(CronJobBase):
 
 			keras.backend.clear_session()
 			model = create_model(learning_rate = 1e-3)#couldve been anything for this, just gonna predict
-			model.load_weights(path_to_model)
+			model.load_weights('%s/%s'%(djangoSettings.STATIC_ROOT,path_to_model))
 			
 			#Need to deal with NANs now since many objects are outside the SDSS footprint, later models will learn to deal with this
 			#ideas: need to retain a mask of where the nans are in the row
@@ -162,7 +163,7 @@ class YSE(CronJobBase):
 					indices.append(i)
 			
 			#predict on data that is not NAN
-			predictions = model.predict(X[mask,:], verbose=2)
+			posterior = model.predict(X[mask,:], verbose=2)
 			np.save('YSE_predictions.npy',predictions)
 			n_classes=315
 			redshift_bin_middles = np.array(np.array(range(n_classes)) * 0.7/n_classes + 0.7/(n_classes*2))
@@ -171,31 +172,63 @@ class YSE(CronJobBase):
 				for i in range(np.shape(Out)[0]):
 					Y[i] = np.sum(bins * Out[i,:])
 				return(Y)
-			predictions=expected_values(predictions)
+			predictions=expected_values(posterior)
+			N_error=posterior.shape[0]
+			error=np.ones(N_error)
+			for i in N_error:
+				error[i]=np.std(np.random.choice(a=redshift_bin_middles,size=1000,p=posterior[i,:],replace=True))
 			#print(np.shape(predictions))
 			#print(N)
 			#make nan array with size of what user asked for
+			return_me_error=np.ones(N)*np.nan
+			return_me_posterior = np.ones((N,315))*np.nan
 			return_me = np.ones(N)*np.nan
-			#now replace nan with the predictions in order
+			#now replace nan with the predictions in order, fixing outside SDSS footprint
+			return_me_error[indices]=error
+			return_me_posterior[indices,:] = posterior
 			return_me[indices] = predictions
+			#now replace nan with predictions in order, fixing missing YSE information
+			return_me_outer_error=np.pnes(N_outer)*np.nan
+			return_me_outer_posterior=np.ones((N_outer,315))*np.nan
 			return_me_outer = np.ones(N_outer) * np.nan
+			
+			return_me_outer_posterior[outer_mask]=return_me_error
+			return_me_outer_posterior[outer_mask,:] = return_me_posterior
 			return_me_outer[outer_mask] = return_me
+			
+		
+			#return_me_outer_posterior is a discrete estimate of the posterior probability over the array
+			#redshift_bin_middles. Gautham found a good way of sampling the uncertainty, which assumes that
+			#there is NOT a bi-modal distribution in the posterior (users would have to check) and that the posterior
+			#is roughly a normal distribution: and excluding a fancier model that discriminates PDFs automatically, I think
+			#is the easiest and safest assumption to make, barring bimodal.
+			
+			#Another loop will need to be added below to store the posteriors in return_me_outer_posterior and the errrors
+			#in return_me_outer_errors to the correct locations, as already done in lines 211 to 216. The indexing is all
+			#the same, and you can skip any array that is already excluded because return_me_outer = nan. I've also set
+			#it up so that the reuturn_me_outer_error will be nan if return_me_outer is nan.
+			
 			print('time taken:', datetime.datetime.utcnow() - nowdate)
 			#print('uploading now')
 			tz,mpz = [],[]
 			for t,pz in zip(transients,return_me):
 				if pz != pz: continue
 				host = t.host
-				host.photo_z = pz
-				host.save()
+				# hard-coded to avoid the limits of the training
+				if pz < 0.4:
+					host.photo_z = pz
+					#something like host.photo_z_error = error
+					#something like host.photo_z_posterior = posterior
+					host.save()
 				tz += [host.redshift]
 				mpz += [pz]
-			plt.plot(tz,mpz,'.',alpha=0.02)
-			plt.xlim(-0.01,0.7)
-			plt.ylim(-0.01,0.7)
-			plt.ylabel('Photo Z')
-			plt.xlabel('true Z')
-			plt.savefig('test.png')
+			if debug:
+				plt.plot(tz,mpz,'.',alpha=0.02)
+				plt.xlim(-0.01,0.7)
+				plt.ylim(-0.01,0.7)
+				plt.ylabel('Photo Z')
+				plt.xlabel('true Z')
+				plt.savefig('test.png')
 
 			print('time taken with upload:', datetime.datetime.utcnow() - nowdate)
 		except Exception as e:

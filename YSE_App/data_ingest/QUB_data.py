@@ -3,7 +3,7 @@ import requests
 import urllib
 import json
 import time
-from requests.auth import HTTPBasicAuth
+from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 import astropy.table as at
 from astropy.coordinates import SkyCoord
 import astropy.units as u
@@ -12,7 +12,7 @@ import numpy as np
 import coreapi
 from django_cron import CronJobBase, Schedule
 from django.conf import settings as djangoSettings
-import optparse
+import argparse
 import configparser
 import os
 import shutil
@@ -34,6 +34,11 @@ run:
 import dustmaps
 import dustmaps.sfd
 dustmaps.sfd.fetch()""")
+
+def fluxToMicroJansky(adu, exptime, zp):
+    factor = 10**(-0.4*(zp-23.9))
+    uJy = adu/exptime*factor
+    return uJy
 
 def getRADecBox(ra,dec,size=None):
 	RAboxsize = DECboxsize = size
@@ -109,12 +114,12 @@ class QUB(CronJobBase):
 		# some convoluted syntax here, making it so param file is not required
 
 		parser = self.add_options(usage=usagestring)
-		options,  args = parser.parse_args()
+		options,  args = parser.parse_known_args()
 
 		config = configparser.ConfigParser()
 		config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
 		parser = self.add_options(usage=usagestring,config=config)
-		options,  args = parser.parse_args()
+		options,  args = parser.parse_known_args()
 		self.options = options
 		#tnsproc.hostmatchrad = options.hostmatchrad
 
@@ -127,7 +132,7 @@ class QUB(CronJobBase):
 			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
 			subject = "QUB Transient Upload Failure"
 			print("Sending error email")
-			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg = "Alert : YSE_PZ Failed to upload transients from PSST in QUB_data.py\n"
 			html_msg += "Error : %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e),
@@ -137,51 +142,51 @@ class QUB(CronJobBase):
 
 
 	def add_options(self, parser=None, usage=None, config=None):
-		import optparse
+		import argparse
 		if parser == None:
-			parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
+			parser = argparse.ArgumentParser(usage=usage, conflict_handler="resolve")
 
 		# The basics
-		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
-		parser.add_option('--clobber', default=False, action="store_true",
+		parser.add_argument('-v', '--verbose', action="count", dest="verbose",default=1)
+		parser.add_argument('--clobber', default=False, action="store_true",
 						  help='clobber output file')
-		parser.add_option('-s','--settingsfile', default=None, type="string",
+		parser.add_argument('-s','--settingsfile', default=None, type=str,
 						  help='settings file (login/password info)')
-		parser.add_option('--status', default='New', type="string",
+		parser.add_argument('--status', default='New', type=str,
 						  help='transient status to enter in YS_PZ')
-		parser.add_option('--max_days', default=7, type="float",
+		parser.add_argument('--max_days', default=7, type=float,
 						  help='grab photometry/objects from the last x days')
 
 		if config:
-			parser.add_option('--dblogin', default=config.get('main','dblogin'), type="string",
+			parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbemail', default=config.get('main','dbemail'), type="string",
+			parser.add_argument('--dbemail', default=config.get('main','dbemail'), type=str,
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbpassword', default=config.get('main','dbpassword'), type="string",
+			parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
 							  help='database password, if post=True (default=%default)')
-			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
+			parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
 							  help='URL to POST transients to a database (default=%default)')
-			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
+			parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
 							  help='ZTF URL (default=%default)')
-			parser.add_option('--STATIC', default=config.get('site_settings','STATIC'), type="string",
+			parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
 							  help='static directory (default=%default)')
-			parser.add_option('--qubuser', default=config.get('main','qubuser'), type="string",
+			parser.add_argument('--qubuser', default=config.get('main','qubuser'), type=str,
 							  help='QUB database username (default=%default)')
-			parser.add_option('--qubpass', default=config.get('main','qubpass'), type="string",
+			parser.add_argument('--qubpass', default=config.get('main','qubpass'), type=str,
 							  help='QUB database password (default=%default)')
-			parser.add_option('--psstlink_summary', default=config.get('main','psstlink_summary'), type="string",
+			parser.add_argument('--psstlink_summary', default=config.get('main','psstlink_summary'), type=str,
 							  help='PSST summary CSV (default=%default)')
-			parser.add_option('--psstlink_lc', default=config.get('main','psstlink_lc'), type="string",
+			parser.add_argument('--psstlink_lc', default=config.get('main','psstlink_lc'), type=str,
 							  help='PSST lightcurve CSV (default=%default)')
-			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
+			parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
 							  help='ZTF URL (default=%default)')
 
 			
-			parser.add_option('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type="string",
+			parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
 							  help='SMTP login (default=%default)')
-			parser.add_option('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type="string",
+			parser.add_argument('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type=str,
 							  help='SMTP host (default=%default)')
-			parser.add_option('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type="string",
+			parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
 							  help='SMTP port (default=%default)')
 		else:
 			pass
@@ -299,10 +304,10 @@ class QUB(CronJobBase):
 			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
 			
 			#transientdict['transientphotometry'] = photometrydict
-		#import pdb; pdb.set_trace()
+
 		#scall = SkyCoord(ra,dec,unit=u.deg) #summary['ra_psf'],summary['dec_psf']
 		#transientdict = self.getZTFPhotometry(transientdict,obj,scall)
-		#import pdb; pdb.set_trace()
+
 		return transientdict,nsn
 
 	def getZTFPhotometry(self,ra,dec):
@@ -403,7 +408,6 @@ class QUB(CronJobBase):
 
 		except Exception as e:
 			print(e)
-			#import pdb; pdb.set_trace()
 						
 	def UploadTransients(self,TransientUploadDict):
 
@@ -417,7 +421,7 @@ class QUB(CronJobBase):
 
 class YSE(CronJobBase):
 
-	RUN_EVERY_MINS = 0.1
+	RUN_EVERY_MINS = 30
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.QUB_data.QUB'
@@ -432,12 +436,12 @@ class YSE(CronJobBase):
 		# some convoluted syntax here, making it so param file is not required
 		try:
 			parser = self.add_options(usage=usagestring)
-			options,  args = parser.parse_args()
+			options,  args = parser.parse_known_args()
 
 			config = configparser.ConfigParser()
 			config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
 			parser = self.add_options(usage=usagestring,config=config)
-			options,  args = parser.parse_args()
+			options,  args = parser.parse_known_args()
 			self.options = options
 
 			nsn = self.main()
@@ -448,7 +452,7 @@ class YSE(CronJobBase):
 			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
 			subject = "QUB Transient Upload Failure"
 			print("Sending error email")
-			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
+			html_msg = "Alert : YSE_PZ Failed to upload transients from YSE in QUB_data.py\n"
 			html_msg += "Error : %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e),
@@ -458,55 +462,55 @@ class YSE(CronJobBase):
 
 
 	def add_options(self, parser=None, usage=None, config=None):
-		import optparse
+		import argparse
 		if parser == None:
-			parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
+			parser = argparse.ArgumentParser(usage=usage, conflict_handler="resolve")
 
 		# The basics
-		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
-		parser.add_option('--clobber', default=False, action="store_true",
+		parser.add_argument('-v', '--verbose', action="count", dest="verbose",default=1)
+		parser.add_argument('--clobber', default=False, action="store_true",
 						  help='clobber output file')
-		parser.add_option('-s','--settingsfile', default=None, type="string",
+		parser.add_argument('-s','--settingsfile', default=None, type=str,
 						  help='settings file (login/password info)')
-		parser.add_option('--status', default='New', type="string",
+		parser.add_argument('--status', default='New', type=str,
 						  help='transient status to enter in YS_PZ')
-		parser.add_option('--max_days', default=7, type="float",
+		parser.add_argument('--max_days', default=1, type=float,
 						  help='grab photometry/objects from the last x days')
 
 		if config:
-			parser.add_option('--dblogin', default=config.get('main','dblogin'), type="string",
+			parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbemail', default=config.get('main','dbemail'), type="string",
+			parser.add_argument('--dbemail', default=config.get('main','dbemail'), type=str,
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbpassword', default=config.get('main','dbpassword'), type="string",
+			parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
 							  help='database password, if post=True (default=%default)')
-			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
+			parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
 							  help='URL to POST transients to a database (default=%default)')
-			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
+			parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
 							  help='ZTF URL (default=%default)')
-			parser.add_option('--STATIC', default=config.get('site_settings','STATIC'), type="string",
+			parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
 							  help='static directory (default=%default)')
-			parser.add_option('--qubuser', default=config.get('main','qubuser'), type="string",
+			parser.add_argument('--qubuser', default=config.get('main','qubuser'), type=str,
 							  help='QUB database username (default=%default)')
-			parser.add_option('--qubpass', default=config.get('main','qubpass'), type="string",
+			parser.add_argument('--qubpass', default=config.get('main','qubpass'), type=str,
 							  help='QUB database password (default=%default)')
-			parser.add_option('--yselink_summary', default=config.get('main','yselink_summary'), type="string",
+			parser.add_argument('--yselink_summary', default=config.get('main','yselink_summary'), type=str,
 							  help='YSE summary CSV (default=%default)')
-			parser.add_option('--yselink_lc', default=config.get('main','yselink_lc'), type="string",
+			parser.add_argument('--yselink_lc', default=config.get('main','yselink_lc'), type=str,
 							  help='YSE lightcurve CSV (default=%default)')
-			parser.add_option('--yselink_genericsummary', default=config.get('main','yselink_genericsummary'), type="string",
+			parser.add_argument('--yselink_genericsummary', default=config.get('main','yselink_genericsummary'), type=str,
 							  help='YSE summary CSV for possible candidates (default=%default)')
-			parser.add_option('--yselink_genericlc', default=config.get('main','yselink_genericlc'), type="string",
+			parser.add_argument('--yselink_genericlc', default=config.get('main','yselink_genericlc'), type=str,
 							  help='YSE lightcurve CSV for possible candidates (default=%default)')
-			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
+			parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
 							  help='ZTF URL (default=%default)')
 
 			
-			parser.add_option('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type="string",
+			parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
 							  help='SMTP login (default=%default)')
-			parser.add_option('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type="string",
+			parser.add_argument('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type=str,
 							  help='SMTP host (default=%default)')
-			parser.add_option('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type="string",
+			parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
 							  help='SMTP port (default=%default)')
 		else:
 			pass
@@ -515,20 +519,8 @@ class YSE(CronJobBase):
 		return(parser)
 
 	def main(self):
-		transientdict,nsn = self.parse_data()
-		print('uploading %i transients'%nsn)
-		self.send_data(transientdict)
-		self.copy_stamps(transientdict)
-		return nsn
-		
-	def parse_data(self):
-		# today's date
-		nowmjd = Time.now().mjd
 
-		transientdict = {}
-		obj,ra,dec = [],[],[]
 		nsn = 0
-
 		for yselink_summary, yselink_lc, namecol in zip([self.options.yselink_summary,self.options.yselink_genericsummary],
 														[self.options.yselink_lc,self.options.yselink_genericlc],
 														['ps1_designation','local_designation']):
@@ -544,109 +536,188 @@ class YSE(CronJobBase):
 			if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
 			try: lc = at.Table.read(r.text, format='ascii', delimiter='|')
 			except: continue
+
+			nsn = 0
+			nsn_single = 50
+
+			nowmjd = Time.now().mjd
+			summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
+			while nsn_single == 50:
+				transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=50)
+				print('uploading %i transients'%nsn_single)
+				self.send_data(transientdict)
+				self.copy_stamps(transientdict)
+				nsn += 50
+				
+		return nsn
+		
+	def parse_data(self,summary,lc,transient_idx=0,max_transients=None):
+		# today's date
+		nowmjd = Time.now().mjd
+
+		transientdict = {}
+		obj,ra,dec = [],[],[]
+		nsn = 0
+
+		for i,s in enumerate(summary[transient_idx:transient_idx+max_transients]):
+			#if nowmjd - s['mjd_obs'] > self.options.max_days:
+			#	nsn += 1
+			#	continue
+			#print(s['local_designation'])
+			#if s['local_designation'] == '10EYSEdxa':
+			#	import pdb; pdb.set_trace()
 			
-			for i,s in enumerate(summary):
-				if nowmjd - s['mjd_obs'] > self.options.max_days: continue
+			r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id']) #,
+			#				 auth=HTTPDigestAuth(self.options.qubuser,self.options.qubpass))
 
-				sc = SkyCoord(s['ra_psf'],s['dec_psf'],unit=u.deg)
-				try:
-					ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
-				except:
-					ps_prob = None
+			if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
+			try:
+				lc_forced = at.Table.read(r.text, format='ascii', delimiter=' ')
+				if len(lc_forced): has_forced_phot = True
+				else: has_forced_phot = False
+			except:
+				has_forced_phot = False
 
-				mw_ebv = float('%.3f'%(sfd(sc)*0.86))
 
-				iLC = (lc['local_designation'] == s['local_designation']) & (nowmjd - lc['mjd_obs'] < self.options.max_days)
+			sc = SkyCoord(s['ra_psf'],s['dec_psf'],unit=u.deg)
+			try:
+				ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
+			except:
+				ps_prob = None
 
-				if nowmjd - Time('%s 00:00:00'%s['followup_flag_date'],format='iso',scale='utc').mjd > self.options.max_days:
-					status = 'Ignore'
-				else:
-					status = self.options.status
+			mw_ebv = float('%.3f'%(sfd(sc)*0.86))
 
-				if type(s['target']) == np.ma.core.MaskedConstant:
-					postage_stamp_file = ''
-					postage_stamp_ref = ''
-					postage_stamp_diff = ''
-					postage_stamp_file_fits = ''
-					postage_stamp_ref_fits = ''
-					postage_stamp_diff_fits = ''
-				else:
-					postage_stamp_file = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target'])
-					postage_stamp_ref = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref'])
-					postage_stamp_diff = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff'])
-					postage_stamp_file_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target'])
-					postage_stamp_ref_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref'])
-					postage_stamp_diff_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff'])
-					
-				tdict = {'name':s['local_designation'],
-						 'ra':s['ra_psf'],
-						 'dec':s['dec_psf'],
-						 'obs_group':'YSE',
-						 'postage_stamp_file':postage_stamp_file,
-						 'postage_stamp_ref':postage_stamp_ref,
-						 'postage_stamp_diff':postage_stamp_diff,
-						 'postage_stamp_file_fits':postage_stamp_file_fits,
-						 'postage_stamp_ref_fits':postage_stamp_ref_fits,
-						 'postage_stamp_diff_fits':postage_stamp_diff_fits,
-						 'status':status,
-						 'context_class':s['sherlockClassification'].replace('UNCLEAR','Unknown'),
-						 #'host':s['host'],
-						 'tags':['YSE'],
-						 'disc_date':s['followup_flag_date'], #mjd_to_date(s['mjd_obs']),
-						 'mw_ebv':mw_ebv,
-						 'point_source_probability':ps_prob}
+			iLC = (lc['local_designation'] == s['local_designation']) & (nowmjd - lc['mjd_obs'] < self.options.max_days)
 
-				obj += [s['local_designation']]
-				ra += [s['ra_psf']]
-				dec += [s['dec_psf']]
+			if nowmjd - Time('%s 00:00:00'%s['followup_flag_date'],format='iso',scale='utc').mjd > self.options.max_days:
+				status = 'Ignore'
+			else:
+				status = self.options.status
 
-				PhotUploadAll = {"mjdmatchmin":0.01,
-								 "clobber":self.options.clobber}
-				photometrydict = {'instrument':'GPC1',
-								  'obs_group':'YSE',
-								  'photdata':{}}
-				for j,l in enumerate(lc[iLC][np.argsort(lc['mjd_obs'][iLC])]):
-					if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-l['mjd_obs']) < 1: disc_point = 1
+			if type(s['target']) == np.ma.core.MaskedConstant:
+				postage_stamp_file = ''
+				postage_stamp_ref = ''
+				postage_stamp_diff = ''
+				postage_stamp_file_fits = ''
+				postage_stamp_ref_fits = ''
+				postage_stamp_diff_fits = ''
+			else:
+				postage_stamp_file = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target'])
+				postage_stamp_ref = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref'])
+				postage_stamp_diff = '%s/%s/%s.jpeg'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff'])
+				postage_stamp_file_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['target'])
+				postage_stamp_ref_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['ref'])
+				postage_stamp_diff_fits = '%s/%s/%s.fits'%(s['local_designation'],s['target'].split('_')[1].split('.')[0],s['diff'])
+
+			if type(s['sherlock_specz']) == np.ma.core.MaskedConstant:
+				redshift = None
+			else:
+				redshift = s['sherlock_specz']
+
+			if type(s['sherlock_object_id']) == np.ma.core.MaskedConstant:
+				hostdict = {}
+			else:
+				hostdict = {'name':s['sherlock_object_id'][:64],
+							'ra':s['sherlock_host_ra'],
+							'dec':s['sherlock_host_dec'],
+							'redshift':redshift}
+			if type(s['rb_factor_image']) == np.ma.core.MaskedConstant:
+				rb_factor = None
+			else:
+				rb_factor = s['rb_factor_image']
+
+			tdict = {'name':s['local_designation'],
+					 'ra':s['ra_psf'],
+					 'dec':s['dec_psf'],
+					 'obs_group':'YSE',
+					 'postage_stamp_file':postage_stamp_file,
+					 'postage_stamp_ref':postage_stamp_ref,
+					 'postage_stamp_diff':postage_stamp_diff,
+					 'postage_stamp_file_fits':postage_stamp_file_fits,
+					 'postage_stamp_ref_fits':postage_stamp_ref_fits,
+					 'postage_stamp_diff_fits':postage_stamp_diff_fits,
+					 'status':status,
+					 'context_class':s['sherlockClassification'].replace('UNCLEAR','Unknown'),
+					 'host':hostdict,
+					 'tags':['YSE'],
+					 'disc_date':s['followup_flag_date'],
+					 'mw_ebv':mw_ebv,
+					 'point_source_probability':ps_prob,
+					 'real_bogus_score':rb_factor}
+
+			obj += [s['local_designation']]
+			ra += [s['ra_psf']]
+			dec += [s['dec_psf']]
+
+			PhotUploadAll = {"mjdmatchmin":0.01,
+							 "clobber":self.options.clobber}
+			photometrydict = {'instrument':'GPC1',
+							  'obs_group':'YSE',
+							  'photdata':{}}
+			if has_forced_phot:
+				for j,lf in enumerate(lc_forced[np.argsort(lc_forced['mjd'])]):
+					if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-lf['mjd']) < 1: disc_point = 1
 					else: disc_point = 0
 
-					flux = 10**(-0.4*(l['cal_psf_mag']-27.5))
-					flux_err = np.log(10)*0.4*flux*l['psf_inst_mag_sig']
-					if type(l['psf_inst_mag_sig']) == np.ma.core.MaskedConstant:
-						mag_err = 0
-						flux_err = 0
+					if lf['cal_psf_mag'] == 'None':
+						forced_mag,forced_mag_err = None,None
 					else:
-						mag_err = l['psf_inst_mag_sig']
-					phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
-										'band':l['filter'],
-										'groups':'YSE',
-										'mag':l['cal_psf_mag'],
-										'mag_err':mag_err,
-										'flux':flux,
-										'flux_err':flux_err,
+						forced_mag,forced_mag_err = lf['cal_psf_mag'],lf['psf_inst_mag_sig']
+
+					# forced photometry
+					phot_upload_dict = {'obs_date':mjd_to_date(lf['mjd']),
+										'band':lf['filter'],
+										'groups':['YSE'],
+										'mag':forced_mag,
+										'mag_err':forced_mag_err,
+										'flux':fluxToMicroJansky(lf['psf_inst_flux'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
+										'flux_err':fluxToMicroJansky(lf['psf_inst_flux_sig'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
 										'data_quality':0,
-										'forced':0,
+										'forced':1,
 										'flux_zero_point':27.5,
 										'discovery_point':disc_point,
 										'diffim':1}
-					photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
+					photometrydict['photdata']['%s_%i'%(mjd_to_date(lf['mjd']),j)] = phot_upload_dict
 
-				PhotUploadAll['PS1'] = photometrydict
-				transientdict[s['local_designation']] = tdict
-				transientdict[s['local_designation']]['transientphotometry'] = PhotUploadAll
 
-				photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
-				if photometrydict_ztf is not None:
-					PhotUploadAll['ZTF'] = photometrydict_ztf
-				#if s['local_designation'] == '10AYSEaaj':
-				#	import pdb; pdb.set_trace()
+			for j,l in enumerate(lc[iLC][np.argsort(lc['mjd_obs'][iLC])]):
+				if has_forced_phot and np.min(np.abs(lc_forced['mjd']-l['mjd_obs'])) < 0.01: continue
+				if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-l['mjd_obs']) < 1: disc_point = 1
+				else: disc_point = 0
 
-				nsn += 1
-			#transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
-			
-			#transientdict['transientphotometry'] = photometrydict
+				flux = 10**(-0.4*(l['cal_psf_mag']-27.5))
+				flux_err = np.log(10)*0.4*flux*l['psf_inst_mag_sig']
+				if type(l['psf_inst_mag_sig']) == np.ma.core.MaskedConstant:
+					mag_err = 0
+					flux_err = 0
+				else:
+					mag_err = l['psf_inst_mag_sig']
 
-		#scall = SkyCoord(ra,dec,unit=u.deg) #summary['ra_psf'],summary['dec_psf']
-		#transientdict = self.getZTFPhotometry(transientdict,obj,scall)
+				# unforced photometry
+				phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
+									'band':l['filter'],
+									'groups':'YSE',
+									'mag':l['cal_psf_mag'],
+									'mag_err':mag_err,
+									'flux':flux,
+									'flux_err':flux_err,
+									'data_quality':0,
+									'forced':0,
+									'flux_zero_point':27.5,
+									'discovery_point':disc_point,
+									'diffim':1}
+
+				photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
+
+			PhotUploadAll['PS1'] = photometrydict
+			transientdict[s['local_designation']] = tdict
+			transientdict[s['local_designation']]['transientphotometry'] = PhotUploadAll
+
+			photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+			if photometrydict_ztf is not None:
+				PhotUploadAll['ZTF'] = photometrydict_ztf
+			print(s['local_designation'])
+			nsn += 1
 
 		return transientdict,nsn
 
@@ -748,19 +819,22 @@ class YSE(CronJobBase):
 
 		except Exception as e:
 			print(e)
-			#import pdb; pdb.set_trace()
-						
+
 	def UploadTransients(self,TransientUploadDict):
 
 		url = '%s'%self.options.dburl.replace('/api','/add_transient')
-		r = requests.post(url = url, data = json.dumps(TransientUploadDict),
-						  auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
+		try:
+			r = requests.post(url = url, data = json.dumps(TransientUploadDict),
+							  auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword),
+							  timeout=60)
+			try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
+			except: print(r.text)
+			print("Process done.")
 
-		try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
-		except: print(r.text)
-		print("Process done.")
+		except Exception as e:
+			print("Error: %s"%e)
 
-		
+
 def jd_to_date(jd):
 	time = Time(jd,scale='utc',format='jd')
 	return time.isot
@@ -847,7 +921,7 @@ def get(url,json_list,api_key):
 	
 if __name__ == """__main__""":
 
-	import optparse
+	import argparse
 	import configparser
 
 	usagestring = "TNS_Synopsis.py <options>"
@@ -858,13 +932,13 @@ if __name__ == """__main__""":
 	# read in the options from the param file and the command line
 	# some convoluted syntax here, making it so param file is not required
 	parser = qub.add_options(usage=usagestring)
-	options,  args = parser.parse_args()
+	options,  args = parser.parse_known_args()
 	if options.settingsfile:
 		config = configparser.ConfigParser()
 		config.read(options.settingsfile)
 	else: config=None
 	parser = qub.add_options(usage=usagestring,config=config)
-	options,  args = parser.parse_args()
+	options,  args = parser.parse_known_args()
 	qub.options = options
 	#tnsproc.hostmatchrad = options.hostmatchrad
 

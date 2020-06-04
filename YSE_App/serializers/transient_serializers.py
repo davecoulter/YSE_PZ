@@ -78,6 +78,10 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
 		instance.k2_msg = validated_data.get('k2_msg', instance.k2_msg)
 		instance.TNS_spec_class = validated_data.get('TNS_spec_class', instance.TNS_spec_class)
 
+		instance.has_hst = validated_data.get('has_hst', instance.has_hst)
+		instance.has_chandra = validated_data.get('has_chandra', instance.has_chandra)
+		instance.has_spitzer = validated_data.get('has_spitzer', instance.has_spitzer)
+
 		if 'tags' in validated_data.keys():
 			# Disassociate existing `Transient Tags`
 			transient_tags = instance.tags.all()

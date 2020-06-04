@@ -32,6 +32,8 @@ def split_survey_field(survey_field):
 #				'airmass','image_id']
 # email key: (data model key, function name that transforms)
 ingest_keys_map = {'exp_name':('image_id',None),
+				   'diff_id':('diff_id',None),
+				   'warp_id':('warp_id',None),
 				   'dateobs':('obs_mjd',date_to_mjd),
 				   'exp_time':('exposure_time',None),
 				   'filter':('photometric_band',split_band),
@@ -43,7 +45,9 @@ ingest_keys_map = {'exp_name':('image_id',None),
 				   'deteff':('mag_lim',None),
 				   'zpt_obs':('zpt_obs',None),
 				   'Ngood_diff_skycell':('n_good_skycell',None),
-				   'comment':('survey_field',split_survey_field)}
+				   'comment':('survey_field',split_survey_field),
+				   'radeg':('ra_cen',None),
+				   'decdeg':('dec_cen',None)}
 
 class SurveyObs(CronJobBase):
 
@@ -54,13 +58,13 @@ class SurveyObs(CronJobBase):
 
 	def do(self):
 		parser = self.add_options(usage='')
-		options,  args = parser.parse_args()
+		options,  args = parser.parse_known_args()
 		try:
 			config = configparser.ConfigParser()
 			config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
 
 			parser = self.add_options(usage='',config=config)
-			options,  args = parser.parse_args()
+			options,  args = parser.parse_known_args()
 			self.options = options
 
 			if os.path.exists('%s/surveyfields.txt'%djangoSettings.STATIC_ROOT):
@@ -162,7 +166,8 @@ class SurveyObs(CronJobBase):
 								   'ra_cen':sc.ra.deg,
 								   'dec_cen':sc.dec.deg,
 								   'width_deg':3.1,
-								   'height_deg':3.1}
+								   'height_deg':3.1,
+								   'active':1}
 			
 		url = '%s'%self.options.dburl.replace('/api','/add_yse_survey_fields')
 		r = requests.post(url = url, data = json.dumps(SurveyUploadDict),
@@ -182,34 +187,34 @@ class SurveyObs(CronJobBase):
 		print("upload finished.")
 		
 	def add_options(self, parser=None, usage=None, config=None):
-		import optparse
+		import argparse
 		if parser == None:
-			parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
+			parser = argparse.ArgumentParser(usage=usage, conflict_handler="resolve")
 
 		# The basics
-		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
-		parser.add_option('--clobber', default=False, action="store_true",
+		parser.add_argument('-v', '--verbose', action="count", dest="verbose",default=1)
+		parser.add_argument('--clobber', default=False, action="store_true",
 						  help='clobber output file')
-		#parser.add_option('-s','--settingsfile', default=None, type="string",
+		#parser.add_option('-s','--settingsfile', default=None, type=str,
 		#				  help='settings file (login/password info)')
 
 		if config:
-			parser.add_option('--dblogin', default=config.get('main','dblogin'), type="string",
+			parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbemail', default=config.get('main','dbemail'), type="string",
+			parser.add_argument('--dbemail', default=config.get('main','dbemail'), type=str,
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbpassword', default=config.get('main','dbpassword'), type="string",
+			parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
 							  help='database password, if post=True (default=%default)')
-			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
+			parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
 							  help='URL to POST transients to a database (default=%default)')
 
-			parser.add_option('--SMTP_LOGIN', default=config.get('YSE_SMTP_provider','SMTP_LOGIN'), type="string",
+			parser.add_argument('--SMTP_LOGIN', default=config.get('YSE_SMTP_provider','SMTP_LOGIN'), type=str,
 							  help='SMTP login (default=%default)')
-			parser.add_option('--SMTP_PASSWORD', default=config.get('YSE_SMTP_provider','SMTP_PASSWORD'), type="string",
+			parser.add_argument('--SMTP_PASSWORD', default=config.get('YSE_SMTP_provider','SMTP_PASSWORD'), type=str,
 							  help='SMTP password (default=%default)')
-			parser.add_option('--SMTP_HOST', default=config.get('YSE_SMTP_provider','SMTP_HOST'), type="string",
+			parser.add_argument('--SMTP_HOST', default=config.get('YSE_SMTP_provider','SMTP_HOST'), type=str,
 							  help='SMTP host (default=%default)')
-			parser.add_option('--SMTP_PORT', default=config.get('YSE_SMTP_provider','SMTP_PORT'), type="string",
+			parser.add_argument('--SMTP_PORT', default=config.get('YSE_SMTP_provider','SMTP_PORT'), type=str,
 							  help='SMTP port (default=%default)')
 
 		return parser

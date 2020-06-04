@@ -1,0 +1,16 @@
+
+{% if record.survey_fields.all.0.active %}
+
+<label class="switch">
+    <input id="checkbox {{record.id}}" type="checkbox" checked/>
+    <span class="slider round" id = "{{record.id}} {{ record.survey_fields.all.0.active }}" onclick="toggleTargetField('{{ record.id }}', '{{ record.survey_fields.all.0.active }}')"></span>
+</label>
+
+{% else %}
+
+<label class="switch">
+    <input id="checkbox {{record.id}}" type="checkbox"/>
+    <span class="slider round" id = "{{record.id}} {{ record.survey_fields.all.0.active }}" onclick="toggleTargetField('{{ record.id }}', '{{ record.survey_fields.all.0.active }}')"></span>
+</label>
+
+{% endif %}

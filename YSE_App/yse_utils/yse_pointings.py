@@ -45,22 +45,22 @@ def get_yse_pointings_base(field_name,snid):
 	# try to move a field up/down to accommodate SN
 	suggested_pointings = []
 	suggested_pointing_names = []
-	ra_adj = None
+	ra_adj,dec_adj = None,0
 	sep_list = []
 	for pointing in [PS_SW,PS_NW,PS_SE,PS_NE,PS_SE2,PS_NE2]:
 		sep_list += [sc_transient.separation(pointing).deg]
 	sep_list = np.array(sep_list)
-		
 	for pointing,name,pointing_name,sep in zip([PS_SW,PS_NW,PS_SE,PS_NE,PS_SE2,PS_NE2],
-										   ['PS_SW','PS_NW','PS_SE','PS_NE','PS_SE2','PS_NE2'],
+											   ['PS_SW','PS_NW','PS_SE','PS_NE','PS_SE2','PS_NE2'],
 											   ['A','B','C','D','E','F'],sep_list):
-		print(sep)
-		if abs(sep - np.min(sep_list)) > 1e-4:
-			suggested_pointings += [pointing]
-			suggested_pointing_names += [field_name.replace('ZTF.','')+'.%s'%pointing_name]
-			continue
-		
+		#print(sep)
+		#if abs(sep - np.min(sep_list)) > 1e-4:
+		#	suggested_pointings += [pointing]
+		#	suggested_pointing_names += [field_name.replace('ZTF.','')+'.%s'%pointing_name]
+		#	continue
+		#if sep < 1.55:
 		dra,ddec = sc_transient.spherical_offsets_to(pointing)
+		print(dra.deg,ddec.deg)
 		if abs(dra.deg) < 1.45 and abs(ddec.deg) < 1.45:
 			if sep > 0.4:
 				# pointing is good as is
@@ -84,23 +84,23 @@ def get_yse_pointings_base(field_name,snid):
 					suggested_pointing_names += [field_name.replace('ZTF.','')+'.%s'%pointing_name]
 				else: raise Http404('Something went wrong!')
 				#import pdb; pdb.set_trace()
-		elif abs(dra.deg) > 1.45:
+		elif abs(dra.deg) > 1.45 and abs(dra.deg) < 1.55:
 			# really don't want SNe right near the edge
 			ra_offset = dra.deg - 1.35
 			#import pdb; pdb.set_trace()
-			if dra.deg > 1.45:
-				ra_adj = -0.4
-			elif dra.deg < -1.45:
-				ra_adj = 0.4
+			if ra_adj is None:
+				if dra.deg > 1.45:
+					ra_adj = -0.4
+				elif dra.deg < -1.45:
+					ra_adj = 0.4
 			suggested_pointings += [pointing]
 			suggested_pointing_names += [field_name.replace('ZTF.','')+'.%s'%pointing_name]
-		elif abs(ddec.deg) > 1.45:
+		elif abs(ddec.deg) > 1.45 and abs(ddec.deg) < 1.55:
 			ra_offset = (sc_transient.ra.deg-pointing.ra.deg)/np.abs(np.cos(sc_transient.dec.deg))
 			dec_offset = np.sqrt(0.75**2.-ra_offset**2.)
 			if 'PS_N' in name: new_pointing = cd.SkyCoord(pointing.ra.deg,pointing.dec.deg+dec_offset,unit=u.deg)
 			if 'PS_S' in name: new_pointing = cd.SkyCoord(pointing.ra.deg,pointing.dec.deg-dec_offset,unit=u.deg)
 			# verify that this worked
-			#import pdb; pdb.set_trace()
 			if sc_transient.separation(new_pointing).deg > 0.4 and sc_transient.separation(new_pointing).deg < 1:
 				suggested_pointings += [new_pointing]
 				suggested_pointing_names += [field_name.replace('ZTF.','')+'.%s'%pointing_name]
@@ -109,16 +109,58 @@ def get_yse_pointings_base(field_name,snid):
 			suggested_pointings += [pointing]
 			suggested_pointing_names += [field_name.replace('ZTF.','')+'.%s'%pointing_name]
 
+		#print('hi',sep,dra.deg,ddec.deg)
+		if ((abs(dra.deg) < 1.55 and abs(ddec.deg) < 1.55) or abs(sep - np.min(sep_list)) < 1e-4) \
+		   and (abs(dra.deg) > 1.05 or abs(ddec.deg) > 1.05):
+			# four corners at +0.75,+0.75 deg, +0.75,-0.75, etc etc
+			d = pointing.dec.deg*np.pi/180 #self.coord.dec.radian
+			width_corr = 0.75/np.abs(np.cos(d))
+
+			ra_offset = cd.Angle(width_corr, unit=u.deg)
+			dec_offset = cd.Angle(0.75, unit=u.deg)
+	
+			# 6 pointings, spaced in usual way
+			SW = cd.SkyCoord(sc_transient.ra - ra_offset, sc_transient.dec - dec_offset)
+			NW = cd.SkyCoord(sc_transient.ra - ra_offset, sc_transient.dec + dec_offset)
+			SE = cd.SkyCoord(sc_transient.ra + ra_offset, sc_transient.dec - dec_offset)
+			NE = cd.SkyCoord(sc_transient.ra + ra_offset, sc_transient.dec + dec_offset)
+			sep1 = pointing.separation(SW).deg
+			sep2 = pointing.separation(NW).deg
+			sep3 = pointing.separation(SE).deg
+			sep4 = pointing.separation(NE).deg
+			if sep1 == np.min([sep1,sep2,sep3,sep4]):
+				ddra,dddec = pointing.spherical_offsets_to(SW)
+			elif sep2 == np.min([sep1,sep2,sep3,sep4]):
+				ddra,dddec = pointing.spherical_offsets_to(NW)
+			elif sep3 == np.min([sep1,sep2,sep3,sep4]):
+				ddra,dddec = pointing.spherical_offsets_to(SE)
+			elif sep4 == np.min([sep1,sep2,sep3,sep4]):
+				ddra,dddec = pointing.spherical_offsets_to(NE)
+			ra_adj,dec_adj = ddra.deg,dddec.deg
+			#import pdb; pdb.set_trace()
+		print(ddec.deg)
+			
 	# if necessary, move all fields right or left
 	# to accomodate SN
 	if ra_adj:
 		new_suggested_pointings = []
 		new_suggested_pointing_names = []
 		for p,n in zip(suggested_pointings,['A','B','C','D','E','F']):
-			new_suggested_pointings += [cd.SkyCoord(p.ra.deg+ra_adj,p.dec.deg,unit=u.deg)]
+			new_suggested_pointings += [cd.SkyCoord(p.ra.deg+ra_adj,p.dec.deg+dec_adj,unit=u.deg)]
 			new_suggested_pointing_names += [field_name.replace('ZTF.','')+'.%s'%n]
 		suggested_pointings = new_suggested_pointings
 		suggested_pointing_names = new_suggested_pointing_names
+	# if necessary, move all fields up or down
+	# to accomodate SN
+	#if dec_adj:
+	#	new_suggested_pointings = []
+	#	new_suggested_pointing_names = []
+	#	for p,n in zip(suggested_pointings,['A','B','C','D','E','F']):
+	#		new_suggested_pointings += [cd.SkyCoord(p.ra.deg,p.dec.deg_dec_adj,unit=u.deg)]
+	#		new_suggested_pointing_names += [field_name.replace('ZTF.','')+'.%s'%n]
+	#	suggested_pointings = new_suggested_pointings
+	#	suggested_pointing_names = new_suggested_pointing_names
+
 		
 	# check that new pointings don't overlap
 	# with any existing pointings
@@ -144,6 +186,7 @@ def get_yse_pointings_base(field_name,snid):
 		dra,ddec = sc_transient.spherical_offsets_to(p)
 		if np.abs(dra.deg) < 1.45 and np.abs(ddec.deg) < 1.45:
 			good_pointing_exists = True
+
 	if not good_pointing_exists:
 		raise Http404('can\'t find the right pointings for this transient')
 
@@ -217,7 +260,7 @@ def adjust_yse_pointings(request,field_name,snid):
 	
 	tables = []
 	for p,n in zip(all_pointings,all_pointing_names):
-		transients = sne_in_yse_field(n)
+		transients = sne_in_yse_field_with_ignore(n)
 
 		transientfilter = TransientFilter(request.GET, queryset=transients,prefix=n.replace('.',''))
 		table = TransientTable(transientfilter.qs,prefix=n.replace('.',''))
@@ -342,7 +385,7 @@ def adjust_yse_pointings_base(field_name,snid):
 		sep_list = []
 		for p in pointings:
 			sep = new_pointing.separation(p).deg
-			dra,ddeg = new_pointing.spherical_offsets_to(p)
+			dra,ddec = new_pointing.spherical_offsets_to(p)
 			sep_list += [sep]
 			if np.abs(dra.deg) < 3.1 and np.abs(ddec.deg) < 3.1:
 				good = False

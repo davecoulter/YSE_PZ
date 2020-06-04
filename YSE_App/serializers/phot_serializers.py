@@ -335,6 +335,41 @@ class TransientImageSerializer(serializers.HyperlinkedModelSerializer):
 
 		return instance
 
+class TransientDiffImageSerializer(serializers.HyperlinkedModelSerializer):
+	phot_data = serializers.HyperlinkedRelatedField(queryset=TransientPhotData.objects.all(), view_name='transientphotdata-detail')
+
+	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+
+	class Meta:
+		model = TransientImage
+		fields = "__all__"
+
+	def create(self, validated_data):
+		return TransientImage.objects.create(**validated_data)
+
+	def update(self, instance, validated_data):
+		instance.phot_data_id = validated_data.get('phot_data', instance.phot_data)
+		instance.valid_pixels = validated_data.get('valid_pixels', instance.valid_pixels)
+
+		instance.postage_stamp_file = validated_data.get('postage_stamp_file', instance.postage_stamp_file)
+		instance.postage_stamp_ref = validated_data.get('postage_stamp_ref', instance.postage_stamp_ref)
+		instance.postage_stamp_diff = validated_data.get('postage_stamp_diff', instance.postage_stamp_diff)
+		instance.postage_stamp_file_fits = validated_data.get('postage_stamp_file_fits', instance.postage_stamp_file_fits)
+		instance.postage_stamp_ref_fits = validated_data.get('postage_stamp_ref_fits', instance.postage_stamp_ref_fits)
+		instance.postage_stamp_diff_fits = validated_data.get('postage_stamp_diff_fits', instance.postage_stamp_diff_fits)
+		
+		instance.zero_point = validated_data.get('zero_point', instance.zero_point)
+		instance.zero_point_err = validated_data.get('zero_point_err', instance.zero_point_err)
+		instance.sky = validated_data.get('sky', instance.sky)
+		instance.sky_rms = validated_data.get('sky_rms', instance.sky_rms)
+		instance.dcmp_file = validated_data.get('dcmp_file', instance.dcmp_file)
+
+		instance.save()
+
+		return instance
+
+
 class HostImageSerializer(serializers.HyperlinkedModelSerializer):
 	phot_data = serializers.HyperlinkedRelatedField(queryset=HostPhotData.objects.all(), view_name='hostphotdata-detail')
 

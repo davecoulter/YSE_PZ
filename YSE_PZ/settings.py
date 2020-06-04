@@ -58,13 +58,17 @@ INSTALLED_APPS = [
 ]
 
 CRON_CLASSES = [
-	#'YSE_App.data_ingest.Photo_Z.YSE',
+	'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_emails',
+	'YSE_App.data_ingest.Photo_Z.Photo_Z',
 	'YSE_App.data_ingest.Apply_Tags.Tags',
 	'YSE_App.data_ingest.YSE_observations.SurveyObs',
-	'YSE_App.data_ingest.Query_ZTF.AlerceZTF',
+	'YSE_App.data_ingest.Query_ZTF.AntaresZTF',
 	'YSE_App.data_ingest.QUB_data.YSE',
 	'YSE_App.data_ingest.QUB_data.QUB',
     'YSE_App.rapid.rapid_classify.rapid_classify_cron',
+	'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhot',
+	'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_updates',
+	'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_Ignore_updates'
 ]
 
 MIDDLEWARE = [

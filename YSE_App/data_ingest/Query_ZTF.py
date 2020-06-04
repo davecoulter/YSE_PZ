@@ -21,6 +21,12 @@ import time
 import coreapi
 from alerce.api import AlerceAPI
 import sys
+from astropy.io import fits
+import astropy.table as at
+from YSE_App.util.skycells import getskycell
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
 
 try:
   from dustmaps.sfd import SFDQuery
@@ -86,45 +92,71 @@ query_test = {
     }
   }
 }
+_allowed_galaxy_catalogs = {'sdss_gals':{'name_key':'Objid','ra_key':'ra','dec_key':'dec_','redshift_key':'z','priority':1},
+							'ned':{'name_key':'sid','ra_key':'RA_deg','dec_key':'DEC_deg','redshift_key':'Redshift_1','priority':2},
+							'veron_agn_qso':{'name_key':'sid','ra_key':'RAJ2000','dec_key':'DEJ2000','redshift_key':'z','priority':3},
+							'RC3':{'name_key':'id','ra_key':'ra','dec_key':'dec','redshift_key':None,'priority':4},
+							'2mass_psc':{'name_key':'sid','ra_key':'ra','dec_key':'decl','redshift_key':None,'priority':5},
+							'nyu_valueadded_gals':{'name_key':'sid','ra_key':'RA','dec_key':'DEC','redshift_key':None,'priority':6}}
+							#'french_post_starburst_gals':{'name_key':'Objid','ra_key':'ra','dec_key':dec,'redshift_key':z,'priority':5}}
 
-#				{
-#					"match": {
-#						"properties.ztf_object_id": "ZTF18abrfjdh"
-#					}
-#                }
+def sendemail(from_addr, to_addr,
+			  subject, message,
+			  login, password, smtpserver, cc_addr=None):
 
+	print("Preparing email")
 
+	msg = MIMEMultipart('alternative')
+	msg['Subject'] = subject
+	msg['From'] = from_addr
+	msg['To'] = to_addr
+	payload = MIMEText(message, 'html')
+	msg.attach(payload)
+	
+	with smtplib.SMTP(smtpserver) as server:
+		try:
+			server.starttls()
+			server.login(login, password)
+			resp = server.sendmail(from_addr, [to_addr], msg.as_string())
+			print("Send success")
+		except:
+			print("Send fail")
+
+							
 class AntaresZTF(CronJobBase):
 
-	RUN_EVERY_MINS = 0.1
+	RUN_EVERY_MINS = 60
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.data_ingest.Query_ZTF.AntaresZTF'
 	
 	def do(self):
-
-		tstart = time.time()
-		
-		parser = self.add_options(usage='')
-		options,  args = parser.parse_args()
-
-		config = configparser.ConfigParser()
-		config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
-		parser = self.add_options(usage='',config=config)
-		options,  args = parser.parse_args()
-		self.options = options
-
+		print("running ANTARES query at {}".format(datetime.datetime.now().isoformat()))
 		try:
-			self.main()
+			tstart = time.time()
+		
+			parser = self.add_options(usage='')
+			options,  args = parser.parse_known_args()
+
+			config = configparser.ConfigParser()
+			config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+			parser = self.add_options(usage='',config=config)
+			options,  args = parser.parse_known_args()
+			self.options = options
+
+
+			nsn = self.main()
 		except Exception as e:
 			print(e)
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			print("""Antares cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno))
 			nsn = 0
 			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
 			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-			subject = "QUB Transient Upload Failure"
+			subject = "YSE_PZ/ANTARES Transient Upload Failure"
 			print("Sending error email")
-			html_msg = "Alert : YSE_PZ Failed to upload transients\n"
-			html_msg += "Error : %s"
+			html_msg = "Alert : YSE_PZ Failed to upload transients in Query_ZTF.py\n"
+			html_msg += """Antares cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno)
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e),
 					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
@@ -132,23 +164,24 @@ class AntaresZTF(CronJobBase):
 		print('Antares -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
 	def main(self):
-		
-		recentmjd = date_to_mjd(datetime.datetime.utcnow() - datetime.timedelta(7))
+
+		recentmjd = date_to_mjd(datetime.datetime.utcnow() - datetime.timedelta(self.options.max_days))
 		survey_obs = SurveyObservation.objects.filter(obs_mjd__gt=recentmjd)
 		field_pk = survey_obs.values('survey_field').distinct()
 		survey_fields = SurveyField.objects.filter(pk__in = field_pk).select_related()
-		
+		nsn = 0
+		print(survey_fields)
 		for s in survey_fields:
 
-			width_corr = 3.1/np.abs(np.cos(s.dec_cen))
+			width_corr = 1.55/np.abs(np.cos(s.dec_cen*np.pi/180))
 			ra_offset = Angle(width_corr/2., unit=u.deg)
-			dec_offset = Angle(3.1/2., unit=u.deg)
+			dec_offset = Angle(1.55/2., unit=u.deg)
 			sc = SkyCoord(s.ra_cen,s.dec_cen,unit=u.deg)
 			ra_min = sc.ra - ra_offset
 			ra_max = sc.ra + ra_offset
 			dec_min = sc.dec - dec_offset
 			dec_max = sc.dec + dec_offset
-			
+
 			query = query_template.copy()
 			query['query']['bool']['must'][0]['range']['ra']['gte'] = ra_min.deg
 			query['query']['bool']['must'][0]['range']['ra']['lte'] = ra_max.deg
@@ -160,9 +193,9 @@ class AntaresZTF(CronJobBase):
 			
 			transientdict,nsn = self.parse_data(result_set)
 			print('uploading %i transients'%nsn)
-			self.send_data(transientdict)
-			
-			import pdb; pdb.set_trace()
+			if nsn > 0: self.send_data(transientdict)
+
+		return nsn
 
 	def send_data(self,TransientUploadDict):
 
@@ -184,8 +217,30 @@ class AntaresZTF(CronJobBase):
 		obj,ra,dec = [],[],[]
 		nsn = 0
 		for i,s in enumerate(result_set):
-			if 'astrorapid_skipped' in s['properties'].keys(): continue
+			#if 'astrorapid_skipped' in s['properties'].keys(): continue
+			if 'streams' not in s.keys() or 'yse_candidate_test' not in s["streams"]: continue
+
 			
+			#if s['properties']['ztf_object_id'] == 'ZTF20aaykvgb': import pdb; pdb.set_trace()
+			#print(s['properties']['snfilter_known_exgal'])
+			if s['properties']['snfilter_known_exgal'] == 1:
+				# name, ra, dec, redshift
+				# print(s['properties']['ztf_object_id'])
+				antareslink = '{}/loci/{}/catalog-matches'.format(self.options.antaresapi,s['locus_id'])
+				r = requests.get(antareslink)
+				data = json.loads(r.text)
+				
+				for k in _allowed_galaxy_catalogs.keys():
+					if k in data['result'].keys():
+						hostdict = {'name':k+'_'+str(data['result'][k][0][_allowed_galaxy_catalogs[k]['name_key']]),
+									'ra':data['result'][k][0][_allowed_galaxy_catalogs[k]['ra_key']],
+									'dec':data['result'][k][0][_allowed_galaxy_catalogs[k]['dec_key']]}
+						if _allowed_galaxy_catalogs[k]['redshift_key'] is not None:
+							hostdict['redshift'] = data['result'][k][0][_allowed_galaxy_catalogs[k]['redshift_key']]
+				
+			else:
+				hostdict = {}
+
 			sc = SkyCoord(s['properties']['ztf_ra'],s['properties']['ztf_dec'],unit=u.deg)
 			try:
 				ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
@@ -200,10 +255,11 @@ class AntaresZTF(CronJobBase):
 						 'ra':s['properties']['ztf_ra'],
 						 'dec':s['properties']['ztf_dec'],
 						 'obs_group':'ZTF',
-						 'tags':['ZTF'],
+						 'tags':['ZTF in YSE Fields'],
 						 'disc_date':mjd_to_date(s['properties']['ztf_jd']-2400000.5),
 						 'mw_ebv':mw_ebv,
-						 'point_source_probability':ps_prob}
+						 'point_source_probability':ps_prob,
+						 'host':hostdict}
 				obj += [s['properties']['ztf_object_id']]
 				ra += [s['properties']['ztf_ra']]
 				dec += [s['properties']['ztf_dec']]
@@ -254,36 +310,38 @@ class AntaresZTF(CronJobBase):
 		return transientdict,nsn
 
 	def add_options(self, parser=None, usage=None, config=None):
-		import optparse
+		import argparse
 		if parser == None:
-			parser = optparse.OptionParser(usage=usage, conflict_handler="resolve")
+			parser = argparse.ArgumentParser(usage=usage, conflict_handler="resolve")
 
 		# The basics
-		parser.add_option('-v', '--verbose', action="count", dest="verbose",default=1)
-		parser.add_option('--clobber', default=False, action="store_true",
+		parser.add_argument('-v', '--verbose', action="count", dest="verbose",default=1)
+		parser.add_argument('--clobber', default=False, action="store_true",
 						  help='clobber output file')
-		parser.add_option('-s','--settingsfile', default=None, type="string",
+		parser.add_argument('-s','--settingsfile', default=None, type=str,
 						  help='settings file (login/password info)')
-		parser.add_option('--status', default='New', type="string",
+		parser.add_argument('--status', default='New', type=str,
 						  help='transient status to enter in YS_PZ')
-		parser.add_option('--max_days', default=7, type="float",
+		parser.add_argument('--max_days', default=7, type=float,
 						  help='grab photometry/objects from the last x days')
 
 		if config:
-			parser.add_option('--dblogin', default=config.get('main','dblogin'), type="string",
+			parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbemail', default=config.get('main','dbemail'), type="string",
+			parser.add_argument('--dbemail', default=config.get('main','dbemail'), type=str,
 							  help='database login, if post=True (default=%default)')
-			parser.add_option('--dbpassword', default=config.get('main','dbpassword'), type="string",
+			parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
 							  help='database password, if post=True (default=%default)')
-			parser.add_option('--dburl', default=config.get('main','dburl'), type="string",
+			parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
 							  help='URL to POST transients to a database (default=%default)')
+			parser.add_argument('--antaresapi', default=config.get('antares','antaresapi'), type=str,
+							  help='ANTARES API (default=%default)')
 
-			parser.add_option('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type="string",
+			parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
 							  help='SMTP login (default=%default)')
-			parser.add_option('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type="string",
+			parser.add_argument('--SMTP_HOST', default=config.get('SMTP_provider','SMTP_HOST'), type=str,
 							  help='SMTP host (default=%default)')
-			parser.add_option('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type="string",
+			parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
 							  help='SMTP port (default=%default)')
 
 		else:
@@ -572,20 +630,18 @@ class AlerceZTF(CronJobBase):
 						}
 					}
 				}
-			
+
 			client = AlerceAPI()
 			try:
 				result_set = client.query(params) #, format='pandas')
 			except:
 				continue
-			#import pdb; pdb.set_trace()
+
 			if not len(result_set): continue
 
 			transientdict,nsn = self.parse_data(result_set)
 			print('uploading %i transients'%nsn)
 			self.send_data(transientdict)
-			
-			#import pdb; pdb.set_trace()
 
 	def send_data(self,TransientUploadDict):
 

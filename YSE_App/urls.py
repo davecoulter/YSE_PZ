@@ -6,12 +6,13 @@ from django.contrib import admin
 from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import DefaultRouter
 from rest_framework.schemas import get_schema_view
+from django.urls import path, re_path, include
 
 from . import views, view_utils, data_utils, table_utils, yse_views
 from . import api_views
 from .form_views import *
 from . import surveypages
-from YSE_App.yse_utils import yse_pointings
+from YSE_App.yse_utils import yse_pointings, yse_view_utils
 
 schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
 
@@ -43,6 +44,19 @@ urlpatterns = [
     url(r'^observing_calendar/$', views.observing_calendar, name='observing_calendar'),
     url(r'^yse_observing_calendar/$', views.yse_observing_calendar, name='yse_observing_calendar'),
     url(r'^yse_planning/$', yse_views.yse_planning, name='yse_planning'),
+    url(r'^yse_sky/$', yse_views.yse_sky, name='yse_sky'),
+    url(r'^msb_detail/(?P<msb>.*)$', yse_views.msb_detail, name='msb_detail'),
+
+    re_path(r'^toggleTargetField/$', yse_view_utils.toggle_field, name='toggle_field'),
+	re_path(r'^toggleFieldSet/$', yse_view_utils.toggle_fieldset, name='toggle_fieldset'),
+	re_path(r'^getFieldVerts/$', yse_view_utils.get_field_verts, name='get_field_verts'),
+	re_path(r'^getSNVerts/$', yse_view_utils.get_sn_verts, name='get_sn_verts'),
+	re_path(r'^getFieldMSBVerts/$', yse_view_utils.get_fieldmsb_verts, name='get_fieldmsb_verts'),
+    re_path(r'^initDrawFields/$', yse_view_utils.init_draw_fields, name='init_draw_fields'),
+    re_path(r'^initDrawTransients/$', yse_view_utils.init_draw_transients, name='init_draw_transients'),
+    re_path(r'^initDrawFieldsDetail/$', yse_view_utils.init_draw_fields_detail, name='init_draw_fields_detail'),
+    re_path(r'^updateTargetFieldLocations/$', yse_view_utils.update_target_field_locations, name='update_target_field_locations'),
+
     #url(r'^yse_msb/$', yse_views.yse_msb, name='yse_msb'),
     url(r'^yse_pointings/(?P<field_name>.*)/(?P<snid>[a-zA-Z0-9_-]+)/$', yse_pointings.get_yse_pointings, name='yse_pointings'),
     url(r'^yse_pointings_plot/(?P<field_name>.*)/(?P<snid>[a-zA-Z0-9_-]+)/$', yse_pointings.yse_pointing_plot, name='yse_pointings_plot'),
@@ -52,7 +66,7 @@ urlpatterns = [
 		yse_views.yse_msb_change, name='yse_msb_change'),
 
     url(r'^yse_oncall_calendar/$', views.yse_oncall_calendar, name='yse_oncall_calendar'),
-    url(r'^observing_night/(?P<telescope>.*)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.observing_night, name='observing_night'),
+    url(r'^observing_night/(?P<telescope>.*)/(?P<obs_date>[a-zA-Z0-9_-]+)/(?P<pi_name>.*)$', views.observing_night, name='observing_night'),
     #url(r'^survey_observing_calendar/$', views.survey_observing_calendar, name='survey_observing_calendar'),
     url(r'^yse_observing_night/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.yse_observing_night, name='yse_observing_night'),
     url(r'^view_yse_fields/$', view_utils.view_yse_fields, name='view_yse_fields'),
@@ -70,7 +84,11 @@ urlpatterns = [
 		data_utils.get_rising_transients_box, name='get_rising_transients_box'),
 	url(r'^get_new_transients_box/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<ra_width>\d+\.?\d*)/(?P<dec_width>\d+\.?\d*)/$', 
 		data_utils.get_new_transients_box, name='get_new_transients_box'),
+	url(r'^query_api/(?P<query_name>.*)/$',data_utils.query_api, name='query_api'),
+	url(r'^change_status_for_query/(?P<query_id>[a-zA-Z0-9_-]+)/(?P<status_id>[a-zA-Z0-9_-]+)$', 
+		views.change_status_for_query, name='change_status_for_query'),
 	url(r'^download_data/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_data, name='download_data'),
+	url(r'^download_spectra/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_spectra, name='download_spectra'),
 	url(r'^download_photometry/(?P<slug>[a-zA-Z0-9_-]+)/$', views.download_photometry, name='download_photometry'),
 	url(r'^download_bulk_photometry/(?P<query_title>[a-zA-Z0-9_-]+)/$', views.download_bulk_photometry, name='download_bulk_photometry'),
 	url(r'^download_target_list/(?P<telescope>[a-zA-Z0-9_-]+)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.download_target_list, name='download_target_list'),
@@ -82,8 +100,10 @@ urlpatterns = [
     url(r"^airmassplot/(?P<transient_id>[a-zA-Z0-9_-]+)/(?P<obs_id>[a-zA-Z0-9_-]+)/(?P<telescope_id>[a-zA-Z0-9_-]+)", 
 		view_utils.airmassplot, name='airmassplot'),
     url(r'^lightcurveplot_detail/(?P<transient_id>[0-9_-]+)/$', view_utils.lightcurveplot_detail, name='lightcurveplot_detail'),
+    url(r'^lightcurveplot_flux/(?P<transient_id>[0-9_-]+)/$', view_utils.lightcurveplot_flux, name='lightcurveplot_flux'),
     url(r'^lightcurveplot_summary/(?P<transient_id>[0-9_-]+)/$', view_utils.lightcurveplot_summary, name='lightcurveplot_summary'),
     url(r'^salt2plot/(?P<transient_id>[0-9]+)/(?P<salt2fit>[0-1]+)/$', view_utils.salt2plot, name='salt2plot'),
+    url(r'^salt2fluxplot/(?P<transient_id>[0-9]+)/(?P<salt2fit>[0-1]+)/$', view_utils.salt2fluxplot, name='salt2fluxplot'),
     url(r'^spectrumplot/(?P<transient_id>[0-9]+)/$', view_utils.spectrumplot, name='spectrumplot'),
     url(r'^spectrumplotsingle/(?P<transient_id>[a-zA-Z0-9_-]+)/(?P<spec_id>[a-zA-Z0-9_-]+)/$', view_utils.spectrumplotsingle, name='spectrumplotsingle'),
 	url(r'^finderchart/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderchart, name='finderchart'),

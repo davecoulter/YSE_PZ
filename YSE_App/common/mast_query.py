@@ -1,6 +1,7 @@
-import sys
+import sys, numpy as np
 from astroquery.mast import Observations
 from astropy.coordinates import SkyCoord
+from astropy.table import Table,unique
 from astropy import units as u
 from datetime import datetime
 from astropy.time import Time
@@ -14,7 +15,7 @@ instrument_defaults = {
         'mask': {'instrument_name': ['WFPC2/WFC','PC/WFC','ACS/WFC','ACS/HRC',
                                      'ACS/SBC','WFC3/UVIS','WFC3/IR'],
                  't_exptime': 40,
-                 'obs_collection': ['HST'],
+                 'obs_collection': ['HST','HLA'],
                  'filters': ['F220W','F250W','F330W','F344N','F435W','F475W',
                       'F550M','F555W','F606W','F625W','F658N','F660N','F660N',
                       'F775W','F814W','F850LP','F892N','F098M','F105W','F110W',
@@ -43,7 +44,7 @@ class hstImages():
         self.dec=self.coord.dec.degree
         self.obstable = None
         self.object=obj
-        self.radius=0.0001
+        self.radius=0.001
 
         ## Selection criteria
         self.options = instrument_defaults
@@ -71,7 +72,20 @@ class hstImages():
         # Construct and apply mask
         mask = [all(l) for l in zip(filmask,expmask,obsmask,detmask)]
         self.obstable = table[mask]
-        self.Nimages=len(self.obstable)
+
+        self.Nimages=0
+        if self.obstable:
+          if len(self.obstable)>0:
+
+            self.obstable['t_min']=np.around(self.obstable['t_min'], decimals=4)
+            self.obstable['t_max']=np.around(self.obstable['t_max'], decimals=4)
+
+            self.obstable.sort('obs_collection')
+
+            self.obstable = unique(self.obstable, keys=['t_min'], keep='last')
+            self.obstable = unique(self.obstable, keys=['t_max'], keep='last')
+
+            self.Nimages=len(self.obstable)
 
     def getJPGurl(self):
         if len(self.obstable) == 0:
@@ -87,13 +101,7 @@ class hstImages():
 ## TEST TEST TEST
 if __name__=='__main__':
     startTime = datetime.now()
-    if (len(sys.argv) < 3):
-        print("Must define RA and DEC in command line!!!")
-        sys.exit(1)
-
-    ra=sys.argv[1]
-    dec=sys.argv[2]
-    hst=hstImages(ra,dec,'Object')
+    hst=hstImages(199.8674542,-13.7236833,'Object')
     hst.getObstable()
     hst.getJPGurl()
     print("I found",hst.Nimages,"HST images of",hst.object,"located at coordinates",hst.ra,hst.dec)

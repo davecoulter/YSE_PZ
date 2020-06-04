@@ -8,6 +8,7 @@
 	<link rel="stylesheet" href="//aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.css" />
 	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/select2/dist/css/select2.min.css' %}">
 	<link rel="stylesheet" href="{% static 'YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
+
 {% endblock %}
 	
 <!-- Content Header (Page header) -->
@@ -204,6 +205,36 @@
 												<br>
 											</div>
 										</div>
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Real/Bogus Score</strong>
+												<p class="text-muted">
+													{% if transient.real_bogus_score %}
+													{{ transient.real_bogus_score }}
+													{% else %}
+													None
+													{% endif %}
+												</p>
+												<br>
+											</div>
+										</div>
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Best Distance</strong>
+													{% if transient.redshift %}
+														<p class="text-muted">Lum. Dist. = {{ transient.redshift|DL }} Mpc</p>
+														<p class="text-muted">&mu; = {{ transient.redshift|distmod }}</p>
+													{% elif transient.host.redshift %}
+														<p class="text-muted">Lum. Dist. = {{ transient.host.redshift|DL }} Mpc</p>
+														<p class="text-muted">&mu; = {{ transient.host.redshift|distmod }}</p>
+													{% elif transient.host.photo_z %}
+														<p class="text-muted">Lum. Dist. = {{ transient.host.photo_z|DL }} Mpc</p>
+														<p class="text-muted">&mu; = {{ transient.host.photo_z|distmod }}</p>
+													{% else %}
+														<p class="text-muted">Unknown</p>
+													{% endif %}
+											</div>
+										</div>
 										<div class="col-xs-12">
 											<hr>
 											<h4>Photometric Summary</h4>
@@ -273,13 +304,14 @@
 										{% endif %}
 									</div>
 									<div class="box-body">
+										<div class="row">
 										<div class="col-xs-4">
 											<div class="form-group">
 												<strong>Host Name</strong>
 												<p class="text-muted">
 													{% if transient.host %}
 														{% if transient.host.name %}
-															{{ transient.host.name }}
+															{{ transient.host.name|slice:':25' }}
 														{% endif %}
 													{% else %}
 														Unknown
@@ -318,8 +350,29 @@
 												</p>
 											</div>
 										</div>
+									</div>
+									<div class="row">
+										<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Photo-z</strong>
+												<p class="text-muted">
+													{% if transient.host %}
+														{% if transient.host.photo_z %}
+															{{ transient.host.photo_z|floatformat:3 }} 
+
+															{% if transient.host.photo_z_err %}
+																+/- {{ transient.host.photo_z_err }}
+															{% endif %}
+														{% endif %}
+													{% else %}
+														Unknown
+													{% endif %}
+												</p>
+										</div>
+									</div>
+
 										<!--<div class="box-body">-->
-											<div class="col-xs-12">
+											<div class="col-xs-4">
 												<div class="form-group">
 													<strong>Transient sep from likely host</strong>
 													<p class="text-muted">
@@ -331,7 +384,8 @@
 													</p>
 												</div>
 											</div>
-										
+										</div>
+									
 
 										<!-- Start 2 column -->
 										<div class="col-xs-12">
@@ -393,7 +447,7 @@
 											</div>
 											<div class="col-xs-6">
 												<div class="form-group">
-													<a class="btn btn-block btn-primary" href="http://nedwww.ipac.caltech.edu/cgi-bin/nph-objsearch?ra={{ transient.ra }}&dec={{ transient.dec }}d&radius=10.0&search_type=Near+Position+Search" target="_blank">NED</a>
+													<a class="btn btn-block btn-primary" href="http://nedwww.ipac.caltech.edu/cgi-bin/nph-objsearch?ra={{ transient.ra }}&dec={{ transient.dec }}d&radius=2.0&search_type=Near+Position+Search" target="_blank">NED</a>
 												</div>
 											</div>
 											<div class="col-xs-6">
@@ -431,6 +485,13 @@
 													<a class="btn btn-block btn-primary" href="https://mars.lco.global/?sort_value=jd&sort_order=desc&cone={{transient.ra}}%2C{{transient.dec}}%2C0.0014" target="_blank">ZTF Cone Search</a>
 												</div>
 											</div>
+											{% if transient.postage_stamp_file %}
+											<div class="col-xs-6">
+												<div class="form-group">
+													<a class="btn btn-block btn-primary" href="https://star.pst.qub.ac.uk/sne/ps1yse/psdb/candidate/{{qub_candidate}}/" target="_blank">QUB</a>
+												</div>
+											</div>
+											{% endif %}
 										</div>
 									</div>
 								<!--<div class="col-xs-13">-->
@@ -439,16 +500,33 @@
 											<h3 class="box-title">Spectrum</h3>
 										</div>
 										{% if all_transient_spectra.count > 1 %}
-										&ensp;&nbsp;<div class="btn-group">
-											<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-												Select from {{ all_transient_spectra.count }} Spectra<span class="caret"></span>
-											</button>
-											<ul class="dropdown-menu">
-												{% for spec in all_transient_spectra %}
-													<li><a spec_plot-id="{{ spec.id }}" class="specPlotChange" href="#">{{ spec }} - {{ spec.instrument.name }}</a></li>
-												{% endfor %}
-											</ul>
+										<div class="btn-group">
+											<div class="col-xs-12">
+												<div class="col-xs-6">
+													<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+														Select from {{ all_transient_spectra.count }} Spectra<span class="caret"></span>
+													</button>
+													<ul class="dropdown-menu">
+														{% for spec in all_transient_spectra %}
+														<li><a spec_plot-id="{{ spec.id }}" class="specPlotChange" href="#">{{ spec }} - {{ spec.instrument.name }}</a></li>
+														{% endfor %}
+													</ul>
+												</div>
+												<div class="col-xs-6">
+													<button style="margin-bottom:5px" type="button" class="btn btn-block btn-primary" data-toggle="dropdown" onclick="window.open('{% url 'download_spectra' transient.slug %}')">
+													Download {{ all_transient_spectra.count }} Spectra
+													</button>
+												</div>
+											</div>
 										</div>
+										{% elif all_transient_spectra.count == 1 %}
+											&ensp;&nbsp;<div class="btn-group">
+
+												<button style="margin-bottom:5px" type="button" class="btn btn-block btn-primary" data-toggle="dropdown" onclick="window.open('{% url 'download_spectra' transient.slug %}')">
+													Download {{ all_transient_spectra.count }} Spectrum
+												</button>
+
+											</div>
 										{% endif %}
 										<div class="box-body" id="specplot"></div>
 										<p></p>
@@ -501,16 +579,21 @@
 								</div>
 								<div class="col-xs-12">
 									<div class="col-xs-6">
-										<div class="box box-default box-solid">
-													<div class="box-header with-border">
-														<strong>Available Tags</strong>
-													</div>
-													<div id="external-events" class="box-body">
-														{% for tag in all_transient_tags %}
-															<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
-														{% endfor %}
+										<div class="box box-default box-solid collapsed-box">
+											<div class="box-header with-border" data-widget="collapse" type="button" class="btn btn-box-tool">
+												<button id="tags_btn" class="btn btn-box-tool" style="height: 30px;"><h3 class="box-title">Available Tags</h3></button>
+												<div class="box-tools pull-right">
+													<button id="tags_btn" class="btn btn-box-tool"><i class="fa fa-plus"></i></button>
+												</div>
+											</div>
+													<div id="external-events" class="box-body collapsed-box">
+													<!--<div class="followupbox box box-primary collapsed-box">-->
+															{% for tag in all_transient_tags %}
+																<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
+															{% endfor %}
 													</div>
 												</div>
+												
 
 												<div class="box box-default box-solid">
 													<div class="box-header with-border">
@@ -542,6 +625,15 @@
 														{% for tag in assigned_transient_tags %}
 															<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
 														{% endfor %}
+													</div>
+												</div>
+											</div>
+											<div class="col-xs-6">
+												<div id="del-associated-event" class="box box-default box-solid">
+													<div class="box-header with-border">
+														<strong>Remove Associated Tag</strong>
+													</div>
+													<div class="box-body" id="del-associated-events-list">
 													</div>
 												</div>
 											</div>
@@ -767,29 +859,125 @@
 										<input class="btn btn-block btn-primary" type="button" value="Download All Data" onclick="window.open('{% url 'download_data' transient.slug %}')">
 									</div>
 						<h4>Photometry for {{transient.name}}</h4>
+						<div class="col-xs-13">
+							<div class="box box-primary">
+								<div class="box-header">
+									<h3 class="box-title">Photometry (Flux Units)</h3>
+								</div>
+								&ensp;&nbsp;<div class="btn-group">
+									<button style="margin-bottom:5px;" type="button" class="plotSALT2flux" id="salt2fluxplot">
+									Show SALT2 Fit</span>
+									</button>
+									</div>
+								<td><button type="button" class="plotFlux">Show Flux Plot</button></td>
+								<div class="box-body" id="lcfluxplot"></div>
+							</div>
+						</div>
 
+						{% if diff_images %}
+						<div class="col-xs-13">
+							<div class="box box-primary">
+								<div class="box-header">
+									<h3 class="box-title">Forced Photometry and Difference Imaging</h3>
+								</div>
+							<div class="box-body">
 						<table class="table table-bordered table-striped">
-												<thead>
-													<tr>
-														<th>Date</th>
-														<th>Mag</th>
-														<th>Mag Error</th>
-														<th>Filter</th>
-														<th>Instrument</th>
-													</tr>
-												</thead>
-												<tbody>
-												{%for allphot in allphotdata%}
-													<tr>
-														<td>{{allphot.obs_date|date:"M d, Y H:i:s"}}</td>
-														<td>{{allphot.mag}}</td>
-														<td>{{allphot.mag_err}}</td>
-														<td>{{allphot.band.name}}</td>
-														<td>{{allphot.band.instrument.name}}</td>
-													<tr/>
-												{%endfor%}
-												</tbody>
-											</table>
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>Flux</th>
+									<th>Flux Error</th>
+									<th>Mag</th>
+									<th>Mag Error</th>
+									<th>Mag Lim</th>
+									<th>Filter</th>
+									<th>Instrument</th>
+									<th>Warp</th>
+									<th>Template</th>
+									<th>Diff</th>
+								</tr>
+							</thead>
+							<tbody>
+							{%for diff in diff_images%}
+								<tr>
+									<td>{{diff.phot_data.obs_date|date:"M d, Y H:i:s"}}</td>
+									<td>{{diff.phot_data.flux|floatformat:3}}</td>
+									<td>{{diff.phot_data.flux_err|floatformat:3}}</td>
+									<td>{{diff.phot_data.mag|floatformat:3}}</td>
+									<td>{{diff.phot_data.mag_err|floatformat:3}}</td>
+									<td>{{diff.phot_data.mag_lim|floatformat:3}}</td>
+									<td>{{diff.phot_data.band.name}}</td>
+									<td>{{diff.phot_data.band.instrument.name}}</td>
+									<td>
+									 {% if diff.valid_pixels %}
+										{% static "" as baseUrl %}
+                 						{% with "YSE_App/images/stamps/"|add:diff.postage_stamp_file as stampfile %}
+                						{% with "YSE_App/images/stamps/"|add:diff.postage_stamp_file_fits as stampfitsfile %}
+                  						<a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
+ 						                {% endwith %}
+					                    {% endwith %}
+					                    {% else %}
+					                    No Valid Pixels
+					                    {% endif %}
+					                </td>
+					                <td>
+					                	{% if diff.valid_pixels %}
+										{% static "" as baseUrl %}
+                 						{% with "YSE_App/images/stamps/"|add:diff.postage_stamp_ref as stampfile %}
+                						{% with "YSE_App/images/stamps/"|add:diff.postage_stamp_ref_fits as stampfitsfile %}
+                  						<a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
+ 						                {% endwith %}
+					                    {% endwith %}
+					                    {% else %}
+					                    No Valid Pixels
+					                    {% endif %}
+					                </td>
+					                <td>
+					                	{% if diff.valid_pixels %}
+										{% static "" as baseUrl %}
+                 						{% with "YSE_App/images/stamps/"|add:diff.postage_stamp_diff as stampfile %}
+                						{% with "YSE_App/images/stamps/"|add:diff.postage_stamp_diff_fits as stampfitsfile %}
+                  						<a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
+ 						                {% endwith %}
+					                    {% endwith %}
+					                    {% else %}
+					                    No Valid Pixels
+					                    {% endif %}
+					                </td>
+								</tr>
+							{%endfor%}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+
+						{% endif %}
+						<table class="table table-bordered table-striped">
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>Mag</th>
+									<th>Mag Error</th>
+									<th>Filter</th>
+									<th>Instrument</th>
+									<th>DQ</th>
+								</tr>
+							</thead>
+							<tbody>
+							{%for allphot in allphotdata%}
+								<tr>
+									<td>{{allphot.obs_date|date:"M d, Y H:i:s"}}</td>
+									<td>{{allphot.mag}}</td>
+									<td>{{allphot.mag_err}}</td>
+									<td>{{allphot.band.name}}</td>
+									<td>{{allphot.band.instrument.name}}</td>
+									<td>{{allphot.data_quality}}</td>
+								<tr/>
+							{%endfor%}
+							</tbody>
+						</table>
 
 					</div>
 					<div class="tab-pane" id="spectra_tab">
@@ -895,7 +1083,7 @@
 	<script src="{% static 'YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
 	<script type="text/javascript" src="https://mpld3.github.io/js/d3.v3.min.js"></script>
 	<script type="text/javascript" src="https://mpld3.github.io/js/mpld3.v0.3.1.dev1.js"></script>
-	<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-1.3.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-1.4.0.min.js"></script>
 	<script src="{% static 'YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js' %}"></script>
 
 	<script>
@@ -922,6 +1110,7 @@
 			}
 
 			init_events($('#external-events div.external-event'))
+			init_events($('#associated-events div.external-event'))
 
 			// Make target canvas draggable
 			$("#associated-events").droppable({
@@ -940,6 +1129,63 @@
 					var tag_urls = []
 					for (i=0; i< tag_ids.length; i++) {
 						tag_urls.push(base_url + "{% url 'transienttag-list' %}" + tag_ids[i] + "/")
+					}
+
+					var transient_target = "{% url 'transient-detail' transient.id %}"
+					var api_url = base_url + transient_target
+
+					var patchData = { "tags": tag_urls }
+					var jsonData = JSON.stringify(patchData)
+
+					$.ajax({
+						type: "PATCH",
+						url: api_url,
+						csrfmiddlewaretoken: "{{ csrf_token }}",
+						data: jsonData,
+						contentType: "application/json; charset=utf-8",
+ 						dataType: "json",
+						success: function(data, textStatus, jqXHR) {
+							if (textStatus == "success") {
+
+							} else {
+								alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+							}
+						},
+						error: function(XMLHttpRequest, textStatus, errorThrown) {
+							// alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+							alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));
+						}
+					});
+
+				}
+			});
+			$("#del-associated-event").droppable({
+				drop:function(e,source){
+
+					$("#del-associated-events-list").append(source.draggable);
+					// Now, get all associated events and PATCH transient with them
+					var tag_ids = $("#associated-events-list").children("div").map(function() {return $(this).attr("data-tag_id")})
+					var del_tag_ids = $("#del-associated-events-list").children("div").map(function() {return $(this).attr("data-tag_id")})
+					//alert(typeof del_tag_ids)
+					var base_url = window.location.protocol + "//" + window.location.hostname
+					var port = window.location.port
+					if (port != "") {
+						base_url = base_url + ":" + port
+					}
+
+					var tag_urls = []
+					for (i=0; i< tag_ids.length; i++) {
+						var in_del_tags = false
+						for (j=0; j< del_tag_ids.length; j++){
+							if (del_tag_ids[j] == tag_ids[i]){
+								//alert(del_tag_ids,tag_ids[i])
+								//if (Object.keys(del_tag_ids).includes(Object.keys(tag_ids[i])) == false) {
+								in_del_tags = true
+							}
+						}
+						if (in_del_tags == false){
+							tag_urls.push(base_url + "{% url 'transienttag-list' %}" + tag_ids[i] + "/")
+						}
 					}
 
 					var transient_target = "{% url 'transient-detail' transient.id %}"
@@ -1293,6 +1539,44 @@
 	  					$(".plotSALT2").html("Show SALT2 Fit");
 	  				});
 				}
+			});
+
+			$('.plotSALT2flux').on('click', function(event){
+				//var spec_id = $(this).attr('spec_plot-id')
+				//var transient_id = {{transient.id}}		
+				var buttontext = $("#salt2fluxplot").html();
+				var mybutton = "hi";
+				//$(".plotSALT2").html(buttontext);
+				//$(".plotSALT2").html("Hide SALT2 Fit");
+				if (buttontext.indexOf("Show") > -1){
+					url = "{% url 'salt2fluxplot' transient.id 1 %}";
+					$.get(url).done(function(htmlresponse){
+						var lastNode = $("#lcfluxplot").children().last();
+	        	    	lastNode.prev().remove();
+
+						var rows = $("#lcfluxplot");
+	  					$(rows).html(htmlresponse);
+
+	  					$(".plotSALT2flux").html("Hide SALT2 Fit");
+	  				});
+	  			} else {
+	  				url = "{% url 'salt2fluxplot' transient.id 0 %}";
+					$.get(url).done(function(htmlresponse){
+						var lastNode = $("#lcfluxplot").children().last();
+	        			lastNode.prev().remove();
+
+						var rows = $("#lcfluxplot");
+	  					$(rows).html(htmlresponse);
+
+	  					$(".plotSALT2flux").html("Show SALT2 Fit");
+	  				});
+				}
+			});
+
+			$('.plotFlux').on('click', function(event){
+				$.get("{% url 'lightcurveplot_flux' transient.id %}").done(function(htmlresponse){
+	  				$("#lcfluxplot").html(htmlresponse);
+			  	});
 			});
 
 			$('.plotAirmass').on('click', function(event){

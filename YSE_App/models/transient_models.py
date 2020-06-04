@@ -47,6 +47,9 @@ class Transient(BaseModel):
 	dec = models.FloatField()
 
 	# Optional
+	ra_err = models.FloatField(null=True, blank=True)
+	dec_err = models.FloatField(null=True, blank=True)
+
 	disc_date = models.DateTimeField(null=True, blank=True)
 	candidate_hosts = models.TextField(null=True, blank=True) # A string field to hold n hosts -- if we don't quite know which is the correct one
 	redshift = models.FloatField(null=True, blank=True)
@@ -69,7 +72,13 @@ class Transient(BaseModel):
 	point_source_probability = models.FloatField(null=True, blank=True)
 
 	slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
+
+	real_bogus_score = models.FloatField(null=True, blank=True)
 	
+	has_hst = models.NullBooleanField(null=True, blank=True)
+	has_spitzer = models.NullBooleanField(null=True, blank=True)
+	has_chandra = models.NullBooleanField(null=True, blank=True)
+
 	def CoordString(self):
 		return GetSexigesimalString(self.ra, self.dec)
 
@@ -85,10 +94,10 @@ class Transient(BaseModel):
 
 	def LikelyYSEField(self):
 		d = self.dec*np.pi/180
-		width_corr = 3.3/np.abs(np.cos(d))
+		width_corr = 3.4/np.abs(np.cos(d))
 		# Define the tile offsets:
 		ra_offset = cd.Angle(width_corr/2., unit=u.deg)
-		dec_offset = cd.Angle(3.3/2., unit=u.deg)
+		dec_offset = cd.Angle(3.4/2., unit=u.deg)
 
 		sf = SurveyField.objects.filter(~Q(obs_group__name='ZTF')).\
 				filter((Q(ra_cen__gt = self.ra-ra_offset.degree) &

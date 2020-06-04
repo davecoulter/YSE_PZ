@@ -28,7 +28,9 @@ from .common.alert import sendemail
 from .common.utilities import getRADecBox
 from django.db.models import Q
 from .queries.yse_python_queries import *
+from .queries import yse_python_queries
 import sys
+from urllib.parse import unquote
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -81,9 +83,10 @@ def add_yse_survey_fields(request):
 
 		dbsurveyfield = SurveyField.objects.filter(
 			field_id=surveydict['field_id'])
-		
+
+		# no clobbering for now
 		if len(dbsurveyfield):
-			dbsurveyfield.update(**surveydict)
+		#	dbsurveyfield.update(**surveydict)
 			dbsurveyfield = dbsurveyfield[0]
 		else:
 			dbsurveyfield = SurveyField.objects.create(**surveydict)
@@ -135,6 +138,7 @@ def add_yse_survey_obs(request):
 		
 		surveykeys = survey.keys()
 		for surveykey in surveykeys:
+			if surveykey in ['ra_cen','dec_cen']: continue
 			if not isinstance(SurveyObservation._meta.get_field(surveykey), ForeignKey):
 				surveydict[surveykey] = survey[surveykey]
 			else:
@@ -142,7 +146,24 @@ def add_yse_survey_obs(request):
 				if surveykey == 'photometric_band':
 					fk = fkmodel.objects.filter(name=survey[surveykey].split('-')[1]).filter(instrument__name=survey[surveykey].split('-')[0])
 				elif surveykey == 'survey_field':
-					fk = fkmodel.objects.filter(field_id=survey[surveykey])
+					#fk = fkmodel.objects.filter(field_id=survey[surveykey])
+					#import pdb; pdb.set_trace()
+					fk = fkmodel.objects.filter(Q(ra_cen__gt=float(survey['ra_cen'])-0.1) & Q(ra_cen__lt=float(survey['ra_cen'])+0.1) &
+												Q(dec_cen__gt=float(survey['dec_cen'])-0.1) & Q(dec_cen__lt=float(survey['dec_cen'])+0.1))
+					if not len(fk):
+						fk = fkmodel.objects.filter(field_id=survey[surveykey])
+						fk_edit = fk[0]
+						fk_edit.ra_cen = survey['ra_cen']
+						fk_edit.dec_cen = survey['dec_cen']
+						fk_edit.save()
+					if not len(fk):
+						try: ztf_id = survey[surveykey].split('.')[0]
+						except: ztf_id = None
+						fk = fkmodel.objects.create(
+							field_id=survey[surveykey],ra_cen=survey['ra_cen'],dec_cen=survey['dec_cen'],
+							instrument=Instrument.objects.get(name='GPC1'),created_by_id=user.id,
+							modified_by_id=user.id,active=1,width_deg=3.1,
+							height_deg=3.1,ztf_field_id=ztf_id,cadence=3)
 				else: fk = fkmodel.objects.filter(name=survey[surveykey])
 				if not len(fk):
 					print("Sending email to: %s" % user.username)
@@ -160,6 +181,7 @@ def add_yse_survey_obs(request):
 				obs_mjd__gt=float(surveydict['obs_mjd'])-0.01).filter(
 					obs_mjd__lt=float(surveydict['obs_mjd'])+0.01).filter(
 						photometric_band=surveydict['photometric_band'])
+
 		if not len(dbsurveyfield):
 			# obs MJD on same night - probably need to get rise/set times
 			# to do this right
@@ -254,12 +276,12 @@ def add_transient(request):
 				#	Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
 				#	Q(disc_date__year=transient['disc_date'].split('-')[0]))
 				#dateutil.parser.parse(obs_date)
+#				import pdb; pdb.set_trace()
 				dbtransient = Transient.objects.filter(
 					Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
 					Q(disc_date__gte=dateutil.parser.parse(transient['disc_date'])-datetime.timedelta(365)) &
 					Q(disc_date__lte=dateutil.parser.parse(transient['disc_date'])+datetime.timedelta(365)))
-				#if transient['name'] == '10AYSEaaj':
-				#	import pdb; pdb.set_trace()
+				
 				if len(dbtransient):
 					#dbtransient = dbtransient[0]
 					obs_group = ObservationGroup.objects.get(name=transient['obs_group'])
@@ -273,14 +295,12 @@ def add_transient(request):
 						dbtransient[0].slug = transient['name']
 						dbtransient[0].save()
 					else:
-						#import pdb; pdb.set_trace()
 						alt_transients = AlternateTransientNames.objects.filter(name=transient['name'])
 						if not len(alt_transients):
 							AlternateTransientNames.objects.create(
 								transient=dbtransient[0],obs_group=obs_group,name=transient['name'],
 								created_by_id=user.id,modified_by_id=user.id)
 						transientdict['name'] = dbtransient[0].name
-						#dbtransient[0].save()
 
 					if 'noupdatestatus' in transient_data.keys() and not transient_data['noupdatestatus']:
 						if dbtransient[0].status.name == 'Ignore':
@@ -306,7 +326,6 @@ def add_transient(request):
 							tagobj = TransientTag.objects.get(name=tag)
 							dbtransient[0].tags.add(tagobj)
 							dbtransient[0].save()
-
 				else:
 					dbtransient = Transient(**transientdict)
 					
@@ -326,6 +345,13 @@ def add_transient(request):
 					transientdict['postage_stamp_diff_fits'] = dbtransient[0].postage_stamp_diff_fits
 
 				dbtransient.update(**transientdict)
+				if 'tags' in transientkeys:
+					for tag in transient['tags']:
+						if not len(dbtransient[0].tags.filter(name=tag)):
+							tagobj = TransientTag.objects.get(name=tag)
+							dbtransient[0].tags.add(tagobj)
+							dbtransient[0].save()
+
 				dbtransient = dbtransient[0]
 
 			#print('saved transient in %.1f sec'%(t4-t3))
@@ -345,7 +371,6 @@ def add_transient(request):
 			#sendsms(from_addr, phone_email, subject, txt_msg%transient['name'],
 			#		 djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
 
-	#import pdb; pdb.set_trace()
 	Transient.objects.bulk_create(transient_entries)
 	for t in transient_entries:
 		dbt = Transient.objects.get(name=t.name)
@@ -368,7 +393,7 @@ def add_transient(request):
 		if not len(dbtransient):
 			dbtransient = AlternateTransientNames.objects.filter(name=transient['name'])[0].transient
 		else: dbtransient = dbtransient[0]
-			
+
 		if 'transientphotometry' in transientkeys:
 			# do photometry
 			response,transientphot = add_transient_phot_util(
@@ -398,7 +423,7 @@ def add_transient(request):
 		if not len(dbtransient):
 			dbtransient = AlternateTransientNames.objects.filter(name=transient['name'])[0].transient
 		else: dbtransient = dbtransient[0]
-		
+
 		if 'transientphotometry' in transientkeys:
 			# do photometry
 			response,transientphot = add_transient_phot_util(
@@ -408,7 +433,6 @@ def add_transient(request):
 	
 	TransientPhotometry.objects.bulk_create(photdata_entries)
 	return_dict = {"message":"success"}
-
 	return JsonResponse(return_dict)
 
 @csrf_exempt
@@ -672,7 +696,6 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
 			transientphot_entries += [transientphot]
 		else: transientphot = transientphot[0]
 		existingphot = TransientPhotData.objects.filter(photometry=transientphot)
-
 		if do_photdata:
 			for k in photometry['photdata']:
 				p = photometry['photdata'][k]
@@ -715,7 +738,17 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
 									e.band = band
 									e.modified_by_id = user.id
 									e.save()
+								if 'diffimg' in p.keys():
+									existing_diff = TransientDiffImage.objects.filter(phot_data=e)
+									p['diffimg']['created_by_id'] = user.id
+									p['diffimg']['modified_by_id'] = user.id
+									p['diffimg']['phot_data_id'] = e.id
+									if not len(existing_diff):
+										TransientDiffImage.objects.create(**p['diffimg'])
+									else:
+										existing_diff.update(**p['diffimg'])
 
+									
 				if not obsExists:
 					if p['data_quality']:
 						dq = DataQuality.objects.filter(name=p['data_quality'])
@@ -723,7 +756,7 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
 							dq = DataQuality.objects.filter(name='Bad')
 						dq = dq[0]
 					else: dq = None
-					TransientPhotData.objects.create(
+					e = TransientPhotData.objects.create(
 						obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
 						mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
 						diffim=p['diffim'],
@@ -731,7 +764,12 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
 						flux_zero_point=p['flux_zero_point'],
 						discovery_point=p['discovery_point'],band=band,
 						created_by_id=user.id,modified_by_id=user.id)
-
+					if 'diffimg' in p.keys():
+						p['diffimg']['created_by_id'] = user.id
+						p['diffimg']['modified_by_id'] = user.id
+						p['diffimg']['phot_data_id'] = e.id
+						TransientDiffImage.objects.create(**p['diffimg'])
+						
 	return_dict = {"message":"successfully added phot data"}
 	return JsonResponse(return_dict),transientphot_entries
 
@@ -1125,7 +1163,9 @@ def get_rising_transients_box(request, ra, dec, ra_width, dec_width):
 
 	qs = recent_rising_transient_queryset(ndays=5)
 	ramin,ramax,decmin,decmax = getRADecBox(float(ra),float(dec),float(ra_width),float(dec_width))
-	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax).filter(~Q(status__name='Ignore'))
+	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax).filter(~Q(status__name='Ignore')).filter(
+		Q(status__name='New') | Q(status__name='Watch') | Q(status__name='FollowupRequested') | Q(status__name='Following')
+		| ~Q(tags__name='YSE')).filter(disc_date__gt=datetime.datetime.utcnow()-datetime.timedelta(10))
 	
 	serialized_transients = []
 	for t in qs:
@@ -1145,7 +1185,8 @@ def get_new_transients_box(request, ra, dec, ra_width, dec_width):
 
 	qs = Transient.objects.all() #filter(disc_date__gte=datetime.datetime.utcnow()-datetime.timedelta(5)) #.filter(~Q(TNS_spec_class__isnull=True))
 	ramin,ramax,decmin,decmax = getRADecBox(float(ra),float(dec),float(ra_width),float(dec_width))
-	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax).filter(Q(status__name='Watch') | Q(status__name='Following'))
+	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax).filter(
+		Q(status__name='Watch') | Q(status__name='FollowupRequested') | Q(status__name='Following') | ~Q(tags__name='YSE')).filter(disc_date__gt=datetime.datetime.utcnow()-datetime.timedelta(10))
 	
 	serialized_transients = []
 	for t in qs:
@@ -1160,7 +1201,38 @@ def get_new_transients_box(request, ra, dec, ra_width, dec_width):
 
 	return JsonResponse(return_dict)
 
+@csrf_exempt
+@login_or_basic_auth_required
+def query_api(request,query_name):
 
+	query = Query.objects.filter(title=unquote(query_name))
+	if len(query):
+		query = query[0]
+		if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
+		if 'name' not in query.sql.lower(): return Http404('Invalid Query')
+		if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
+		cursor = connections['explorer'].cursor()
+		cursor.execute(query.sql.replace('%','%%'), ())
+		transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+		cursor.close()
+	else:
+		#query = UserQuery.objects.filter(python_query = unquote(query_name))
+		#if not len(query): return Http404('Invalid Query')
+		#query = query[0]
+		try: transients = getattr(yse_python_queries,unquote(query_name))() #.python_query)()
+		except: return Http404('Invalid Query')
+
+	serialized_transients = []
+	for t in transients:
+		serialized_transients.append(
+			{"transient_ra":t.ra,"transient_dec":t.dec,
+			 "transient_name":t.name,"transient_id":t.id}
+		)
+
+	return_dict = {"transients":serialized_transients }
+		
+	return JsonResponse(return_dict)
+	
 def getRADecBox(ra,dec,size=None,dec_size=None):
 	if not dec_size:
 		RAboxsize = DECboxsize = size

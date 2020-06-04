@@ -13,6 +13,7 @@ from YSE_App.common.utilities import date_to_mjd
 from YSE_App import models as yse_models
 from django.dispatch import receiver
 from pytz import timezone
+from django.core.validators import MinValueValidator,MaxValueValidator
 
 class SurveyField(BaseModel):
 
@@ -23,7 +24,8 @@ class SurveyField(BaseModel):
 	cadence = models.FloatField(null=True, blank=True)
 	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
 	ztf_field_id = models.CharField(max_length=64,null=True,blank=True)
-	
+	active = models.NullBooleanField(null=True,blank=True)
+
 	# field center
 	ra_cen = models.FloatField()
 	dec_cen = models.FloatField()
@@ -46,6 +48,9 @@ class SurveyFieldMSB(BaseModel):
 
 	def __str__(self):
 		return self.name
+
+	def fieldSet(self):
+		return ','.join([sf for sf in survey_fields])
 	
 class SurveyObservation(BaseModel):
 
@@ -64,6 +69,9 @@ class SurveyObservation(BaseModel):
 	eccentricity = models.FloatField(null=True, blank=True)
 	airmass = models.FloatField(null=True, blank=True)
 	image_id = models.CharField(max_length=128,null=True,blank=True)
+	diff_id = models.CharField(max_length=128,null=True,blank=True)
+	warp_id = models.CharField(max_length=128,null=True,blank=True)
+	stack_id = models.CharField(max_length=128,null=True,blank=True)
 	mag_lim = models.FloatField(null=True, blank=True)
 	zpt_obs = models.FloatField(null=True, blank=True)
 	quality = models.IntegerField(null=True, blank=True)
@@ -77,20 +85,23 @@ class SurveyObservation(BaseModel):
 			return '%s: %s'%(
 				self.survey_field.field_id,self.mjd_requested)
 
-#class SurveyObservation(BaseModel):
+class CanvasFOV(models.Model):
 
-#	obs_mjd = models.FloatField(null=True, blank=True)
-#	survey_observation_task = models.ForeignKey(SurveyObservationTask, on_delete=models.CASCADE)
-#	status = models.ForeignKey(TaskStatus, models.SET(get_sentinel_taskstatus))
-#	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
-#	exposure_time = models.FloatField()
-#	photometric_band = models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
-#	pos_angle_deg = models.FloatField()
-#	fwhm = models.FloatField(null=True, blank=True)
-#	eccentricity = models.FloatField(null=True, blank=True)
-#	airmass = models.FloatField(null=True, blank=True)
-#	image_id = models.BigIntegerField()
-	
-#	def __str__(self):
-#		return '%s: %s - %s'%(
-#			self.survey_observation_task,self.obs_mjd)
+	raCenter = models.FloatField(verbose_name='RA Center (deg)',
+								 validators=[MinValueValidator(0.),MaxValueValidator(360.)])
+	decCenter = models.FloatField(verbose_name='Dec Center (deg)',
+								  validators=[MinValueValidator(-89.9999),MaxValueValidator(89.9999)])
+
+	fovWidth = models.FloatField(verbose_name='FOV Width (deg)',
+								 validators=[MinValueValidator(0.)])
+
+	# default canvas size for index page
+	canvas_x_grid_size = models.IntegerField(default=500)
+	canvas_y_grid_size = models.IntegerField(default=500)
+
+	# hidden fields (in the form)
+	#author = models.CharField(max_length=50) # hidden; will populate with _auth_user_hash
+	created = models.DateTimeField() # hidden; will use this to retrieve most recent
+
+	def __str__(self):
+		return '{} {}'.format(self.raCenter,self.decCenter)

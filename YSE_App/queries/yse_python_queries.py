@@ -132,6 +132,22 @@ def rising_transient_queryset(ndays=14):
 	return qs_final
 
 @python_query_reg
+def tns_yse_rising_transient_queryset(ndays=14):
+
+	# g/V rise
+	qs = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(ndays)).filter(tags__name__in='YSE').filter(name__startswith='20')
+	qs = annotate_rising_transient_qs(qs)
+	qs_final = qs.filter((Q(rise_rate_g__gte=0) & (Q(rise_rate_g_sig__gte=1)))|
+						 (Q(rise_rate_g_lim__gte=0) & (Q(rise_rate_g_lim_sig__gte=1)))|
+						 (Q(rise_rate_r__gte=0) & (Q(rise_rate_r_sig__gte=1)))|
+						 (Q(rise_rate_r_lim__gte=0) & (Q(rise_rate_r_lim_sig__gte=1)))|
+						 (Q(rise_rate_i__gte=0) & (Q(rise_rate_i_sig__gte=1)))|
+						 (Q(rise_rate_i_lim__gte=0) & (Q(rise_rate_i_lim_sig__gte=1))))
+	
+	return qs_final
+
+
+@python_query_reg
 def recent_rising_transient_queryset(ndays=5):
 
 	# g/V rise
@@ -166,19 +182,23 @@ def sne_in_last_nights_fields():
 					 Q(dec__gt = s.survey_field.dec_cen-dec_offset.degree) &
 					 Q(dec__lt = s.survey_field.dec_cen+dec_offset.degree))]
 
-	query_full = qs_list[0]
-	for q in qs_list[1:]:
-		query_full = np.bitwise_or(query_full,q)
-	qs_final = qs.filter(query_full)
-
+	if len(qs_list):
+		query_full = qs_list[0]
+		for q in qs_list[1:]:
+			query_full = np.bitwise_or(query_full,q)
+		qs_final = qs.filter(query_full)
+	else:
+		qs_final = Transient.objects.none()
+	
 	return qs_final
 
 @python_query_reg
-def sne_15deg_from_yse():
+def sne_15deg_from_yse(qs_start=None):
 
-	qs = None
-	survey_obs = SurveyObservation.objects.filter(obs_mjd__gte=date_to_mjd(datetime.datetime.utcnow()-datetime.timedelta(14)))
+	survey_obs = SurveyObservation.objects.filter(Q(obs_mjd__gte=date_to_mjd(datetime.datetime.utcnow()-datetime.timedelta(14))) |
+												  Q(mjd_requested__gte=date_to_mjd(datetime.datetime.utcnow()-datetime.timedelta(14))))
 	done_list = []
+	qs = Transient.objects.none()
 	for s in survey_obs:
 		if s.survey_field.field_id in done_list: continue
 		done_list += [s.survey_field.field_id]
@@ -200,11 +220,14 @@ HAVING sep < 15
 		cursor = connections['explorer'].cursor()
 		cursor.execute(query, ())
 
-		if qs is None:
-			qs = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(~Q(tags__name='YSE')).filter(~Q(status__name='Ignore')).filter(name__in=(x[0] for x in cursor))
-		else:
+		#if qs is None:
+		#	qs = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(~Q(tags__name='YSE')).filter(~Q(status__name='Ignore')).filter(name__in=(x[0] for x in cursor))
+		#else:
+		if qs_start is None:
 			qs_single = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(~Q(tags__name='YSE')).filter(~Q(status__name='Ignore')).filter(name__in=(x[0] for x in cursor))
-			qs = qs | qs_single
+		else:
+			qs_single = qs_start.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(~Q(tags__name='YSE')).filter(~Q(status__name='Ignore')).filter(name__in=(x[0] for x in cursor))
+		qs = qs | qs_single
 		cursor.close()
 
 	return qs
@@ -235,3 +258,31 @@ HAVING sep < 3.3
 	qs = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(~Q(status__name='Ignore')).filter(name__in=(x[0] for x in cursor))
 
 	return qs
+
+def sne_in_yse_field_with_ignore(field_id):
+
+	qs = None
+	survey_field = SurveyField.objects.filter(field_id=field_id)[0]
+
+	d = survey_field.dec_cen*np.pi/180
+	width_corr = 1.65/np.abs(np.cos(d))
+	#radius = ((ra-s.survey_field.ra_cen)**2. + (dec-s.survey_field.dec_cen)**2.)**(1/2.)
+
+	ra_offset = cd.Angle(width_corr, unit=u.deg)
+	dec_offset = cd.Angle(1.65, unit=u.deg)
+
+	query= """SELECT t.name, ACOS(SIN(t.dec*3.14159/180)*SIN(%s*3.14159/180)+COS(t.dec*3.14159/180)*COS(%s*3.14159/180)*COS((t.ra-%s)*3.14159/180))*180/3.14159 as sep
+FROM YSE_App_transient t
+WHERE t.ra > %s AND t.ra < %s AND t.dec > %s AND t.dec < %s
+HAVING sep < 3.3
+""" % (
+	survey_field.dec_cen, survey_field.dec_cen, survey_field.ra_cen,
+	survey_field.ra_cen-ra_offset.degree,survey_field.ra_cen+ra_offset.degree,
+	survey_field.dec_cen-dec_offset.degree,survey_field.dec_cen+dec_offset.degree)
+	cursor = connections['explorer'].cursor()
+	cursor.execute(query, ())
+
+	qs = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(name__in=(x[0] for x in cursor))
+
+	return qs
+

@@ -1,0 +1,125 @@
+
+{% extends "YSE_App/yse_sky/header.html" %}
+{% load transient_detail_extras %}
+{% load dashboard_extras %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
+{% load static %}
+{% load django_tables2 %}
+
+{% block content %}
+
+<!-- Content Header (Page header) -->
+
+  <div class="container">
+    <div class="row">
+        <!-- Draw up the canvas section on the left -->
+        <div class="col-12">
+            <!-- Canvas -->
+            <div style="text-align:center;">
+          <canvas id="myCanvas" width="800" height="400"></canvas>
+                      <!-- Coordinate form -->
+          <form method="POST" class="post-form">{% csrf_token %}
+              <div class="col-11 card  card-body bg-light">
+                  {{ viewContent.coordForm.as_p }}
+                  <div col-4>
+                      <button type="submit" class="btn btn-primary btn-sm">Update FOV</button>
+                  </div>
+              </div>
+          </form>
+        </div>
+      </div>
+      <div class="col-12">
+        {% if viewContent.table %}
+          {% render_table viewContent.table %}
+        {% else %}
+          <div> <p>No table data available (yet).</p></div>
+        {% endif %}
+      </div>
+      <div class="box-header with-border" id="{{sntable.1}}">
+        <h3 class="box-title">{{sntable_title}}</h3>
+      </div>
+      <div align='right'>
+        {% if transient_nearby_table.2 %}
+        <form action="" method="get" class="form form-inline">
+        {% bootstrap_form sntable.2.form layout='inline' %}
+        {% with "#"|add:sntable.1 as link %}
+        {% bootstrap_button 'filter' %}&ensp;&nbsp;
+        {% endwith %}
+        </form>
+        {% endif %}
+      </div>
+      <div class="box-body">
+        {% render_table sntable.0 %}
+      </div>
+      <div class="box-footer">
+      </div>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+
+<script>
+  $( document ).ready(function(){
+    window.location = '#{{ anchor }}'
+  });
+  $(function () {
+
+      // This function gets cookie with a given name
+      function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+
+      var csrftoken = getCookie('csrftoken');
+
+      /*
+      The functions below will create a header with csrftoken
+      */
+
+      function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+      }
+
+      function sameOrigin(url) {
+        // test that a given url is a same-origin URL
+        // url could be relative or scheme relative or absolute
+        var host = document.location.host; // host + port
+        var protocol = document.location.protocol;
+        var sr_origin = '//' + host;
+        var origin = protocol + sr_origin;
+        // Allow absolute or scheme relative URLs to same origin
+        return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+        (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+          // or any other URL that isn't scheme relative or absolute i.e relative.
+          !(/^(\/\/|http:|https:).*/.test(url));
+        }
+
+        $.ajaxSetup({
+          beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
+            // Send the token to same-origin, relative URLs only.
+            // Send the token only if the method warrants CSRF protection
+            // Using the CSRFToken value acquired earlier
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+          }
+        }
+      });
+    });
+
+</script>
+{% endblock %}

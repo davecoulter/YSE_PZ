@@ -47,9 +47,16 @@ class AddTransientFollowupFormView(FormView):
 			instance = form.save(commit=False)
 			instance.created_by = self.request.user
 			instance.modified_by = self.request.user
-
+			if instance.classical_resource:
+				instance.valid_start = instance.classical_resource.begin_date_valid
+				instance.valid_stop = instance.classical_resource.end_date_valid
+			
 			instance.save() #update_fields=['created_by','modified_by']
 
+			if instance.transient.status.name in ['New','Watch','Ignore']:
+				instance.transient.status = TransientStatus.objects.filter(name='FollowupRequested')[0]
+				instance.transient.save()
+			
 			if form.cleaned_data['comment']:
 				log = Log(transient_followup=TransientFollowup.objects.get(id=instance.id),
 						  comment=form.cleaned_data['comment'])
@@ -71,8 +78,13 @@ class AddTransientFollowupFormView(FormView):
 			if instance.queued_resource:
 				data_dict['queued_resource'] = str(instance.queued_resource)
 
-			data_dict['valid_start'] = form.cleaned_data['valid_start']
-			data_dict['valid_stop'] = form.cleaned_data['valid_stop']
+			if instance.classical_resource:
+				data_dict['valid_start'] = instance.classical_resource.begin_date_valid
+				data_dict['valid_stop'] = instance.classical_resource.end_date_valid
+			else:
+				data_dict['valid_start'] = form.cleaned_data['valid_start']
+				data_dict['valid_stop'] = form.cleaned_data['valid_stop']
+
 			data_dict['spec_priority'] = form.cleaned_data['spec_priority']
 			data_dict['phot_priority'] = form.cleaned_data['phot_priority']
 			data_dict['offset_star_ra'] = form.cleaned_data['offset_star_ra']
@@ -352,10 +364,21 @@ class AddSurveyObsFormView(FormView):
 					illum = moon_illumination(t)
 
 					# need to see what was observed in the previous obs w/ the same moon illumination
-					previous_obs = SurveyObservation.objects.filter(survey_field=s).\
-						filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').\
-						order_by('-mjd_requested').select_related()
+					# first have to grab the MSB associated with this observation, if it exists
+					# otherwise it's gonna schedule different filters for different pointings
 
+					previous_msb = SurveyFieldMSB.objects.filter(survey_fields__in=[s])
+					if len(previous_msb):
+						previous_field = previous_msb[0].survey_fields.all()[0]
+						previous_obs = SurveyObservation.objects.filter(survey_field=previous_field).\
+							filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').\
+							order_by('-mjd_requested').select_related()
+					else:
+						previous_obs = SurveyObservation.objects.filter(survey_field=s).\
+							filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').\
+							order_by('-mjd_requested').select_related()
+
+					
 					def previous_obs_func(illum_min,illum_max):
 						filt = []
 						for p in previous_obs:
