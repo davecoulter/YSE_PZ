@@ -397,7 +397,7 @@ def add_transient(request):
 		if 'transientphotometry' in transientkeys:
 			# do photometry
 			response,transientphot = add_transient_phot_util(
-				transient['transientphotometry'],dbtransient,user,do_photdata=True)
+				transient['transientphotometry'],dbtransient,user,do_photdata=False)
 			for t in transientphot:
 				phot_entries.append(t)
 
