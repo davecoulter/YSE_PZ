@@ -132,6 +132,22 @@ def rising_transient_queryset(ndays=14):
 	return qs_final
 
 @python_query_reg
+def tns_yse_rising_transient_queryset(ndays=14):
+
+	# g/V rise
+	qs = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(ndays)).filter(tags__name__in='YSE').filter(name__startswith='20')
+	qs = annotate_rising_transient_qs(qs)
+	qs_final = qs.filter((Q(rise_rate_g__gte=0) & (Q(rise_rate_g_sig__gte=1)))|
+						 (Q(rise_rate_g_lim__gte=0) & (Q(rise_rate_g_lim_sig__gte=1)))|
+						 (Q(rise_rate_r__gte=0) & (Q(rise_rate_r_sig__gte=1)))|
+						 (Q(rise_rate_r_lim__gte=0) & (Q(rise_rate_r_lim_sig__gte=1)))|
+						 (Q(rise_rate_i__gte=0) & (Q(rise_rate_i_sig__gte=1)))|
+						 (Q(rise_rate_i_lim__gte=0) & (Q(rise_rate_i_lim_sig__gte=1))))
+	
+	return qs_final
+
+
+@python_query_reg
 def recent_rising_transient_queryset(ndays=5):
 
 	# g/V rise

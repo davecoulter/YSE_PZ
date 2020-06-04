@@ -28,6 +28,7 @@ from .common.alert import sendemail
 from .common.utilities import getRADecBox
 from django.db.models import Q
 from .queries.yse_python_queries import *
+from .queries import yse_python_queries
 import sys
 from urllib.parse import unquote
 
@@ -275,11 +276,12 @@ def add_transient(request):
 				#	Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
 				#	Q(disc_date__year=transient['disc_date'].split('-')[0]))
 				#dateutil.parser.parse(obs_date)
+#				import pdb; pdb.set_trace()
 				dbtransient = Transient.objects.filter(
 					Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
 					Q(disc_date__gte=dateutil.parser.parse(transient['disc_date'])-datetime.timedelta(365)) &
 					Q(disc_date__lte=dateutil.parser.parse(transient['disc_date'])+datetime.timedelta(365)))
-
+				
 				if len(dbtransient):
 					#dbtransient = dbtransient[0]
 					obs_group = ObservationGroup.objects.get(name=transient['obs_group'])
@@ -391,11 +393,11 @@ def add_transient(request):
 		if not len(dbtransient):
 			dbtransient = AlternateTransientNames.objects.filter(name=transient['name'])[0].transient
 		else: dbtransient = dbtransient[0]
-			
+
 		if 'transientphotometry' in transientkeys:
 			# do photometry
 			response,transientphot = add_transient_phot_util(
-				transient['transientphotometry'],dbtransient,user,do_photdata=False)
+				transient['transientphotometry'],dbtransient,user,do_photdata=True)
 			for t in transientphot:
 				phot_entries.append(t)
 
@@ -1161,7 +1163,9 @@ def get_rising_transients_box(request, ra, dec, ra_width, dec_width):
 
 	qs = recent_rising_transient_queryset(ndays=5)
 	ramin,ramax,decmin,decmax = getRADecBox(float(ra),float(dec),float(ra_width),float(dec_width))
-	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax).filter(~Q(status__name='Ignore'))
+	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax).filter(~Q(status__name='Ignore')).filter(
+		Q(status__name='New') | Q(status__name='Watch') | Q(status__name='FollowupRequested') | Q(status__name='Following')
+		| ~Q(tags__name='YSE')).filter(disc_date__gt=datetime.datetime.utcnow()-datetime.timedelta(10))
 	
 	serialized_transients = []
 	for t in qs:
@@ -1181,7 +1185,8 @@ def get_new_transients_box(request, ra, dec, ra_width, dec_width):
 
 	qs = Transient.objects.all() #filter(disc_date__gte=datetime.datetime.utcnow()-datetime.timedelta(5)) #.filter(~Q(TNS_spec_class__isnull=True))
 	ramin,ramax,decmin,decmax = getRADecBox(float(ra),float(dec),float(ra_width),float(dec_width))
-	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax).filter(Q(status__name='Watch') | Q(status__name='Following'))
+	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax).filter(
+		Q(status__name='Watch') | Q(status__name='FollowupRequested') | Q(status__name='Following') | ~Q(tags__name='YSE')).filter(disc_date__gt=datetime.datetime.utcnow()-datetime.timedelta(10))
 	
 	serialized_transients = []
 	for t in qs:
@@ -1211,10 +1216,11 @@ def query_api(request,query_name):
 		transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
 		cursor.close()
 	else:
-		query = UserQuery.objects.filter(python_query = unquote(query_name))
-		if not len(query): return Http404('Invalid Query')
-		query = query[0]
-		transients = getattr(yse_python_queries,query.python_query)()
+		#query = UserQuery.objects.filter(python_query = unquote(query_name))
+		#if not len(query): return Http404('Invalid Query')
+		#query = query[0]
+		try: transients = getattr(yse_python_queries,unquote(query_name))() #.python_query)()
+		except: return Http404('Invalid Query')
 
 	serialized_transients = []
 	for t in transients:
