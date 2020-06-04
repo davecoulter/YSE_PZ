@@ -63,6 +63,8 @@ class Host(BaseModel):
 	eff_offset = models.FloatField(null=True, blank=True)
 	photo_z = models.FloatField(null=True, blank=True)
 	photo_z_err = models.FloatField(null=True, blank=True)
+	photo_z_internal = models.FloatField(null=True, blank=True)
+	photo_z_err_internal = models.FloatField(null=True, blank=True)
 	photo_z_source = models.CharField(max_length=64, null=True, blank=True)
 	transient_host_rank = models.IntegerField(null=True, blank=True)
 
