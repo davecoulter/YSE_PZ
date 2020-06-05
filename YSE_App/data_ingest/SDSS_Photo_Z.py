@@ -163,5 +163,5 @@ class YSE(CronJobBase):
             #sendemail(from_addr, user.email, subject, html_msg,
             #          djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
 
-IDK = YSE() #why is this suddenly neccessary???
-IDK.do()
+#IDK = YSE() #why is this suddenly neccessary???
+#IDK.do()
