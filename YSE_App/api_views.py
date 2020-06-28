@@ -37,6 +37,15 @@ class FollowupStatusViewSet(viewsets.ReadOnlyModelViewSet):
 	serializer_class = FollowupStatusSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 
+### `SurveyField` Filter Set ###
+class SurveyFieldFilter(django_filters.FilterSet):
+	field_id = django_filters.Filter(field_id="field_id")
+	
+	class Meta:
+		model = SurveyField
+		fields = ()
+
+
 ### `SurveyField ViewSets` ###
 class SurveyFieldViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = SurveyField.objects.all()
