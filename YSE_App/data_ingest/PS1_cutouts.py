@@ -105,9 +105,9 @@ class YSE(CronJobBase):
             transients = (Transient.objects.filter(Q(host__isnull=False) ))# & Q(something that prevents redownloading!)
             #we probably will have to run through the IDs and check what is currently available in th Cutouts folder
                 
-            counter = 0 #for local testing don't grab too many or else i'll nuke my computer
+            #counter = 0 #for local testing don't grab too many or else i'll nuke my computer
             for T in transients:
-                if T.host.ra and T.host.dec and counter <0
+                if T.host.ra and T.host.dec:
                     ID = T.name
                     image = np.zeros((104,104,5)) #holds the final image
                     try:
@@ -153,7 +153,7 @@ class YSE(CronJobBase):
                         
                     h.save()
                     T.save()
-                    counter+=1 #update counter, when more than 10 this will just pass through
+                    #counter+=1 #update counter, when more than 10 this will just pass through
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             print("""PS1 Host cutout cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno))

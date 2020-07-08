@@ -436,7 +436,7 @@ class YSE(CronJobBase):
                 
             for i,value in enumerate(list(transient_dictionary.keys())):
                 T = transient_dictionary[value]
-                if not(T.host.photo_z_internal): #dont update if already there, prevents overwriting SDSS objects....
+                if not(T.host.photo_z_PSCNN): 
                     T.host.photo_z_PSCNN = point_estimates[i]
                     T.host.photo_z_err_PSCNN = error[i]
                     #T.host.photo_z_posterior_PSCNN = posterior[i] #Gautham suggested we add it to the host model
