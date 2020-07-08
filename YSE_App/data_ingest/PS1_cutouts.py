@@ -157,8 +157,3 @@ class YSE(CronJobBase):
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             print("""PS1 Host cutout cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno))
-
-WHY = YSE() #David jones says this is unneccessary-- I don't get it.
-WHY.do()
-print('run once?')
-raise Exception('run once please')
