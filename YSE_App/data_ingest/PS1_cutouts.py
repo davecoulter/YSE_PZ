@@ -28,7 +28,7 @@ from django.contrib.auth.models import User
 
 
 
-user = User.objects.get(username = 'anon') #!!! ask david how to deal with this?
+user = User.objects.get(username = 'admin') #!!!
 
 def getimages(ra,dec,size=240,filters="grizy", type='stack'):
 
@@ -107,7 +107,7 @@ class YSE(CronJobBase):
                 
             counter = 0 #for local testing don't grab too many or else i'll nuke my computer
             for T in transients:
-                if T.host.ra and T.host.dec and counter < 2: #go past anything that isn't real...
+                if T.host.ra and T.host.dec and counter <0
                     ID = T.name
                     image = np.zeros((104,104,5)) #holds the final image
                     try:
@@ -151,8 +151,8 @@ class YSE(CronJobBase):
                         hi = HostImage(phot_data=hpd,img_file=djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,F),created_by=user,modified_by=user)
                         hi.save()
                         
-                    #h.save()
-                    #T.save()
+                    h.save()
+                    T.save()
                     counter+=1 #update counter, when more than 10 this will just pass through
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()

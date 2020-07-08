@@ -436,11 +436,12 @@ class YSE(CronJobBase):
                 
             for i,value in enumerate(list(transient_dictionary.keys())):
                 T = transient_dictionary[value]
-                T.host.photo_z_internal = point_estimates[i]
-                T.host.photo_z_err_internal = error[i]
-                #T.host.photo_z_posterior = posterior[i] #Gautham suggested we add it to the host model
-                T.host.photo_z_source = 'YSE internal'
-                #T.host.save() #takes a long time and then my query needs to be reset which is also a long time
+                if not(T.host.photo_z_internal): #dont update if already there, prevents overwriting SDSS objects....
+                    T.host.photo_z_PSCNN = point_estimates[i]
+                    T.host.photo_z_err_PSCNN = error[i]
+                    #T.host.photo_z_posterior_PSCNN = posterior[i] #Gautham suggested we add it to the host model
+                    #T.host.photo_z_source = 'YSE internal PS CNN' #this is not neccessary its in the name
+                    T.host.save() #takes a long time and then my query needs to be reset which is also a long time
     
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
