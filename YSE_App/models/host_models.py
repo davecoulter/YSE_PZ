@@ -65,6 +65,8 @@ class Host(BaseModel):
 	photo_z_err = models.FloatField(null=True, blank=True)
 	photo_z_internal = models.FloatField(null=True, blank=True)
 	photo_z_err_internal = models.FloatField(null=True, blank=True)
+	photo_z_PSCNN = models.FloatField(null=True, blank=True)
+	photo_z_err_PSCNN = models.FloatField(null=True, blank=True)
 	photo_z_source = models.CharField(max_length=64, null=True, blank=True)
 	transient_host_rank = models.IntegerField(null=True, blank=True)
 
