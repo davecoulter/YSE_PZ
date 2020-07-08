@@ -27,7 +27,7 @@ djangorestframework==3.7.3
 # extinction==0.3.0
 healpy==1.12.4
 html5lib==1.0.1
-httpie==0.9.9
+httpie==1.0.3
 idna==2.6
 #iminuit==1.2
 itypes==1.1.0
