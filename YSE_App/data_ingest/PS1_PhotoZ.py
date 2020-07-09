@@ -1,3 +1,6 @@
+
+
+#####################################################################################
 from django_cron import CronJobBase, Schedule
 from YSE_App.models.transient_models import *
 from YSE_App.common.alert import sendemail
@@ -399,7 +402,7 @@ class YSE(CronJobBase):
             my_index = np.array(range(0,len(transients))) #dummy index used in DF, then used to create a mapping from matched galaxies back to these hosts
                
             transient_dictionary = dict(zip(my_index,transients))
-                            
+                        
             #another script will place the images into the data model, just pull them out here...
             #print('Original length of Transients: ',len(transients))
             for i,T in enumerate(transients): #get rid of fake entries, or entries not yet classified or given a PS cutout
@@ -407,12 +410,12 @@ class YSE(CronJobBase):
                 if not(os.path.isfile(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,'g'))) or not(os.path.isfile(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,'r'))) or not(os.path.isfile(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,'i'))) or not(os.path.isfile(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,'z'))) or not(os.path.isfile(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,'y'))): #check if cutout exists from that transient name in dir...
                 #It would be simpler maybe to just go around the data model, make a dictionary for the images in the cutout folder and grab them from there...
                     transient_dictionary.pop(i) #if I don't have the image in the data model, drop that transient, wait until the other cron does its job.
-            
+ 
             #print('attempting to create model')
             mymodel = create_model_groundup_decay_ultimate(NB_BINS)
             #print('attempting to load model')
             mymodel.load_weights(model_filepath)
-            
+			
             #first do a modulo to find how many 1000's exist in the transient dictionary
             outer_loop_how_many = len(transient_dictionary)//1000
             remainder_how_many = len(transient_dictionary)%1000
@@ -437,7 +440,7 @@ class YSE(CronJobBase):
                         DATA[inner_index,:,:,j] = np.load(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,F))
                     RA.append(T.host.ra)
                     DEC.append(T.host.dec)
-                
+
                 #Next run model and place into posterior
                 Extinctions = m.ebv(np.array(RA),np.array(DEC))
                 posterior[outer_index*1000:(outer_index+1)*1000] = mymodel.predict([DATA,Extinctions])
@@ -461,7 +464,7 @@ class YSE(CronJobBase):
             Extinctions = m.ebv(np.array(RA),np.array(DEC))
             posterior[outer_index*1000:(outer_index+1)*1000] = mymodel.predict([DATA,Extinctions])
             #Now posterior should be full!
-            
+			
             #print('done')
             point_estimates = np.sum(range_z*posterior,1)
                 
