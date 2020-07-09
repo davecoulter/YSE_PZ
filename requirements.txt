@@ -15,7 +15,7 @@ coreapi==2.3.3
 coreschema==0.0.4
 cryptography==2.1.4
 cycler==0.10.0
-Django==2.0.4
+Django==2.2.13
 django-autoslug
 django-bootstrap3==10.0.1
 django-filter==1.1.0
@@ -27,7 +27,7 @@ djangorestframework==3.7.3
 # extinction==0.3.0
 healpy==1.12.4
 html5lib==1.0.1
-httpie==0.9.9
+httpie==1.0.3
 idna==2.6
 #iminuit==1.2
 itypes==1.1.0
@@ -43,7 +43,7 @@ mpld3
 optional-django==0.1.0
 packaging==17.1
 # photutils==0.4
-Pillow==5.0.0
+Pillow==6.2.0
 pluggy==0.6.0
 py==1.5.2
 pycparser==2.18
