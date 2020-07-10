@@ -197,7 +197,8 @@ class ForcedPhot(CronJobBase):
 		except Exception as e:
 			print(e)
 			exc_type, exc_obj, exc_tb = sys.exc_info()
-			print("""Forced phot cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno))
+			print("""Forced phot cron failed with error %s at line number %s"""%(
+				e,exc_tb.tb_lineno))
 			nsn = 0
 			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
 			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
@@ -270,7 +271,7 @@ class ForcedPhot(CronJobBase):
 		# candidate transients
 		min_date = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.options.max_time_minutes)
 		nowmjd = date_to_mjd(datetime.datetime.utcnow())
-		#transient_name='10EYSEdqr'
+		#transient_name='2020iuy'
 		if transient_name is None:
 			transients = Transient.objects.filter(
 				created_date__gte=min_date).filter(~Q(tags__name='YSE')).order_by('-created_date')

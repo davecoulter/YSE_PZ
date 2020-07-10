@@ -20,6 +20,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 from io import open as iopen
+import datetime
 
 psst_image_url = "https://star.pst.qub.ac.uk/sne/ps13pi/site_media/images/data/ps13pi"
 yse_image_url = "https://star.pst.qub.ac.uk/sne/ps1yse/site_media/images/data/ps1yse"
@@ -428,6 +429,7 @@ class YSE(CronJobBase):
 
 	def do(self):
 
+		print("starting YSE ingest at {}".format(datetime.datetime.now().isoformat()))
 		usagestring = "TNS_Synopsis.py <options>"
 
 		tstart = time.time()
@@ -541,14 +543,18 @@ class YSE(CronJobBase):
 			nsn_single = 50
 
 			nowmjd = Time.now().mjd
-			summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
+			summary = summary[nowmjd - summary['mjd_obs'] < 20] #self.options.max_days]
+			import pdb; pdb.set_trace()
 			while nsn_single == 50:
-				transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=50)
-				print('uploading %i transients'%nsn_single)
-				self.send_data(transientdict)
-				self.copy_stamps(transientdict)
-				nsn += 50
-				
+				if '10EYSEdys' in summary['local_designation'][nsn:nsn+50]:
+					transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=50)
+					print('uploading %i transients'%nsn_single)
+					self.send_data(transientdict)
+					self.copy_stamps(transientdict)
+					nsn += 50
+				else:
+					nsn += 50
+					
 		return nsn
 		
 	def parse_data(self,summary,lc,transient_idx=0,max_transients=None):
@@ -564,8 +570,6 @@ class YSE(CronJobBase):
 			#	nsn += 1
 			#	continue
 			#print(s['local_designation'])
-			#if s['local_designation'] == '10EYSEdxa':
-			#	import pdb; pdb.set_trace()
 			
 			r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id']) #,
 			#				 auth=HTTPDigestAuth(self.options.qubuser,self.options.qubpass))
@@ -717,6 +721,9 @@ class YSE(CronJobBase):
 			if photometrydict_ztf is not None:
 				PhotUploadAll['ZTF'] = photometrydict_ztf
 			print(s['local_designation'])
+			if s['local_designation'] == '10EYSEdys':
+				import pdb; pdb.set_trace()
+
 			nsn += 1
 
 		return transientdict,nsn

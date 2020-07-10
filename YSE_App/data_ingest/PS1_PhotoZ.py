@@ -387,7 +387,7 @@ class YSE(CronJobBase):
             print('Entered the photo_z Pan-Starrs CNN cron')        
             #save time b/c the other cron jobs print a time for completion
                 
-            m = sfdmap.SFDMap(mapdir=djangoSettings.STATIC_ROOT+'/sfddata-master/sfddata-master')
+            m = sfdmap.SFDMap(mapdir=djangoSettings.STATIC_ROOT+'/sfddata-master')
             model_filepath = djangoSettings.STATIC_ROOT+'PS_7_01_ultimate.hdf5' #fill this in with one
                 
             NB_BINS = 270
@@ -427,7 +427,6 @@ class YSE(CronJobBase):
 
             #create a holding array for predictions
             posterior = np.zeros((len(whats_left),NB_BINS)) #(how many unique hosts,how many bins of discrete redshift)
-
             for outer_index in range(outer_loop_how_many):
                 use_these_indices = whats_left[outer_index*Number:(outer_index+1)*Number]
                 #now reset the data array
@@ -436,7 +435,7 @@ class YSE(CronJobBase):
                 RA = []
                 DEC = []
                 for inner_index,value in enumerate(use_these_indices):
-                    T = transient_dictionary[use_these_indices[value]]
+                    T = transient_dictionary[value]
                     ID = T.name
                     for j,F in enumerate(['g','r','i','z','y']):
                         DATA[inner_index,:,:,j] = np.load(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,F))
@@ -449,14 +448,14 @@ class YSE(CronJobBase):
 
             #next use the remainder
 
-            use_these_indices = whats_left[((outer_loop_how_many+1)*Number):((outer_loop_how_many+1)*Number)+remainder_how_many]
+            use_these_indices = whats_left[((outer_loop_how_many)*Number):((outer_loop_how_many)*Number)+remainder_how_many]
             #Reset Data, only create array large enough to hold whats left
             DATA = np.zeros((len(use_these_indices),104,104,5))
             #reset ra,dec
             RA = []
             DEC = []
             for inner_index,value in enumerate(use_these_indices):
-                T = transient_dictionary(use_these_indices[value])
+                T = transient_dictionary[value]
                 ID = T.name
                 for j,F in enumerate(['g','r','i','z','y']):
                     DATA[inner_index,:,:,j] = np.load(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,F))
@@ -464,15 +463,15 @@ class YSE(CronJobBase):
                 DEC.append(T.host.dec)
 
             Extinctions = m.ebv(np.array(RA),np.array(DEC))
-            posterior[outer_index*1000:(outer_index+1)*1000] = mymodel.predict([DATA,Extinctions])
+            posterior[((outer_loop_how_many)*Number):((outer_loop_how_many)*Number)+remainder_how_many] = mymodel.predict([DATA,Extinctions])
             #Now posterior should be full!
-            
+
             #print('done')
             point_estimates = np.sum(range_z*posterior,1)
                 
             error = np.ones(len(point_estimates))
             for i in range(len(point_estimates)):
-                error[i] = np.std(np.random.choice(a=range_z,size=1000,p=posterior[i,:],replace=True)) #this could be parallized i'm sure
+                error[i] = np.std(np.random.choice(a=range_z,size=1000,p=posterior[i,:]/np.sum(posterior[i,:]),replace=True)) #this could be parallized i'm sure
                 
             for i,value in enumerate(list(transient_dictionary.keys())):
                 T = transient_dictionary[value]
