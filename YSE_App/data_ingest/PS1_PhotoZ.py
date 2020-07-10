@@ -1,3 +1,6 @@
+
+
+#####################################################################################
 from django_cron import CronJobBase, Schedule
 from YSE_App.models.transient_models import *
 from YSE_App.common.alert import sendemail
@@ -383,7 +386,7 @@ class YSE(CronJobBase):
             from django.db.models import Q #HAS To Remain Here, I dunno why
             print('Entered the photo_z Pan-Starrs CNN cron')        
             #save time b/c the other cron jobs print a time for completion
-            
+                
             m = sfdmap.SFDMap(mapdir=djangoSettings.STATIC_ROOT+'/sfddata-master/sfddata-master')
             model_filepath = djangoSettings.STATIC_ROOT+'PS_7_01_ultimate.hdf5' #fill this in with one
                 
@@ -404,29 +407,66 @@ class YSE(CronJobBase):
             #print('Original length of Transients: ',len(transients))
             for i,T in enumerate(transients): #get rid of fake entries, or entries not yet classified or given a PS cutout
                 ID = T.name
-                if not(os.path.isfile(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,'g'))): #check if cutout exists from that transient name in dir...
+                if not(os.path.isfile(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,'g'))) or not(os.path.isfile(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,'r'))) or not(os.path.isfile(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,'i'))) or not(os.path.isfile(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,'z'))) or not(os.path.isfile(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,'y'))): #check if cutout exists from that transient name in dir...
                 #It would be simpler maybe to just go around the data model, make a dictionary for the images in the cutout folder and grab them from there...
                     transient_dictionary.pop(i) #if I don't have the image in the data model, drop that transient, wait until the other cron does its job.
-            RA=[]
-            DEC=[]
-            DATA = np.zeros((len(list(transient_dictionary.keys())),104,104,5))
-            for i in range(len(list(transient_dictionary.keys()))):
-                T = transient_dictionary[i]
-                ID = T.name
-                for j,F in enumerate(['g','r','i','z','y']): 
-                    DATA[i,:,:,j] = np.load(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,F)) #this may have a differnt name in the data model
-                RA.append(T.host.ra)
-                DEC.append(T.host.dec)
-            #print('data shape: ', np.shape(DATA))
-            #Next load define the model,and load the weights (DONT COMPILE!)
-            #print('attempting to get extinctions')
-            Extinctions = m.ebv(np.array(RA),np.array(DEC))
+ 
             #print('attempting to create model')
             mymodel = create_model_groundup_decay_ultimate(NB_BINS)
             #print('attempting to load model')
             mymodel.load_weights(model_filepath)
-            #print('attempting predictions')
-            posterior = mymodel.predict([DATA,Extinctions])
+            
+            Number = 1000 #!!!
+            
+            #first do a modulo to find how many 1000's exist in the transient dictionary
+            outer_loop_how_many = len(transient_dictionary)//Number
+            remainder_how_many = len(transient_dictionary)%Number
+
+            #next take these numbers to make a list of the keys to transient_dictionary, then query parts of that list in turn...
+            whats_left = list(transient_dictionary.keys()) #list holding the keys to transient after removing bad entries...
+
+            #create a holding array for predictions
+            posterior = np.zeros((len(whats_left),NB_BINS)) #(how many unique hosts,how many bins of discrete redshift)
+
+            for outer_index in range(outer_loop_how_many):
+                use_these_indices = whats_left[outer_index*Number:(outer_index+1)*Number]
+                #now reset the data array
+                DATA = np.zeros((Number,104,104,5)) #safe because if not 1000 would have //1000 = 0 and range(0) is empty []
+                #Now reset the ra and dec lists so I can grab more extinctions
+                RA = []
+                DEC = []
+                for inner_index,value in enumerate(use_these_indices):
+                    T = transient_dictionary[use_these_indices[value]]
+                    ID = T.name
+                    for j,F in enumerate(['g','r','i','z','y']):
+                        DATA[inner_index,:,:,j] = np.load(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,F))
+                    RA.append(T.host.ra)
+                    DEC.append(T.host.dec)
+
+                #Next run model and place into posterior
+                Extinctions = m.ebv(np.array(RA),np.array(DEC))
+                posterior[outer_index*Number:(outer_index+1)*Number] = mymodel.predict([DATA,Extinctions])
+
+            #next use the remainder
+
+            use_these_indices = whats_left[((outer_loop_how_many+1)*Number):((outer_loop_how_many+1)*Number)+remainder_how_many]
+            #Reset Data, only create array large enough to hold whats left
+            DATA = np.zeros((len(use_these_indices),104,104,5))
+            #reset ra,dec
+            RA = []
+            DEC = []
+            for inner_index,value in enumerate(use_these_indices):
+                T = transient_dictionary(use_these_indices[value])
+                ID = T.name
+                for j,F in enumerate(['g','r','i','z','y']):
+                    DATA[inner_index,:,:,j] = np.load(djangoSettings.STATIC_ROOT+'/cutouts/cutout_{}_{}.npy'.format(ID,F))
+                RA.append(T.host.ra)
+                DEC.append(T.host.dec)
+
+            Extinctions = m.ebv(np.array(RA),np.array(DEC))
+            posterior[outer_index*1000:(outer_index+1)*1000] = mymodel.predict([DATA,Extinctions])
+            #Now posterior should be full!
+            
             #print('done')
             point_estimates = np.sum(range_z*posterior,1)
                 
