@@ -386,7 +386,7 @@ class YSE(CronJobBase):
             from django.db.models import Q #HAS To Remain Here, I dunno why
             print('Entered the photo_z Pan-Starrs CNN cron')        
             #save time b/c the other cron jobs print a time for completion
-            
+                
             m = sfdmap.SFDMap(mapdir=djangoSettings.STATIC_ROOT+'/sfddata-master/sfddata-master')
             model_filepath = djangoSettings.STATIC_ROOT+'PS_7_01_ultimate.hdf5' #fill this in with one
                 
@@ -415,10 +415,12 @@ class YSE(CronJobBase):
             mymodel = create_model_groundup_decay_ultimate(NB_BINS)
             #print('attempting to load model')
             mymodel.load_weights(model_filepath)
-			
+            
+            Number = 1000 #!!!
+            
             #first do a modulo to find how many 1000's exist in the transient dictionary
-            outer_loop_how_many = len(transient_dictionary)//1000
-            remainder_how_many = len(transient_dictionary)%1000
+            outer_loop_how_many = len(transient_dictionary)//Number
+            remainder_how_many = len(transient_dictionary)%Number
 
             #next take these numbers to make a list of the keys to transient_dictionary, then query parts of that list in turn...
             whats_left = list(transient_dictionary.keys()) #list holding the keys to transient after removing bad entries...
@@ -427,9 +429,9 @@ class YSE(CronJobBase):
             posterior = np.zeros((len(whats_left),NB_BINS)) #(how many unique hosts,how many bins of discrete redshift)
 
             for outer_index in range(outer_loop_how_many):
-                use_these_indices = whats_left[outer_index*1000:(outer_index+1)*1000]
+                use_these_indices = whats_left[outer_index*Number:(outer_index+1)*Number]
                 #now reset the data array
-                DATA = np.zeros((1000,104,104,5)) #safe because if not 1000 would have //1000 = 0 and range(0) is empty []
+                DATA = np.zeros((Number,104,104,5)) #safe because if not 1000 would have //1000 = 0 and range(0) is empty []
                 #Now reset the ra and dec lists so I can grab more extinctions
                 RA = []
                 DEC = []
@@ -443,11 +445,11 @@ class YSE(CronJobBase):
 
                 #Next run model and place into posterior
                 Extinctions = m.ebv(np.array(RA),np.array(DEC))
-                posterior[outer_index*1000:(outer_index+1)*1000] = mymodel.predict([DATA,Extinctions])
+                posterior[outer_index*Number:(outer_index+1)*Number] = mymodel.predict([DATA,Extinctions])
 
             #next use the remainder
 
-            use_these_indices = whats_left[((outer_index+1)*1000):((outer_index+1)*1000)+remainder_how_many]
+            use_these_indices = whats_left[((outer_loop_how_many+1)*Number):((outer_loop_how_many+1)*Number)+remainder_how_many]
             #Reset Data, only create array large enough to hold whats left
             DATA = np.zeros((len(use_these_indices),104,104,5))
             #reset ra,dec
@@ -464,7 +466,7 @@ class YSE(CronJobBase):
             Extinctions = m.ebv(np.array(RA),np.array(DEC))
             posterior[outer_index*1000:(outer_index+1)*1000] = mymodel.predict([DATA,Extinctions])
             #Now posterior should be full!
-			
+            
             #print('done')
             point_estimates = np.sum(range_z*posterior,1)
                 
