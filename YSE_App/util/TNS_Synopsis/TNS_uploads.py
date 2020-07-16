@@ -584,7 +584,7 @@ class processTNS:
 			
 		return hostdict,hostcoords
 
-	def UpdateFromTNS(self,ndays=None,allowed_statuses=['New','Following','Watch','FollowupRequested'],doTNS=True):
+	def UpdateFromTNS(self,ndays=None,allowed_statuses=['New','Following','Watch','FollowupRequested','Interesting'],doTNS=True):
 
 		if ndays:
 			date_format = '%Y-%m-%d'

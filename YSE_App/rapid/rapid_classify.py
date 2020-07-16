@@ -20,6 +20,7 @@ def do(debug=False):
 	transients_to_classify = \
 		Transient.objects.filter(Q(status__name = 'New') |
 								 Q(status__name = 'Watch') |
+								 Q(status__name = 'Interesting') |
 								 Q(status__name = 'FollowupRequested') |
 								 Q(status__name = 'Following'))
 

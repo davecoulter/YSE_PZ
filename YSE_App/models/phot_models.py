@@ -18,7 +18,8 @@ class Photometry(BaseModel):
 	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
 	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
 	groups = models.ManyToManyField(Group, blank=True)
-		
+	reference = models.CharField(max_length=512, null=True, blank=True)
+
 
 class TransientPhotometry(Photometry):
 	### Entity relationships ###

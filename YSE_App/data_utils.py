@@ -1164,8 +1164,9 @@ def get_rising_transients_box(request, ra, dec, ra_width, dec_width):
 	qs = recent_rising_transient_queryset(ndays=5)
 	ramin,ramax,decmin,decmax = getRADecBox(float(ra),float(dec),float(ra_width),float(dec_width))
 	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax).filter(~Q(status__name='Ignore')).filter(
-		Q(status__name='New') | Q(status__name='Watch') | Q(status__name='FollowupRequested') | Q(status__name='Following')
-		| ~Q(tags__name='YSE')).filter(disc_date__gt=datetime.datetime.utcnow()-datetime.timedelta(10))
+		Q(status__name='New') | Q(status__name='Watch') | Q(status__name='FollowupRequested') |
+		Q(status__name='Following') | Q(status__name='Interesting') |
+		~Q(tags__name='YSE')).filter(disc_date__gt=datetime.datetime.utcnow()-datetime.timedelta(10))
 	
 	serialized_transients = []
 	for t in qs:
@@ -1186,7 +1187,8 @@ def get_new_transients_box(request, ra, dec, ra_width, dec_width):
 	qs = Transient.objects.all() #filter(disc_date__gte=datetime.datetime.utcnow()-datetime.timedelta(5)) #.filter(~Q(TNS_spec_class__isnull=True))
 	ramin,ramax,decmin,decmax = getRADecBox(float(ra),float(dec),float(ra_width),float(dec_width))
 	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax).filter(
-		Q(status__name='Watch') | Q(status__name='FollowupRequested') | Q(status__name='Following') | ~Q(tags__name='YSE')).filter(disc_date__gt=datetime.datetime.utcnow()-datetime.timedelta(10))
+		Q(status__name='Watch') | Q(status__name='FollowupRequested') | Q(status__name='Following') | Q(status__name='Interesting') |
+		~Q(tags__name='YSE')).filter(disc_date__gt=datetime.datetime.utcnow()-datetime.timedelta(10))
 	
 	serialized_transients = []
 	for t in qs:
@@ -1200,6 +1202,27 @@ def get_new_transients_box(request, ra, dec, ra_width, dec_width):
 				   "transients":serialized_transients }
 
 	return JsonResponse(return_dict)
+
+@login_or_basic_auth_required		
+def get_all_transients_box(request, ra, dec, ra_width, dec_width):
+
+	qs = Transient.objects.all() #filter(disc_date__gte=datetime.datetime.utcnow()-datetime.timedelta(5)) #.filter(~Q(TNS_spec_class__isnull=True))
+	ramin,ramax,decmin,decmax = getRADecBox(float(ra),float(dec),float(ra_width),float(dec_width))
+	qs = qs.filter(ra__gt=ramin).filter(ra__lt=ramax).filter(dec__gt=decmin).filter(dec__lt=decmax)
+	
+	serialized_transients = []
+	for t in qs:
+		serialized_transients.append(
+			{"transient_ra":t.ra,"transient_dec":t.dec,
+			 "transient_name":t.name,"transient_id":t.id}
+		)
+
+	return_dict = {"requested ra":float(ra),
+				   "requested dec":float(dec),
+				   "transients":serialized_transients }
+
+	return JsonResponse(return_dict)
+
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -1224,6 +1247,43 @@ def query_api(request,query_name):
 
 	serialized_transients = []
 	for t in transients:
+		serialized_transients.append(
+			{"transient_ra":t.ra,"transient_dec":t.dec,
+			 "transient_name":t.name,"transient_id":t.id}
+		)
+
+	return_dict = {"transients":serialized_transients }
+		
+	return JsonResponse(return_dict)
+
+@csrf_exempt
+@login_or_basic_auth_required
+def box_search(request,ra,dec,radius):
+
+	qs = None
+
+	ra,dec,radius = float(ra),float(dec),float(radius)
+	
+	d = float(dec)*np.pi/180
+	width_corr = float(radius)/np.abs(np.cos(d))
+
+	ra_offset = cd.Angle(width_corr, unit=u.deg)
+	dec_offset = cd.Angle(radius, unit=u.deg)
+
+	query= """SELECT t.name, ACOS(SIN(t.dec*3.14159/180)*SIN(%s*3.14159/180)+COS(t.dec*3.14159/180)*COS(%s*3.14159/180)*COS((t.ra-%s)*3.14159/180))*180/3.14159 as sep
+FROM YSE_App_transient t
+WHERE t.ra > %s AND t.ra < %s AND t.dec > %s AND t.dec < %s
+HAVING sep < 3.3
+""" % (
+	dec, dec, ra, ra-radius,ra+radius,
+	dec-radius,dec+radius)
+	cursor = connections['explorer'].cursor()
+	cursor.execute(query, ())
+
+	qs = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(name__in=(x[0] for x in cursor))
+
+	serialized_transients = []
+	for t in qs.filter(Q(tags__name='YSE')):
 		serialized_transients.append(
 			{"transient_ra":t.ra,"transient_dec":t.dec,
 			 "transient_name":t.name,"transient_id":t.id}

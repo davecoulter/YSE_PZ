@@ -89,73 +89,26 @@ def auth_logout(request):
 
 @login_required
 def dashboard(request):
-	new_transients = None
-	inprocess_transients = None
-	new_k2_transients = None
-	new_notk2_transients = None
-	watch_transients = None
-	following_transients = None
-	followup_requested_transients = None
-	finishedfollowing_transients = None
+
+	transient_categories = []
+	for title,statusname in zip(['New Transients','Followup Requested','Following','Interesting','Watch','Finished Following','Needs Template'],
+								['New','FollowupRequested','Following','Interesting','Watch','FollowupFinished','NeedsTemplate']):
+		status = TransientStatus.objects.filter(name=statusname).order_by('-modified_date')
+		if len(status) == 1:
+			transients = Transient.objects.filter(status=status[0]).order_by('-disc_date')
+		else:
+			transients = Transient.objects.filter(status=None).order_by('-disc_date')
+		transientfilter = TransientFilter(request.GET, queryset=transients,prefix=statusname.lower())
+		table = TransientTable(transientfilter.qs,prefix=statusname.lower())
+		RequestConfig(request, paginate={'per_page': 10}).configure(table)
+		transient_categories += [(table,title,statusname.lower(),transientfilter),]
 	
-	status_new = TransientStatus.objects.filter(name='New').order_by('-modified_date')
-	if len(status_new) == 1:
-		new_transients = Transient.objects.filter(status=status_new[0]).order_by('-disc_date')
-	newtransientfilter = TransientFilter(request.GET, queryset=new_transients,prefix='new')
-	new_table = NewTransientTable(newtransientfilter.qs,prefix='new')
-	RequestConfig(request, paginate={'per_page': 10}).configure(new_table)
-
-	status_watch = TransientStatus.objects.filter(name='Watch').order_by('-modified_date')
-	if len(status_watch) == 1:
-		watch_transients = Transient.objects.filter(status=status_watch[0]).order_by('-disc_date')
-	watchtransientfilter = TransientFilter(request.GET, queryset=watch_transients,prefix='watch')
-	watch_table = TransientTable(watchtransientfilter.qs,prefix='watch')
-	RequestConfig(request, paginate={'per_page': 10}).configure(watch_table)
-	
-	status_followrequest = TransientStatus.objects.filter(name='FollowupRequested').order_by('-modified_date')
-	if len(status_followrequest) == 1:
-		followup_requested_transients = Transient.objects.filter(status=status_followrequest[0]).order_by('-disc_date')
-	followrequesttransientfilter = TransientFilter(request.GET, queryset=followup_requested_transients,prefix='followrequest')
-	follow_request_table = TransientTable(followrequesttransientfilter.qs,prefix='followrequest')
-	RequestConfig(request, paginate={'per_page': 10}).configure(follow_request_table)
-		
-	status_following = TransientStatus.objects.filter(name='Following').order_by('-modified_date')
-	if len(status_following) == 1:
-		following_transients = Transient.objects.filter(status=status_following[0]).order_by('-disc_date')
-	followingtransientfilter = TransientFilter(request.GET, queryset=following_transients,prefix='following')
-	following_table = TransientTable(followingtransientfilter.qs,prefix='following')
-	RequestConfig(request, paginate={'per_page': 10}).configure(following_table)
-
-	status_finishedfollowing = TransientStatus.objects.filter(name='FollowupFinished').order_by('-modified_date')
-	if len(status_finishedfollowing) == 1:
-		finishedfollowing_transients = Transient.objects.filter(status=status_finishedfollowing[0]).order_by('-disc_date')
-	finishedfollowingtransientfilter = TransientFilter(request.GET, queryset=finishedfollowing_transients,prefix='finishedfollowing')
-	finished_following_table = TransientTable(finishedfollowingtransientfilter.qs,prefix='finishedfollowing')
-	RequestConfig(request, paginate={'per_page': 10}).configure(finished_following_table)
-
-	status_needs_template = TransientStatus.objects.filter(name='NeedsTemplate').order_by('-modified_date')
-	if len(status_needs_template) == 1:
-		needs_template_transients = Transient.objects.filter(status=status_needs_template[0]).order_by('-disc_date')
-	else:
-		needs_template_transients = Transient.objects.filter(status=None).order_by('-disc_date')
-	needs_templatetransientfilter = TransientFilter(request.GET, queryset=needs_template_transients,prefix='needstemplate')
-	needs_template_table = TransientTable(needs_templatetransientfilter.qs,prefix='needstemplate')
-	RequestConfig(request, paginate={'per_page': 10}).configure(needs_template_table)
-
-	
-	transient_categories = [(new_table,'New Transients','new',newtransientfilter),
-							(follow_request_table,'Followup Requested','followrequest',followrequesttransientfilter),
-							(following_table,'Following','following',followingtransientfilter),
-							(watch_table,'Watch','watch',watchtransientfilter),
-							(finished_following_table,'Finished Following','finishedfollowing',finishedfollowingtransientfilter),
-							(needs_template_table,'Needs Template','needstemplate',needs_templatetransientfilter)]
-
 	if request.META['QUERY_STRING']:
 		anchor = request.META['QUERY_STRING'].split('-')[0]
 	else: anchor = ''
 	context = {
 		'transient_categories':transient_categories,
-		'all_transient_statuses':TransientStatus.objects.all(),
+		'all_transient_statuses':TransientStatus.objects.order_by('name'),
 		'anchor':anchor,
 	}
 
@@ -218,7 +171,8 @@ def transient_summary(request,status_or_query_name,
 	transient_status_followrequest = TransientStatus.objects.get(name="FollowupRequested")
 	transient_status_watch = TransientStatus.objects.get(name="Watch")
 	transient_status_ignore = TransientStatus.objects.get(name="Ignore")
-
+	transient_status_interesting = TransientStatus.objects.get(name="Interesting")
+	
 	#all_simple_followups = SimpleTransientSpecRequest.objects.all()
 
 	#transients_with_followup = SimpleTransientFollowupRequest.objects.all().values('transient__name').distinct()
@@ -290,6 +244,7 @@ SELECT pd.mag
 		'transient_status_follow': transient_status_follow,
 		'transient_status_followrequest': transient_status_followrequest,
 		'transient_status_watch': transient_status_watch,
+		'transient_status_interesting': transient_status_interesting,
 		'transient_status_ignore': transient_status_ignore,
 		'transient_followup_form': transient_followup_form,
 		'anchor':anchor,
@@ -798,6 +753,7 @@ def transient_detail(request, slug):
 		all_transient_statuses = TransientStatus.objects.all()
 		transient_status_follow = TransientStatus.objects.get(name="Following")
 		transient_status_watch = TransientStatus.objects.get(name="Watch")
+		transient_status_interesting = TransientStatus.objects.get(name="Interesting")
 		transient_status_ignore = TransientStatus.objects.get(name="Ignore")
 		transient_comment_form = TransientCommentForm()
 
@@ -880,6 +836,7 @@ def transient_detail(request, slug):
 			'transient_status_follow': transient_status_follow,
 			'transient_status_watch': transient_status_watch,
 			'transient_status_ignore': transient_status_ignore,
+			'transient_status_interesting': transient_status_interesting,
 			'logs':logs,
 			'all_transient_tags': all_transient_tags,
 			'assigned_transient_tags': assigned_transient_tags,

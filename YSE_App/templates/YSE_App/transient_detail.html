@@ -84,6 +84,7 @@
 													<div class="btn-group-horizontal">
 														<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_follow.id }}" class="transientStatusChange btn btn-primary">{{ transient_status_follow.name }}</button>
 														<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_watch.id }}" class="transientStatusChange btn btn-warning">{{ transient_status_watch.name }}</button>
+														<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_interesting.id }}" class="transientStatusChange btn btn-success">{{ transient_status_interesting.name }}</button>
 														<button style="margin-bottom:5px;" type="button" data-status_id="{{ transient_status_ignore.id }}" class="transientStatusChange btn btn-danger">{{ transient_status_ignore.name }}</button>
 														<div class="btn-group">
 															<button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
@@ -230,6 +231,9 @@
 													{% elif transient.host.photo_z %}
 														<p class="text-muted">Lum. Dist. = {{ transient.host.photo_z|DL }} Mpc</p>
 														<p class="text-muted">&mu; = {{ transient.host.photo_z|distmod }}</p>
+													{% elif transient.host.photo_z_PSCNN %}
+														<p class="text-muted">Lum. Dist. = {{ transient.host.photo_z_PSCNN|DL }} Mpc</p>
+														<p class="text-muted">&mu; = {{ transient.host.photo_z_PSCNN|distmod }}</p>
 													{% else %}
 														<p class="text-muted">Unknown</p>
 													{% endif %}
@@ -354,14 +358,32 @@
 									<div class="row">
 										<div class="col-xs-4">
 											<div class="form-group">
-												<strong>Photo-z</strong>
+												<strong>Photo-z (SDSS)</strong>
 												<p class="text-muted">
 													{% if transient.host %}
 														{% if transient.host.photo_z %}
 															{{ transient.host.photo_z|floatformat:3 }} 
 
 															{% if transient.host.photo_z_err %}
-																+/- {{ transient.host.photo_z_err }}
+																+/- {{ transient.host.photo_z_err|floatformat:3 }}
+															{% endif %}
+														{% endif %}
+													{% else %}
+														Unknown
+													{% endif %}
+												</p>
+										</div>
+									</div>
+									<div class="col-xs-4">
+											<div class="form-group">
+												<strong>Photo-z (Pan-STARRS CNN)</strong>
+												<p class="text-muted">
+													{% if transient.host %}
+														{% if transient.host.photo_z_PSCNN %}
+															{{ transient.host.photo_z_PSCNN|floatformat:3 }} 
+
+															{% if transient.host.photo_z_err_PSCNN %}
+																+/- {{ transient.host.photo_z_err_PSCNN|floatformat:3 }}
 															{% endif %}
 														{% endif %}
 													{% else %}
