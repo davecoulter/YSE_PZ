@@ -602,7 +602,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 		#if p.data_quality:
 		#	continue			
 		
-		if (p.flux and p.mag and p.flux/p.flux_err > 3) or (not p.flux and p.mag):
+		if (p.flux and p.mag and p.flux_err and p.flux/p.flux_err > 3) or (not p.flux and p.mag):
 			if p.discovery_point:
 				limmjd = dbmjd-30
 				
@@ -859,7 +859,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		#if p.data_quality:
 		#	continue			
 
-		if (p.flux and p.mag and p.flux/p.flux_err > 3) or (not p.flux and p.mag):
+		if (p.flux and p.mag and p.flux_err and p.flux/p.flux_err > 3) or (not p.flux and p.mag):
 			if p.discovery_point:
 				limmjd = dbmjd-30
 				
