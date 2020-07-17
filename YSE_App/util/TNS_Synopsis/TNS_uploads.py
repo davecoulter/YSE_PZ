@@ -94,7 +94,7 @@ class processTNS:
 
 		# The basics
 		parser.add_argument('-v', '--verbose', action="count", dest="verbose",default=1)
-		parser.add_argument('--clobber', default=True, action="store_true",
+		parser.add_argument('--clobber', default=False, action="store_true",
 							help='clobber output file')
 		parser.add_argument('-s','--settingsfile', default=None, type=str,
 							help='settings file (login/password info)')
