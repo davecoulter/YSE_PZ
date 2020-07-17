@@ -94,7 +94,7 @@ class processTNS:
 
 		# The basics
 		parser.add_argument('-v', '--verbose', action="count", dest="verbose",default=1)
-		parser.add_argument('--clobber', default=False, action="store_true",
+		parser.add_argument('--clobber', default=True, action="store_true",
 							help='clobber output file')
 		parser.add_argument('-s','--settingsfile', default=None, type=str,
 							help='settings file (login/password info)')
@@ -437,15 +437,16 @@ class processTNS:
 			try:
 				dlfile = requests.get(s).text
 			except: continue
-			fout = open('spec_tns_upload.txt','w')
-			print('# wavelength flux',file=fout)
-			print('# instrument %s'%si,file=fout)
-			print('# obs_date %s'%so.replace(' ','T'),file=fout)
-			print('# obs_group %s'%sog,file=fout)
-			print('# ra %s'%sc.ra.deg,file=fout)
-			print('# dec %s'%sc.dec.deg,file=fout)
-			for line in dlfile.split('\n'):
-				print(line.replace('\n',''),file=fout)
+			with open('spec_tns_upload.txt','w') as fout:
+				print('# wavelength flux',file=fout)
+				print('# instrument %s'%si,file=fout)
+				print('# obs_date %s'%so.replace(' ','T'),file=fout)
+				print('# obs_group %s'%sog,file=fout)
+				print('# ra %s'%sc.ra.deg,file=fout)
+				print('# dec %s'%sc.dec.deg,file=fout)
+				for line in dlfile.split('\n'):
+					print(line.replace('\n',''),file=fout)
+
 			fin = open('spec_tns_upload.txt')
 			count = 0
 			for line in fin:
@@ -493,7 +494,7 @@ class processTNS:
 									'flux_err':None}
 						SpecData[w] = SpecDict
 
-			os.system('rm spec_tns_upload.txt')
+			#os.system('rm spec_tns_upload.txt')
 			Spectrum['specdata'] = SpecData
 			Spectrum['instrument'] = si
 			Spectrum['obs_date'] = so

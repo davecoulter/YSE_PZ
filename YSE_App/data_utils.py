@@ -823,11 +823,11 @@ def add_transient_spec_util(specdict,transient,user):
 		if not len(transientspec):
 			transientspec = TransientSpectrum.objects.create(**spectrum_copy)
 		else:
-			transientspec = transientspec[0]
 			if specdict['clobber']:
 				transientspec.update(**spectrum_copy)
-				transientspec.save()
-
+				#transientspec.save()
+			transientspec = transientspec[0]
+			
 		if len(allgroups):
 			for group in allgroups:
 				if group not in transientspec.groups.all():

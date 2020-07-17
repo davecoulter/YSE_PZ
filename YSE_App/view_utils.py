@@ -1431,6 +1431,7 @@ def spectrumplot(request, transient_id):
 	for s in spec:
 		wave += [s.wavelength]
 		flux += [s.flux]
+
 	bottom = np.percentile(flux,5)*0.5; top = np.percentile(flux,95)*1.3
 	if np.percentile(flux,2) < 0:
 		bottom = np.percentile(flux,2)*1.5
