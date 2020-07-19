@@ -115,6 +115,7 @@ class YSE(CronJobBase):
                     try:
                         for i,F in enumerate(['g','r','i','z','y']):
                             fitsurl = geturl(ra=T.host.ra, dec=T.host.dec, size=104, filters=F, format="fits")
+                            if not len(fitsurl): continue
                             fh = fits.open(fitsurl[0])
                             image[:,:,i] = fh[0].data
 
