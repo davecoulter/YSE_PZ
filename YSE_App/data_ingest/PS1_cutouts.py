@@ -141,6 +141,13 @@ class YSE(CronJobBase):
                     except (urllib.error.HTTPError, http.client.IncompleteRead):
                         print('URL error, this cutout may never work?')
                         print('keep track of my error: ', T.name)
+                        continue
+                    except Exception as e:
+                        continue
+                    if np.any(np.isnan(image)): #quick last check that after interpolation something hasn't gone terribly wrong
+                        continue
+                    if np.all(image == 0): #quick check that the try loop failed to weed out missing files so my datarray was never updated
+                        continue
                     
                     
                     #now save the final processed image as a numpy array, except in each band because thats how the image model works.
