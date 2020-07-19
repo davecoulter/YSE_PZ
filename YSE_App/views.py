@@ -99,7 +99,8 @@ def dashboard(request):
 		else:
 			transients = Transient.objects.filter(status=None).order_by('-disc_date')
 		transientfilter = TransientFilter(request.GET, queryset=transients,prefix=statusname.lower())
-		table = TransientTable(transientfilter.qs,prefix=statusname.lower())
+		if statusname == 'New': table = NewTransientTable(transientfilter.qs,prefix=statusname.lower())
+		else: table = TransientTable(transientfilter.qs,prefix=statusname.lower())
 		RequestConfig(request, paginate={'per_page': 10}).configure(table)
 		transient_categories += [(table,title,statusname.lower(),transientfilter),]
 	
