@@ -102,7 +102,7 @@ class YSE(CronJobBase):
             print('Entered the PS cutout Cron')        
             #save time b/c the other cron jobs print a time for completion
             
-            transients = (Transient.objects.filter(Q(host__isnull=False) ))# & Q(something that prevents redownloading!)
+            transients = (Transient.objects.filter(Q(host__isnull=False) & Q(host__dec__gt=-31))# & Q(something that prevents redownloading!)
             #we probably will have to run through the IDs and check what is currently available in th Cutouts folder
                             
             counter = 0 #for local testing don't grab too many or else i'll nuke my computer #!!!
