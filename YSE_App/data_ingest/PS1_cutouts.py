@@ -130,7 +130,11 @@ class YSE(CronJobBase):
                                     x1 = backxx[np.logical_not(array.mask)]  
                                     y1 = backyy[np.logical_not(array.mask)]  
                                     newarr = array[np.logical_not(array.mask)]
-                                    image[:,:,j] = interpolate.griddata((x1, y1), newarr.ravel(), (backxx, backyy), method='cubic')
+                                    try: image[:,:,j] = interpolate.griddata((x1, y1), newarr.ravel(), (backxx, backyy), method='cubic')
+                                    except:
+                                        print('whole image is NaN, this cutout may never work?')
+                                        print('keep track of my error: ', T.name)
+                                        continue
                                     
                         image = (image)/10000.0 #everything in the same range as SDSS
                         image[image>1] = 1 #now max 1 so everything in range -1, 1
