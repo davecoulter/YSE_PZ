@@ -543,17 +543,16 @@ class YSE(CronJobBase):
 			nsn_single = 50
 
 			nowmjd = Time.now().mjd
-			summary = summary[nowmjd - summary['mjd_obs'] < 20] #self.options.max_days]
-			import pdb; pdb.set_trace()
+			summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
 			while nsn_single == 50:
-				if '10EYSEdys' in summary['local_designation'][nsn:nsn+50]:
-					transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=50)
-					print('uploading %i transients'%nsn_single)
-					self.send_data(transientdict)
-					self.copy_stamps(transientdict)
-					nsn += 50
-				else:
-					nsn += 50
+				#if '10EYSEdys' in summary['local_designation'][nsn:nsn+50]:
+				transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=50)
+				print('uploading %i transients'%nsn_single)
+				self.send_data(transientdict)
+				self.copy_stamps(transientdict)
+				nsn += 50
+				#else:
+				#	nsn += 50
 					
 		return nsn
 		

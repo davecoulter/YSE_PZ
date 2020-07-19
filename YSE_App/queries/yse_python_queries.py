@@ -285,4 +285,3 @@ HAVING sep < 3.3
 	qs = Transient.objects.filter(created_date__gte=datetime.datetime.utcnow()-datetime.timedelta(90)).filter(name__in=(x[0] for x in cursor))
 
 	return qs
-

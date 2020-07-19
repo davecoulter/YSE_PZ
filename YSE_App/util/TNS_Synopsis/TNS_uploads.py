@@ -437,15 +437,16 @@ class processTNS:
 			try:
 				dlfile = requests.get(s).text
 			except: continue
-			fout = open('spec_tns_upload.txt','w')
-			print('# wavelength flux',file=fout)
-			print('# instrument %s'%si,file=fout)
-			print('# obs_date %s'%so.replace(' ','T'),file=fout)
-			print('# obs_group %s'%sog,file=fout)
-			print('# ra %s'%sc.ra.deg,file=fout)
-			print('# dec %s'%sc.dec.deg,file=fout)
-			for line in dlfile.split('\n'):
-				print(line.replace('\n',''),file=fout)
+			with open('spec_tns_upload.txt','w') as fout:
+				print('# wavelength flux',file=fout)
+				print('# instrument %s'%si,file=fout)
+				print('# obs_date %s'%so.replace(' ','T'),file=fout)
+				print('# obs_group %s'%sog,file=fout)
+				print('# ra %s'%sc.ra.deg,file=fout)
+				print('# dec %s'%sc.dec.deg,file=fout)
+				for line in dlfile.split('\n'):
+					print(line.replace('\n',''),file=fout)
+
 			fin = open('spec_tns_upload.txt')
 			count = 0
 			for line in fin:
@@ -493,7 +494,7 @@ class processTNS:
 									'flux_err':None}
 						SpecData[w] = SpecDict
 
-			os.system('rm spec_tns_upload.txt')
+			#os.system('rm spec_tns_upload.txt')
 			Spectrum['specdata'] = SpecData
 			Spectrum['instrument'] = si
 			Spectrum['obs_date'] = so
@@ -584,7 +585,7 @@ class processTNS:
 			
 		return hostdict,hostcoords
 
-	def UpdateFromTNS(self,ndays=None,allowed_statuses=['New','Following','Watch','FollowupRequested'],doTNS=True):
+	def UpdateFromTNS(self,ndays=None,allowed_statuses=['New','Following','Watch','FollowupRequested','Interesting'],doTNS=True):
 
 		if ndays:
 			date_format = '%Y-%m-%d'
