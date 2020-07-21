@@ -102,7 +102,7 @@ class YSE(CronJobBase):
             print('Entered the PS cutout Cron')        
             #save time b/c the other cron jobs print a time for completion
             
-            transients = (Transient.objects.filter(Q(host__isnull=False) ))# & Q(something that prevents redownloading!)
+            transients = (Transient.objects.filter(Q(host__isnull=False) & Q(host__dec__gt=-31)))# & Q(something that prevents redownloading!)
             #we probably will have to run through the IDs and check what is currently available in th Cutouts folder
                             
             counter = 0 #for local testing don't grab too many or else i'll nuke my computer #!!!
@@ -115,6 +115,7 @@ class YSE(CronJobBase):
                     try:
                         for i,F in enumerate(['g','r','i','z','y']):
                             fitsurl = geturl(ra=T.host.ra, dec=T.host.dec, size=104, filters=F, format="fits")
+                            if not len(fitsurl): continue
                             fh = fits.open(fitsurl[0])
                             image[:,:,i] = fh[0].data
 
@@ -129,13 +130,24 @@ class YSE(CronJobBase):
                                     x1 = backxx[np.logical_not(array.mask)]  
                                     y1 = backyy[np.logical_not(array.mask)]  
                                     newarr = array[np.logical_not(array.mask)]
-                                    image[:,:,j] = interpolate.griddata((x1, y1), newarr.ravel(), (backxx, backyy), method='cubic')
+                                    try: image[:,:,j] = interpolate.griddata((x1, y1), newarr.ravel(), (backxx, backyy), method='cubic')
+                                    except:
+                                        print('whole image is NaN, this cutout may never work?')
+                                        print('keep track of my error: ', T.name)
+                                        continue
                                     
                         image = (image)/10000.0 #everything in the same range as SDSS
                         image[image>1] = 1 #now max 1 so everything in range -1, 1
                     except (urllib.error.HTTPError, http.client.IncompleteRead):
                         print('URL error, this cutout may never work?')
                         print('keep track of my error: ', T.name)
+                        continue
+                    except Exception as e:
+                        continue
+                    if np.any(np.isnan(image)): #quick last check that after interpolation something hasn't gone terribly wrong
+                        continue
+                    if np.all(image == 0): #quick check that the try loop failed to weed out missing files so my datarray was never updated
+                        continue
                     
                     
                     #now save the final processed image as a numpy array, except in each band because thats how the image model works.

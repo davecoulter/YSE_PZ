@@ -540,17 +540,17 @@ class YSE(CronJobBase):
 			except: continue
 
 			nsn = 0
-			nsn_single = 50
+			nsn_single = 25
 
 			nowmjd = Time.now().mjd
 			summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
-			while nsn_single == 50:
+			while nsn_single == 25:
 				#if '10EYSEdys' in summary['local_designation'][nsn:nsn+50]:
-				transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=50)
+				transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=25)
 				print('uploading %i transients'%nsn_single)
 				self.send_data(transientdict)
 				self.copy_stamps(transientdict)
-				nsn += 50
+				nsn += 25
 				#else:
 				#	nsn += 50
 					
