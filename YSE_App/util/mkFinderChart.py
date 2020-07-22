@@ -187,7 +187,7 @@ RA (to targ): %.3f E, Dec (to targ): %.3f N"""%(i,ra_str,dec_str,m,ro.arcsec,do.
 		
 		# use detection/findstars from photutils to get stars
 		from photutils import DAOStarFinder
-		mean, median, std = sigma_clipped_stats(imdata, sigma=3.0, iters=5)
+		mean, median, std = sigma_clipped_stats(imdata, sigma=3.0)
 		self.skystd = std
 		daofind = DAOStarFinder(fwhm=3.0, threshold=5.*std, roundlo=roundlo, roundhi=roundhi)
 		sources = daofind(imdata - median)
