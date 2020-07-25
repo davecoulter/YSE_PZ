@@ -565,7 +565,7 @@ def yse_observing_calendar(request):
 	}
 	return render(request, 'YSE_App/yse_observing_calendar.html', context)
 
-
+@login_required
 def observing_night(request, telescope, obs_date, pi_name):
 
 	# get follow requests for telescope/date
