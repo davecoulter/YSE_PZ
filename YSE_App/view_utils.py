@@ -1007,7 +1007,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	ax.add_layout(vline)
 	from bokeh.models import Legend
 	legend = Legend(items=legend_it) #, location=(0,-500)) #location="bottom_right")
-	legend.click_policy="mute"
+	legend.click_policy="hide"
 	legend.label_height = 1
 	legend.glyph_height = 20
 	
