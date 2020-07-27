@@ -12,6 +12,10 @@ cosmo = FlatLambdaCDM(70,0.3)
 
 register = template.Library()
 
+@register.filter(name='tags_list')
+def tags_list(tags):
+	return tags.all().values_list('name',flat=True)
+
 @register.filter(name='DL')
 def DL(redshift):
 	return '%.3f'%cosmo.luminosity_distance(redshift).value

@@ -13,8 +13,11 @@
 	
 <!-- Content Header (Page header) -->
 {% block content_header %}
-	<h1>
+	<h1>{% if 'YSE' in transient.tags|tags_list or 'YSE Forced Phot' in transient.tags|tags_list %}
+		{{transient.name}}   <b>(YSE)</b><br/>
+		{% else %}
 		{{transient.name}}<br/>
+		{% endif %}
 		<small><a href="{% url 'index' %}">Back</a></small>
 	</h1>
 	<ol class="breadcrumb">

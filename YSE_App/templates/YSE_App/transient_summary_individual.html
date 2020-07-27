@@ -8,7 +8,11 @@
 
   <div class="box" id="{{transient_cat.2}}">
     <div class="box-header with-border">
-      <p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient }}</h3><span style="float:right;"><a href="{% url 'transient_detail' transient.slug %}" target="_blank"><h3 class="box-title">Detail View</h3></a></span></p>
+      {% if 'YSE' in transient.tags|tags_list or 'YSE Forced Phot' in transient.tags|tags_list %}
+        <p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient }}   <b>(YSE)</b> </h3><span style="float:right;"><a href="{% url 'transient_detail' transient.slug %}" target="_blank"><h3 class="box-title">Detail View</h3></a></span></p>
+      {% else %}
+          <p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient }}</h3><span style="float:right;"><a href="{% url 'transient_detail' transient.slug %}" target="_blank"><h3 class="box-title">Detail View</h3></a></span></p>
+      {% endif %}
       <!--<h3 class="box-title">{{ transient }}</h3>-->
     </div>
     <div class="box-body">
