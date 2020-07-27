@@ -1298,7 +1298,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 	ax.add_layout(hline)
 	from bokeh.models import Legend
 	legend = Legend(items=legend_it)
-	legend.click_policy="mute"
+	legend.click_policy="hide"
 	legend.label_height = 1
 	legend.glyph_height = 20
 	
