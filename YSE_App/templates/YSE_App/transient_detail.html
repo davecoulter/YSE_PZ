@@ -604,6 +604,24 @@
 								</div>
 								<div class="col-xs-12">
 									<div class="col-xs-6">
+										<div class="box box-default box-solid">
+											<div class="box-header with-border" data-widget="collapse" type="button" class="btn btn-box-tool">
+												<button id="tags_btn" class="btn btn-box-tool" style="height: 30px;"><h3 class="box-title">Apply Tag</h3></button>
+											</div>
+											<div id="external-events" class="box-body">
+												<form id="add_tags_datalist" method="post">
+													<input type="text" list="tags" name="tags_datalist" id="tags_datalist">
+													<datalist id="tags">
+														{% for tag in all_transient_tags %}
+															<option value="{{ tag.name }}" data-tag_id="{{ tag.id }}" tag_color="{{ tag.color.color }}">
+														{% endfor %}
+													</datalist>
+													<input type="submit" class="btn btn-block btn-primary btn-sm" style="width:60%;margin-top:5%;">
+												</form>
+													<!--<div class="followupbox box box-primary collapsed-box">-->
+											</div>
+										</div>
+
 										<div class="box box-default box-solid collapsed-box">
 											<div class="box-header with-border" data-widget="collapse" type="button" class="btn btn-box-tool">
 												<button id="tags_btn" class="btn btn-box-tool" style="height: 30px;"><h3 class="box-title">Available Tags</h3></button>
@@ -611,15 +629,13 @@
 													<button id="tags_btn" class="btn btn-box-tool"><i class="fa fa-plus"></i></button>
 												</div>
 											</div>
-													<div id="external-events" class="box-body collapsed-box">
-													<!--<div class="followupbox box box-primary collapsed-box">-->
-															{% for tag in all_transient_tags %}
-																<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
-															{% endfor %}
-													</div>
-												</div>
-												
-
+											<div id="external-events" class="box-body collapsed-box">
+												{% for tag in all_transient_tags %}
+													<div data-tag_id="{{ tag.id }}" class="external-event bg-{{ tag.color }}">{{ tag.name }}</div>
+												{% endfor %}
+											</div>
+										</div>
+										
 												<div class="box box-default box-solid">
 													<div class="box-header with-border">
 														<strong>Create Tag</strong>
@@ -1115,6 +1131,74 @@
 
 		$(function() {
 
+			$('#add_tags_datalist').on('submit', function(event){
+				event.preventDefault();
+				add_tags();
+			});
+
+			// add autocomplete form, no more drag/drop
+			function add_tags(){
+				var tags_list = document.getElementById('tags_datalist');
+				var tag_id = document.querySelector("#tags option[value='"+tags_list.value+"']").getAttribute('data-tag_id')
+  				//var tag_id = tags.value;
+				//alert("Hi!"+tags_list.value);
+				var transient_id = $('#transient_pk').val();
+				//data = (tag_name + "&transient=" + transient_id);
+
+				var base_url = window.location.protocol + "//" + window.location.hostname
+				var port = window.location.port
+				if (port != "") {
+					base_url = base_url + ":" + port
+				}
+
+				var tag_ids = $("#associated-events-list").children("div").map(function() {return $(this).attr("data-tag_id")})
+				if (tag_id in tag_ids){
+					alert("tag has already been applied");
+					return;
+				}
+
+				var tag_urls = []
+				for (i=0; i< tag_ids.length; i++) {
+					tag_urls.push(base_url + "{% url 'transienttag-list' %}" + tag_ids[i] + "/")
+				}
+
+				tag_urls.push(base_url + "{% url 'transienttag-list' %}" + tag_id + "/");
+
+				var transient_target = "{% url 'transient-detail' transient.id %}"
+				var api_url = base_url + transient_target
+
+				var patchData = { "tags": tag_urls }
+				var jsonData = JSON.stringify(patchData)
+
+				// Now, get all associated events and PATCH transient with them
+
+				$.ajax({
+					type: "PATCH",
+					url: api_url,
+					csrfmiddlewaretoken: "{{ csrf_token }}",
+					data: jsonData,
+					contentType: "application/json; charset=utf-8",
+ 					dataType: "json",
+					success: function(data, textStatus, jqXHR) {
+						if (textStatus == "success") {
+							var tags_list = document.getElementById('tags_datalist');
+							//var label = document.querySelector("#tags_datalist option[value='"+tags_list.value+"']").dataset.value;
+							var tag_id = document.querySelector("#tags option[value='"+tags_list.value+"']").getAttribute('data-tag_id');
+							var color = document.querySelector("#tags option[value='"+tags_list.value+"']").getAttribute('tag_color');
+							$("#associated-events-list").append("<div data-tag_id=\""+tag_id+"\" class=\"external-event bg-"+color+"\">"+tags_list.value+"</div>");
+
+						} else {
+							alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+						}
+					},
+					error: function(XMLHttpRequest, textStatus, errorThrown) {
+						// alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+						alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));
+					}
+				});
+			};
+
+
 			// initialize the external events
 			function init_events(ele) {
 				ele.each(function () {
@@ -1184,6 +1268,8 @@
 
 				}
 			});
+			
+
 			$("#del-associated-event").droppable({
 				drop:function(e,source){
 
