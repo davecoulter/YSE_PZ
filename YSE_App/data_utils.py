@@ -1236,7 +1236,9 @@ def query_api(request,query_name):
 		if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
 		cursor = connections['explorer'].cursor()
 		cursor.execute(query.sql.replace('%','%%'), ())
-		transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+		#transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+		field_names = [c[0] for c in cursor.description]
+		field_vals = [x for x in cursor]
 		cursor.close()
 	else:
 		#query = UserQuery.objects.filter(python_query = unquote(query_name))
@@ -1246,12 +1248,16 @@ def query_api(request,query_name):
 		except: return Http404('Invalid Query')
 
 	serialized_transients = []
-	for t in transients:
+	for vals in field_vals:
+		#tdict = {"transient_ra":t.ra,"transient_dec":t.dec,
+		#		 "transient_name":t.name,"transient_id":t.id}
+		tdict = {}
+		for f,v in zip(field_names,vals):
+			tdict[f] = v
 		serialized_transients.append(
-			{"transient_ra":t.ra,"transient_dec":t.dec,
-			 "transient_name":t.name,"transient_id":t.id}
+			tdict
 		)
-
+		
 	return_dict = {"transients":serialized_transients }
 		
 	return JsonResponse(return_dict)
