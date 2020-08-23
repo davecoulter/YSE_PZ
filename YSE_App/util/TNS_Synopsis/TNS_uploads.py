@@ -785,7 +785,7 @@ class processTNS:
 			# For Item in Email, Get NED
 			########################################################
 			if jd is not None:
-				if type(jd['data']['reply']['name']) == str:
+				if type(jd['data']['reply']['objname']) == str:
 					jd = jd['data']['reply']
 				else:
 					jd = None
