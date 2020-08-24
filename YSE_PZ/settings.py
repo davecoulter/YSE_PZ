@@ -72,7 +72,8 @@ CRON_CLASSES = [
 	'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhot',
 	'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_updates',
 	'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_Ignore_updates',
-	'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_recent'
+	'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_recent',
+    'YSE_App.data_ingest.QUB_data.CheckDuplicates'
 ]
 
 MIDDLEWARE = [

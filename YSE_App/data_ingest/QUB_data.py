@@ -21,6 +21,7 @@ from email.mime.text import MIMEText
 import smtplib
 from io import open as iopen
 import datetime
+from django.db.models import Q
 
 psst_image_url = "https://star.pst.qub.ac.uk/sne/ps13pi/site_media/images/data/ps13pi"
 yse_image_url = "https://star.pst.qub.ac.uk/sne/ps1yse/site_media/images/data/ps1yse"
@@ -529,6 +530,7 @@ class YSE(CronJobBase):
 			# grab CSV files
 			r = requests.get(url=yselink_summary,
 							 auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
+			#import pdb; pdb.set_trace()
 			if r.status_code != 200: raise RuntimeError('problem accessing summary link %s'%self.options.yselink_summary)
 			try: summary = at.Table.read(r.text, format='ascii', delimiter='|')
 			except: continue
@@ -543,16 +545,14 @@ class YSE(CronJobBase):
 			nsn_single = 25
 
 			nowmjd = Time.now().mjd
-			summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
+			summary = summary[summary['local_designation'] == '10HYSEkcp']
+			import pdb; pdb.set_trace()
 			while nsn_single == 25:
-				#if '10EYSEdys' in summary['local_designation'][nsn:nsn+50]:
 				transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=25)
 				print('uploading %i transients'%nsn_single)
 				self.send_data(transientdict)
 				self.copy_stamps(transientdict)
 				nsn += 25
-				#else:
-				#	nsn += 50
 					
 		return nsn
 		
@@ -840,7 +840,51 @@ class YSE(CronJobBase):
 		except Exception as e:
 			print("Error: %s"%e)
 
+class CheckDuplicates(CronJobBase):
+    
+	RUN_EVERY_MINS = 30
 
+	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+	code = 'YSE_App.data_ingest.QUB_data.CheckDuplicates'
+
+	def do(self):
+
+		print("starting duplicate check at {}".format(datetime.datetime.now().isoformat()))
+
+		tstart = time.time()
+
+		# read in the options from the param file and the command line
+		# some convoluted syntax here, making it so param file is not required
+		try:
+			nsn = self.main()
+		except Exception as e:
+			print(e)
+			nsn = 0
+			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+			subject = "Duplicate Check Failure"
+			print("Sending error email")
+			html_msg = "Alert : YSE_PZ Failed to upload transients from YSE in QUB_data.py\n"
+			html_msg += "Error : %s"
+			sendemail(from_addr, options.dbemail, subject,
+					  html_msg%(e),
+					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+
+		print('Checking duplicates took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
+
+	def main(self):
+		from YSE_App.models import Transient
+        # 10HYSEkcp
+        
+		transients = Transient.objects.filter(created_date__gt=datetime.datetime.now()-datetime.timedelta(1)).filter(name__startswith='10')
+		for t in transients:
+			ramin,ramax,decmin,decmax = getRADecBox(t.ra,t.dec,size=0.00042)
+			dups = Transient.objects.filter(Q(ra__gt=ramin) & Q(ra__lt=ramax) &
+											Q(dec__gt=decmin) & Q(dec__lt=decmax) &
+                                            Q(disc_date__gte=t.disc_date-datetime.timedelta(365)))
+			if len(dups) > 1:
+				t.delete()
+			
 def jd_to_date(jd):
 	time = Time(jd,scale='utc',format='jd')
 	return time.isot
