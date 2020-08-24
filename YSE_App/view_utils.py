@@ -57,6 +57,8 @@ from bokeh.palettes import Dark2_5 as palette
 from django.db import connection, reset_queries
 import time
 import functools
+import signal
+from multiprocessing import Process
 
 def query_debugger(func):
 
@@ -846,518 +848,249 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	if not photdata:
 		return django.http.HttpResponse('')
 	
-	mjd,salt2mjd,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym,data_quality,magsys = \
+	mjd,salt2mjd,salt2flux,salt2fluxerr,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym,data_quality,magsys = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
-		np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
+		np.array([]),np.array([])
 	upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor,upperlimdataquality,upperlimmagsys = \
 		np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 	limmjd = None
 
-	if 'hi':
-		tstart = time.time()
-		fluxes = np.array(photdata.values_list('flux',flat=True))
-		flux_errs = np.array(photdata.values_list('flux_err',flat=True))
-		flux_zpts = np.array(photdata.values_list('flux_zero_point',flat=True))
-		flux_zpts[flux_zpts == None] = 27.5
-		mags = np.array(photdata.values_list('mag',flat=True))
-		mag_errs = np.array(photdata.values_list('mag_err',flat=True))
-		disc_points = np.array(photdata.values_list('discovery_point',flat=True))
-		obs_dates = np.array(photdata.values_list('obs_date',flat=True))
-		mjds = date_to_mjd(obs_dates)
-		data_quality = np.array(photdata.values_list('data_quality',flat=True))
-		mag_sys = np.array(photdata.values_list('mag_sys',flat=True))
-		band = np.array(photdata.values_list('band',flat=True))
-		band_name = np.array(photdata.values_list('band__name',flat=True))
-		instrument_name = np.array(photdata.values_list('band__instrument__name',flat=True))
-		disp_symbol = np.array(photdata.values_list('band__disp_symbol',flat=True))
-		disp_color = np.array(photdata.values_list('band__disp_color',flat=True))
-		mag_errs_tmp = mag_errs
-		mag_errs_tmp[mag_errs == None] = 1.0
-		print('getting data took %s'%(time.time()-tstart))
-		#import pdb; pdb.set_trace()
-		colorlist = ['#8dd3c7','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9']
-		TOOLTIPS = [
-			('mag','$y'),
-			('band','@band'),
-			('date','@date'),
-			('dq','@data_quality'),
-			('magsys','@magsys')]
-		ax=figure(plot_width=240,plot_height=240,sizing_mode='scale_width')#,tooltips=TOOLTIPS)#'stretch_both')
-		bandunq,idx = np.unique(band,return_index=True)
-		count = 0
-		legend_it = []
-		for bs,bn,b,bc,bsym,inn in zip(
-				bandunq,band_name[idx],band[idx],disp_color[idx],disp_symbol[idx],instrument_name[idx]):
-			if bc != 'None' and bc: color = bc
-			else:
-				coloridx = count % len(np.unique(colorlist))
-				color = colorlist[coloridx]
-				count += 1
+	salt2bandpasses = np.array(bandpassdict.keys())
 
-			if bsym and bsym != 'inverted_triangle':
-				try:
-					plotmethod = getattr(ax, bsym)
-				except:
-					plotmethod = getattr(ax, 'triangle')
-			else:
+	tstart = time.time()
+	fluxes = np.array(photdata.values_list('flux',flat=True))
+	flux_errs = np.array(photdata.values_list('flux_err',flat=True))
+	flux_zpts = np.array(photdata.values_list('flux_zero_point',flat=True))
+	flux_zpts[flux_zpts == None] = 27.5
+	mags = np.array(photdata.values_list('mag',flat=True))
+	mag_errs = np.array(photdata.values_list('mag_err',flat=True))
+	disc_points = np.array(photdata.values_list('discovery_point',flat=True))
+	obs_dates = np.array(photdata.values_list('obs_date',flat=True))
+	mjds = date_to_mjd(obs_dates)
+	data_quality = np.array(photdata.values_list('data_quality',flat=True))
+	mag_sys = np.array(photdata.values_list('mag_sys',flat=True))
+	band = np.array(photdata.values_list('band',flat=True))
+	band_name = np.array(photdata.values_list('band__name',flat=True))
+	instrument_name = np.array(photdata.values_list('band__instrument__name',flat=True))
+	disp_symbol = np.array(photdata.values_list('band__disp_symbol',flat=True))
+	disp_color = np.array(photdata.values_list('band__disp_color',flat=True))
+	mag_errs_tmp = mag_errs
+	mag_errs_tmp[mag_errs == None] = 1.0
+
+	colorlist = ['#8dd3c7','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9']
+	TOOLTIPS = [
+		('mag','$y'),
+		('band','@band'),
+		('date','@date'),
+		('dq','@data_quality'),
+		('magsys','@magsys')]
+	ax=figure(plot_width=240,plot_height=240,sizing_mode='scale_width')#,tooltips=TOOLTIPS)#'stretch_both')
+	bandunq,idx = np.unique(band,return_index=True)
+	count = 0
+	legend_it = []
+	for bs,bn,b,bc,bsym,inn in zip(
+			bandunq,band_name[idx],band[idx],disp_color[idx],disp_symbol[idx],instrument_name[idx]):
+		if bc != 'None' and bc: color = bc
+		else:
+			coloridx = count % len(np.unique(colorlist))
+			color = colorlist[coloridx]
+			count += 1
+
+		if bsym and bsym != 'inverted_triangle':
+			try:
+				plotmethod = getattr(ax, bsym)
+			except:
 				plotmethod = getattr(ax, 'triangle')
-			if bsym != 'asterisk': size=7
-			else: size=20
-
-			iPlot = (band_name == bn) & (instrument_name == inn) & (mags != None) & \
-			        (mag_errs != None) & ((mag_errs_tmp <= 0.36) | (fluxes == None) | (flux_errs == None))
-			#iPlotUlim = (band_name == bn) & (instrument_name == inn) & (mags != None) & \
-			#			(mag_errs != None) & (mag_errs_tmp > 0.36)
-			#iPlotUlimFlux = (band_name == bn) & (instrument_name == inn) & (mag_errs_tmp > 0.36) & (fluxes != None)
-			iPlotUlimFlux = (band_name == bn) & (instrument_name == inn) & (fluxes != None) & (flux_errs != None)
-			iPlotUlimFlux2 = fluxes[iPlotUlimFlux]/flux_errs[iPlotUlimFlux] < 3
-			mags_ulim = -2.5*np.log10((fluxes[iPlotUlimFlux][iPlotUlimFlux2] + \
-                3*flux_errs[iPlotUlimFlux][iPlotUlimFlux2]).astype(float)) + flux_zpts[iPlotUlimFlux][iPlotUlimFlux2]
-
-            
-			source = ColumnDataSource(data=dict(x=mjds[iPlot].tolist(),
-												y=mags[iPlot].tolist(),
-												date=obs_dates[iPlot].tolist(),
-												data_quality=data_quality[iPlot].tolist(),
-												magsys=mag_sys[iPlot].tolist(),
-												band=[bn]*len(mjds[iPlot].tolist())))
-
-			p = plotmethod('x','y',source=source,
-					   color=color,size=size, muted_alpha=0.2)
-			g1_hover = HoverTool(renderers=[p],
-								 tooltips=TOOLTIPS,toggleable=False)
-			ax.add_tools(g1_hover)
-
-			source = ColumnDataSource(data=dict(x=mjds[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
-												y=mags_ulim.tolist(), #[iPlotUlim].tolist(),
-												date=obs_dates[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
-												data_quality=data_quality[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
-												magsys=mag_sys[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
-												band=[bn]*len(mjds[iPlotUlimFlux][iPlotUlimFlux2].tolist())))
-			
-			p = ax.inverted_triangle('x','y',source=source,
-									 color=color,size=5,muted_alpha=0.2)
-			g1_hover = HoverTool(renderers=[p],
-								 tooltips=TOOLTIPS,toggleable=False)
-			ax.add_tools(g1_hover)
-			#if len(mjds[iPlotUlimFlux][iPlotUlimFlux2]): import pdb; pdb.set_trace()
-			err_xs,err_ys = [],[]
-			for x,y,yerr in zip(mjds[iPlot].tolist(),mags[iPlot].tolist(),mag_errs[iPlot].tolist()):
-				err_xs.append((x, x))
-				err_ys.append((y - yerr, y + yerr))
-			ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)#, legend='%s - %s'%(
-
-			legend_it.append(('%s - %s'%(inn,bn), [p]))
-		print('loop took %s'%(time.time()-tstart))			
-		today = Time(datetime.datetime.today()).mjd
-		p = ax.line(today,20,line_width=3,line_color='black')
-		legend_it.append(('today (%i)'%today, [p]))
-		vline = Span(location=today, dimension='height', line_color='black',
-					 line_width=3)
-		ax.add_layout(vline)
-		legend = Legend(items=legend_it)
-		legend.click_policy="hide"
-		legend.label_height = 1
-		legend.glyph_height = 20
-
-		ax.add_layout(legend, 'below')
-		print('plotting crap v1 took %s'%(time.time()-tstart))
-
-		ax.xaxis.axis_label = 'MJD'
-		ax.yaxis.axis_label = 'Mag'
-		if len(mjds[disc_points == 1]):
-			limmjd = np.min(mjds[disc_points == 1])-30
-			ax.x_range=Range1d(limmjd,np.max(mjds)+10)
-			ax.extra_x_ranges = {"dateax": Range1d(limmjd,np.max(mjds)+10)}
 		else:
-			ax.x_range=Range1d(np.min(mjds)-10,np.max(mjds)+10)
-			ax.extra_x_ranges = {"dateax": Range1d(np.min(mjds)-10,np.max(mjds)+10)}
-
-		ax.y_range=Range1d(np.max(mags[mags != None])+0.25,np.min(mags[mags != None])-0.5)
-		ax.add_layout(LinearAxis(x_range_name="dateax"), 'above')
-		
-		ax.plot_height = 400+20*len(bandunq)
-		ax.plot_width = 400
-
-		majorticks = []; overridedict = {}
-		mjdrange = range(int(np.min(mjds)-100),int(np.max(mjds)+100))
-		times = Time(mjdrange,format='mjd')
-		if (not limmjd and np.max(mjds)+10 - (np.min(mjds)-10) > 300) or \
-		   (limmjd and np.max(mjds)+10 - limmjd > 300):
-			count = 0
-			for m,t in zip(mjdrange,times):
-				tm_list = t.iso.split()[0].split('-')
-				if tm_list[2] == '01': count += 1
-				if count % 3: continue
-				if tm_list[2] == '01':
-					majorticks += [m]
-					overridedict[m] = '%s %i, %i'%(calendar.month_name[int(tm_list[1])][:3],int(tm_list[2]),int(tm_list[0]))
-		else:
-			for m,t in zip(mjdrange,times):
-				tm_list = t.iso.split()[0].split('-')
-				if tm_list[2] == '01':
-					majorticks += [m]
-					overridedict[m] = '%s %i, %i'%(calendar.month_name[int(tm_list[1])][:3],int(tm_list[2]),int(tm_list[0]))
-
-		ax.xaxis[0].ticker = majorticks
-		ax.xaxis[0].major_label_overrides = overridedict
-
-		print('plotting crap took %s'%(time.time()-tstart))
-		# add absolute mag axis
-		if transient.redshift: z = transient.redshift
-		elif transient.host and transient.host.redshift: z = transient.host.redshift
-		elif transient.host and transient.host.photo_z: z = transient.host.photo_z
-		else: z = None
-		if z is not None:
-			mu = cosmo.distmod(z).value
-			ax.extra_y_ranges = {"Abs. Mag": Range1d(start=ax.y_range.start-mu, end=ax.y_range.end-mu)}
-			ax.add_layout(LinearAxis(y_range_name="Abs. Mag", axis_label="Abs. Mag"), 'right')
-		print('redshifts took %s'%(time.time()-tstart))
+			plotmethod = getattr(ax, 'triangle')
+		if bsym != 'asterisk': size=7
+		else: size=20
 
 		if salt2:
-			model = sncosmo.Model(source='salt2')
-			if transient.redshift:
-				model.set(z=transient.redshift); fitparams = ['t0', 'x0', 'x1', 'c']
-			elif transient.host and transient.host.redshift:
-				model.set(z=transient.host.redshift); fitparams = ['t0', 'x0', 'x1', 'c']
-			else: fitparams = ['z', 't0', 'x0', 'x1', 'c']
+			bandkey = 'Band: %s - %s'%(inn,bn)
+			if bandkey in bandpassdict.keys():
+				iBand = (band_name == bn) & (mags != None)
+				salt2mag_errs = mag_errs[iBand]
+				salt2mag_errs[(salt2mag_errs < 0.01) | (salt2mag_errs == None)] = 0.01
+				salt2mjd = np.append(salt2mjd,mjds[iBand])
+				salt2flux = np.append(salt2flux,10**(-0.4*(mags[iBand]-27.5)))
+				salt2fluxerr = np.append(salt2fluxerr,mags[iBand]*salt2mag_errs*0.4*np.log(10))
+				salt2band = np.append(salt2band,[bandpassdict[bandkey]]*len(salt2mag_errs))
+				if 'bessell' in bandpassdict[bandkey]: zpsys = np.append(zpsys,['Vega']*len(mag_errs[iBand]))
+				else: zpsys = np.append(zpsys,['AB']*len(mag_errs[iBand]))
 
-			zp = np.array([27.5]*len(salt2band))
-			data = Table([salt2mjd,salt2band,flux,fluxerr,zp,zpsys],
-                         names=['mjd','band','flux','fluxerr','zp','zpsys'],
-                         meta={'t0':salt2mjd[fluxes == np.max(fluxes)]})
+		iPlot = (band_name == bn) & (instrument_name == inn) & (mags != None) & \
+				(mag_errs != None) & ((mag_errs_tmp <= 0.36) | (fluxes == None) | (flux_errs == None))
+		iPlotUlimFlux = (band_name == bn) & (instrument_name == inn) & (fluxes != None) & (flux_errs != None)
+		iPlotUlimFlux2 = fluxes[iPlotUlimFlux]/flux_errs[iPlotUlimFlux] < 3
+		mags_ulim = -2.5*np.log10((fluxes[iPlotUlimFlux][iPlotUlimFlux2] + \
+			3*flux_errs[iPlotUlimFlux][iPlotUlimFlux2]).astype(float)) + flux_zpts[iPlotUlimFlux][iPlotUlimFlux2]
 
-			pkguess = np.atleast_1d(salt2mjd[flux/fluxerr > 3][flux[flux/fluxerr > 3] == np.max(flux[flux/fluxerr > 3])])
-			if len(pkguess):
-				pkguess = pkguess[0]
-				result, fitted_model = sncosmo.fit_lc(
-					data, model, fitparams,
-					bounds={'t0':(pkguess-10, pkguess+10),
-							'z':(0.0,0.7),'x1':(-3,3),'c':(-0.3,0.3)})	# bounds on parameters (if any)
 
-				count = 0
-				plotmjd = np.arange(result['parameters'][1]-20,result['parameters'][1]+50,0.5)
-				bandunq,idx = np.unique(bandstr,return_index=True)
-				for bs,b,bc in zip(bandunq,band[idx],bandcolor[idx]):
-					if bc != 'None' and bc:
-						color = bc
-					else:
-						coloridx = count % len(np.unique(colorlist))
-						color = colorlist[coloridx]
-						count += 1
+		source = ColumnDataSource(data=dict(x=mjds[iPlot].tolist(),
+											y=mags[iPlot].tolist(),
+											date=obs_dates[iPlot].tolist(),
+											data_quality=data_quality[iPlot].tolist(),
+											magsys=mag_sys[iPlot].tolist(),
+											band=[bn]*len(mjds[iPlot].tolist())))
 
-					if bs in bandpassdict.keys() and bandpassdict[bs] in salt2band:
-						salt2flux = fitted_model.bandflux(bandpassdict[bs], plotmjd, zp=27.5,zpsys=zpsys[bandpassdict[bs] == salt2band][0])
-						ax.line(plotmjd,-2.5*np.log10(salt2flux)+27.5,color=color)
+		p = plotmethod('x','y',source=source,
+				   color=color,size=size, muted_alpha=0.2)
+		g1_hover = HoverTool(renderers=[p],
+							 tooltips=TOOLTIPS,toggleable=False)
+		ax.add_tools(g1_hover)
 
-			lcphase = today-result['parameters'][1]
-			if lcphase > 0: lcphase = '+%.1f'%(lcphase)
-			else: lcphase = '%.1f'%(lcphase)
-			latex1 = Label(x=10,y=280,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="phase = %s days"%(
-							   lcphase))
-			latex2 = Label(x=10,y=265,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="\uD835\uDE3B  = %.3f"%(result.parameters[0]))
-			latex3 = Label(x=10,y=250,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="\uD835\uDC61\u2080	 = %i"%(result['parameters'][1]))
-			latex4 = Label(x=10,y=235,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="\uD835\uDC5A\u2088 = %.2f"%(10.635-2.5*np.log10(result['parameters'][2])))
-			latex5 = Label(x=10,y=220,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="\uD835\uDC65\u2081 = %.2f"%(result['parameters'][3]))
-			latex6 = Label(x=10,y=205,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="\uD835\uDC50  = %.2f"%(result['parameters'][4]))
-			for latex in [latex1,latex2,latex3,latex4,latex5,latex6]:
-				ax.add_layout(latex)
-		print('nothing took %s'%(time.time()-tstart))
-		g = file_html(ax,CDN,"my plot")
-		print("plotting took %s"%(time.time()-tstart))
-		return HttpResponse(g.replace('width: 90%','width: 100%'))
+		source = ColumnDataSource(data=dict(x=mjds[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
+											y=mags_ulim.tolist(), #[iPlotUlim].tolist(),
+											date=obs_dates[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
+											data_quality=data_quality[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
+											magsys=mag_sys[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
+											band=[bn]*len(mjds[iPlotUlimFlux][iPlotUlimFlux2].tolist())))
 
-	if not 'hi':
-		tstart = time.time()
-		for p in photdata:
-			dbmjd = date_to_mjd(p.obs_date)
-			if p.flux and np.abs(p.flux) > 1e10: continue
+		p = ax.inverted_triangle('x','y',source=source,
+								 color=color,size=5,muted_alpha=0.2)
+		g1_hover = HoverTool(renderers=[p],
+							 tooltips=TOOLTIPS,toggleable=False)
+		ax.add_tools(g1_hover)
+		err_xs,err_ys = [],[]
+		for x,y,yerr in zip(mjds[iPlot].tolist(),mags[iPlot].tolist(),mag_errs[iPlot].tolist()):
+			err_xs.append((x, x))
+			err_ys.append((y - yerr, y + yerr))
+		ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)#, legend='%s - %s'%(
 
-			if (p.flux and p.mag and p.flux_err and p.flux/p.flux_err > 3) or (not p.flux and p.mag):
-				if p.discovery_point:
-					limmjd = dbmjd-30
+		legend_it.append(('%s - %s'%(inn,bn), [p]))
 
-				mjd = np.append(mjd,[dbmjd])
-				date = np.append(date,[p.obs_date.strftime('%m/%d/%Y')])
-				mag = np.append(mag,[p.mag])
-				if p.data_quality is None: data_quality = np.append(data_quality,['Good'])
-				else: data_quality = np.append(data_quality,[p.data_quality.name])
-				if p.mag_sys is None: magsys = np.append(magsys,['None'])
-				else: magsys = np.append(magsys,[p.mag_sys])
+	today = Time(datetime.datetime.today()).mjd
+	p = ax.line(today,20,line_width=3,line_color='black')
+	legend_it.append(('today (%i)'%today, [p]))
+	vline = Span(location=today, dimension='height', line_color='black',
+				 line_width=3)
+	ax.add_layout(vline)
+	legend = Legend(items=legend_it)
+	legend.click_policy="hide"
+	legend.label_height = 1
+	legend.glyph_height = 20
 
-				if p.mag_err: magerr = np.append(magerr,p.mag_err)
-				else: magerr = np.append(magerr,0)
-				bandstr = np.append(bandstr,str(p.band))
-				bandcolor = np.append(bandcolor,str(p.band.disp_color))
-				if p.band.disp_symbol in py2bokeh_symboldict.keys():
-					bandsym = np.append(bandsym,str(py2bokeh_symboldict[p.band.disp_symbol]))
+	ax.add_layout(legend, 'below')
+
+	ax.xaxis.axis_label = 'MJD'
+	ax.yaxis.axis_label = 'Mag'
+	if len(mjds[disc_points == 1]):
+		limmjd = np.min(mjds[disc_points == 1])-30
+		ax.x_range=Range1d(limmjd,np.max(mjds)+10)
+		ax.extra_x_ranges = {"dateax": Range1d(limmjd,np.max(mjds)+10)}
+	else:
+		ax.x_range=Range1d(np.min(mjds)-10,np.max(mjds)+10)
+		ax.extra_x_ranges = {"dateax": Range1d(np.min(mjds)-10,np.max(mjds)+10)}
+
+	ax.y_range=Range1d(np.max(mags[mags != None])+0.25,np.min(mags[mags != None])-0.5)
+	ax.add_layout(LinearAxis(x_range_name="dateax"), 'above')
+
+	ax.plot_height = 400+20*len(bandunq)
+	ax.plot_width = 400
+
+	majorticks = []; overridedict = {}
+	mjdrange = range(int(np.min(mjds)-100),int(np.max(mjds)+100))
+	times = Time(mjdrange,format='mjd')
+	if (not limmjd and np.max(mjds)+10 - (np.min(mjds)-10) > 300) or \
+	   (limmjd and np.max(mjds)+10 - limmjd > 300):
+		count = 0
+		for m,t in zip(mjdrange,times):
+			tm_list = t.iso.split()[0].split('-')
+			if tm_list[2] == '01': count += 1
+			if count % 3: continue
+			if tm_list[2] == '01':
+				majorticks += [m]
+				overridedict[m] = '%s %i, %i'%(calendar.month_name[int(tm_list[1])][:3],int(tm_list[2]),int(tm_list[0]))
+	else:
+		for m,t in zip(mjdrange,times):
+			tm_list = t.iso.split()[0].split('-')
+			if tm_list[2] == '01':
+				majorticks += [m]
+				overridedict[m] = '%s %i, %i'%(calendar.month_name[int(tm_list[1])][:3],int(tm_list[2]),int(tm_list[0]))
+
+	ax.xaxis[0].ticker = majorticks
+	ax.xaxis[0].major_label_overrides = overridedict
+
+	# add absolute mag axis
+	if transient.redshift: z = transient.redshift
+	elif transient.host and transient.host.redshift: z = transient.host.redshift
+	elif transient.host and transient.host.photo_z: z = transient.host.photo_z
+	else: z = None
+	if z is not None:
+		mu = cosmo.distmod(z).value
+		ax.extra_y_ranges = {"Abs. Mag": Range1d(start=ax.y_range.start-mu, end=ax.y_range.end-mu)}
+		ax.add_layout(LinearAxis(y_range_name="Abs. Mag", axis_label="Abs. Mag"), 'right')
+
+	if salt2:
+		model = sncosmo.Model(source='salt2')
+		if transient.redshift:
+			model.set(z=transient.redshift); fitparams = ['t0', 'x0', 'x1', 'c']
+		elif transient.host and transient.host.redshift:
+			model.set(z=transient.host.redshift); fitparams = ['t0', 'x0', 'x1', 'c']
+		else: fitparams = ['z', 't0', 'x0', 'x1', 'c']
+
+		zp = np.array([27.5]*len(salt2band))
+		data = Table([salt2mjd,salt2band,salt2flux.astype(float),salt2fluxerr.astype(float),zp,zpsys],
+					 names=['mjd','band','flux','fluxerr','zp','zpsys'],
+					 meta={'t0':salt2mjd[salt2flux == np.max(salt2flux)]})
+
+		pkguess = np.atleast_1d(salt2mjd[salt2flux/salt2fluxerr > 3][salt2flux[salt2flux/salt2fluxerr > 3] == np.max(salt2flux[salt2flux/salt2fluxerr > 3])])
+		if len(pkguess):
+			pkguess = pkguess[0]
+			data = data[(salt2mjd > pkguess-20) & (salt2mjd < pkguess+40)]
+			result, fitted_model = sncosmo.fit_lc(
+				data, model, fitparams,
+				bounds={'t0':(pkguess-10, pkguess+10),
+						'z':(0.0,0.7),'x1':(-3,3),'c':(-0.3,0.3)})	# bounds on parameters (if any)
+
+			count = 0
+			plotmjd = np.arange(result['parameters'][1]-20,result['parameters'][1]+50,0.5)
+			bandunq,idx = np.unique(band,return_index=True)
+			for bs,bn,b,bc,bsym,inn in zip(
+					bandunq,band_name[idx],band[idx],disp_color[idx],disp_symbol[idx],instrument_name[idx]):
+				if bc != 'None' and bc:
+					color = bc
 				else:
-					bandsym = np.append(bandsym,str(p.band.disp_symbol))
-				band = np.append(band,p.band)
-				if salt2:
-					if str(p.band) in bandpassdict.keys():
-						if p.mag_err: mag_err = p.mag_err
-						else: mag_err = 0.02
-						salt2mjd = np.append(salt2mjd,[dbmjd])
-						flux = np.append(flux,10**(-0.4*(p.mag-27.5)))
-						fluxerr = np.append(fluxerr,p.mag*mag_err*0.4*np.log(10))
-						salt2band = np.append(salt2band,bandpassdict[str(p.band)])
-						if 'bessell' in bandpassdict[str(p.band)]: zpsys = np.append(zpsys,'Vega')
-						else: zpsys = np.append(zpsys,'AB')
+					coloridx = count % len(np.unique(colorlist))
+					color = colorlist[coloridx]
+					count += 1
+				bandkey = 'Band: %s - %s'%(inn,bn)
+				if bandkey in bandpassdict.keys() and bandpassdict[bandkey] in salt2band:
+					salt2flux = fitted_model.bandflux(bandpassdict[bandkey], plotmjd, zp=27.5,zpsys=zpsys[bandpassdict[bandkey] == salt2band][0])
+					ax.line(plotmjd,-2.5*np.log10(salt2flux)+27.5,color=color)
 
-			elif p.flux and p.flux_zero_point and p.flux + 3*p.flux_err > 0:
-				upperlimmjd = np.append(upperlimmjd,[dbmjd])
-				upperlimdate = np.append(upperlimdate,[p.obs_date.strftime('%m/%d/%Y')])
-				upperlimmag = np.append(upperlimmag,[-2.5*np.log10(p.flux + 3*p.flux_err) + p.flux_zero_point])
-				upperlimbandstr = np.append(upperlimbandstr,str(p.band))
-				upperlimband = np.append(upperlimband,p.band)
-				upperlimbandcolor = np.append(upperlimbandcolor,p.band.disp_color)
-				if p.mag_sys is None: upperlimmagsys = np.append(upperlimmagsys,'None')
-				else: upperlimmagsys = np.append(upperlimmagsys,p.mag_sys)
-				if p.data_quality is None: upperlimdataquality = np.append(upperlimdataquality,['Good'])
-				else: upperlimdataquality = np.append(upperlimdataquality,[p.data_quality.name])
-				if salt2:
-					if str(p.band) in bandpassdict.keys():
-						salt2mjd = np.append(salt2mjd,[dbmjd])
-						flux = np.append(flux,p.flux)
-						fluxerr = np.append(fluxerr,p.flux_err)
-						salt2band = np.append(salt2band,bandpassdict[str(p.band)])
-						if 'bessell' in bandpassdict[str(p.band)]: zpsys = np.append(zpsys,'Vega')
-						else: zpsys = np.append(zpsys,'AB')
+		lcphase = today-result['parameters'][1]
+		if lcphase > 0: lcphase = '+%.1f'%(lcphase)
+		else: lcphase = '%.1f'%(lcphase)
+		latex1 = Label(x=10,y=280,x_units='screen',y_units='screen',
+					   render_mode='css', text_font_size='10pt',
+					   text="phase = %s days"%(
+						   lcphase))
+		latex2 = Label(x=10,y=265,x_units='screen',y_units='screen',
+					   render_mode='css', text_font_size='10pt',
+					   text="\uD835\uDE3B  = %.3f"%(result.parameters[0]))
+		latex3 = Label(x=10,y=250,x_units='screen',y_units='screen',
+					   render_mode='css', text_font_size='10pt',
+					   text="\uD835\uDC61\u2080	 = %i"%(result['parameters'][1]))
+		latex4 = Label(x=10,y=235,x_units='screen',y_units='screen',
+					   render_mode='css', text_font_size='10pt',
+					   text="\uD835\uDC5A\u2088 = %.2f"%(10.635-2.5*np.log10(result['parameters'][2])))
+		latex5 = Label(x=10,y=220,x_units='screen',y_units='screen',
+					   render_mode='css', text_font_size='10pt',
+					   text="\uD835\uDC65\u2081 = %.2f"%(result['parameters'][3]))
+		latex6 = Label(x=10,y=205,x_units='screen',y_units='screen',
+					   render_mode='css', text_font_size='10pt',
+					   text="\uD835\uDC50  = %.2f"%(result['parameters'][4]))
+		for latex in [latex1,latex2,latex3,latex4,latex5,latex6]:
+			ax.add_layout(latex)
 
-		if transient.non_detect_limit and transient.non_detect_band:
-			upperlimmjd = np.append(upperlimmjd,[date_to_mjd(transient.non_detect_date)])
-			upperlimdate = np.append(upperlimdate,[transient.non_detect_date.strftime('%m/%d/%Y')])
-			upperlimmag = np.append(upperlimmag,transient.non_detect_limit)
-			upperlimbandstr = np.append(upperlimbandstr,str(transient.non_detect_band))
-			upperlimband = np.append(upperlimband,transient.non_detect_band)
-			upperlimbandcolor = np.append(upperlimbandcolor,transient.non_detect_band.disp_color)
-			upperlimdataquality = np.append(upperlimdataquality,'Good')
-			upperlimmagsys = np.append(upperlimmagsys,'None')
+	g = file_html(ax,CDN,"my plot")
+	print("plotting took %s"%(time.time()-tstart))
+	return HttpResponse(g.replace('width: 90%','width: 100%'))
 
-		colorlist = ['#8dd3c7','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9']
-		count = 0
-		allband = np.append(band,upperlimband)
-		allbandstr = np.append(bandstr,upperlimbandstr)
-		allbandcolor = np.append(bandcolor,upperlimbandcolor)
-		allbandsym = np.append(bandsym,[None]*len(upperlimbandcolor))
-		bandunq,idx = np.unique(allbandstr,return_index=True)
-
-		TOOLTIPS = [
-			('mag','$y'),
-			('band','@band'),
-			('date','@date'),
-			('dq','@data_quality'),
-			('magsys','@magsys')]
-		ax=figure(plot_width=240,plot_height=240,sizing_mode='scale_width')#,tooltips=TOOLTIPS)#'stretch_both')
-
-
-		legend_it = []
-		for bs,b,bc,bsym in zip(bandunq,allband[idx],allbandcolor[idx],allbandsym[idx]):
-			if bc != 'None' and bc: color = bc
-			else:
-				coloridx = count % len(np.unique(colorlist))
-				color = colorlist[coloridx]
-				count += 1
-
-			if bsym and bsym != 'inverted_triangle':
-				try:
-					plotmethod = getattr(ax, bsym)
-				except:
-					plotmethod = getattr(ax, 'triangle')
-			else:
-				plotmethod = getattr(ax, 'triangle')
-			if bsym != 'asterisk': size=7
-			else: size=20
-
-			source = ColumnDataSource(data=dict(x=mjd[bandstr == bs].tolist(),
-												y=mag[bandstr == bs].tolist(),
-												date=date[bandstr == bs].tolist(),
-												data_quality=data_quality[bandstr == bs].tolist(),
-												magsys=magsys[bandstr == bs].tolist(),
-												band=[bs.replace('Band: ','')]*len(mjd[bandstr == bs].tolist())))
-
-			p = plotmethod('x','y',source=source, #mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),
-					   color=color,size=size, muted_alpha=0.2)#,legend='%s - %s'%(
-						   #b.instrument.telescope.name,b.name))
-			g1_hover = HoverTool(renderers=[p],
-								 tooltips=TOOLTIPS,toggleable=False)
-			ax.add_tools(g1_hover)
-
-			#legend_it.append(('%s - %s'%(b.instrument.telescope.name,b.name), [p]))
-			if len(upperlimbandstr) and len(upperlimmjd[upperlimbandstr == bs]):
-				source = ColumnDataSource(data=dict(x=upperlimmjd[upperlimbandstr == bs].tolist(),
-													y=upperlimmag[upperlimbandstr == bs].tolist(),
-													date=upperlimdate[upperlimbandstr == bs].tolist(),
-													data_quality=upperlimdataquality[upperlimbandstr == bs].tolist(),
-													magsys=upperlimmagsys[upperlimbandstr == bs].tolist(),
-													band=[bs.replace('Band: ','')]*len(upperlimmjd[upperlimbandstr == bs].tolist())))
-				p = ax.inverted_triangle('x','y',source=source,
-										 color=color,size=5,muted_alpha=0.2)
-				g1_hover = HoverTool(renderers=[p],
-									 tooltips=TOOLTIPS,toggleable=False)
-				ax.add_tools(g1_hover)
-
-				#,legend='%s - %s'%(b.instrument.telescope.name,b.name)
-
-			err_xs,err_ys = [],[]
-			for x,y,yerr in zip(mjd[bandstr == bs].tolist(),mag[bandstr == bs].tolist(),magerr[bandstr == bs].tolist()):
-				err_xs.append((x, x))
-				err_ys.append((y - yerr, y + yerr))
-			ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)#, legend='%s - %s'%(
-
-			legend_it.append(('%s - %s'%(b.instrument.telescope.name,b.name), [p]))
-			#b.instrument.telescope.name,b.name))
-			#legend_it.append(('%s - %s'%(b.instrument.telescope.name,b.name), [p]))
-
-		today = Time(datetime.datetime.today()).mjd
-		p = ax.line(today,20,line_width=3,line_color='black')#,legend='today (%i)'%today)
-		legend_it.append(('today (%i)'%today, [p]))
-		vline = Span(location=today, dimension='height', line_color='black',
-					 line_width=3)
-		ax.add_layout(vline)
-		legend = Legend(items=legend_it) #, location=(0,-500)) #location="bottom_right")
-		legend.click_policy="hide"
-		legend.label_height = 1
-		legend.glyph_height = 20
-
-		ax.add_layout(legend, 'below')
-
-		#ax.legend.location = 'bottom_center'
-
-		#ax.legend.label_text_font_size = "4pt"#FontSizeSpec("10")
-		#ax.legend.click_policy="hide"
-
-
-		ax.xaxis.axis_label = 'MJD'
-		ax.yaxis.axis_label = 'Mag'
-
-		if limmjd:
-			ax.x_range = Range1d(limmjd,np.max(mjd)+10)
-			ax.y_range = Range1d(np.max(np.append(mag[mjd > limmjd],upperlimmag[upperlimmjd > limmjd]))+0.25,
-								 np.min(mag[mjd > limmjd])-0.5)
-			ax.extra_x_ranges = {"dateax": Range1d(limmjd,np.max(mjd)+10)}
-			ax.add_layout(LinearAxis(x_range_name="dateax"), 'above')
-
-		else:
-			ax.x_range=Range1d(np.min(mjd)-10,np.max(mjd)+10)
-			ax.y_range=Range1d(np.max(np.append(mag,upperlimmag))+0.25,np.min(mag)-0.5)
-			ax.extra_x_ranges = {"dateax": Range1d(np.min(mjd)-10,np.max(mjd)+10)}
-			ax.add_layout(LinearAxis(x_range_name="dateax"), 'above')
-			#ax.legend()
-		ax.plot_height = 400+20*len(bandunq)
-		ax.plot_width = 400
-
-		majorticks = []; overridedict = {}
-		mjdrange = range(int(np.min(mjd)-100),int(np.max(mjd)+100))
-		times = Time(mjdrange,format='mjd')
-		if (not limmjd and np.max(mjd)+10 - (np.min(mjd)-10) > 300) or \
-		   (limmjd and np.max(mjd)+10 - limmjd > 300):
-			count = 0
-			for m,t in zip(mjdrange,times):
-				tm_list = t.iso.split()[0].split('-')
-				if tm_list[2] == '01': count += 1
-				if count % 3: continue
-				if tm_list[2] == '01':
-					majorticks += [m]
-					overridedict[m] = '%s %i, %i'%(calendar.month_name[int(tm_list[1])][:3],int(tm_list[2]),int(tm_list[0]))
-		else:
-			for m,t in zip(mjdrange,times):
-				tm_list = t.iso.split()[0].split('-')
-				if tm_list[2] == '01':
-					majorticks += [m]
-					overridedict[m] = '%s %i, %i'%(calendar.month_name[int(tm_list[1])][:3],int(tm_list[2]),int(tm_list[0]))
-
-		ax.xaxis[0].ticker = majorticks
-		ax.xaxis[0].major_label_overrides = overridedict
-
-
-		# add absolute mag axis
-		if transient.redshift: z = transient.redshift
-		elif transient.host and transient.host.redshift: z = transient.host.redshift
-		elif transient.host and transient.host.photo_z: z = transient.host.photo_z
-		else: z = None
-		if z is not None:
-			mu = cosmo.distmod(z).value
-			ax.extra_y_ranges = {"Abs. Mag": Range1d(start=ax.y_range.start-mu, end=ax.y_range.end-mu)}
-			ax.add_layout(LinearAxis(y_range_name="Abs. Mag", axis_label="Abs. Mag"), 'right')
-
-
-		if salt2:
-			model = sncosmo.Model(source='salt2')
-			if transient.redshift:
-				model.set(z=transient.redshift); fitparams = ['t0', 'x0', 'x1', 'c']
-			elif transient.host and transient.host.redshift:
-				model.set(z=transient.host.redshift); fitparams = ['t0', 'x0', 'x1', 'c']
-			else: fitparams = ['z', 't0', 'x0', 'x1', 'c']
-
-			zp = np.array([27.5]*len(salt2band))
-			data = Table([salt2mjd,salt2band,flux,fluxerr,zp,zpsys],names=['mjd','band','flux','fluxerr','zp','zpsys'],meta={'t0':salt2mjd[flux == np.max(flux)]})
-
-			pkguess = np.atleast_1d(salt2mjd[flux/fluxerr > 3][flux[flux/fluxerr > 3] == np.max(flux[flux/fluxerr > 3])])
-			if len(pkguess):
-				pkguess = pkguess[0]
-				result, fitted_model = sncosmo.fit_lc(
-					data, model, fitparams,
-					bounds={'t0':(pkguess-10, pkguess+10),
-							'z':(0.0,0.7),'x1':(-3,3),'c':(-0.3,0.3)})	# bounds on parameters (if any)
-
-				count = 0
-				plotmjd = np.arange(result['parameters'][1]-20,result['parameters'][1]+50,0.5)
-				bandunq,idx = np.unique(bandstr,return_index=True)
-				for bs,b,bc in zip(bandunq,band[idx],bandcolor[idx]):
-					if bc != 'None' and bc:
-						color = bc
-					else:
-						coloridx = count % len(np.unique(colorlist))
-						color = colorlist[coloridx]
-						count += 1
-
-					if bs in bandpassdict.keys() and bandpassdict[bs] in salt2band:
-						salt2flux = fitted_model.bandflux(bandpassdict[bs], plotmjd, zp=27.5,zpsys=zpsys[bandpassdict[bs] == salt2band][0])
-						ax.line(plotmjd,-2.5*np.log10(salt2flux)+27.5,color=color)
-
-			lcphase = today-result['parameters'][1]
-			if lcphase > 0: lcphase = '+%.1f'%(lcphase)
-			else: lcphase = '%.1f'%(lcphase)
-			latex1 = Label(x=10,y=280,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="phase = %s days"%(
-							   lcphase))
-			latex2 = Label(x=10,y=265,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="\uD835\uDE3B  = %.3f"%(result.parameters[0]))
-			latex3 = Label(x=10,y=250,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="\uD835\uDC61\u2080	 = %i"%(result['parameters'][1]))
-			latex4 = Label(x=10,y=235,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="\uD835\uDC5A\u2088 = %.2f"%(10.635-2.5*np.log10(result['parameters'][2])))
-			latex5 = Label(x=10,y=220,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="\uD835\uDC65\u2081 = %.2f"%(result['parameters'][3]))
-			latex6 = Label(x=10,y=205,x_units='screen',y_units='screen',
-						   render_mode='css', text_font_size='10pt',
-						   text="\uD835\uDC50  = %.2f"%(result['parameters'][4]))
-			for latex in [latex1,latex2,latex3,latex4,latex5,latex6]:
-				ax.add_layout(latex)
-
-		g = file_html(ax,CDN,"my plot")
-		print("plotting took %s"%(time.time()-tstart))
-		return HttpResponse(g.replace('width: 90%','width: 100%'))
 
 def lightcurveplot_flux(request, transient_id, salt2=False):
 	import time
@@ -1785,59 +1518,77 @@ def spectrumplotsingle(request, transient_id, spec_id):
 
 def rise_time(request,transient_id,obs_id):
 
-	tstart = time.time()
-	transient = Transient.objects.filter(id=transient_id)[0]
-	coords = transient.CoordString()
+	def rise_func(transient_id,obs_id,risedict):
+		tstart = time.time()
+		transient = Transient.objects.filter(id=transient_id)[0]
+		coords = transient.CoordString()
 
-	obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
-	
-	tme = Time(str(obsnight.obs_date).split()[0])
-	sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
+		obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
 
-	location = EarthLocation.from_geodetic(
-		obsnight.resource.telescope.longitude*u.deg,obsnight.resource.telescope.latitude*u.deg,
-		obsnight.resource.telescope.elevation*u.m)
-	tel = Observer(location=location, timezone="UTC")
+		tme = Time(str(obsnight.obs_date).split()[0])
+		sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
 
-	target_rise_time = tel.target_rise_time(tme,sc,horizon=18*u.deg,which="previous")
-	
-	if target_rise_time:
-		risetime = target_rise_time.isot.split('T')[-1]
-	else: 
-		risetime = None
-			
-	print(time.time()-tstart)
-	risedict = {'rise_time':risetime}
+		location = EarthLocation.from_geodetic(
+			obsnight.resource.telescope.longitude*u.deg,obsnight.resource.telescope.latitude*u.deg,
+			obsnight.resource.telescope.elevation*u.m)
+		tel = Observer(location=location, timezone="UTC")
+
+		target_rise_time = tel.target_rise_time(tme,sc,horizon=18*u.deg,which="previous")
+
+		if target_rise_time:
+			risetime = target_rise_time.isot.split('T')[-1]
+		else: 
+			risetime = None
+
+		print('rise time took %s'%(time.time()-tstart))
+		risedict = {'rise_time':risetime}
+		return
+		
+	risedict = {'rise_time':''}
+	action = Process(target=rise_func,args=(transient_id,obs_id,risedict))
+	action.start()
+	action.join(timeout=1)
+	action.terminate()
+
 	return JsonResponse(risedict)
 
+    
 def set_time(request,transient_id,obs_id):
 
-	import time
-	tstart = time.time()
-	transient = Transient.objects.filter(id=transient_id)[0]
-	coords = transient.CoordString()
+	def set_func(transient_id,obs_id,setdict):
+		tstart = time.time()
+		transient = Transient.objects.filter(id=transient_id)[0]
+		coords = transient.CoordString()
 
-	obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
-	
-	tme = Time(str(obsnight.obs_date).split()[0])
-	sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
+		obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
 
-	location = EarthLocation.from_geodetic(
-		obsnight.resource.telescope.longitude*u.deg,obsnight.resource.telescope.latitude*u.deg,
-		obsnight.resource.telescope.elevation*u.m)
-	tel = Observer(location=location, timezone="UTC")
+		tme = Time(str(obsnight.obs_date).split()[0])
+		sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
 
-	target_set_time = tel.target_set_time(tme,sc,horizon=18*u.deg,which="previous")
-	
-	if target_set_time:
-		settime = target_set_time.isot.split('T')[-1]
-	else: 
-		settime = None
-			
-	print(time.time()-tstart)
-	setdict = {'set_time':settime}
+		location = EarthLocation.from_geodetic(
+			obsnight.resource.telescope.longitude*u.deg,obsnight.resource.telescope.latitude*u.deg,
+			obsnight.resource.telescope.elevation*u.m)
+		tel = Observer(location=location, timezone="UTC")
+
+		target_set_time = tel.target_set_time(tme,sc,horizon=18*u.deg,which="previous")
+
+		if target_set_time:
+			settime = target_set_time.isot.split('T')[-1]
+		else: 
+			settime = None
+
+		print('set time took %s'%(time.time()-tstart))
+		setdict = {'set_time':settime}
+
+	setdict = {'set_time':''}
+	action = Process(target=set_func,args=(transient_id,obs_id,setdict))
+	action.start()
+	action.join(timeout=1)
+	action.terminate()
+
 	return JsonResponse(setdict)
 
+        
 def moon_angle(request,transient_id,obs_id):
 	transient = Transient.objects.filter(id=transient_id)[0]
 	coords = transient.CoordString()

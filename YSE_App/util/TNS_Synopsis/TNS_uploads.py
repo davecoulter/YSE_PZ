@@ -624,6 +624,32 @@ class processTNS:
 		else: nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=False,doTNS=doTNS)
 		return nsn
 
+	def GetRecentEvents(self,ndays=None,doTNS=True):
+		
+		#date_format = '%Y-%m-%d'
+		datemin = (datetime.now() - timedelta(days=ndays)).isoformat() #strftime(date_format)
+		search_obj=[("ra",""), ("dec",""), ("radius",""), ("units",""),
+					("objname",""), ("internal_name",""),("public_timestamp",datemin)]
+		response=search(self.tnsapi, search_obj, self.tnsapikey)
+		json_data = format_to_json(response.text)
+
+		objs,ras,decs = [],[],[]
+		for jd in json_data['data']['reply']:
+			TNSGetSingle = [("objname",jd['objname']),
+							("photometry","0"),
+							("spectra","0")]
+
+			response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey)
+			json_data_single = format_to_json(response_single.text)
+
+			objs.append(json_data_single['data']['reply']['objname'])
+			ras.append(json_data_single['data']['reply']['ra'])
+			decs.append(json_data_single['data']['reply']['dec'])
+		
+		nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=True,doTNS=doTNS)
+		return nsn
+
+	
 	def ProcessTNSEmails(self):
 		body = ""
 		html = ""
@@ -913,6 +939,22 @@ def format_to_json(source):
 	#result=json.dumps(parsed,indent=4)
 	return parsed #result
 
+def search(url,json_list,api_key):
+	try:
+		# url for search obj
+		search_url=url+'/search'
+		# change json_list to json format
+		json_file=OrderedDict(json_list)
+		# construct the list of (key,value) pairs
+		search_data=[('api_key',(None, api_key)),
+					 ('data',(None,json.dumps(json_file)))]
+		# search obj using request module
+		response=requests.post(search_url, files=search_data)
+		# return response
+		return response
+	except Exception as e:
+		return [None,'Error message : \n'+str(e)]
+
 def get(url,json_list,api_key):
 	try:
 		# url for get obj
@@ -1118,3 +1160,64 @@ class TNS_Ignore_updates(CronJobBase):
 
 		print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 		
+class TNS_recent(CronJobBase):
+
+	RUN_AT_TIMES = ['00:00', '08:00']
+
+	schedule = Schedule(run_at_times=RUN_AT_TIMES)
+	code = 'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_updates'
+
+	def do(self):
+
+		# execute only if run as a script
+		print("checking for recent TNS events at {}".format(datetime.now().isoformat()))
+		usagestring = "TNS_Synopsis.py <options>"
+
+		tstart = time.time()
+		tnsproc = processTNS()
+
+		# read in the options from the param file and the command line
+		# some convoluted syntax here, making it so param file is not required
+		parser = tnsproc.add_options(usage=usagestring)
+		options,  args = parser.parse_known_args()
+		options.settingsfile = "%s/settings.ini"%djangoSettings.PROJECT_DIR
+		
+		config = configparser.ConfigParser()
+		config.read(options.settingsfile)
+
+		parser = tnsproc.add_options(usage=usagestring,config=config)
+		options,  args = parser.parse_known_args()
+		tnsproc.hostmatchrad = options.hostmatchrad
+
+		tnsproc.login = options.login
+		tnsproc.password = options.password
+		tnsproc.dblogin = options.dblogin
+		tnsproc.dbpassword = options.dbpassword
+		tnsproc.dburl = options.dburl
+		tnsproc.status = options.status
+		tnsproc.settingsfile = options.settingsfile
+		tnsproc.clobber = options.clobber
+		tnsproc.noupdatestatus = options.noupdatestatus
+		tnsproc.redoned = True
+		tnsproc.nedradius = options.nedradius
+		tnsproc.tnsapi = options.tnsapi
+		tnsproc.tnsapikey = options.tnsapikey
+		tnsproc.ztfurl = options.ztfurl
+		#options.ndays=0.5
+		try:
+			tnsproc.noupdatestatus = True
+			nsn = tnsproc.GetRecentEvents(ndays=1)
+		except Exception as e:
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			nsn = 0
+			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+			subject = "TNS Transient Upload Failure in GetRecentEvents"
+			print("Sending error email")
+			html_msg = "Alert : YSE_PZ Failed to upload transients in TNS_uploads.TNS_recent()\n"
+			html_msg += "Error : %s at line number %s"
+			sendemail(from_addr, options.dbemail, subject,
+					  html_msg%(e,exc_tb.tb_lineno),
+					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+
+		print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
