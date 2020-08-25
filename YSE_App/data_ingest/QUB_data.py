@@ -426,7 +426,7 @@ class YSE(CronJobBase):
 	RUN_EVERY_MINS = 30
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
-	code = 'YSE_App.data_ingest.QUB_data.QUB'
+	code = 'YSE_App.data_ingest.QUB_data.YSE'
 
 	def do(self):
 
@@ -840,6 +840,51 @@ class YSE(CronJobBase):
 		except Exception as e:
 			print("Error: %s"%e)
 
+class YSE_Weekly(CronJobBase):
+
+	RUN_EVERY_MINS = 30
+
+	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+	code = 'YSE_App.data_ingest.QUB_data.YSE'
+
+	def do(self):
+
+		print("starting YSE ingest at {}".format(datetime.datetime.now().isoformat()))
+		usagestring = "TNS_Synopsis.py <options>"
+
+		tstart = time.time()
+
+		# read in the options from the param file and the command line
+		# some convoluted syntax here, making it so param file is not required
+		try:
+            ys = YSE()
+			parser = ys.add_options(usage=usagestring)
+			options,  args = parser.parse_known_args()
+
+			config = configparser.ConfigParser()
+			config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+			parser = ys.add_options(usage=usagestring,config=config)
+			options,  args = parser.parse_known_args()
+			ys.options = options
+            ys.options.max_days = 7
+            
+			nsn = ys.main()
+		except Exception as e:
+			print(e)
+			nsn = 0
+			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+			subject = "YSE Weekly Updates Transient Upload Failure"
+			print("Sending error email")
+			html_msg = "Alert : YSE_PZ Failed to upload weekly transients from YSE in QUB_data.py\n"
+			html_msg += "Error : %s"
+			sendemail(from_addr, options.dbemail, subject,
+					  html_msg%(e),
+					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+
+		print('QUB -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
+
+            
 class CheckDuplicates(CronJobBase):
     
 	RUN_EVERY_MINS = 30

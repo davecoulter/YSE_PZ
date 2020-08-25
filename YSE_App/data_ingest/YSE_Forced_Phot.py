@@ -266,15 +266,18 @@ class ForcedPhot(CronJobBase):
 
 		return(parser)
 		
-	def main(self,transient_name=None):
+	def main(self,transient_name=None,update_forced=False):
 
 		# candidate transients
 		min_date = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.options.max_time_minutes)
 		nowmjd = date_to_mjd(datetime.datetime.utcnow())
 		#transient_name='2020iuy'
-		if transient_name is None:
+		if transient_name is None and not update_forced:
 			transients = Transient.objects.filter(
 				created_date__gte=min_date).filter(~Q(tags__name='YSE')).order_by('-created_date')
+        elif update_forced:
+            min_date_forcedphot=datetime.datetime.utcnow() - datetime.timedelta(days=7)
+            transients = Transient.objects.filter(~Q(tags__name='YSE') & Q(transientphotometry__transientphotdata__obs_date__gt=min_date_forcedphot)).distinct()
 		else:
 			transients = Transient.objects.filter(name=transient_name)
 
@@ -833,6 +836,55 @@ class ForcedPhot(CronJobBase):
 		else: files = {'filename':filename_or_obj.getvalue()}
 		page = session.post(stampurl, files=files)
 
+class ForcedPhotUpdate(CronJobBase):
+
+	RUN_EVERY_MINS = 30
+
+	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+	code = 'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhot'
+
+	def __init__(self):
+		
+		self.debug = False
+		if self.debug:
+			print('debug mode enabled')
+	
+	def do(self):
+		self.debug = False
+		
+		try:
+			tstart = time.time()
+
+		    fp = ForcedPhot()
+			parser = fp.add_options(usage='')
+			options,  args = parser.parse_known_args()
+
+			config = configparser.ConfigParser()
+			config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+			parser = fp.add_options(usage='',config=config)
+			options,  args = parser.parse_known_args()
+			fp.options = options
+
+			nsn = fp.main(update_forced=True)
+		except Exception as e:
+			print(e)
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			print("""Forced phot cron failed with error %s at line number %s"""%(
+				e,exc_tb.tb_lineno))
+			nsn = 0
+			smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+			from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+			subject = "YSE_PZ Forced Photometry Upload Failure"
+			print("Sending error email")
+			html_msg = "Alert : YSE_PZ Forced Photometry Failed to upload transients in YSE_Forced_Phot.py\n"
+			html_msg += "Error : %s"
+			sendemail(from_addr, options.dbemail, subject,
+					  html_msg%(e),
+					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+
+		print('YSE_PZ Forced Photometry took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
+
+        
 def sendemail(from_addr, to_addr,
 			  subject, message,
 			  login, password, smtpserver, cc_addr=None):
