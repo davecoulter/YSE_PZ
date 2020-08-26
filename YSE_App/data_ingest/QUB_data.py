@@ -544,9 +544,8 @@ class YSE(CronJobBase):
 			nsn = 0
 			nsn_single = 25
 
-			nowmjd = Time.now().mjd
-			summary = summary[summary['local_designation'] == '10HYSEkcp']
-			import pdb; pdb.set_trace()
+			nowmjd = Time.now().mjds
+			summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
 			while nsn_single == 25:
 				transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=25)
 				print('uploading %i transients'%nsn_single)
