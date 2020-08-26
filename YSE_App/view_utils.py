@@ -844,7 +844,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	transient = Transient.objects.get(pk=transient_id)
 	photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
 		'created_by', 'modified_by', 'band', 'unit', 'data_quality', 'photometry',
-		'band__instrument','band__instrument__telescope')
+		'band__instrument','band__instrument__telescope').order_by('-modified_date')
 	if not photdata:
 		return django.http.HttpResponse('')
 	
@@ -868,16 +868,17 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	mag_errs = np.array(photdata.values_list('mag_err',flat=True))
 	disc_points = np.array(photdata.values_list('discovery_point',flat=True))
 	obs_dates = np.array(photdata.values_list('obs_date',flat=True))
+	obs_dates_str = np.array([p.strftime('%m/%d/%Y') for p in photdata.values_list('obs_date',flat=True)])
 	mjds = date_to_mjd(obs_dates)
-	data_quality = np.array(photdata.values_list('data_quality',flat=True))
-	mag_sys = np.array(photdata.values_list('mag_sys',flat=True))
+	data_quality = np.array(['Good' if p is None else p for p in photdata.values_list('data_quality__name',flat=True)])
+	mag_sys = np.array(['None' if p is None else p for p in photdata.values_list('mag_sys__name',flat=True)])
 	band = np.array(photdata.values_list('band',flat=True))
 	band_name = np.array(photdata.values_list('band__name',flat=True))
 	instrument_name = np.array(photdata.values_list('band__instrument__name',flat=True))
 	disp_symbol = np.array(photdata.values_list('band__disp_symbol',flat=True))
 	disp_color = np.array(photdata.values_list('band__disp_color',flat=True))
 	mag_errs_tmp = mag_errs
-	mag_errs_tmp[mag_errs == None] = 1.0
+	mag_errs_tmp[mag_errs == None] = 0.01
 
 	colorlist = ['#8dd3c7','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9']
 	TOOLTIPS = [
@@ -890,6 +891,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	bandunq,idx = np.unique(band,return_index=True)
 	count = 0
 	legend_it = []
+	upperlimmag,upperlimmjd = np.array([]),np.array([])
 	for bs,bn,b,bc,bsym,inn in zip(
 			bandunq,band_name[idx],band[idx],disp_color[idx],disp_symbol[idx],instrument_name[idx]):
 		if bc != 'None' and bc: color = bc
@@ -927,14 +929,15 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		iPlotUlimFlux2 = fluxes[iPlotUlimFlux]/flux_errs[iPlotUlimFlux] < 3
 		mags_ulim = -2.5*np.log10((fluxes[iPlotUlimFlux][iPlotUlimFlux2] + \
 			3*flux_errs[iPlotUlimFlux][iPlotUlimFlux2]).astype(float)) + flux_zpts[iPlotUlimFlux][iPlotUlimFlux2]
-
+		upperlimmag = np.append(upperlimmag,mags_ulim)
+		upperlimmjd = np.append(upperlimmjd,mjds[iPlotUlimFlux][iPlotUlimFlux2].tolist())
 
 		source = ColumnDataSource(data=dict(x=mjds[iPlot].tolist(),
 											y=mags[iPlot].tolist(),
-											date=obs_dates[iPlot].tolist(),
+											date=obs_dates_str[iPlot].tolist(),
 											data_quality=data_quality[iPlot].tolist(),
 											magsys=mag_sys[iPlot].tolist(),
-											band=[bn]*len(mjds[iPlot].tolist())))
+											band=['%s - %s'%(inn,bn)]*len(mjds[iPlot].tolist())))
 
 		p = plotmethod('x','y',source=source,
 				   color=color,size=size, muted_alpha=0.2)
@@ -944,10 +947,10 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
 		source = ColumnDataSource(data=dict(x=mjds[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
 											y=mags_ulim.tolist(), #[iPlotUlim].tolist(),
-											date=obs_dates[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
+											date=obs_dates_str[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
 											data_quality=data_quality[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
 											magsys=mag_sys[iPlotUlimFlux][iPlotUlimFlux2].tolist(),
-											band=[bn]*len(mjds[iPlotUlimFlux][iPlotUlimFlux2].tolist())))
+											band=['%s - %s'%(inn,bn)]*len(mjds[iPlotUlimFlux][iPlotUlimFlux2].tolist())))
 
 		p = ax.inverted_triangle('x','y',source=source,
 								 color=color,size=5,muted_alpha=0.2)
@@ -981,11 +984,14 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		limmjd = np.min(mjds[disc_points == 1])-30
 		ax.x_range=Range1d(limmjd,np.max(mjds)+10)
 		ax.extra_x_ranges = {"dateax": Range1d(limmjd,np.max(mjds)+10)}
+		ax.y_range = Range1d(np.max(np.append(mags[mags != None][mjds[mags != None] > limmjd],upperlimmag[upperlimmjd > limmjd]))+0.25,
+							 np.min(mags[mags != None][mjds[mags != None] > limmjd])-0.5)
 	else:
 		ax.x_range=Range1d(np.min(mjds)-10,np.max(mjds)+10)
 		ax.extra_x_ranges = {"dateax": Range1d(np.min(mjds)-10,np.max(mjds)+10)}
-
-	ax.y_range=Range1d(np.max(mags[mags != None])+0.25,np.min(mags[mags != None])-0.5)
+		ax.y_range=Range1d(np.max(np.append(mags,upperlimmag))+0.25,np.min(mags)-0.5)
+        
+	#ax.y_range=Range1d(np.max(mags[mags != None])+0.25,np.min(mags[mags != None])-0.5)
 	ax.add_layout(LinearAxis(x_range_name="dateax"), 'above')
 
 	ax.plot_height = 400+20*len(bandunq)
@@ -1432,7 +1438,7 @@ def spectrumplot(request, transient_id):
 	legend.glyph_height = 20
 	ax.add_layout(legend) #, 'right')
 
-	ax.plot_height = 800
+	ax.plot_height = 400+50*len(dbspectra)
 	ax.plot_width = 400
 	
 	ax.xaxis.axis_label = r'Wavelength (Angstrom)'
@@ -1583,7 +1589,7 @@ def set_time(request,transient_id,obs_id):
 	setdict = {'set_time':''}
 	action = Process(target=set_func,args=(transient_id,obs_id,setdict))
 	action.start()
-	action.join(timeout=1)
+	action.join(timeout=1.0)
 	action.terminate()
 
 	return JsonResponse(setdict)
