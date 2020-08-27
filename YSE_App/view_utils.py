@@ -1430,7 +1430,7 @@ def spectrumplot(request, transient_id):
 
 		p = ax.line(spectra[i]['wave'], (spectra[i]['flux']-spectra[i].minval)/spectra[i].scale + spectra[i].offset,
 					color=color,muted_alpha=0.2)
-		legend_it[np.where(temp2 == i)[0][0]] = ('%s - %s'%(dbspectra[i].instrument.name,dbspectra[i].obs_date.isoformat().split('+')[0]), [p])
+		legend_it[np.where(temp2 == i)[0][0]] = ('%s - %s'%(dbspectra[i].instrument.name,dbspectra[i].obs_date.strftime('%Y-%m-%d')), [p])
 	
 	legend = Legend(items=legend_it, location="bottom_right")
 	legend.click_policy="mute"
