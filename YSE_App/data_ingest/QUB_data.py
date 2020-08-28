@@ -920,7 +920,7 @@ class CheckDuplicates(CronJobBase):
 		from YSE_App.models import Transient
         # 10HYSEkcp
         
-		transients = Transient.objects.filter(created_date__gt=datetime.datetime.now()-datetime.timedelta(20)).filter(name__startswith='10')
+		transients = Transient.objects.filter(created_date__gt=datetime.datetime.now()-datetime.timedelta(1)).filter(name__startswith='10')
 		for t in transients:
 			ramin,ramax,decmin,decmax = getRADecBox(t.ra,t.dec,size=0.00042)
 			dups = Transient.objects.filter(Q(ra__gt=ramin) & Q(ra__lt=ramax) &
