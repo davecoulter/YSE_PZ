@@ -1092,7 +1092,7 @@ class ObsNightFollowupTable(tables.Table):
 		sc = SkyCoord('%s %s'%(value[0],value[1]),unit=(u.hourangle,u.deg))
 		target_rise_time = self.tel.target_rise_time(self.tme,sc,horizon=18*u.deg,which="previous")
 
-		if target_rise_time and target_rise_time.value.data == target_rise_time.value.data:
+		if target_rise_time and target_rise_time.value == target_rise_time.value:
 			risetime = target_rise_time.isot.split('T')[-1].split('.')[0]
 		else:
 			risetime = None
@@ -1103,7 +1103,7 @@ class ObsNightFollowupTable(tables.Table):
 		sc = SkyCoord('%s %s'%(value[0],value[1]),unit=(u.hourangle,u.deg))
 		target_set_time = self.tel.target_set_time(self.tme,sc,horizon=18*u.deg,which="previous")
 
-		if target_set_time and target_set_time.value.data == target_set_time.value.data:
+		if target_set_time and target_set_time.value == target_set_time.value:
 			settime = target_set_time.isot.split('T')[-1].split('.')[0]
 		else:
 			settime = None
