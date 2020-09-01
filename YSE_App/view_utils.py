@@ -1389,7 +1389,7 @@ def spectrumplot(request, transient_id):
 
 		wave = list(spec.values_list('wavelength',flat=True))
 		flux = list(spec.values_list('flux',flat=True))
-		#import pdb; pdb.set_trace()
+
 		#figure is a function in the bokeh module
 		#HELLO
 		#wave,flux = [],[]
@@ -1404,14 +1404,16 @@ def spectrumplot(request, transient_id):
 		spectra[i].mjd = date_to_mjd(spectrum.obs_date.isoformat().split('+')[0])
 		n_pix = len(wave)
 		sort_flux = np.sort(flux)
-		minval = sort_flux[round(n_pix*0.05)]
-		maxval = sort_flux[round(n_pix*0.95)]
-		minval = minval*0.5
-		maxval = maxval*1.1
-		scale = maxval - minval
-		spectra[i].minval = minval
-		spectra[i].maxval = maxval
-		spectra[i].scale  = scale
+
+		if len(flux):
+			minval = sort_flux[round(n_pix*0.05)]
+			maxval = sort_flux[round(n_pix*0.95)]
+			minval = minval*0.5
+			maxval = maxval*1.1
+			scale = maxval - minval
+			spectra[i].minval = minval
+			spectra[i].maxval = maxval
+			spectra[i].scale  = scale
 
 		dates.append(spectra[i].mjd)
 
@@ -1428,8 +1430,9 @@ def spectrumplot(request, transient_id):
 	for i,color in zip(range(len(dbspectra)),colors):
 		spectra[i].offset = offset[i]
 
-		p = ax.line(spectra[i]['wave'], (spectra[i]['flux']-spectra[i].minval)/spectra[i].scale + spectra[i].offset,
-					color=color,muted_alpha=0.2)
+		if len(spectra[i]['flux']):
+			p = ax.line(spectra[i]['wave'], (spectra[i]['flux']-spectra[i].minval)/spectra[i].scale + spectra[i].offset,
+						color=color,muted_alpha=0.2)
 		legend_it[np.where(temp2 == i)[0][0]] = ('%s - %s'%(dbspectra[i].instrument.name,dbspectra[i].obs_date.strftime('%Y-%m-%d')), [p])
 	
 	legend = Legend(items=legend_it, location="bottom_right")
@@ -1579,7 +1582,8 @@ def set_time(request,transient_id,obs_id):
 		target_set_time = tel.target_set_time(tme,sc,horizon=18*u.deg,which="previous")
 
 		if target_set_time:
-			settime = target_set_time.isot.split('T')[-1]
+			try: settime = target_set_time.isot.split('T')[-1]
+			except: settime = None
 		else: 
 			settime = None
 
@@ -1625,7 +1629,8 @@ def tonight_rise_time(request,transient_id,too_id):
 	target_rise_time = tel.target_rise_time(time,sc,horizon=18*u.deg,which="previous")
 
 	if target_rise_time:
-		returnstarttime = target_rise_time.isot.split('T')[-1]
+		try: returnstarttime = target_rise_time.isot.split('T')[-1]
+		except: returnstarttime = None
 	else: returnstarttime = None
 
 	risedict = {'rise_time':returnstarttime}
@@ -1648,7 +1653,8 @@ def tonight_set_time(request,transient_id,too_id):
 	target_set_time = tel.target_set_time(time,sc,horizon=18*u.deg,which="previous")
 
 	if target_set_time:
-		returnstarttime = target_set_time.isot.split('T')[-1]
+		try: returnstarttime = target_set_time.isot.split('T')[-1]
+		except: returnstarttime = None
 	else: returnstarttime = None
 
 	setdict = {'set_time':returnstarttime}
