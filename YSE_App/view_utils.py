@@ -989,7 +989,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	else:
 		ax.x_range=Range1d(np.min(mjds)-10,np.max(mjds)+10)
 		ax.extra_x_ranges = {"dateax": Range1d(np.min(mjds)-10,np.max(mjds)+10)}
-		ax.y_range=Range1d(np.max(np.append(mags,upperlimmag))+0.25,np.min(mags)-0.5)
+		ax.y_range=Range1d(np.max(np.append(mags[mags != None],upperlimmag))+0.25,np.min(mags[mags != None])-0.5)
         
 	#ax.y_range=Range1d(np.max(mags[mags != None])+0.25,np.min(mags[mags != None])-0.5)
 	ax.add_layout(LinearAxis(x_range_name="dateax"), 'above')
