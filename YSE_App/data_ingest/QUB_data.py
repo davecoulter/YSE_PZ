@@ -544,7 +544,7 @@ class YSE(CronJobBase):
 			nsn = 0
 			nsn_single = 25
 
-			nowmjd = Time.now().mjds
+			nowmjd = Time.now().mjd
 			summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
 			while nsn_single == 25:
 				transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=25)
@@ -856,7 +856,7 @@ class YSE_Weekly(CronJobBase):
 		# read in the options from the param file and the command line
 		# some convoluted syntax here, making it so param file is not required
 		try:
-            ys = YSE()
+			ys = YSE()
 			parser = ys.add_options(usage=usagestring)
 			options,  args = parser.parse_known_args()
 
@@ -865,8 +865,8 @@ class YSE_Weekly(CronJobBase):
 			parser = ys.add_options(usage=usagestring,config=config)
 			options,  args = parser.parse_known_args()
 			ys.options = options
-            ys.options.max_days = 7
-            
+			ys.options.max_days = 7
+			
 			nsn = ys.main()
 		except Exception as e:
 			print(e)
@@ -927,7 +927,9 @@ class CheckDuplicates(CronJobBase):
 											Q(dec__gt=decmin) & Q(dec__lt=decmax) &
                                             Q(disc_date__gte=t.disc_date-datetime.timedelta(365)))
 			if len(dups) > 1:
+				print('deleting transient %s'%t.name)
 				t.delete()
+		return len(transients)
 			
 def jd_to_date(jd):
 	time = Time(jd,scale='utc',format='jd')

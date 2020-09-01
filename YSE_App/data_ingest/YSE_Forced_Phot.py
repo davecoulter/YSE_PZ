@@ -271,13 +271,13 @@ class ForcedPhot(CronJobBase):
 		# candidate transients
 		min_date = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.options.max_time_minutes)
 		nowmjd = date_to_mjd(datetime.datetime.utcnow())
-		#transient_name='2020iuy'
+		#transient_name='2020sck'
 		if transient_name is None and not update_forced:
 			transients = Transient.objects.filter(
 				created_date__gte=min_date).filter(~Q(tags__name='YSE')).order_by('-created_date')
-        elif update_forced:
-            min_date_forcedphot=datetime.datetime.utcnow() - datetime.timedelta(days=7)
-            transients = Transient.objects.filter(~Q(tags__name='YSE') & Q(transientphotometry__transientphotdata__obs_date__gt=min_date_forcedphot)).distinct()
+		elif update_forced:
+			min_date_forcedphot=datetime.datetime.utcnow() - datetime.timedelta(days=7)
+			transients = Transient.objects.filter(~Q(tags__name='YSE') & Q(transientphotometry__transientphotdata__obs_date__gt=min_date_forcedphot)).distinct()
 		else:
 			transients = Transient.objects.filter(name=transient_name)
 
@@ -702,11 +702,11 @@ class ForcedPhot(CronJobBase):
 			if tbl['Completion Time (UTC)'][idx]: done = True
 			else: done = False
 
-			if tbl['Total Jobs'][idx] == tbl['Successful Jobs'][idx]: success = True
+			if float(tbl['Total Jobs'][idx]) == float(tbl['Successful Jobs'][idx]): success = True
 			else:
 				success = False
-				print('warning: %i of %i jobs failed'%(tbl['Total Jobs'][idx]-tbl['Successful Jobs'][idx],tbl['Total Jobs'][idx]))
-
+				print('warning: %i of %i jobs failed'%(float(tbl['Total Jobs'][idx])-float(tbl['Successful Jobs'][idx]),float(tbl['Total Jobs'][idx])))
+		
 		return done,success
 		
 	def stamp_request(
@@ -855,7 +855,7 @@ class ForcedPhotUpdate(CronJobBase):
 		try:
 			tstart = time.time()
 
-		    fp = ForcedPhot()
+			fp = ForcedPhot()
 			parser = fp.add_options(usage='')
 			options,  args = parser.parse_known_args()
 
