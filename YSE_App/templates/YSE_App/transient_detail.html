@@ -68,8 +68,8 @@
 											<div style="margin-top:10px;" class="form-group">
 												<strong>Disc. Date (UTC)</strong>
 												<p class="text-muted">
-													{% if first_magdate %}
-														{{ first_magdate }}
+													{% if transient.disc_date %}
+														{{ transient.disc_date }}
 													{% else %}
 														Unknown
 													{% endif %}
