@@ -555,53 +555,53 @@ def yse_observing_calendar(request):
 						  '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)]),)
 
 			
-	important_dates_list = [todaydate-datetime.timedelta(1),
-							todaydate,
-							todaydate+datetime.timedelta(1)]
-	important_dates = []
-	for i,date in enumerate(important_dates_list):
+	#important_dates_list = [todaydate-datetime.timedelta(1),
+	#						todaydate,
+	#						todaydate+datetime.timedelta(1)]
+	#important_dates = []
+	#for i,date in enumerate(important_dates_list):
 
-		time = Time(date_to_mjd(date.strftime('%Y-%m-%d 00:00:00')),format='mjd')
+	#	time = Time(date_to_mjd(date.strftime('%Y-%m-%d 00:00:00')),format='mjd')
 		
-		sunset_forobs = tel.sun_set_time(time,which="next")
-		sunrise_forobs = tel.sun_rise_time(time,which="next")
-		survey_obs = SurveyObservation.objects.filter(
-			Q(mjd_requested__gte = date_to_mjd(sunset_forobs)-0.1) | Q(obs_mjd__gte = date_to_mjd(sunset_forobs)-0.1)).\
-			filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1))
-		if not len(survey_obs): continue
-		ztf_ids = survey_obs.values_list('survey_field__ztf_field_id',flat=True).distinct()
-		field_ids = survey_obs.values_list('survey_field__field_id',flat=True).distinct()
+	#	sunset_forobs = tel.sun_set_time(time,which="next")
+	#	sunrise_forobs = tel.sun_rise_time(time,which="next")
+	#	survey_obs = SurveyObservation.objects.filter(
+	#		Q(mjd_requested__gte = date_to_mjd(sunset_forobs)-0.1) | Q(obs_mjd__gte = date_to_mjd(sunset_forobs)-0.1)).\
+	#		filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1))
+	#	if not len(survey_obs): continue
+	#	ztf_ids = survey_obs.values_list('survey_field__ztf_field_id',flat=True).distinct()
+	#	field_ids = survey_obs.values_list('survey_field__field_id',flat=True).distinct()
 
-		yse_pas,transients_on_goodcells = [],[]
-		for msb_name in ztf_ids:
-			so = survey_obs.filter(survey_field__ztf_field_id = msb_name)
-			if len(so) and so[0].pos_angle_deg is None:
-				pa,tog = yse_pa(msb_name)
-			elif len(so):
-				pa,tog = None,[]
-				pa,tog = yse_pa(msb_name,pa=so[0].pos_angle_deg)
-			else:
-				pa,tog = None,[]
-			yse_pas += [pa]
-			transients_on_goodcells += [','.join(tog)]
-			if pa is not None:
-				 for s in so:
-					 if s.pos_angle_deg is None:
-						 s.pos_angle_deg = pa
-						 s.save()
+	#	yse_pas,transients_on_goodcells = [],[]
+	#	for msb_name in ztf_ids:
+	#		so = survey_obs.filter(survey_field__ztf_field_id = msb_name)
+	#		if len(so) and so[0].pos_angle_deg is None:
+	#			pa,tog = yse_pa(msb_name)
+	#		elif len(so):
+	#			pa,tog = None,[]
+	#			pa,tog = yse_pa(msb_name,pa=so[0].pos_angle_deg)
+	#		else:
+	#			pa,tog = None,[]
+	#		yse_pas += [pa]
+	#		transients_on_goodcells += [','.join(tog)]
+	#		if pa is not None:
+	#			 for s in so:
+	#				 if s.pos_angle_deg is None:
+	#					 s.pos_angle_deg = pa
+	#					 s.save()
 			
-		date_info = ()
-		subfields = [', '.join([f for f in field_ids if f.startswith(z)]) for z in ztf_ids]
-		for p,z,f,t in zip(yse_pas,ztf_ids,subfields,transients_on_goodcells):
-			date_info += ((date,z,f,p,t),)
+	#	date_info = ()
+	#	subfields = [', '.join([f for f in field_ids if f.startswith(z)]) for z in ztf_ids]
+	#	for p,z,f,t in zip(yse_pas,ztf_ids,subfields,transients_on_goodcells):
+	#		date_info += ((date,z,f,p,t),)
 
-		important_dates += [date_info]
+	#	important_dates += [date_info]
 		#import pdb; pdb.set_trace()
 
 	context = {
 		'all_obs': obstuple,
 		'utc_time': datetime.datetime.utcnow().isoformat().replace(' ','T'),
-		'important_dates': important_dates
+	#	'important_dates': important_dates
 		#'telescope_colors': telescope_colors
 	}
 	#import pdb; pdb.set_trace()
