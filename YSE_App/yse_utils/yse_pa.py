@@ -24,10 +24,10 @@ from astropy.time import Time
 from astroplan import Observer
 tel = Observer.at_site('keck', timezone='US/Hawaii')
 
-goodcells = {}
-with open("/Users/David/Dropbox/research/YSE_FieldSelection/YSE_scheduler/findcells/good_cells.txt") as fin:
-    for line in fin:
-        goodcells[line.split()[0][:-1]] = line.split()[1:]
+#goodcells = {}
+#with open("/Users/David/Dropbox/research/YSE_FieldSelection/YSE_scheduler/findcells/good_cells.txt") as fin:
+#    for line in fin:
+#        goodcells[line.split()[0][:-1]] = line.split()[1:]
 
 def yse_pa(msb_name,pa=None):
     print(msb_name)

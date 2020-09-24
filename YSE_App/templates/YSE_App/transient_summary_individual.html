@@ -353,7 +353,7 @@
         $.get(url_target).done(function(htmlresponse){
           $("#lcplot_{{transient.id}}").html(htmlresponse);
         });
-        $.get("{% url 'spectrumplot' transient.id %}").done(function(htmlresponse){
+        $.get("{% url 'spectrumplot_summary' transient.id %}").done(function(htmlresponse){
           var rows = $("#specplot_{{transient.id}}");
           $(rows).html(htmlresponse);
         });
