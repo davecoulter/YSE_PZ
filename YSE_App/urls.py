@@ -107,6 +107,7 @@ urlpatterns = [
     url(r'^salt2plot/(?P<transient_id>[0-9]+)/(?P<salt2fit>[0-1]+)/$', view_utils.salt2plot, name='salt2plot'),
     url(r'^salt2fluxplot/(?P<transient_id>[0-9]+)/(?P<salt2fit>[0-1]+)/$', view_utils.salt2fluxplot, name='salt2fluxplot'),
     url(r'^spectrumplot/(?P<transient_id>[0-9]+)/$', view_utils.spectrumplot, name='spectrumplot'),
+    url(r'^spectrumplot_summary/(?P<transient_id>[0-9]+)/$', view_utils.spectrumplot_summary, name='spectrumplot_summary'),
     url(r'^spectrumplotsingle/(?P<transient_id>[a-zA-Z0-9_-]+)/(?P<spec_id>[a-zA-Z0-9_-]+)/$', view_utils.spectrumplotsingle, name='spectrumplotsingle'),
 	url(r'^finderchart/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderchart, name='finderchart'),
 	url(r'^finderim/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderim, name='finderim'),

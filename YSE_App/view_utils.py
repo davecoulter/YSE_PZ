@@ -1450,6 +1450,83 @@ def spectrumplot(request, transient_id):
 	time.sleep(5)
 	return HttpResponse(g.replace('width: 90%','width: 100%'))
 
+def spectrumplot_summary(request, transient_id):
+	tstart = time.time()
+	transient = Transient.objects.get(pk=transient_id)
+	dbspectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True).select_related()
+	spectra = {}
+
+	if not len(dbspectra):
+		return django.http.HttpResponse('')
+
+	
+	dates = []
+	for i,spectrum in enumerate(dbspectra):
+		spec = TransientSpecData.objects.filter(spectrum=spectrum)
+
+		wave = list(spec.values_list('wavelength',flat=True))
+		flux = list(spec.values_list('flux',flat=True))
+
+		#figure is a function in the bokeh module
+		#HELLO
+		#wave,flux = [],[]
+		#for s in spec:
+		#	wave += [s.wavelength]
+		#	flux += [s.flux]
+		flux = np.array(flux)[np.argsort(wave)]
+		wave = np.sort(wave)
+			
+		spec = Table([wave,flux],names=['wave','flux'])			
+		spectra[i] = spec
+		spectra[i].mjd = date_to_mjd(spectrum.obs_date.isoformat().split('+')[0])
+		n_pix = len(wave)
+		sort_flux = np.sort(flux)
+
+		if len(flux):
+			minval = sort_flux[round(n_pix*0.05)]
+			maxval = sort_flux[round(n_pix*0.95)]
+			minval = minval*0.5
+			maxval = maxval*1.1
+			scale = maxval - minval
+			spectra[i].minval = minval
+			spectra[i].maxval = maxval
+			spectra[i].scale  = scale
+
+		dates.append(spectra[i].mjd)
+
+	dates = np.array(dates)
+	temp = np.argsort(-dates)
+	temp2 = np.argsort(dates)
+	offset = np.empty_like(temp)
+	offset[temp] = np.arange(len(dates))
+	ax=figure(plot_width=240,plot_height=240,sizing_mode='stretch_width',y_range=(-0.15, len(dbspectra)+0.15))
+
+
+	colors = itertools.cycle(palette)
+	legend_it = [None]*len(dbspectra)
+	for i,color in zip(range(len(dbspectra)),colors):
+		spectra[i].offset = offset[i]
+
+		if len(spectra[i]['flux']):
+			p = ax.line(spectra[i]['wave'], (spectra[i]['flux']-spectra[i].minval)/spectra[i].scale + spectra[i].offset,
+						color=color,muted_alpha=0.2)
+		legend_it[np.where(temp2 == i)[0][0]] = ('%s - %s'%(dbspectra[i].instrument.name,dbspectra[i].obs_date.strftime('%Y-%m-%d')), [p])
+	
+	legend = Legend(items=legend_it, location="bottom_right")
+	legend.click_policy="mute"
+	legend.label_height = 1
+	legend.glyph_height = 20
+	ax.add_layout(legend) #, 'right')
+
+	ax.plot_height = 150+50*len(dbspectra)
+	ax.plot_width = 400
+	
+	ax.xaxis.axis_label = r'Wavelength (Angstrom)'
+	ax.yaxis.axis_label = 'Flux'
+	g = file_html(ax,CDN,"spectrum plot")
+	time.sleep(5)
+	return HttpResponse(g.replace('width: 90%','width: 100%'))
+
 
 #def spectrumplot(request, transient_id):
 #	tstart = time.time()
