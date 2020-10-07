@@ -22,7 +22,8 @@ def do(debug=False):
 								 Q(status__name = 'Watch') |
 								 Q(status__name = 'Interesting') |
 								 Q(status__name = 'FollowupRequested') |
-								 Q(status__name = 'Following'))
+								 Q(status__name = 'Following') |
+								 Q(tags__name = 'YSE') | Q(tags__name = 'YSE Forced Phot')).distinct()
 
 	light_curve_list_z,light_curve_list_noz,transient_list_z,transient_list_noz = [],[],[],[]
 
@@ -86,9 +87,11 @@ def do(debug=False):
 	if len(light_curve_list_noz):
 		classification_noz = Classify(known_redshift=False, bcut=False, zcut=None)
 		predictions_noz = classification_noz.get_predictions(light_curve_list_noz)
+	else: predictions_noz = [[]]
 	if len(light_curve_list_z):
 		classification_z = Classify(known_redshift=True, bcut=False, zcut=None)
 		predictions_z = classification_z.get_predictions(light_curve_list_z)
+	else: predictions_z = [[]]
 
 	if debug:
 		import matplotlib.pyplot as plt
@@ -96,6 +99,7 @@ def do(debug=False):
 		classification_z.plot_light_curves_and_classifications(indexes_to_plot=(0,))
 
 	for tl,predictions in zip([transient_list_z,transient_list_noz],[predictions_z[0],predictions_noz[0]]):
+		
 		for i,t in enumerate(tl):
 			try:
 				best_predictions = predictions[i][-1,:]
@@ -104,11 +108,13 @@ def do(debug=False):
 				idx,outclassnames,PIa = 0,[],0
 				for j in range(len(classification_z.class_names)):
 					if classification_z.class_names[j] == 'Pre-explosion': continue
-					elif classification_z.class_names[j].startswith('SNIa'): PIa += best_predictions[j]
+					elif classification_z.class_names[j].startswith('SNIa'):
+						PIa += best_predictions[j]
 					else:
 						outclassnames += [classification_z.class_names[j]]
 						adjusted_best_predictions[idx] = best_predictions[j]
 						idx += 1
+
 				outclassnames += ['SN Ia']
 				outclassnames = np.array(outclassnames)
 				adjusted_best_predictions = adjusted_best_predictions[:len(outclassnames)]
@@ -118,6 +124,7 @@ def do(debug=False):
 				transient_class = outclassnames[adjusted_best_predictions == np.max(adjusted_best_predictions)][0]
 				photo_class = TransientClass.objects.filter(name = classdict[transient_class])
 			except Exception as e:
+				import pdb; pdb.set_trace()
 				print('Runtime Error: %s'%e)
 				raise RuntimeError(e)
 
@@ -127,6 +134,7 @@ def do(debug=False):
 			else:
 				print('class %s not in DB'%classdict[transient_class])
 				raise RuntimeError('class %s not in DB'%classdict[transient_class])
+			
 	print('successfully finished classifying with RAPID')
 
 
