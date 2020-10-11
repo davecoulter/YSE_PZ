@@ -34,7 +34,6 @@ htmlheader = """
       <th>Dec</th>
       <th>Type</th>
       <th>Redshift</th>
-      <th>Host Redshift</th>
       <th>Reporting Group/s</th>
       <th>Discovery Mag</th>
       <th>Discovery Filter</th>
@@ -62,7 +61,10 @@ def main():
     with open('/data/yse_pz/YSE_PZ/YSE_PZ/static/yse_latest.html','w') as fout:
         print(htmlheader,file=fout)
         for d in data:
-            dataline = f"""
+            if d['Redshift']: redshift = d['Redshift']
+            else: redshift = d['Host Redshift']
+            
+            dataline = """
 <tr>
 <td>%s</td>
 <td>%s</td>
@@ -73,9 +75,8 @@ def main():
 <td>%s</td>
 <td>%s</td>
 <td>%s</td>
-<td>%s</td>
 </tr>
-"""%(d['Name'],d['RA'],d['DEC'],d['Obj. Type'],d['Redshift'],d['Host Redshift'],
+"""%(d['Name'],d['RA'],d['DEC'],d['Obj. Type'],redshift,
      d['Reporting Group/s'],d['Discovery Mag/Flux'],d['Discovery Filter'],
      d['Discovery Date (UT)'])
             print(dataline,file=fout) 
