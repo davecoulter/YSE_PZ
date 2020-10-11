@@ -59,7 +59,7 @@ def main():
     response = requests.get(csvlink)
     data = at.Table.read(response.text,format='ascii.csv')
 
-    with open('yse_latest.html','w') as fout:
+    with open('/data/yse_pz/YSE_PZ/YSE_PZ/static/yse_latest.html','w') as fout:
         print(htmlheader,file=fout)
         for d in data:
             dataline = f"""
