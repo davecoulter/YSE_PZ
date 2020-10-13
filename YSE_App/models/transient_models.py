@@ -216,7 +216,7 @@ class Transient(BaseModel):
 		all_phot = yse_models.TransientPhotometry.objects.filter(transient_query)
 		phot_ids = all_phot.values('id')
 		phot_data_query = Q(photometry__id__in=phot_ids)
-		recent_mag = yse_models.TransientPhotData.objects.exclude(data_quality__isnull=False).filter(phot_data_query).order_by('-obs_date')
+		recent_mag = yse_models.TransientPhotData.objects.exclude(data_quality__isnull=False).filter(mag__isnull=False).filter(phot_data_query).order_by('-obs_date')
 
 		if len(recent_mag):
 			return '%.2f'%(recent_mag[0].mag)
