@@ -873,8 +873,10 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	data_quality = np.array(['Good' if p is None else p for p in photdata.values_list('data_quality__name',flat=True)])
 	mag_sys = np.array(['None' if p is None else p for p in photdata.values_list('mag_sys__name',flat=True)])
 	band = np.array(photdata.values_list('band',flat=True))
-	band_name = np.array(photdata.values_list('band__name',flat=True))
-	instrument_name = np.array(photdata.values_list('band__instrument__name',flat=True))
+	band_name = np.array([PhotometricBand.objects.get(pk=b).name for b in band])
+	instrument_name = np.array([PhotometricBand.objects.get(pk=b).instrument.name for b in band])
+	#band_name = np.array(photdata.values_list('band__name',flat=True))
+	#instrument_name = np.array(photdata.values_list('band__instrument__name',flat=True))
 	disp_symbol = np.array(photdata.values_list('band__disp_symbol',flat=True))
 	disp_color = np.array(photdata.values_list('band__disp_color',flat=True))
 	mag_errs_tmp = mag_errs
@@ -1518,7 +1520,7 @@ def spectrumplot_summary(request, transient_id):
 	legend.glyph_height = 20
 	ax.add_layout(legend) #, 'right')
 
-	ax.plot_height = 150+50*len(dbspectra)
+	ax.plot_height = 200 #150+30*len(dbspectra)
 	ax.plot_width = 400
 	
 	ax.xaxis.axis_label = r'Wavelength (Angstrom)'
