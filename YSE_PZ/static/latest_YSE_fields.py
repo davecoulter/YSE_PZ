@@ -22,7 +22,7 @@ def GetSexigesimalString(ra_decimal, dec_decimal):
 
     ra_string = "%02d:%02d:%06.3f" % (ra[0],ra[1],ra[2])
     if dec[0] >= 0:
-        dec_string = " %02d:%02d:%06.3f" % (dec[0],np.abs(dec[1]),np.abs(dec[2]))
+        dec_string = "+%02d:%02d:%06.3f" % (dec[0],np.abs(dec[1]),np.abs(dec[2]))
     else:
         dec_string = "%03d:%02d:%06.3f" % (dec[0],np.abs(dec[1]),np.abs(dec[2]))
 
@@ -62,8 +62,8 @@ htmlheader = """
       <th>RA</th>
       <th>Dec</th>
       <th>Filters</th>
-      <th>Date/Time (UT)</th>
-      <th>Limiting Mags</th>
+      <!--<th>Date/Time (UT)</th>
+      <th>Limiting Mags</th>-->
     </tr>
   <tbody>
 """
@@ -111,10 +111,10 @@ def main():
             filt = filters[iMJDMatch]
             if filt == 'z' or p['name'] == 'g' or (p['name'] == 'r' and filt in ['i','z']):
                 filters[iMJDMatch] = p['name']+','+filters[iMJDMatch]
-                maglim[iMJDMatch] = '%.2f,%.2f'%(d['mag_lim'],maglim[iMJDMatch])
+                maglim[iMJDMatch] = '%.2f, %s'%(d['mag_lim'],maglim[iMJDMatch])
             else:
                 filters[iMJDMatch] = filters[iMJDMatch][0] + ',' + p['name']
-                maglim[iMJDMatch] = '%.2f,%.2f'%(maglim[iMJDMatch],d['mag_lim'])
+                maglim[iMJDMatch] = '%s, %.2f'%(maglim[iMJDMatch],d['mag_lim'])
         else:
             field = np.append(field,f['field_id'])
             ra = np.append(ra,f['ra_cen'])
@@ -143,15 +143,16 @@ def main():
 <td>%s</td>
 <td>%s</td>
 <td><i>%s</i></td>
-<td>%s</td>
-<td>%s</td>
 </tr>
-"""%(f,ra_string,dec_string,flt,mjd_to_date(mj).replace('T',' '),m)
+"""%(f,ra_string,dec_string,flt)
 
             
             print(dataline,file=fout)
         print(htmlfooter,file=fout)
 
+	#<td>%s</td>
+	#<td>%s</td>
+	#mjd_to_date(mj).replace('T',' '),m
 
 if __name__ == "__main__":
     main()
