@@ -111,10 +111,10 @@ def main():
             filt = filters[iMJDMatch]
             if filt == 'z' or p['name'] == 'g' or (p['name'] == 'r' and filt in ['i','z']):
                 filters[iMJDMatch] = p['name']+','+filters[iMJDMatch]
-                maglim[iMJDMatch] = '%.2f,%.2f'%(d['mag_lim'],maglim[iMJDMatch])
+                maglim[iMJDMatch] = '%.2f,%s'%(d['mag_lim'],maglim[iMJDMatch])
             else:
                 filters[iMJDMatch] = filters[iMJDMatch][0] + ',' + p['name']
-                maglim[iMJDMatch] = '%.2f,%.2f'%(maglim[iMJDMatch],d['mag_lim'])
+                maglim[iMJDMatch] = '%s,%.2f'%(maglim[iMJDMatch],d['mag_lim'])
         else:
             field = np.append(field,f['field_id'])
             ra = np.append(ra,f['ra_cen'])
