@@ -877,8 +877,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 	instrument_name = np.array([PhotometricBand.objects.get(pk=b).instrument.name for b in band])
 	#band_name = np.array(photdata.values_list('band__name',flat=True))
 	#instrument_name = np.array(photdata.values_list('band__instrument__name',flat=True))
-	disp_symbol = np.array(photdata.values_list('band__disp_symbol',flat=True))
-	disp_color = np.array(photdata.values_list('band__disp_color',flat=True))
+	disp_symbol = np.array([PhotometricBand.objects.get(pk=b).disp_symbol for b in band])
+	disp_color = np.array([PhotometricBand.objects.get(pk=b).disp_color for b in band])
 	mag_errs_tmp = mag_errs
 	mag_errs_tmp[mag_errs == None] = 0.01
 
