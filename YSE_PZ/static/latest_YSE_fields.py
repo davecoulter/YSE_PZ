@@ -111,13 +111,15 @@ def main():
             filt = filters[iMJDMatch]
             if filt == 'z' or p['name'] == 'g' or (p['name'] == 'r' and filt in ['i','z']):
                 filters[iMJDMatch] = p['name']+','+filters[iMJDMatch]
+                maglim[iMJDMatch] = '%.2f,%.2f'%(d['mag_lim'],maglim[iMJDMatch])
             else:
                 filters[iMJDMatch] = filters[iMJDMatch][0] + ',' + p['name']
+                maglim[iMJDMatch] = '%.2f,%.2f'%(maglim[iMJDMatch],d['mag_lim'])
         else:
             field = np.append(field,f['field_id'])
             ra = np.append(ra,f['ra_cen'])
             dec = np.append(dec,f['dec_cen'])
-            maglim = np.append(maglim,d['mag_lim'])
+            maglim = np.append(maglim,'%.2f'%d['mag_lim'])
             mjd = np.append(mjd,d['obs_mjd'])
             filters = np.append(filters,p['name'])
         #if f['field_id'] == '403.F':
@@ -142,7 +144,7 @@ def main():
 <td>%s</td>
 <td><i>%s</i></td>
 <td>%s</td>
-<td>%.2f</td>
+<td>%s</td>
 </tr>
 """%(f,ra_string,dec_string,flt,mjd_to_date(mj).replace('T',' '),m)
 
