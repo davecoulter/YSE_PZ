@@ -10,7 +10,12 @@ Welcome to the YSE_PZ documentation!
    :maxdepth: 1
 
    install
-
+   queries
+   dashboards
+   observing 
+   detail
+   triage
+   
 Indices and tables
 ==================
 
