@@ -82,7 +82,7 @@ def main():
     nowmjd = date_to_mjd((datetime.datetime.now()+datetime.timedelta(hours=10)).isoformat())
     
     r = requests.get('http://ziggy.ucolick.org/yse/api/surveyobservations/?obs_mjd_gte=%i&limit=1000'%(nowmjd-7),
-                     auth=HTTPBasicAuth('djones','BossTent1'))
+                     auth=HTTPBasicAuth())
     data = json.loads(r.text)
     data_results = data['results']
     #import pdb; pdb.set_trace()
@@ -94,13 +94,13 @@ def main():
 
         # save the foreign keys when possible
         if d['photometric_band'] not in results_dict.keys():
-            photo_results = requests.get(d['photometric_band'],auth=HTTPBasicAuth('djones','BossTent1'))
+            photo_results = requests.get(d['photometric_band'],auth=HTTPBasicAuth())
             p = json.loads(photo_results.text)
             results_dict[d['photometric_band']] = p
         else:
             p = results_dict[d['photometric_band']]
         if d['survey_field'] not in results_dict.keys():
-            field_results = requests.get(d['survey_field'],auth=HTTPBasicAuth('djones','BossTent1'))
+            field_results = requests.get(d['survey_field'],auth=HTTPBasicAuth())
             f = json.loads(field_results.text)
             results_dict[d['survey_field']] = f
         else:
