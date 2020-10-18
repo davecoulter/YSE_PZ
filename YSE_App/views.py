@@ -79,7 +79,8 @@ def auth_login(request):
 		if next_page:
 			return HttpResponseRedirect(next_page)
 		else:
-			return render(request,'dashboard')
+			return HttpResponseRedirect('/dashboard/')
+        #render(request,'YSE_App/dashboard.html')
 	else:
 		return render(request, 'YSE_App/login.html')
 
@@ -1308,3 +1309,9 @@ def change_status_for_query(request, query_id, status_id):
 		t.save()
 
 	return redirect('personaldashboard')
+
+#@login_required
+#class SearchResultsView(ListView):
+#    model = Transient
+#    template_name = 'YSE_App/search_results.html'
+#    queryset = City.objects.filter(name__icontains='Boston')
