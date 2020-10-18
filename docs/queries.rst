@@ -1,29 +1,32 @@
+.. _queries:
+
 ****************************
 Querying the YSE_PZ Database
 ****************************
 
-This is a quick overview for running querying the YSE-PZ database.
+This is a quick overview for running queries against the YSE-PZ database.
 
 Running Queries with SQL Explorer
 =================================
 
-:code:`YSE-PZ` uses :code:`SQL Explorer` <https://github.com/groveco/django-sql-explorer>
-to allow users to query its database.  The link </explorer> allows users to see queries
-from other users and write their own.  Please see additional documentation through the
-:code:`SQL Explorer` link.
+YSE-PZ uses `SQL Explorer <https://github.com/groveco/django-sql-explorer>`_
+to allow users to query its database.  The link `<http://127.0.0.1:8000/explorer>`_ allows users to see queries
+from other users and write their own (links assume the default URL for running the server locally).
+Please see additional documentation through the :code:`SQL Explorer` link.
 
-When writing a new query <explorer/new/>, the show schema button provides a way to view
-each database table for :code:`YSE-PZ`.  However, because the :code:`YSE-PZ` model is complex,
+When writing a new query `<http://127.0.0.1:8000/explorer/new/>`_, the show schema button provides a way to view
+each database table for YSE-PZ.  However, because the YSE-PZ model is complex,
 and we summarize the most useful transient tables below.
 
 The YSE-PZ Data Model
 ---------------------
 
 The central table for transient data in YSE-PZ is the :code:`YSE_App_transient` table,
-which in turn is connected to a :code:`tags` model, a `host` model, and `photometry` and
-`spectrum` models.  These relationships are summarized below.  The :code:`tags` model exists
+which in turn is connected to a :code:`tags` model, a code:`Host` model, and code:`TransientPhotometry` and
+code:`TransientSpectrum` models (photometry and spectrum models for host galaxies also exist).
+These relationships are summarized below.  The :code:`TransientTags` model exists
 such that YSE-PZ users can apply various tags to note attributes of objects that they are
-interested in through the :code:`detail` pages.
+interested in through the :ref:`detail`.
 
 .. image:: _static/datamodel.png
 
@@ -121,7 +124,7 @@ Every SN that was brighter than 18th mag in the last week::
 Adding Queries to a User's Personal Dashboard
 =============================================
 Queries can be added to a user's "Personal Dashboard" located
-at the </personaldashboard> link via the form at the bottom of
+at the `<http://127.0.0.1:8000/personaldashboard>`_ link via the form at the bottom of
 the page.  SQL queries created via the SQL Explorer can be selected
 with the left-hand dropdown menu and Python-based queries can
 be selected on the right-hand side (the title of the function is
