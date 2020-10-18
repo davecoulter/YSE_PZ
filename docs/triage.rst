@@ -11,7 +11,7 @@ to the triaging method we use at UCSC.
 Checking the Follow-up Lists
 ============================
 
-Start by refreshing the dashboard page to ensure the latest transient
+Start by refreshing the :ref:`dashboard<dashboard>` to ensure the latest transient
 data are available.  Transients ingested from TNS or other sources, or
 newly classified transients, are automatically sent to "New".
 "FollowupRequested" is used for transients where a team member has
@@ -21,13 +21,14 @@ The "Watch" list includes transients that may be interesting but no additional
 observations have yet been requested.  The "Interesting" list is similar
 to the "Watch" list but our team attempts to keep the list of "Interesting"
 objects to a manageable size so that they can be monitored daily for
-new developments.  FollowupFinished and NeedsTemplate are for older sources.
+new developments.  "FollowupFinished" and "NeedsTemplate" are for older sources.
 
 First, look at the new data in the following list to check for new
 observations.  Sorting by last observing data and going to the last
 page (or clicking the Last Obs. Date button twice to reverse sort)
-will give the most recent observations.  Either the transient summary links
-or the detail links for individual objects will bring up pages that show
+will give the most recent observations.  Either the transient
+:ref:`summary<summary>` links or the :ref:`detail<detailview>`
+links for individual objects will bring up pages that show
 any new data that exist.  Objects rising, those with interesting
 classifications or spectra, or those that change their photometric
 or spectroscopic behavior in some way, might be candidates for
@@ -41,8 +42,8 @@ Next, follow the same procedure for the Watch list.  If follow-up data
 are desired, those can be requested through the Follow-up tab in the detail
 pages.  If no follow-up observations will be requested by any team member,
 we recommend moving the object to "Ignore" where it will no longer show up
-on the dashboard but can still be found through SQL queries and
-going to the detail page link directly.  Judgements on which transients
+on the dashboard but can still be found through :ref:`SQL queries<queries>` and
+by going to the detail page link, e.g. `<http://127.0.0.1:8000/transient_detail/1987A/>`_, directly.  Judgements on which transients
 are of interest or not depend on individual science cases, but generically
 unclassified, rising, bright transients are typically of particular interest
 to our team.
@@ -61,14 +62,15 @@ in galaxies with high PS scores.  Old SNe and SNe with high reddening are
 also generally good candidates for moving to "Ignore".
 
 Next, sort the New list by magnitude and inspect bright sources by opening the
-detail pages.  The archival images of the field from SDSS and Pan-STARRS can
-help by identifying if the transient is near a host galaxy; if not, it may
-more likely be an orphan, asteroid, stellar outburst or some other artifact
-that can be moved to ignore.  We often go down to sources with mag ~18.5
-for these detailed inspections.  Sources near galaxies, even if they only
-have a single detection, are usually moved to "Watch".  For members of a
-certain group, sorting by "Obs Group" can also be helpful to inspect discoveries
-of particular interest.
+detail pages by clicking on each object name.  The archival images of
+the field from SDSS and Pan-STARRS can help by identifying if the transient
+is near a host galaxy; if not, it may more likely be an orphan, asteroid,
+stellar outburst or some other artifact that can be moved to ignore.  We
+often go down to sources with mag ~18.5 for these detailed inspections.
+Sources near galaxies, even if they only have a single detection, are
+usually moved to "Watch".  For members of a certain group, sorting by
+"Obs Group" can also be helpful to inspect discoveries of particular
+interest.
 
 .. image:: _static/yse_pz_dashboardstatus.png
 

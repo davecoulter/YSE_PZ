@@ -8,6 +8,8 @@ The transient summary and detail pages are intended to
 provide in-depth metadata, photometry, spectroscopy, archival data,
 observing tools, and tagging and commenting functionality.
 
+.. _summary:
+
 Transient Summary View
 ======================
 
@@ -27,6 +29,8 @@ currently functional.
 
 .. image:: _static/yse_pz_summary.png
 
+.. _detailview:
+	   
 Transient Detail View
 =====================
 
