@@ -10,7 +10,7 @@ from django.conf import settings as djangoSettings
 def main():
 
 	ztf = at.Table.read('%s/good_ZTF_field_metric.txt'%djangoSettings.STATIC_ROOT,format='ascii')
-	user = User.objects.filter(username='djones')[0]
+	user = User.objects.filter(username='admin')[0]
 	
 	survey_entries = []
 	for z in ztf:
