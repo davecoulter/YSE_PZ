@@ -1,3 +1,5 @@
+.. _install:
+
 ************
 Installation
 ************
@@ -56,7 +58,7 @@ and the following Dropbox link for the database.
 If you don't need to ingest any new transients into the database, you
 can copy this file over to :code:`YSE_PZ/settings.ini` and you're
 good to go!  Otherwise, *still* copy the file over and then see
-the "Setting up the YSE-PZ Crons" section below.
+the :ref:`ysecrons` to finish the setup.
 
 Setting Up the YSE_PZ Database
 ==============================
@@ -123,6 +125,8 @@ Then in a web browser on your computer,
 go to the url <http://127.0.0.1:8000>.  You
 should be good to go!
 
+.. _ysecrons:
+
 Setting up the YSE-PZ Crons
 ===========================
 
@@ -133,8 +137,8 @@ and ingest new ZTF data from MARS.  Ingesting new
 ZTF data for existing transients from MARS is relatively
 easy, while creating new transients from TNS requires
 setting up a TNS "bot" for yourself or your group at
-<https://wis-tns.weizmann.ac.il/bots>.  See the TNS bulk
-reports manual at <https://wis-tns.weizmann.ac.il/sites/default/files/api/TNS_bulk_reports_manual.pdf>
+`<https://wis-tns.weizmann.ac.il/bots>`_.  See the TNS bulk
+reports manual at `<https://wis-tns.weizmann.ac.il/sites/default/files/api/TNS_bulk_reports_manual.pdf>`_
 for more information.  Once the API key has been set up,
 paste the key into the :code:`tnsapikey=` line in the :code:`YSE_PZ/settings.ini`
 file.
@@ -154,7 +158,7 @@ Once all this has been set up, you can run the TNS cron with::
 
   python manage.py runcrons YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_recent --force
 
-Every time you run this command (manually or with a cron, e.g., hyperlink:`https://www.man7.org/linux/man-pages/man5/crontab.5.html`),
+Every time you run this command (manually or with a cron, e.g., `<https://www.man7.org/linux/man-pages/man5/crontab.5.html>`_),
 this will grab transients uploaded to TNS or updated within the last day.  To change the time interval (in YSE, we do
 this every three minutes), change the :code:`tns_recent_ndays` parameter in the settings.ini file.
 
