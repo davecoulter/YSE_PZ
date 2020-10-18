@@ -44,7 +44,7 @@ Make sure to put single quotes around your password!
 
 Anaconda Python
 ---------------
-<http://anaconda.org>
+`<http://anaconda.org>`_
 
 Database File and settings.ini file
 -----------------------------------
@@ -85,7 +85,7 @@ that command would be::
 
 If this fails with a collation error, you might have to
 open up the file and replace :code:`utf8mb4_0900_ai_ci` 
-:code:`utf8mb4_unicode_ci`.
+with :code:`utf8mb4_unicode_ci`.
 
 Installing the YSE_PZ Code
 ==========================
