@@ -2,7 +2,7 @@
 Observing Pages
 ***************
 
-The observing calendar page </observing_calendar> shows each
+The observing calendar page `<http://127.0.0.1:8000/observing_calendar/>`_ shows each
 upcoming observing night that has been recorded in YSE-PZ:
 
 .. image:: _static/yse_pz_observingcalendar.png
