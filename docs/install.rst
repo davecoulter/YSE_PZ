@@ -22,7 +22,7 @@ Then to install and start MySQL::
 
   brew install mysql
 
-Check your :code:`MySQL` version with:
+Check your :code:`MySQL` version with::
 
   mysql --version
 
