@@ -1,5 +1,6 @@
 {% load static %}
 {% load admin_urls %}
+{% load user_extras %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -91,11 +92,13 @@
                 <li><a href="{% url 'survey' %}"><i class="fa fa-home"></i> <span>Survey Home</span></a></li>
 				<li><a target="_blank" href="https://docs.google.com/document/d/1SwpsZMfq4miTYHBGzzx5Fsk4XM0Z-mpnHtdWSAwZFOw/edit?usp=sharing"><i class="fa fa-book"></i> <span>Help/How-to</span></a></li>
 				<li><a target="_blank" href="https://docs.google.com/document/d/1VtMY2v7hssj6DF4Jn--skd1VfAHYCBWvptm3vkqFA8o/edit?usp=sharing"><i class="fa fa-book"></i> <span>Follow-up Guidelines</span></a></li>
+				{% if user|has_group:'YSE' > 0 %}
 				<ul>YSE</ul>
 				<li><a href="{% url 'yse_home' %}"><i class="fa fa-home"></i> <span>YSE Home</span></a></li>
 				<li><a href="{% url 'yse_observing_calendar' %}"><i class="fa fa-calendar"></i> <span>YSE Schedule</span></a></li>
 				<li><a href="{% url 'yse_oncall_calendar' %}"><i class="fa fa-calendar"></i> <span>YSE On-Call Calendar</span></a></li>
 				<li><a href="https://drive.google.com/open?id=1w-ojG_yGO2b2_9_0WuMC76QOVusf-lYP" target="_blank"><i class="fa fa-calendar"></i> <span>YSE Help and Survey Docs</span></a></li>
+				{% endif %}
 			</ul>
 		</section>
 		<!-- /.sidebar -->
