@@ -53,7 +53,8 @@ ask D. Jones for these files.  Otherwise, you can use the
 public versions of the YSE_PZ database (updated approximately
 whenever I feel like it, or please ask for the latest and greatest),
 which are :code:`YSE_PZ/public_settings.ini` for the settings file
-and the following Dropbox link for the database.
+and follow this `Dropbox link <https://www.dropbox.com/s/tr54k9ok920qzi7/YSE_db_public_20201018.sql?dl=0>`_
+for the database.
 
 If you don't need to ingest any new transients into the database, you
 can copy this file over to :code:`YSE_PZ/settings.ini` and you're
@@ -78,14 +79,14 @@ Inside MySQL::
   GRANT ALL PRIVILEGES ON *.* TO 'explorer'@'localhost' WITH GRANT OPTION;
 
 Finally, exit out of mysql and load the database using the existing YSE_PZ database
-file that someone hopefully sent you.  For the DB backup taken on Nov. 4th,
+file that someone hopefully sent you.  For the public DB taken on Oct. 18th, 2020,
 that command would be::
 
-  mysql -u root -p YSE < 20191104_YSE.sql
+  mysql -u root -p YSE < YSE_db_public_20201018.sql
 
 If this fails with a collation error, you might have to
 open up the file and replace :code:`utf8mb4_0900_ai_ci` 
-with :code:`utf8mb4_unicode_ci`.
+with :code:`utf8mb4_unicode_ci` or vice versa.
 
 Installing the YSE_PZ Code
 ==========================
@@ -122,7 +123,10 @@ In the YSE_PZ directory, run::
   python manage.py runserver
 
 Then in a web browser on your computer,
-go to the url <http://127.0.0.1:8000>.  You
+go to the url `<http://127.0.0.1:8000>`_.  If you're initializing
+from the public database, the only existing user is :code:`admin`
+and the password is set to :code:`changeme`.  Users are easy to create
+from the `<http://127.0.0.1:8000/admin>`_ page.  After that, you
 should be good to go!
 
 .. _ysecrons:
