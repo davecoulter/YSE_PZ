@@ -770,6 +770,9 @@ def download_targets_and_finders(request, telescope, obs_date):
 @login_required
 def transient_detail(request, slug):
 
+	classical_resource_form = ClassicalResourceForm()
+	too_resource_form = ToOResourceForm()
+    
 	transient = Transient.objects.filter(slug=slug)
 	alternate_transient = AlternateTransientNames.objects.filter(slug=slug)
 	if len(alternate_transient) and not len(transient):
@@ -893,7 +896,9 @@ def transient_detail(request, slug):
 			'gw_candidate':gwcand,
 			'gw_images':gwimages,
 			'spectrum_upload_form':spectrum_upload_form,
-			'diff_images':TransientDiffImage.objects.filter(phot_data__photometry__transient__name=transient_obj.name)
+			'diff_images':TransientDiffImage.objects.filter(phot_data__photometry__transient__name=transient_obj.name),
+			'classical_resource_form':classical_resource_form,
+			'too_resource_form':too_resource_form
 		}
 
 		if transient_followup_form.fields["valid_start"].initial:

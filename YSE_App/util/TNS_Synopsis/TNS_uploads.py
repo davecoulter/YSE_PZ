@@ -130,6 +130,8 @@ class processTNS:
 								help='TNS API URL (default=%default)')
 			parser.add_argument('--tnsapikey', default=config.get('main','tnsapikey'), type=str,
 								help='TNS API key (default=%default)')
+			parser.add_argument('--tns_recent_ndays', default=config.get('main','tns_recent_ndays'), type=str,
+								help='time interval for grabbing recent TNS events (default=%default)')
 			parser.add_argument('--hostmatchrad', default=config.get('main','hostmatchrad'), type=float,
 								help='matching radius for hosts (arcmin) (default=%default)')
 			parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
@@ -1203,10 +1205,11 @@ class TNS_recent(CronJobBase):
 		tnsproc.tnsapi = options.tnsapi
 		tnsproc.tnsapikey = options.tnsapikey
 		tnsproc.ztfurl = options.ztfurl
+        tnsproc.ndays = options.tns_recent_ndays
 		#options.ndays=0.5
 		try:
 			tnsproc.noupdatestatus = True
-			nsn = tnsproc.GetRecentEvents(ndays=1)
+			nsn = tnsproc.GetRecentEvents(ndays=tnsproc.ndays)
 		except Exception as e:
 			exc_type, exc_obj, exc_tb = sys.exc_info()
 			nsn = 0

@@ -694,6 +694,14 @@
 							</div>
 						</div>
 						<div class="row">
+			                <div class="col-xs-6">
+            			      {% include "YSE_App/form_snippets/classical_resource_form.html" with form=classical_resource_form %}
+			                </div>
+			                <div class="col-xs-6">
+                				{% include "YSE_App/form_snippets/too_resource_form.html" with form=too_resource_form %}
+              				</div>
+						</div>
+						<div class="row">
 							<div id="followup_container">
 								{% for f in followups %}
 									<div class="col-xs-12">
@@ -1489,6 +1497,100 @@
 			});
 			// Clear initial value
 			$('#obs_task_actual_picker').val('');
+
+      		// too resource
+		    $('#too_resource_date_range').daterangepicker({ 
+		        timePicker24Hour: true,
+		        timePicker: true, 
+		        timePickerIncrement: 1, 
+		        format: 'YYYY-MM-DD HH:mm', 
+		        locale: {
+		          format: 'YYYY-MM-DD HH:mm'
+		        } 
+		    });
+
+      		// Initialize daterange
+		      fdr_picker = $('#too_resource_date_range').data('daterangepicker')
+		      $('#begin_date_valid').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+		      $('#end_date_valid').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+		      $('#too_resource_date_range').on('apply.daterangepicker', function(ev, picker) {
+		        $('#begin_date_valid').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+		        $('#end_date_valid').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+		      });
+
+		    // classical resource
+	        $('#observing_date').datepicker({ 
+      		  timePicker24Hour: true,
+        	  timePicker: true,
+	          timePickerIncrement: 1,
+      	      format: 'mm/dd/yyyy',
+ 	          //todayBtn: "linked",
+      		  locale: {
+		          format: 'mm/dd/yyyy'
+        	  } 
+	        });
+
+      // classical resource
+      $('#add_classical_resource').on('submit', function(event){
+        event.preventDefault();
+        add_classical_resource();
+      });
+
+      function add_classical_resource() {
+        // Grab the form, and associate it with the current transient detail page
+        var data = $('#add_classical_resource').serialize()
+        //var transient_id = $('#transient_pk').val()
+        //data = (data + "&transient=" + transient_id)
+
+        $.ajax({
+          url : "{% url 'add_classical_resource' %}", // the endpoint
+          type : "POST", // http method
+          data : data, // data sent with the post request
+
+          // handle a successful response
+          success : function(json) {
+            
+            // Required fields
+              location.reload();
+          },
+
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+            alert(xhr.status + ": " + xhr.responseText);
+          }
+          });
+        }
+
+// classical resource
+      $('#add_too_resource').on('submit', function(event){
+        event.preventDefault();
+        add_too_resource();
+      });
+
+      function add_too_resource() {
+        // Grab the form, and associate it with the current transient detail page
+        var data = $('#add_too_resource').serialize()
+        //var transient_id = $('#transient_pk').val()
+        //data = (data + "&transient=" + transient_id)
+
+        $.ajax({
+          url : "{% url 'add_too_resource' %}", // the endpoint
+          type : "POST", // http method
+          data : data, // data sent with the post request
+
+          // handle a successful response
+          success : function(json) {
+            
+            // Required fields
+              location.reload();
+          },
+
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+            alert(xhr.status + ": " + xhr.responseText);
+          }
+          });
+        }
 
 			// Initialize date	
 			//date_picker = $('#spec_obs_date').data('datetimepicker')
