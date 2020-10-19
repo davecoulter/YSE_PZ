@@ -11,3 +11,6 @@ def contact(request):
 
 def team(request):
 	return render(request, 'YSE_App/survey/team.html')
+
+def acknowledgements(request):
+	return render(request, 'YSE_App/acknowledgements.html')

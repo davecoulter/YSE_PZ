@@ -34,7 +34,8 @@ urlpatterns = [
     url(r'^news/$', surveypages.news, name='news'),
     url(r'^team/$', surveypages.team, name='team'),
     url(r'^contact/$', surveypages.contact, name='contact'),
-
+    url(r'^acknowledgements/$', surveypages.acknowledgements, name='acknowledgements'),
+    
     url(r'^dashboard_example/$', views.dashboard_example, name='dashboard_example'),
     url(r'^transient_edit/$', views.transient_edit, name='transient_edit'),
     url(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
@@ -86,6 +87,9 @@ urlpatterns = [
 		data_utils.get_new_transients_box, name='get_new_transients_box'),
 	url(r'^box_search/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<radius>\d+\.?\d*)/$', 
 		data_utils.box_search, name='box_search'),
+	#url(r'^search/$', 
+	#	views.search, name='search'),
+
 	url(r'^query_api/(?P<query_name>.*)/$',data_utils.query_api, name='query_api'),
 	url(r'^change_status_for_query/(?P<query_id>[a-zA-Z0-9_-]+)/(?P<status_id>[a-zA-Z0-9_-]+)$', 
 		views.change_status_for_query, name='change_status_for_query'),
