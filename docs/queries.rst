@@ -22,8 +22,8 @@ The YSE-PZ Data Model
 ---------------------
 
 The central table for transient data in YSE-PZ is the :code:`YSE_App_transient` table,
-which in turn is connected to a :code:`tags` model, a code:`Host` model, and code:`TransientPhotometry` and
-code:`TransientSpectrum` models (photometry and spectrum models for host galaxies also exist).
+which in turn is connected to a :code:`tags` model, a :code:`Host` model, and :code:`TransientPhotometry` and
+:code:`TransientSpectrum` models (photometry and spectrum models for host galaxies also exist).
 These relationships are summarized below.  The :code:`TransientTags` model exists
 such that YSE-PZ users can apply various tags to note attributes of objects that they are
 interested in through the :ref:`detail`.
