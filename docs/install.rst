@@ -160,7 +160,7 @@ apps in google, which is easy to find instructions for online.
 
 Once all this has been set up, you can run the TNS cron with::
 
-  python manage.py runcrons YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_recent --force
+  python manage.py runcrons YSE_App.data_ingest.TNS_uploads.TNS_recent --force
 
 Every time you run this command (manually or with a cron, e.g., `<https://www.man7.org/linux/man-pages/man5/crontab.5.html>`_),
 this will grab transients uploaded to TNS or updated within the last day.  To change the time interval (in YSE, we do
@@ -170,11 +170,11 @@ Finally, to get new ZTF or TNS photometry/spectra for objects, the following cro
 transients with the statuses :code:`Watch`, :code:`Interesting`:, :code:`FollowupRequested`, :code:`Following`,
 or :code:`FollowupFinished`::
 
-  python manage.py runcrons YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_updates --force
+  python manage.py runcrons YSE_App.data_ingest.TNS_uploads.TNS_updates --force
 
 For everything marked as :code:`Ignore` for transients modified in the last 30 days, run this one::
 
-  python manage.py runcrons YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_Ignore_updates --force
+  python manage.py runcrons YSE_App.data_ingest.TNS_uploads.TNS_Ignore_updates --force
 
 This can be a *ton* of transients, so it's best not to run this too often.
 
