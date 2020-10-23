@@ -10,14 +10,17 @@ import sys
 from requests.auth import HTTPBasicAuth
 import configparser
 from YSE_App.models import Transient, TransientTag, AlternateTransientNames
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
 
 def date_to_mjd(obs_date):
-	time = Time(obs_date,scale='utc')
-	return time.mjd
+    time = Time(obs_date,scale='utc')
+    return time.mjd
 
 def mjd_to_date(obs_mjd):
-	time = Time(obs_mjd,scale='utc',format='mjd')
-	return time.isot
+    time = Time(obs_mjd,scale='utc',format='mjd')
+    return time.isot
 
 def get_gaia_list(look_back_days):
     gaia_list = pd.read_csv('http://gsaweb.ast.cam.ac.uk/alerts/alerts.csv')
@@ -37,6 +40,29 @@ def get_gaia_phot(name, targets):
     else:
         return
 
+def sendemail(from_addr, to_addr,
+            subject, message,
+            login, password, smtpserver, cc_addr=None):
+
+    print("Preparing email")
+
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = from_addr
+    msg['To'] = to_addr
+    payload = MIMEText(message, 'html')
+    msg.attach(payload)
+
+    with smtplib.SMTP(smtpserver) as server:
+        try:
+            server.starttls()
+            server.login(login, password)
+            resp = server.sendmail(from_addr, [to_addr], msg.as_string())
+            print("Send success")
+        except:
+            print("Send fail")
+
+    
 class GaiaLC(CronJobBase):
 
     RUN_AT_TIMES = ['00:00','08:00']
@@ -45,27 +71,27 @@ class GaiaLC(CronJobBase):
     code = 'YSE_App.data_ingest.Gaia_LC.GaiaLC'
 
     def do(self):
+        
+        print("uploading Gaia LCs at {}".format(datetime.datetime.now().isoformat()))
 
+        tstart = time.time()
+            
+        parser = self.add_options()
+        options,  args = parser.parse_known_args()
+
+        config = configparser.ConfigParser()
+        config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+        parser = self.add_options(config=config)
+        options,  args = parser.parse_known_args()
+        self.options = options
+        
         try:
-            print("uploading Gaia LCs at {}".format(datetime.datetime.now().isoformat()))
-
-            tstart = time.time()
-            
-            parser = self.add_options()
-            options,  args = parser.parse_known_args()
-
-            config = configparser.ConfigParser()
-            config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
-            parser = self.add_options(config=config)
-            options,  args = parser.parse_known_args()
-            self.options = options
-            
             self.main()
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             print(e)
-            import pdb; pdb.set_trace()
             nsn = 0
+
             smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
             from_addr = "%s@gmail.com" % options.SMTP_LOGIN
             subject = "Gaia Upload Failure in Gaia_LC.py"
