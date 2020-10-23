@@ -13,6 +13,7 @@ from . import api_views
 from .form_views import *
 from . import surveypages
 from YSE_App.yse_utils import yse_pointings, yse_view_utils
+from YSE_App.views import SearchResultsView
 
 schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
 
@@ -87,8 +88,8 @@ urlpatterns = [
 		data_utils.get_new_transients_box, name='get_new_transients_box'),
 	url(r'^box_search/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<radius>\d+\.?\d*)/$', 
 		data_utils.box_search, name='box_search'),
-	#url(r'^search/$', 
-	#	views.search, name='search'),
+	url(r'^search/$', 
+		SearchResultsView.as_view(), name='search'),
 
 	url(r'^query_api/(?P<query_name>.*)/$',data_utils.query_api, name='query_api'),
 	url(r'^change_status_for_query/(?P<query_id>[a-zA-Z0-9_-]+)/(?P<status_id>[a-zA-Z0-9_-]+)$', 

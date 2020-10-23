@@ -17,6 +17,7 @@ from django.db.models import Count, Value, Max, Min
 import zipfile
 from io import BytesIO
 from YSE_App.yse_utils.yse_pa import yse_pa
+from django.utils.decorators import method_decorator
 
 from astropy.utils import iers
 iers.conf.auto_download = True
@@ -38,6 +39,7 @@ import time
 import dateutil.parser
 from astroplan import moon_illumination
 from astropy.time import Time
+from .common.utilities import getRADecBox
 
 from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable
 from .queries.yse_python_queries import *
@@ -50,6 +52,7 @@ from django.template import RequestContext
 from urllib.parse import unquote
 
 from .common.utilities import date_to_mjd, mjd_to_date
+from django.views.generic.list import ListView
 
 # Create your views here.
 
@@ -80,7 +83,7 @@ def auth_login(request):
 			return HttpResponseRedirect(next_page)
 		else:
 			return HttpResponseRedirect('/dashboard/')
-        #render(request,'YSE_App/dashboard.html')
+		#render(request,'YSE_App/dashboard.html')
 	else:
 		return render(request, 'YSE_App/login.html')
 
@@ -772,7 +775,7 @@ def transient_detail(request, slug):
 
 	classical_resource_form = ClassicalResourceForm()
 	too_resource_form = ToOResourceForm()
-    
+	
 	transient = Transient.objects.filter(slug=slug)
 	alternate_transient = AlternateTransientNames.objects.filter(slug=slug)
 	if len(alternate_transient) and not len(transient):
@@ -916,7 +919,7 @@ def transient_detail(request, slug):
 			context['allphotdata']=allphotdata
 		if transient_obj.postage_stamp_file:
 			context['qub_candidate'] = transient_obj.postage_stamp_file.split('/')[-1].split('_')[0]
-			
+
 		return render(request,
 			'YSE_App/transient_detail.html',
 			context)
@@ -1315,8 +1318,48 @@ def change_status_for_query(request, query_id, status_id):
 
 	return redirect('personaldashboard')
 
-#@login_required
-#class SearchResultsView(ListView):
-#    model = Transient
-#    template_name = 'YSE_App/search_results.html'
-#    queryset = City.objects.filter(name__icontains='Boston')
+@method_decorator(login_required, name='dispatch')
+class SearchResultsView(ListView):
+	model = Transient
+	template_name = 'YSE_App/search_results.html'
+
+	def get_context_data(self):
+		query = self.request.GET.get('q')
+
+		transient = None
+		# a few use cases
+		# if there's a gap or a comma in the middle, assume RA/Dec
+		size = 5/3600. # box size
+		if ',' in query or len(query.split()) > 1:
+			if ',' in query:
+				if len(query.split(',')) == 2:
+					ra,dec = query.split(',')
+				elif len(query.split(',')) == 3:
+					ra,dec,size = query.split(',')
+			else:
+				if len(query.split()) == 2:
+					ra,dec = query.split()
+				elif len(query.split()) == 3:
+					ra,dec,size = query.split()
+			try:
+				ra,dec = float(ra),float(dec)
+				decimal = True
+			except:
+				sc = SkyCoord(ra,dec,unit=(u.hour,u.deg))
+				ra,dec = sc.ra.deg,sc.dec.deg
+				decimal = False
+
+			ramin,ramax,decmin,decmax = getRADecBox(ra,dec,size=float(size))
+			transients = Transient.objects.filter(Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax))
+				
+		if transients is None:
+			# otherwise execute a simple search on name
+			transients = Transient.objects.filter(name__icontains=query)
+		
+		context = super().get_context_data()
+		transientfilter = TransientFilter(self.request.GET, queryset=transients,prefix='')
+		table = TransientTable(transientfilter.qs,prefix='')
+		RequestConfig(self.request, paginate={'per_page': 10}).configure(table)
+		context['transient_search_results'] = (table,'Search Results','Search Results',transientfilter)
+
+		return context
