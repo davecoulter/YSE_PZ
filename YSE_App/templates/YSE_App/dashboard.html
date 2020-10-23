@@ -14,10 +14,10 @@
         <li><i class="fa fa-dashboard"></i> Home</li>
     </ol>
     <ol class="breadcrumb">
-    <form action="{% url 'search' %}" method="get">
-      <input name="q" type="text" placeholder="Search...">
-    </form>
-  </ol>
+      <form action="{% url 'search' %}" method="get">
+        <input name="q" type="text" placeholder="Name or coord. search">
+      </form>
+    </ol>
 {% endblock %}
 
 {% block content %}
