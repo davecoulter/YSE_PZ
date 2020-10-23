@@ -67,6 +67,7 @@ CRON_CLASSES = [
 	'YSE_App.data_ingest.YSE_observations.SurveyObs',
 	'YSE_App.data_ingest.Query_ZTF.AntaresZTF',
 	'YSE_App.data_ingest.QUB_data.YSE',
+	'YSE_App.data_ingest.Gaia_LC.GaiaLC',
 	'YSE_App.data_ingest.QUB_data.YSE_Weekly',
 	'YSE_App.data_ingest.QUB_data.QUB',
     'YSE_App.rapid.rapid_classify.rapid_classify_cron',
