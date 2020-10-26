@@ -749,9 +749,6 @@ class YSE(CronJobBase):
             photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
             if photometrydict_ztf is not None:
                 PhotUploadAll['ZTF'] = photometrydict_ztf
-            #print(s['local_designation'])
-            #if s['local_designation'] == '10EYSEdys':
-            #   import pdb; pdb.set_trace()
 
             nsn += 1
 
@@ -911,7 +908,6 @@ class YSE_Stack(CronJobBase):
         except Exception as e:
             print(e)
             exc_type, exc_obj, exc_tb = sys.exc_info()
-            import pdb; pdb.set_trace()
             nsn = 0
             smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
             from_addr = "%s@gmail.com" % options.SMTP_LOGIN
@@ -967,7 +963,7 @@ class YSE_Stack(CronJobBase):
                               help='ZTF URL (default=%default)')
             parser.add_argument('--max_days_ysestacklc', default=config.get('main','max_days_ysestacklc'), type=float,
                               help='maximum days to look back for lightcurves (default=%default)')
-            parser.add_argument('--max_days_yseignore', default=config.get('main','max_days_yseignore'), type=float,
+            parser.add_argument('--max_days_yseignore', default=config.get('main','max_days_ysestackignore'), type=float,
                               help='maximum days to look back for lightcurves (default=%default)')
 
             
@@ -1011,14 +1007,17 @@ class YSE_Stack(CronJobBase):
         nsn_single = 25
 
         nowmjd = Time.now().mjd
-        summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days_ysestacklc]
+        summary_upload = summary[nowmjd - summary['mjd_obs'] < self.options.max_days_ysestacklc]
+        # important to sort by flag date for a halfway sensible naming scheme
+        summary_upload = summary_upload[np.argsort(date_to_mjd(summary_upload['followup_flag_date']))]
+        print('%i transients to upload!'%len(summary_upload))
         while nsn_single == 25:
-            transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=25)
+            transientdict,nsn_single = self.parse_data(summary_upload,lc,transient_idx=nsn,max_transients=25)
             print('uploading %i transients'%nsn_single)
             self.send_data(transientdict)
             self.copy_stamps(transientdict)
             nsn += 25
-
+         
         return nsn
         
     def parse_data(self,summary,lc,transient_idx=0,max_transients=None):
@@ -1039,8 +1038,17 @@ class YSE_Stack(CronJobBase):
                 Q(disc_date__gte=dateutil.parser.parse(s['followup_flag_date'])-datetime.timedelta(365)) &
                 Q(disc_date__lte=dateutil.parser.parse(s['followup_flag_date'])+datetime.timedelta(365))).\
                 filter(~Q(tags=ysestacktag))
-            if len(dbtransient): continue
-            
+            if len(dbtransient):
+                nsn += 1
+                continue
+            dbstacktransient = Transient.objects.filter(
+                Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
+                Q(disc_date__gte=dateutil.parser.parse(s['followup_flag_date'])-datetime.timedelta(365)) &
+                Q(disc_date__lte=dateutil.parser.parse(s['followup_flag_date'])+datetime.timedelta(365))).\
+                filter(Q(tags=ysestacktag))
+            if len(dbstacktransient): stackname = dbstacktransient[0].name
+            else: stackname = None
+
             r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1ysestack/psdb/lightcurveforced/%s'%s['id']) #,
             #                auth=HTTPDigestAuth(self.options.qubuser,self.options.qubpass))
 
@@ -1060,7 +1068,7 @@ class YSE_Stack(CronJobBase):
                 ps_prob = None
 
             mw_ebv = float('%.3f'%(sfd(sc)*0.86))
-            iLC = (lc['transient_object_id'] == s['id']) & (nowmjd - lc['mjd_obs'] < self.options.max_days_ysestacklc)
+            iLC = (lc['transient_object_id'] == s['id']) #& (nowmjd - lc['mjd_obs'] < self.options.max_days_ysestacklc)
 
             if nowmjd - Time('%s 00:00:00'%s['followup_flag_date'],format='iso',scale='utc').mjd > self.options.max_days_yseignore:
                 status = 'Ignore'
@@ -1099,7 +1107,12 @@ class YSE_Stack(CronJobBase):
             else:
                 rb_factor = s['rb_factor_image']
 
-            tdict = {'name':self.next_name,
+            if stackname: name = stackname[:]
+            else:
+                name = self.next_name[:]
+                self.next_name = get_next_name(self.next_name)
+                
+            tdict = {'name':name,
                      'ra':s['ra_psf'],
                      'dec':s['dec_psf'],
                      'obs_group':'YSE',
@@ -1117,7 +1130,7 @@ class YSE_Stack(CronJobBase):
                      'mw_ebv':mw_ebv,
                      'point_source_probability':ps_prob,
                      'real_bogus_score':rb_factor}
-            self.next_name = get_next_name(self.next_name)
+
 
             obj += [s['local_designation']]
             ra += [s['ra_psf']]

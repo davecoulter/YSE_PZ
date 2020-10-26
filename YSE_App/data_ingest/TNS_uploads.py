@@ -240,6 +240,9 @@ class processTNS:
 				TransientDict['best_spec_class'] = evt_type
 				TransientDict['TNS_spec_class'] = evt_type
 
+			if jd['internal_names']:
+				TransientDict['internal_names'] = jd['internal_names']
+				
 		return TransientDict
 
 	def getZTFPhotometry(self,sc):
@@ -627,7 +630,6 @@ class processTNS:
 		return nsn
 
 	def GetRecentEvents(self,ndays=None,doTNS=True):
-		
 		#date_format = '%Y-%m-%d'
 		datemin = (datetime.now() - timedelta(days=ndays)).isoformat() #strftime(date_format)
 		search_obj=[("ra",""), ("dec",""), ("radius",""), ("units",""),
@@ -647,7 +649,7 @@ class processTNS:
 			objs.append(json_data_single['data']['reply']['objname'])
 			ras.append(json_data_single['data']['reply']['ra'])
 			decs.append(json_data_single['data']['reply']['dec'])
-		
+
 		nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=True,doTNS=doTNS)
 		return nsn
 
@@ -775,7 +777,6 @@ class processTNS:
 
 					response=get(self.tnsapi, TNSGetSingle, self.tnsapikey)
 					json_data += [format_to_json(response.text)]
-					#import pdb; pdb.set_trace()
 					total_objs += 1
 				else:
 					json_data += [None]
@@ -869,7 +870,8 @@ class processTNS:
 
 			try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
 			except: print(r.text)
-		except Exception as e: raise RuntimeError(e)
+		except Exception as e:
+			raise RuntimeError(e)
 		print("Process done.")
 
 
@@ -972,7 +974,7 @@ class TNS_emails(CronJobBase):
 	RUN_EVERY_MINS = 3
 
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
-	code = 'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_emails'
+	code = 'YSE_App.data_ingest.TNS_uploads.TNS_emails'
 
 	def do(self):
 
@@ -1038,7 +1040,7 @@ class TNS_updates(CronJobBase):
 	RUN_AT_TIMES = ['00:00', '08:00']
 
 	schedule = Schedule(run_at_times=RUN_AT_TIMES)
-	code = 'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_updates'
+	code = 'YSE_App.data_ingest.TNS_uploads.TNS_updates'
 
 	def do(self):
 
@@ -1101,7 +1103,7 @@ class TNS_Ignore_updates(CronJobBase):
 	RUN_EVERY_MINS = 4320
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS,run_at_times=RUN_AT_TIMES)
 
-	code = 'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_Ignore_updates'
+	code = 'YSE_App.data_ingest.TNS_uploads.TNS_Ignore_updates'
 
 	def do(self):
 
@@ -1162,7 +1164,7 @@ class TNS_recent(CronJobBase):
 	RUN_AT_TIMES = ['00:00', '08:00']
 
 	schedule = Schedule(run_at_times=RUN_AT_TIMES)
-	code = 'YSE_App.util.TNS_Synopsis.TNS_uploads.TNS_updates'
+	code = 'YSE_App.data_ingest.TNS_uploads.TNS_updates'
 
 	def do(self):
 
