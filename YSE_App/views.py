@@ -1287,6 +1287,20 @@ def upload_spectrum(request):
 						spectrum=tspec,wavelength=wavelength,flux=flux,
 						created_by=request.user,modified_by=request.user)
 					td.save()
+				elif len(line.split(',')) == 3:
+					wavelength,flux,flux_err = line.split(',')
+					wavelength,flux,flux_err = float(wavelength),float(flux),float(flux_err)
+					td = TransientSpecData.objects.create(
+						spectrum=tspec,wavelength=wavelength,flux=flux,flux_err=flux_err,
+						created_by=request.user,modified_by=request.user)
+					td.save()
+				elif len(line.split(',')) == 2:
+					wavelength,flux = line.split(',')
+					wavelength,flux = float(wavelength),float(flux)
+					td = TransientSpecData.objects.create(
+						spectrum=tspec,wavelength=wavelength,flux=flux,
+						created_by=request.user,modified_by=request.user)
+					td.save()
 				else:
 					raise RuntimeError('bad input')
 			
