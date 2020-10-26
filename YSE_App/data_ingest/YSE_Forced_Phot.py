@@ -274,10 +274,10 @@ class ForcedPhot(CronJobBase):
 		#transient_name='2020sck'
 		if transient_name is None and not update_forced:
 			transients = Transient.objects.filter(
-				created_date__gte=min_date).filter(~Q(tags__name='YSE')).order_by('-created_date')
+				created_date__gte=min_date).filter(~Q(tags__name='YSE') & ~Q(tags__name='YSE Stack')).order_by('-created_date')
 		elif update_forced:
 			min_date_forcedphot=datetime.datetime.utcnow() - datetime.timedelta(days=7)
-			transients = Transient.objects.filter(~Q(tags__name='YSE') & Q(transientphotometry__transientphotdata__obs_date__gt=min_date_forcedphot)).distinct()
+			transients = Transient.objects.filter(~Q(tags__name='YSE') & ~Q(tags__name='YSE Stack') & Q(transientphotometry__transientphotdata__obs_date__gt=min_date_forcedphot)).distinct()
 		else:
 			transients = Transient.objects.filter(name=transient_name)
 
