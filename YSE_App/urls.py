@@ -48,6 +48,7 @@ urlpatterns = [
     url(r'^yse_planning/$', yse_views.yse_planning, name='yse_planning'),
     url(r'^yse_sky/$', yse_views.yse_sky, name='yse_sky'),
     url(r'^msb_detail/(?P<msb>.*)$', yse_views.msb_detail, name='msb_detail'),
+    url(r'^delete_followup/(?P<followup_id>[0-9_-]+)/$', views.delete_followup, name='delete_followup'),
 
     re_path(r'^toggleTargetField/$', yse_view_utils.toggle_field, name='toggle_field'),
 	re_path(r'^toggleFieldSet/$', yse_view_utils.toggle_fieldset, name='toggle_fieldset'),

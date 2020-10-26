@@ -146,8 +146,6 @@ def add_yse_survey_obs(request):
 				if surveykey == 'photometric_band':
 					fk = fkmodel.objects.filter(name=survey[surveykey].split('-')[1]).filter(instrument__name=survey[surveykey].split('-')[0])
 				elif surveykey == 'survey_field':
-					#fk = fkmodel.objects.filter(field_id=survey[surveykey])
-					#import pdb; pdb.set_trace()
 					fk = fkmodel.objects.filter(Q(ra_cen__gt=float(survey['ra_cen'])-0.1) & Q(ra_cen__lt=float(survey['ra_cen'])+0.1) &
 												Q(dec_cen__gt=float(survey['dec_cen'])-0.1) & Q(dec_cen__lt=float(survey['dec_cen'])+0.1))
 					if not len(fk):
@@ -245,7 +243,8 @@ def add_transient(request):
 				   transientkey == 'host' or \
 				   transientkey == 'tags' or \
 				   transientkey == 'gw' or \
-				   transientkey == 'non_detect_instrument': continue
+				   transientkey == 'non_detect_instrument' or \
+				   transientkey == 'internal_names': continue
 
 				if not isinstance(Transient._meta.get_field(transientkey), ForeignKey):
 					transientdict[transientkey] = transient[transientkey]
@@ -272,11 +271,6 @@ def add_transient(request):
 			if not len(dbtransient):
 				# check RA/dec
 				ramin,ramax,decmin,decmax = getRADecBox(transient['ra'],transient['dec'],size=0.00042)
-				#dbtransient = Transient.objects.filter(
-				#	Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
-				#	Q(disc_date__year=transient['disc_date'].split('-')[0]))
-				#dateutil.parser.parse(obs_date)
-#				import pdb; pdb.set_trace()
 				dbtransient = Transient.objects.filter(
 					Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
 					Q(disc_date__gte=dateutil.parser.parse(transient['disc_date'])-datetime.timedelta(365)) &
@@ -326,6 +320,7 @@ def add_transient(request):
 							tagobj = TransientTag.objects.get(name=tag)
 							dbtransient[0].tags.add(tagobj)
 							dbtransient[0].save()
+					
 				else:
 					dbtransient = Transient(**transientdict)
 					
@@ -351,6 +346,22 @@ def add_transient(request):
 							tagobj = TransientTag.objects.get(name=tag)
 							dbtransient[0].tags.add(tagobj)
 							dbtransient[0].save()
+				if 'internal_names' in transient.keys():
+					for internal_name in transient['internal_names'].split(','):
+						# see if exists
+						alt = AlternateTransientNames.objects.filter(name=internal_name)
+						if len(alt): continue
+
+						# try to figure out the observation group (this isn't perfect)
+						altgroup = ObservationGroup.objects.filter(name__startswith=internal_name.replace(' ','')[:3])
+						if len(altgroup) != 1:
+							altgroup = ObservationGroup.objects.filter(name='Unknown')
+
+						# make the alternate transient name object
+						AlternateTransientNames.objects.create(
+							name=internal_name,obs_group=altgroup[0],
+							created_by_id=user.id,modified_by_id=user.id,
+							transient=dbtransient[0])
 
 				dbtransient = dbtransient[0]
 
@@ -365,6 +376,7 @@ def add_transient(request):
 			print('Transient %s failed!'%transient['name'])
 			print("Sending email to: %s" % user.username)
 			html_msg = """Alert : YSE_PZ Failed to upload transient %s with error %s at line number %s"""
+			#import pdb; pdb.set_trace()
 			sendemail(from_addr, user.email, subject, html_msg%(transient['name'],e,exc_tb.tb_lineno),
 					  djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
 			# sending SMS is too scary for now
@@ -380,7 +392,23 @@ def add_transient(request):
 				tagobj = TransientTag.objects.get(name=tag)
 				dbt.tags.add(tagobj)
 				dbt.save()
-		
+		if 'internal_names' in transient.keys():
+			for internal_name in transient['internal_names'].split(','):
+				# see if exists
+				alt = AlternateTransientNames.objects.filter(name=internal_name)
+				if len(alt): continue
+
+				# try to figure out the observation group (this isn't perfect)
+				altgroup = ObservationGroup.objects.filter(name__startswith=internal_name.replace(' ','')[:3])
+				if len(altgroup) != 1:
+					altgroup = ObservationGroup.objects.filter(name='Unknown')
+
+				# make the alternate transient name object
+				AlternateTransientNames.objects.create(
+					name=internal_name,obs_group=altgroup[0],
+					created_by_id=user.id,modified_by_id=user.id,
+					transient=dbt)
+				
 	# add photometry, spectra, hosts
 	phot_entries = []
 	for transientlistkey in transient_data.keys():

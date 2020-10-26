@@ -1318,6 +1318,13 @@ def change_status_for_query(request, query_id, status_id):
 
 	return redirect('personaldashboard')
 
+@login_required
+def delete_followup(request,followup_id):
+	followup = get_object_or_404(TransientFollowup,pk=followup_id)
+	slug = followup.transient.slug
+	followup.delete()
+	return HttpResponseRedirect(reverse_lazy('transient_detail',kwargs={'slug':slug}))
+	
 @method_decorator(login_required, name='dispatch')
 class SearchResultsView(ListView):
 	model = Transient

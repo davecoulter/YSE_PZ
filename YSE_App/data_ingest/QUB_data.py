@@ -204,6 +204,10 @@ class QUB(CronJobBase):
                               help='SMTP host (default=%default)')
             parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
                               help='SMTP port (default=%default)')
+
+            parser.add_argument('--max_days', default=config.get('main','max_days_qub'), type=float,
+                                help='grab photometry/objects from the last x days')
+
         else:
             pass
 
@@ -211,36 +215,39 @@ class QUB(CronJobBase):
         return(parser)
 
     def main(self):
-        transientdict,nsn = self.parse_data()
-        print('uploading %i transients'%nsn)
-        self.send_data(transientdict)
-        self.copy_stamps(transientdict)
-        return nsn
-        
-    def parse_data(self):
-        # today's date
-        nowmjd = Time.now().mjd
-        
+
         # grab CSV files
         r = requests.get(url=self.options.psstlink_summary,
                          auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
-        if r.status_code != 200: raise RuntimeError('problem accessing summary link %s'%self.options.psstlink_summary)
+        if r.status_code != 200: raise RuntimeError('problem accessing summary link %s'%self.options.yselink_summary)
         summary = at.Table.read(r.text, format='ascii', delimiter='|')
 
         r = requests.get(url=self.options.psstlink_lc,
                          auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
-        if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.psstlink_summary)
+        if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
         lc = at.Table.read(r.text, format='ascii', delimiter='|')
 
+        nsn = 0
+        nsn_single = 25
+
+
+        nowmjd = Time.now().mjd
+        summary_upload = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
+        while nsn_single == 25:
+            transientdict,nsn_single = self.parse_data(summary_upload,lc,transient_idx=nsn,max_transients=25)
+            print('uploading %i transients'%nsn_single)
+            self.send_data(transientdict)
+            self.copy_stamps(transientdict)
+            nsn += 25
+        
+    def parse_data(self,summary,lc,transient_idx=0,max_transients=None):
+        # today's date
+        nowmjd = Time.now().mjd
         transientdict = {}
         obj,ra,dec = [],[],[]
         nsn = 0
-        for i,s in enumerate(summary):
-            if nowmjd - s['mjd_obs'] > self.options.max_days: continue
-            #if nsn > 100: break
-            #if nsn < 20:
-            #   nsn += 1
-            #   continue
+
+        for i,s in enumerate(summary[transient_idx:transient_idx+max_transients]):
             
             sc = SkyCoord(s['ra_psf'],s['dec_psf'],unit=u.deg)
             try:
@@ -317,12 +324,6 @@ class QUB(CronJobBase):
                 PhotUploadAll['ZTF'] = photometrydict_ztf
             
             nsn += 1
-            #transientdict = self.getZTFPhotometry(transientdict,s['ra_psf'],s['dec_psf'])
-            
-            #transientdict['transientphotometry'] = photometrydict
-
-        #scall = SkyCoord(ra,dec,unit=u.deg) #summary['ra_psf'],summary['dec_psf']
-        #transientdict = self.getZTFPhotometry(transientdict,obj,scall)
 
         return transientdict,nsn
 
@@ -491,8 +492,6 @@ class YSE(CronJobBase):
                           help='settings file (login/password info)')
         parser.add_argument('--status', default='New', type=str,
                           help='transient status to enter in YS_PZ')
-        parser.add_argument('--max_days', default=1, type=float,
-                          help='grab photometry/objects from the last x days')
 
         if config:
             parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
@@ -531,6 +530,10 @@ class YSE(CronJobBase):
                               help='SMTP host (default=%default)')
             parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
                               help='SMTP port (default=%default)')
+
+            parser.add_argument('--max_days', default=config.get('main','max_days_yse'), type=float,
+                                help='grab photometry/objects from the last x days')
+
         else:
             pass
 
@@ -539,6 +542,13 @@ class YSE(CronJobBase):
 
     def main(self):
 
+        # get things with YSE Forced flag but no YSE flag
+        urlbase = self.options.dburl.replace('/api/','')
+        querytitle = 'YSE forced photometry for non-YSE, non-Antares transients'
+        r = requests.get('%s/query_api/%s/'%(urlbase,urllib.parse.quote(querytitle)),
+                         auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
+        data = json.loads(r.text)
+        
         nsn = 0
         for yselink_summary, yselink_lc, namecol in zip([self.options.yselink_summary,self.options.yselink_genericsummary],
                                                         [self.options.yselink_lc,self.options.yselink_genericlc],
@@ -560,15 +570,25 @@ class YSE(CronJobBase):
             nsn = 0
             nsn_single = 25
 
+            scall = SkyCoord(summary['ra_psf'],summary['dec_psf'],unit=u.deg)
+            iSummary = np.array([],dtype=int)
+            for d in data['transients']:
+                sc = SkyCoord(d['ra'],d['dec'],unit=u.deg)
+                sep = sc.separation(scall).arcsec
+                if np.min(sep) < 5:
+                    iSummary = np.append(iSummary,np.where(sep < 5)[0])
+            
             nowmjd = Time.now().mjd
-            summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
+            #summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
+            iSummary = np.append(iSummary,np.where(nowmjd - summary['mjd_obs'] < self.options.max_days)[0])
+            summary_upload = summary[iSummary]
             while nsn_single == 25:
-                transientdict,nsn_single = self.parse_data(summary,lc,transient_idx=nsn,max_transients=25)
+                transientdict,nsn_single = self.parse_data(summary_upload,lc,transient_idx=nsn,max_transients=25)
                 print('uploading %i transients'%nsn_single)
                 self.send_data(transientdict)
                 self.copy_stamps(transientdict)
                 nsn += 25
-                    
+
         return nsn
         
     def parse_data(self,summary,lc,transient_idx=0,max_transients=None):
@@ -580,13 +600,8 @@ class YSE(CronJobBase):
         nsn = 0
 
         for i,s in enumerate(summary[transient_idx:transient_idx+max_transients]):
-            #if nowmjd - s['mjd_obs'] > self.options.max_days:
-            #   nsn += 1
-            #   continue
-            #print(s['local_designation'])
             
-            r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id']) #,
-            #                auth=HTTPDigestAuth(self.options.qubuser,self.options.qubpass))
+            r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'])
 
             if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
             try:

@@ -153,6 +153,7 @@ class GaiaLC(CronJobBase):
         targets = get_gaia_list(90)
 
         for t in transients:
+            print("Adding Gaia data for %s"%t.transient.name)
             tdict = {'name':t.transient.name}            
             data = get_gaia_phot(t.name,targets)[t.name]
 

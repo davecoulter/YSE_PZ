@@ -745,6 +745,7 @@
 																<th>Status</th>
 																<th>Comment</th>
 																<th>Action</th>
+																<th>Delete</th>
 															</tr>
 														</thead>
 														<tbody>
@@ -771,6 +772,7 @@
 																<td>{{ f.status }}</td>
 																<td>{{ f.comment }}</td>
 																<td><a target='_blank' href="{% url 'admin:YSE_App_transientfollowup_change' f.id %}">Edit</a></td>
+																<td><a href="{% url 'delete_followup' f.id %}">Delete</a></td>
 															</tr>
 														</tbody>
 													</table>
@@ -2067,7 +2069,7 @@
 							"</div>" + 
 							"<div class='box-body'>" + 
 							"<table id='tbl_followup_" + followup_pk + "' class='table table-bordered table-striped'>" +
-							"<thead><tr><th>Spec. Priority</th><th>Phot. Priority</th><th>Offset Star<br>RA</th><th>Offset Star<br>DEC</th><th>Offset North</th><th>Offset East</th><th>Attached Resource</th><th>Status</th><th>Action</th></tr></thead>" + 
+							"<thead><tr><th>Spec. Priority</th><th>Phot. Priority</th><th>Offset Star<br>RA</th><th>Offset Star<br>DEC</th><th>Offset North</th><th>Offset East</th><th>Attached Resource</th><th>Status</th><th>Comment</th><th>Action</th><th>Delete</th></tr></thead>" + 
 							"<tbody><tr>" + 
 							"<td>" + spec_priority + "</td>" +
 							"<td>" + phot_priority + "</td>" +
@@ -2079,6 +2081,7 @@
 							"<td>" + status_name + "</td>" + 
 							"<td>" + comment + "</td>" +
 							"<td><a target='_blank' href='{% url 'admin:YSE_App_transientfollowup_changelist' %}" + followup_pk + "/change/'>Edit</a></td>" + 
+							"<td><a href='{% url 'delete_followup' -1 %}".replace('-1', followup_pk) + "'>Delete</a></td>" + 
 							"</tr></tbody></table><hr>" + 
 							"<h4 class='box-title'>Observation Tasks</h4>" + 
 							"<table id='tbl_obs_followup_" + followup_pk + "' class='table table-bordered table-striped'>" +
