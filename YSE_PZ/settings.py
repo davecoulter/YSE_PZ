@@ -70,6 +70,7 @@ CRON_CLASSES = [
 	'YSE_App.data_ingest.Gaia_LC.GaiaLC',
 	'YSE_App.data_ingest.QUB_data.YSE_Weekly',
 	'YSE_App.data_ingest.QUB_data.QUB',
+	'YSE_App.data_ingest.QUB_data.YSE_Stack',
     'YSE_App.rapid.rapid_classify.rapid_classify_cron',
 	'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhot',
 	'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhotUpdate',
