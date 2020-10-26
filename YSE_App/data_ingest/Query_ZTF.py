@@ -158,8 +158,8 @@ class AntaresZTF(CronJobBase):
 			html_msg = "Alert : YSE_PZ Failed to upload transients in Query_ZTF.py\n"
 			html_msg += """Antares cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno)
 			sendemail(from_addr, options.dbemail, subject,
-					  html_msg%(e),
-					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+					  html_msg,
+					  options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
 		print('Antares -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
@@ -189,8 +189,9 @@ class AntaresZTF(CronJobBase):
 			query['query']['bool']['must'][1]['range']['dec']['lte'] = dec_max.deg
 			query['query']['bool']['must'][2]['range']['properties.ztf_rb']['gte'] = 0.5
 			query['query']['bool']['must'][3]['range']['properties.ztf_jd']['gte'] = recentmjd+2400000.5
+
 			result_set = search(query)
-			
+
 			transientdict,nsn = self.parse_data(result_set)
 			print('uploading %i transients'%nsn)
 			if nsn > 0: self.send_data(transientdict)
@@ -332,6 +333,8 @@ class AntaresZTF(CronJobBase):
 							  help='database login, if post=True (default=%default)')
 			parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
 							  help='database password, if post=True (default=%default)')
+			parser.add_argument('--dbemailpassword', default=config.get('main','dbemailpassword'), type=str,
+							  help='database password, if post=True (default=%default)')
 			parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
 							  help='URL to POST transients to a database (default=%default)')
 			parser.add_argument('--antaresapi', default=config.get('antares','antaresapi'), type=str,
@@ -382,7 +385,7 @@ class MARS_ZTF(CronJobBase):
 			html_msg += "Error : %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e),
-					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+					  options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
 		print('Antares -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
@@ -432,7 +435,7 @@ class MARS_ZTF(CronJobBase):
 
 		url = '%s'%self.options.dburl.replace('/api','/add_transient')
 		r = requests.post(url = url, data = json.dumps(TransientUploadDict),
-						  auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
+						  auth=HTTPBasicAuth(self.options.dblogin,self.options.dbemailpassword))
 
 		try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
 		except: print(r.text)
@@ -586,7 +589,7 @@ class AlerceZTF(CronJobBase):
 			html_msg += "Error : %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e),
-					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+					  options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
 		print('Antares -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
