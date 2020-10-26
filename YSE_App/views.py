@@ -1326,7 +1326,7 @@ class SearchResultsView(ListView):
 	def get_context_data(self):
 		query = self.request.GET.get('q')
 
-		transient = None
+		transients = None
 		# a few use cases
 		# if there's a gap or a comma in the middle, assume RA/Dec
 		size = 5/3600. # box size
