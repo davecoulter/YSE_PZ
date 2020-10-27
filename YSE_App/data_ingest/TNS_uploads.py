@@ -1073,7 +1073,7 @@ class TNS_updates(CronJobBase):
 		tnsproc.settingsfile = options.settingsfile
 		tnsproc.clobber = options.clobber
 		tnsproc.noupdatestatus = options.noupdatestatus
-		tnsproc.redoned = True
+		tnsproc.redoned = False
 		tnsproc.nedradius = options.nedradius
 		tnsproc.tnsapi = options.tnsapi
 		tnsproc.tnsapikey = options.tnsapikey
