@@ -220,12 +220,12 @@ class QUB(CronJobBase):
         r = requests.get(url=self.options.psstlink_summary,
                          auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
         if r.status_code != 200: raise RuntimeError('problem accessing summary link %s'%self.options.yselink_summary)
-        summary = at.Table.read(r.text, format='ascii', delimiter='|')
+        summary = at.Table.read(r.text, format='ascii.csv', delimiter='|')
 
         r = requests.get(url=self.options.psstlink_lc,
                          auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
         if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
-        lc = at.Table.read(r.text, format='ascii', delimiter='|')
+        lc = at.Table.read(r.text, format='ascii.csv', delimiter='|')
 
         nsn = 0
         nsn_single = 25
