@@ -46,6 +46,7 @@ urlpatterns = [
     url(r'^observing_calendar/$', views.observing_calendar, name='observing_calendar'),
     url(r'^yse_observing_calendar/$', views.yse_observing_calendar, name='yse_observing_calendar'),
     url(r'^yse_planning/$', yse_views.yse_planning, name='yse_planning'),
+    url(r'^yse_fields/(?P<ra_min_hour>[a-zA-Z0-9_-]+)/(?P<ra_max_hour>[a-zA-Z0-9_-]+)/(?P<min_mag>[a-zA-Z0-9_-]+)/$', yse_views.yse_fields, name='yse_fields'),
     url(r'^yse_sky/$', yse_views.yse_sky, name='yse_sky'),
     url(r'^msb_detail/(?P<msb>.*)$', yse_views.msb_detail, name='msb_detail'),
     url(r'^delete_followup/(?P<followup_id>[0-9_-]+)/$', views.delete_followup, name='delete_followup'),

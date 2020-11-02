@@ -281,3 +281,66 @@ def yse_msb_change(request,field_to_drop,field_to_add,snid,ra_to_add,dec_to_add)
 	msb.save()
 
 	return redirect('adjust_yse_pointings', field_name=field_to_add,snid=snid)
+
+@login_required
+def yse_fields(request,ra_min_hour,ra_max_hour,min_mag):
+
+	qs = Transient.objects.filter(Q(tags__name='YSE')).filter(name__startswith='20')
+	
+	ztfsurveyfields = SurveyField.objects.filter(~Q(obs_group__name='ZTF') & Q(ra_cen__gt=float(ra_min_hour)*360/24.) & Q(ra_cen__lt=float(ra_max_hour)*360/24.)).\
+                                                                     values_list('ztf_field_id').distinct()
+	survey_tables = []
+	for s in ztfsurveyfields:
+		surveyfields = SurveyField.objects.filter(ztf_field_id=s[0])
+		if not len(surveyfields): continue
+		
+		qs_list = []
+		for sf in surveyfields:
+			d = sf.dec_cen*np.pi/180
+			width_corr = 3.3/np.abs(np.cos(d))
+			ra_offset = cd.Angle(width_corr/2., unit=u.deg)
+			dec_offset = cd.Angle(3.3/2., unit=u.deg)
+			
+			qs_list += [(Q(ra__gt = sf.ra_cen-ra_offset.degree) &
+						 Q(ra__lt = sf.ra_cen+ra_offset.degree) &
+						 Q(dec__gt = sf.dec_cen-dec_offset.degree) &
+						 Q(dec__lt = sf.dec_cen+dec_offset.degree))]
+
+		query_full = qs_list[0]
+		for q in qs_list[1:]:
+			query_full = np.bitwise_or(query_full,q)
+		qs_final = qs.filter(query_full)
+			
+
+		recent_mag_raw_query = """
+SELECT pd.mag
+   FROM YSE_App_transient t, YSE_App_transientphotdata pd, YSE_App_transientphotometry p
+   WHERE pd.photometry_id = p.id AND
+   YSE_App_transient.id = t.id AND
+   pd.id = (
+		 SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+		 WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+		 ORDER BY pd2.obs_date DESC
+		 LIMIT 1
+	 )
+"""
+		qs_final = qs_final.annotate(recent_mag=RawSQL(recent_mag_raw_query,()))
+		qs_final = qs_final.annotate(min_mag=Min('transientphotometry__transientphotdata__mag'))
+		qs_final = qs_final.filter(min_mag__lt=float(min_mag))
+        
+		days_from_disc_query = """SELECT DATEDIFF(curdate(), t.disc_date) as days_since_disc
+FROM YSE_App_transient t WHERE YSE_App_transient.id = t.id"""
+		qs_final = qs_final.annotate(days_since_disc=RawSQL(days_from_disc_query,()))
+	
+		risingtransientfilter = RisingTransientFilter(request.GET, queryset=qs_final,prefix=str(s[0]))
+		table_rising = FieldTransientTable(risingtransientfilter.qs,prefix=str(s[0]))
+		RequestConfig(request, paginate={'per_page': 20}).configure(table_rising)
+
+		survey_tables += [(table_rising,str(s[0]),risingtransientfilter)]
+
+	if request.META['QUERY_STRING']:
+		anchor = request.META['QUERY_STRING'].split('-')[0]
+	else: anchor = ''	
+	context = {'survey_tables':survey_tables,
+	}
+	return render(request, 'YSE_App/yse_fields.html', context)
