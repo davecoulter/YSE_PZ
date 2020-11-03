@@ -927,7 +927,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
 		iPlot = (band_name == bn) & (instrument_name == inn) & (mags != None) & \
 				(mag_errs != None) & ((mag_errs_tmp <= 0.36) | (fluxes == None) | (flux_errs == None))
-		iPlotUlimFlux = (band_name == bn) & (instrument_name == inn) & (fluxes != None) & (flux_errs != None) & (flux_errs > 0)
+		iPlotUlimFlux = (band_name == bn) & (instrument_name == inn) & (fluxes != None) & (flux_errs != None) & (flux_errs != 0)
 		iPlotUlimFlux2 = fluxes[iPlotUlimFlux]/flux_errs[iPlotUlimFlux] < 3
 		mags_ulim = -2.5*np.log10((fluxes[iPlotUlimFlux][iPlotUlimFlux2] + \
 			3*flux_errs[iPlotUlimFlux][iPlotUlimFlux2]).astype(float)) + flux_zpts[iPlotUlimFlux][iPlotUlimFlux2]
