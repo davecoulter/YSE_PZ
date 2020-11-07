@@ -268,6 +268,10 @@ def add_transient(request):
 					transientdict[transientkey] = fk[0]
 
 			dbtransient = Transient.objects.filter(name=transient['name'])
+			if len(dbtransient) > 1:
+				dbtransient.filter(~Q(pk=dbtransient[0].id)).delete()
+				dbtransient = Transient.objects.filter(name=transient['name'])
+
 			if not len(dbtransient):
 				# check RA/dec
 				ramin,ramax,decmin,decmax = getRADecBox(transient['ra'],transient['dec'],size=0.00042)
