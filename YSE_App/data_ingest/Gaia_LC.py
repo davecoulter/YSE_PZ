@@ -152,7 +152,7 @@ class GaiaLC(CronJobBase):
                      filter(transient__disc_date__gt=datetime.datetime.now()-datetime.timedelta(days=7))
         targets = get_gaia_list(7)
 
-        for t in transients:
+        for i,t in enumerate(transients):
             print("Adding Gaia data for %s"%t.transient.name)
             tdict = {'name':t.transient.name}            
             data = get_gaia_phot(t.name,targets)
@@ -191,6 +191,10 @@ class GaiaLC(CronJobBase):
             transientdict[t.transient.name] = tdict
             transientdict[t.transient.name]['transientphotometry'] = PhotUploadAll
 
+            if not i % 10 and i != 0:
+                self.send_data(transientdict)
+                transientdict = {}
+        
         self.send_data(transientdict)
     
     def send_data(self,TransientUploadDict):
