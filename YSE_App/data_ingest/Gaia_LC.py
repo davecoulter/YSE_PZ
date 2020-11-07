@@ -149,8 +149,8 @@ class GaiaLC(CronJobBase):
         # not sure how many this will be, but 90 days seems safe-ish
         transients = AlternateTransientNames.objects.\
                      filter(name__startswith='Gaia').\
-                     filter(transient__disc_date__gt=datetime.datetime.now()-datetime.timedelta(days=90))
-        targets = get_gaia_list(90)
+                     filter(transient__disc_date__gt=datetime.datetime.now()-datetime.timedelta(days=7))
+        targets = get_gaia_list(7)
 
         for t in transients:
             print("Adding Gaia data for %s"%t.transient.name)
