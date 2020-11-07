@@ -155,13 +155,16 @@ class GaiaLC(CronJobBase):
         for t in transients:
             print("Adding Gaia data for %s"%t.transient.name)
             tdict = {'name':t.transient.name}            
-            data = get_gaia_phot(t.name,targets)[t.name]
-
+            data = get_gaia_phot(t.name,targets)
+            if data is None: continue
+            data = data[t.name]
+            
             PhotUploadAll = {"mjdmatchmin":0.01,
                              "clobber":True}
             photometrydict = {'instrument':'Gaia-Photometric',
                               'obs_group':'GaiaAlerts',
                               'photdata':{}}
+            
             for i,d in enumerate(data):
                 if not isinstance(data[i],float):
                     if data[i] == 'untrusted' or data[i].startswith('average') or \
