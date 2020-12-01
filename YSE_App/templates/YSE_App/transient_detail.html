@@ -43,7 +43,11 @@
 					{% if gw_candidate %}
 						<li><a href="#gw_tab" data-toggle="tab" id="gw_tab_header">GW Info</a></li>
 					{% endif %}
-					<li><a href="#comments_tab" data-toggle="tab">Comments</a></li>
+					<li><a href="#comments_tab" data-toggle="tab">Comments
+					{% if new_comment %}
+					(<b>New</b>)
+					{% endif %}
+					</a></li>
 				</ul>
 				<div class="tab-content">
 					<div class="active tab-pane" id="summary_tab">

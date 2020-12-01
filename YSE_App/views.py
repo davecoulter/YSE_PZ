@@ -860,6 +860,9 @@ def transient_detail(request, slug):
 		#import pdb
 		#pdb.set_trace()
 
+		has_new_comment = len(Log.objects.filter(transient=transient_obj).\
+                              filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1))) > 0
+        
 		# obsnights,tellist = view_utils.getObsNights(transient[0])
 		# too_resources = ToOResource.objects.all()
 		#
@@ -901,7 +904,8 @@ def transient_detail(request, slug):
 			'spectrum_upload_form':spectrum_upload_form,
 			'diff_images':TransientDiffImage.objects.filter(phot_data__photometry__transient__name=transient_obj.name),
 			'classical_resource_form':classical_resource_form,
-			'too_resource_form':too_resource_form
+			'too_resource_form':too_resource_form,
+            'new_comment':has_new_comment
 		}
 
 		if transient_followup_form.fields["valid_start"].initial:
