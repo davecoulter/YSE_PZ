@@ -543,8 +543,8 @@ class AddTransientCommentFormView(FormView):
 				for user in User.objects.all():
 					emaillist += [user.email]
 			else:
-				for log in logs:
-					emaillist += [log.created_by.email]
+				#for log in logs:
+				#	emaillist += [log.created_by.email]
 				for user in re.compile(r"\@(\w+)").findall(instance.comment):
 					usermatch = User.objects.filter(username=user)
 					if len(usermatch):
