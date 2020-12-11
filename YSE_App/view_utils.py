@@ -933,14 +933,18 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 			3*flux_errs[iPlotUlimFlux][iPlotUlimFlux2]).astype(float)) + flux_zpts[iPlotUlimFlux][iPlotUlimFlux2]
 		upperlimmag = np.append(upperlimmag,mags_ulim)
 		upperlimmjd = np.append(upperlimmjd,mjds[iPlotUlimFlux][iPlotUlimFlux2].tolist())
-
+		iPlotUlimFlux3 = mags_ulim == mags_ulim
+		upperlimmag = np.append(upperlimmag,mags_ulim[iPlotUlimFlux3])
+		upperlimmjd = np.append(upperlimmjd,mjds[iPlotUlimFlux][iPlotUlimFlux2][iPlotUlimFlux3].tolist())
+        
+        
 		source = ColumnDataSource(data=dict(x=mjds[iPlot].tolist(),
 											y=mags[iPlot].tolist(),
 											date=obs_dates_str[iPlot].tolist(),
 											data_quality=data_quality[iPlot].tolist(),
 											magsys=mag_sys[iPlot].tolist(),
 											band=['%s - %s'%(inn,bn)]*len(mjds[iPlot].tolist())))
-
+            
 		p = plotmethod('x','y',source=source,
 				   color=color,size=size, muted_alpha=0.2)
 		g1_hover = HoverTool(renderers=[p],
