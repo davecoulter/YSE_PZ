@@ -861,8 +861,8 @@ def transient_detail(request, slug):
 		#pdb.set_trace()
 
 		has_new_comment = len(Log.objects.filter(transient=transient_obj).\
-                              filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1))) > 0
-        
+							  filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1))) > 0
+		
 		# obsnights,tellist = view_utils.getObsNights(transient[0])
 		# too_resources = ToOResource.objects.all()
 		#
@@ -905,7 +905,7 @@ def transient_detail(request, slug):
 			'diff_images':TransientDiffImage.objects.filter(phot_data__photometry__transient__name=transient_obj.name),
 			'classical_resource_form':classical_resource_form,
 			'too_resource_form':too_resource_form,
-            'new_comment':has_new_comment
+			'new_comment':has_new_comment
 		}
 
 		if transient_followup_form.fields["valid_start"].initial:
@@ -1237,6 +1237,7 @@ def download_spectra(request, slug):
 @csrf_exempt
 @login_or_basic_auth_required
 def upload_spectrum(request):
+
 	if request.method == 'POST':
 		form = SpectrumUploadForm(request.POST, request.FILES)
 		if form.is_valid():
@@ -1272,42 +1273,42 @@ def upload_spectrum(request):
 			
 			existingspec = TransientSpecData.objects.filter(spectrum=tspec)
 			if len(existingspec):
-				for e in existingspec: e.delete()
+				existingspec.delete()
 
+
+			td = []
 			for line in request.FILES['filename']:
 				line = line.decode('utf-8').replace('\n','')
 				if line.startswith('#'): continue
 				if len(line.split()) == 3:
 					wavelength,flux,flux_err = line.split()
 					wavelength,flux,flux_err = float(wavelength),float(flux),float(flux_err)
-					td = TransientSpecData.objects.create(
+					td += [TransientSpecData(
 						spectrum=tspec,wavelength=wavelength,flux=flux,flux_err=flux_err,
-						created_by=request.user,modified_by=request.user)
-					td.save()
+						created_by=request.user,modified_by=request.user)]
 				elif len(line.split()) == 2:
 					wavelength,flux = line.split()
 					wavelength,flux = float(wavelength),float(flux)
-					td = TransientSpecData.objects.create(
+					td += [TransientSpecData(
 						spectrum=tspec,wavelength=wavelength,flux=flux,
-						created_by=request.user,modified_by=request.user)
-					td.save()
+						created_by=request.user,modified_by=request.user)]
 				elif len(line.split(',')) == 3:
 					wavelength,flux,flux_err = line.split(',')
 					wavelength,flux,flux_err = float(wavelength),float(flux),float(flux_err)
-					td = TransientSpecData.objects.create(
+					td += [TransientSpecData(
 						spectrum=tspec,wavelength=wavelength,flux=flux,flux_err=flux_err,
-						created_by=request.user,modified_by=request.user)
-					td.save()
+						created_by=request.user,modified_by=request.user)]
 				elif len(line.split(',')) == 2:
 					wavelength,flux = line.split(',')
 					wavelength,flux = float(wavelength),float(flux)
-					td = TransientSpecData.objects.create(
+					td += TransientSpecData(
 						spectrum=tspec,wavelength=wavelength,flux=flux,
 						created_by=request.user,modified_by=request.user)
-					td.save()
 				else:
 					raise RuntimeError('bad input')
-			
+
+			TransientSpecData.objects.bulk_create(td)
+				
 			return redirect('transient_detail', slug=transient.slug) #HttpResponseRedirect(reverse_lazy('transient_detail',transient.slug))
 	else:
 		form = SpectrumUploadForm()
