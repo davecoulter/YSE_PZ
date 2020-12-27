@@ -46,7 +46,7 @@ from django.conf import settings as djangoSettings
 import argparse, configparser
 import signal
 
-reg_obj = "https://wis-tns.weizmann.ac.il/object/(\w+)"
+reg_obj = "https://www.wis-tns.org/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
 reg_dec = "DEC[\=\*a-zA-Z\<\>\" ]+((?:\+|\-)\d{2}:\d{2}:\d{2}\.\d+)\<\/em\>\,"
 
@@ -1073,7 +1073,7 @@ class TNS_updates(CronJobBase):
 		tnsproc.settingsfile = options.settingsfile
 		tnsproc.clobber = options.clobber
 		tnsproc.noupdatestatus = options.noupdatestatus
-		tnsproc.redoned = False
+		tnsproc.redoned = True
 		tnsproc.nedradius = options.nedradius
 		tnsproc.tnsapi = options.tnsapi
 		tnsproc.tnsapikey = options.tnsapikey
