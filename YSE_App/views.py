@@ -21,6 +21,8 @@ from django.utils.decorators import method_decorator
 
 from astropy.utils import iers
 iers.conf.auto_download = True
+from astropy.utils.iers import conf
+conf.auto_max_age = None
 
 from .models import *
 from .forms import *
