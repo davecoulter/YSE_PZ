@@ -30,9 +30,10 @@ def tess_obs(ra, dec, discovery_jd):
 
 	if len(sectors)>0:
 		for sector in sectors:
-			if (discovery_jd > tess_date[int(sector)-1]-before_leeway and
-				discovery_jd < tess_date[int(sector)]+after_leeway):
-				return(True)
+			if int(sector)-1>len(tess_date):
+				if (discovery_jd > tess_date[int(sector)-1]-before_leeway and
+					discovery_jd < tess_date[int(sector)]+after_leeway):
+					return(True)
 	return(False)
 
 # These should be false
