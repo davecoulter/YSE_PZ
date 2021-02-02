@@ -11,7 +11,10 @@ def tess_obs(ra, dec, discovery_jd):
 		2458814.5,2458841.5,2458869.5,2458897.5,2458926.5,2458955.5,
 		2458982.5,2459008.5,2459034.5,2459060.5,2459087.5,2459114.5,
 		2459143.5,2459172.5,2459200.5,2459227.5,2459254.5,2459280.5,
-		2459306.5,2459332.5,2459360.5]
+		2459306.5,2459332.5,2459360.5,2459389.5,2459418.5,2459446.5,
+		2459473.5,2459499.5,2459524.5,2459550.5,2459578.5,2459607.5,
+		2459636.5,2459664.5,2459691.5,2459717.5,2459743.5,2459717.5,
+		2459743.5,2459769.5,2459796.5,2459823.5]
 
 	url = 'https://heasarc.gsfc.nasa.gov/cgi-bin/tess/webtess/'
 	url += 'wtv.py?Entry={ra}%2C{dec}'
@@ -30,9 +33,10 @@ def tess_obs(ra, dec, discovery_jd):
 
 	if len(sectors)>0:
 		for sector in sectors:
-			if (discovery_jd > tess_date[int(sector)-1]-before_leeway and
-				discovery_jd < tess_date[int(sector)]+after_leeway):
-				return(True)
+			if int(sector)<len(tess_date):
+				if (discovery_jd > tess_date[int(sector)-1]-before_leeway and
+					discovery_jd < tess_date[int(sector)]+after_leeway):
+					return(True)
 	return(False)
 
 # These should be false
