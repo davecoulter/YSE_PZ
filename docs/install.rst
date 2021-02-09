@@ -53,7 +53,7 @@ ask D. Jones for these files.  Otherwise, you can use the
 public versions of the YSE_PZ database (updated approximately
 whenever I feel like it, or please ask for the latest and greatest),
 which are :code:`YSE_PZ/public_settings.ini` for the settings file
-and follow this `Dropbox link <https://www.dropbox.com/s/tr54k9ok920qzi7/YSE_db_public_20201018.sql?dl=0>`_
+and follow this `Dropbox link <https://www.dropbox.com/s/fc6fnmrelds92nq/YSE_db_public_20210208.sql.tgz?dl=0>`_
 for the database.
 
 If you don't need to ingest any new transients into the database, you
