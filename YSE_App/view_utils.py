@@ -1629,7 +1629,8 @@ def rise_time(request,transient_id,obs_id):
 		target_rise_time = tel.target_rise_time(tme,sc,horizon=18*u.deg,which="previous")
 
 		if target_rise_time:
-			risetime = target_rise_time.isot.split('T')[-1]
+			try: risetime = target_rise_time.isot.split('T')[-1]
+			except: risetime = None
 		else: 
 			risetime = None
 
