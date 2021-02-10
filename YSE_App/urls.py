@@ -11,6 +11,7 @@ from django.urls import path, re_path, include
 from . import views, view_utils, data_utils, table_utils, yse_views
 from . import api_views
 from .form_views import *
+from .yse_utils.yse_forms import MoveYSEFormView
 from . import surveypages
 from YSE_App.yse_utils import yse_pointings, yse_view_utils
 from YSE_App.views import SearchResultsView
@@ -48,6 +49,9 @@ urlpatterns = [
     url(r'^yse_planning/$', yse_views.yse_planning, name='yse_planning'),
     url(r'^yse_fields/(?P<ra_min_hour>.*)/(?P<ra_max_hour>.*)/(?P<min_mag>.*)/$', yse_views.yse_fields, name='yse_fields'),
     url(r'^yse_sky/$', yse_views.yse_sky, name='yse_sky'),
+    url(r'^select_yse_fields/$', yse_views.select_yse_fields, name='select_yse_fields'),
+	url(r'^move_yse_field/$', MoveYSEFormView.as_view(), name='move_yse_field'),
+	url(r'^return_serialized_transients/$', yse_views.return_serialized_transients, name='return_serialized_transients'),
     url(r'^msb_detail/(?P<msb>.*)$', yse_views.msb_detail, name='msb_detail'),
     url(r'^delete_followup/(?P<followup_id>[0-9_-]+)/$', views.delete_followup, name='delete_followup'),
 
@@ -80,6 +84,7 @@ urlpatterns = [
 	url(r'^add_transient/', data_utils.add_transient, name='add_transient'),
 	url(r'^add_yse_survey_obs/', data_utils.add_yse_survey_obs, name='add_yse_survey_obs'),
 	url(r'^add_yse_survey_fields/', data_utils.add_yse_survey_fields, name='add_yse_survey_fields'),
+
 	url(r'^add_gw_candidate/', data_utils.add_gw_candidate, name='add_gw_candidate'),
 	url(r'^add_transient_phot/', data_utils.add_transient_phot, name='add_transient_phot'),
 	url(r'^add_transient_spec/', data_utils.add_transient_spec, name='add_transient_spec'),
@@ -195,6 +200,7 @@ router.register(r'observatories', api_views.ObservatoryViewSet)
 router.register(r'oncalldates', api_views.OnCallDateViewSet)
 
 router.register(r'surveyfields', api_views.SurveyFieldViewSet)
+router.register(r'surveyfieldmsbs', api_views.SurveyFieldMSBViewSet)
 router.register(r'surveyobservations', api_views.SurveyObservationViewSet)
 
 router.register(r'transientphotometry', api_views.TransientPhotometryViewSet, base_name='transientphotometry')

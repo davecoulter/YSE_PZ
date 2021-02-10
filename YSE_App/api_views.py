@@ -44,19 +44,29 @@ class SurveyFieldFilter(django_filters.FilterSet):
 		model = SurveyField
 		fields = ()
 
-
+### `SurveyFieldMSB` Filter Set ###
+class SurveyFieldMSBFilter(django_filters.FilterSet):
+	name = django_filters.Filter(name="name")
+	active = django_filters.Filter(name="active")
+	class Meta:
+		model = SurveyFieldMSB
+		fields = ('name','active')
+        
 ### `SurveyField ViewSets` ###
 class SurveyFieldViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = SurveyField.objects.all()
 	serializer_class = SurveyFieldSerializer
 	permission_classes = (permissions.IsAuthenticated,)
+	filter_backends = (DjangoFilterBackend,)
 	filter_class = SurveyFieldFilter
 	
-class SurveyFieldMSBViewSet(viewsets.ReadOnlyModelViewSet):
+class SurveyFieldMSBViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet): #viewsets.ReadOnlyModelViewSet):
 	queryset = SurveyFieldMSB.objects.all()
-	serializer_class = SurveyFieldSerializer
+	serializer_class = SurveyFieldMSBSerializer
 	permission_classes = (permissions.IsAuthenticated,)
-
+	filter_backends = (DjangoFilterBackend,)
+	filter_class = SurveyFieldMSBFilter
+    
 ### `Transient` Filter Set ###
 class SurveyObsFilter(django_filters.FilterSet):
 	status_in = django_filters.BaseInFilter(name="status__name")#, lookup_expr='in')

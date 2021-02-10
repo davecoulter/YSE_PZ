@@ -150,6 +150,11 @@ class SurveyObs(CronJobBase):
 
 			# Mark messages as "Seen"
 			result, wdata = mail.store(msg_ids[i], '+FLAGS', '\\Seen')
+
+		# manually setting MSB name
+		for k in survey_fields.keys():
+			survey_fields[k]['msb'] = survey_fields[k]['survey_field'].split('.')[0]
+		
 		return survey_fields
 
 	def add_survey_fields(self,surveyfile):

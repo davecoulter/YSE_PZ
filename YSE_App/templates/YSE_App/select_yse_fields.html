@@ -1,0 +1,364 @@
+{% extends 'YSE_App/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<section class="content-header">
+	<h1>
+		Active YSE Fields
+	</h1>
+	<ol class="breadcrumb">
+		<li><i class="fa fa-dashboard"></i> Home</li>
+	</ol>
+</section>
+
+<section class="content">
+
+<div class="row">
+
+<div class="row">
+<div class="col-xs-6">
+	<div id="external-events" class="box box-default box-solid">
+		<div class="box-header with-border">
+			<strong>Inactive YSE Fields</strong>
+		</div>
+
+
+		<div class="box-body" id="external-events-list">
+			<table class="table table-bordered table-striped">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>RA</th>
+						<th>Dec</th>
+						<th>Days Since Last Obs</th>
+						<th>Airmass</th>
+					</tr>
+				</thead>
+				<tbody>
+				{% for a in yse_field_data %}
+					<tr>
+						<td><div data-tag_id="{{ a.0.id }}" class="external-event">{{ a.0.name }}</div></td>
+						<td>{{a.0.CoordString.0}}</td>
+						<td>{{a.0.CoordString.1}}</td>
+						<td>{{ a.2|floatformat:0 }}</td>
+						<td>{{a.3}}</td>
+					</tr>
+				{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+<div class="col-xs-6">
+	<div id="associated-events" class="box box-default box-solid">
+		<div class="box-header with-border">
+			<strong>Active YSE Fields</strong>
+		</div>
+		<div class="box-body" id="associated-events-list">
+			<table class="table table-bordered table-striped">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>RA</th>
+						<th>Dec</th>
+						<th>Days Since First Obs</th>
+						<th>Airmass</th>
+					</tr>
+				</thead>
+				<tbody>
+				{% for a in active_yse_field_data %}
+					<tr>
+						<td><div data-tag_id="{{ a.0.id }}" class="external-event">{{ a.0.name }}</div></td>
+						<td>{{a.0.CoordString.0}}</td>
+						<td>{{a.0.CoordString.1}}</td>
+						<td>{{ a.2|floatformat:0 }}</td>
+						<td>{{a.3}}</td>
+					</tr>
+				{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+</div>
+
+<div class="row">
+	<div class="col-xs-6">
+		<div class="box-header with-border">
+			<strong>Move YSE Fields</strong>
+		</div>
+		<div class="box-body">
+			<input type="hidden" id="obs_group" value="{{ yse_group }}"/>
+			<input type="hidden" id="instrument" value="{{ GPC1 }}"/>
+			<input type="hidden" id="width_deg" value="3.1"/>
+			<input type="hidden" id="height_deg" value="3.1"/>
+			{% include "YSE_App/form_snippets/YSE_move_field_form.html" with form=yse_move_field_form %}
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-xs-12">
+		<div id="yse_field_container">
+		</div>
+	</div>
+</div>
+</div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script src="{% static 'YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+<script src="{% static 'YSE_App/plugins/loopj-jquery-tokeninput-201d2d1/src/jquery.tokeninput.js' %}"></script>
+<script src="{% static 'YSE_App/plugins/bootstrap-autocomplete.min.js' %}"></script>
+<!--<script src="https://cdn.rawgit.com/xcash/bootstrap-autocomplete/3de7ad37/dist/latest/bootstrap-autocomplete.js"></script>-->
+<link rel="stylesheet" type="text/css" href="{% static 'YSE_App/plugins/loopj-jquery-tokeninput-201d2d1/styles/token-input-mac.css' %}" />
+
+<script>
+
+$(document).ready(function() {
+       $("#Transients").tokenInput("{% url 'return_serialized_transients' %}", {
+        hintText: "Begin typing a transient name (5 character minimum)",
+        noResultsText: "No results",
+        searchingText: "Searching..."
+    });
+
+    $('.basicAutoComplete').autoComplete(
+        {minLength: 1}
+    );
+    $('.dropdown-menu').css({'top': 'auto', 'left': 'auto'})
+});
+
+$(function() {
+
+			// initialize the external events
+			function init_events(ele) {
+				ele.each(function () {
+
+					var eventObject = {
+						title: $.trim($(this).text())
+					}
+					// store the Event Object in the DOM element so we can get to it later
+					$(this).data('eventObject', eventObject)
+
+					// make the event draggable using jQuery UI
+					$(this).draggable({
+						zIndex			: 1070,
+						revert			: true,	// will cause the event to go back to its
+						revertDuration	:0  //		original position after the drag
+					})
+				})
+			}
+
+			init_events($('#external-events div.external-event'))
+			init_events($('#associated-events div.external-event'))
+
+			// Make target canvas draggable
+			$("#associated-events").droppable({
+				drop:function(e,source){
+
+					$("#associated-events-list").append(source.draggable);
+					// Now, get all associated events and PATCH transient with them
+					var tag_ids = $("#associated-events-list").children("div").map(function() {return $(this).attr("data-tag_id")})
+
+					var base_url = window.location.protocol + "//" + window.location.hostname
+					var port = window.location.port
+					if (port != "") {
+						base_url = base_url + ":" + port
+					}
+
+					var tag_urls = []
+					for (i=0; i< tag_ids.length; i++) {
+					
+
+						var msb_target = "{% url 'surveyfieldmsb-detail' -1 %}".replace(-1,tag_ids[i])
+						var api_url = base_url + msb_target
+						//alert(api_url)
+						var patchData = { "active": 1 }
+						var jsonData = JSON.stringify(patchData)
+
+						$.ajax({
+							type: "PATCH",
+							url: api_url,
+							csrfmiddlewaretoken: "{{ csrf_token }}",
+							data: jsonData,
+							contentType: "application/json; charset=utf-8",
+ 							dataType: "json",
+							success: function(data, textStatus, jqXHR) {
+								if (textStatus == "success") {
+
+								} else {
+									alert("YSE Field statuses may not have been changed -- please use YSE Admin and contact David J.")
+								}
+							},
+							error: function(XMLHttpRequest, textStatus, errorThrown) {
+								// alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+								alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));
+							}
+						});
+					}
+
+				}
+			});
+
+			$("#external-events").droppable({
+				drop:function(e,source){
+
+					$("#external-events-list").append(source.draggable);
+					// Now, get all associated events and PATCH transient with them
+					var tag_ids = $("#external-events-list").children("div").map(function() {return $(this).attr("data-tag_id")})
+
+					var base_url = window.location.protocol + "//" + window.location.hostname
+					var port = window.location.port
+					if (port != "") {
+						base_url = base_url + ":" + port
+					}
+
+					var tag_urls = []
+					for (i=0; i< tag_ids.length; i++) {
+					
+
+						var msb_target = "{% url 'surveyfieldmsb-detail' -1 %}".replace(-1,tag_ids[i])
+						var api_url = base_url + msb_target
+						//alert(api_url)
+						var patchData = { "active": 0 }
+						var jsonData = JSON.stringify(patchData)
+
+						$.ajax({
+							type: "PATCH",
+							url: api_url,
+							csrfmiddlewaretoken: "{{ csrf_token }}",
+							data: jsonData,
+							contentType: "application/json; charset=utf-8",
+ 							dataType: "json",
+							success: function(data, textStatus, jqXHR) {
+								if (textStatus == "success") {
+
+								} else {
+									alert("YSE Field statuses may not have been changed -- please use YSE Admin and contact David J.")
+								}
+							},
+							error: function(XMLHttpRequest, textStatus, errorThrown) {
+								// alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+								alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));
+							}
+						});
+					}
+
+				}
+			});
+
+			$('#move_yse_field').on('submit', function(event){
+				event.preventDefault();
+				move_yse_field();
+			});
+
+			function move_yse_field() {
+				// Grab the form, and associate it with the current transient detail page
+				var data = $('#move_yse_field').serialize()
+
+				$.ajax({
+					url : "{% url 'move_yse_field' %}", // the endpoint
+					type : "POST", // http method
+					data : data, // data sent with the post request
+
+					// handle a successful response
+					success : function(json) {
+
+						// Required fields
+						var email = json.data["email_text"]
+						var warnings = json.data["warning"]
+						
+						// Construct HTML to append container
+						if (warnings){
+							var warningtext = "<p>Warnings: "+warnings+"</p><p>If you wish to schedule this field, please email something like the following to Angie</p>"
+						} else {
+							var warningtext = "<p>Successfully added field!  If you wish to schedule this field, please email something like the following to Angie</p>"
+						}
+
+						var followupHTML = "<div class='row'><div class='col-xs-6'><div class='box-body'>"+warningtext +
+						"<p> "+email + "</p>"+"</div></div></div>"
+
+
+						//var container_collection = $("#yse_field_container > div")
+						//if (container_collection.length == 0) {
+						$("#yse_field_container").append(followupHTML)
+						//} else {
+						//	$("#yse_field_container").prepend(followupHTML)
+						//}
+
+						// Close & reset form box
+						//$("#move_yse_field_btn").trigger("click")
+						//$('#move_yse_field')[0].reset();
+
+					},
+
+					// handle a non-successful response
+					error : function(xhr,errmsg,err) {
+						alert(xhr.status + ": " + xhr.responseText);
+					}
+				});
+			};
+
+			// This function gets cookie with a given name
+			function getCookie(name) {
+				var cookieValue = null;
+				if (document.cookie && document.cookie != '') {
+					var cookies = document.cookie.split(';');
+					for (var i = 0; i < cookies.length; i++) {
+						var cookie = jQuery.trim(cookies[i]);
+						// Does this cookie string begin with the name we want?
+						if (cookie.substring(0, name.length + 1) == (name + '=')) {
+							cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+							break;
+						}
+					}
+				}
+				return cookieValue;
+			}
+
+			var csrftoken = getCookie('csrftoken');
+
+			/*
+			The functions below will create a header with csrftoken
+			*/
+
+			function csrfSafeMethod(method) {
+				// these HTTP methods do not require CSRF protection
+				return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+			}
+
+			function sameOrigin(url) {
+				// test that a given url is a same-origin URL
+				// url could be relative or scheme relative or absolute
+				var host = document.location.host; // host + port
+				var protocol = document.location.protocol;
+				var sr_origin = '//' + host;
+				var origin = protocol + sr_origin;
+				// Allow absolute or scheme relative URLs to same origin
+				return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+				(url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+					// or any other URL that isn't scheme relative or absolute i.e relative.
+					!(/^(\/\/|http:|https:).*/.test(url));
+				}
+
+				$.ajaxSetup({
+					beforeSend: function(xhr, settings) {
+						if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
+						// Send the token to same-origin, relative URLs only.
+						// Send the token only if the method warrants CSRF protection
+						// Using the CSRFToken value acquired earlier
+						xhr.setRequestHeader("X-CSRFToken", csrftoken);
+						}
+					}
+				});
+		})
+
+
+
+</script>
+{% endblock %}

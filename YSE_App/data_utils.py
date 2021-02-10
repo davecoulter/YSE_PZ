@@ -86,11 +86,9 @@ def add_yse_survey_fields(request):
 
 		# no clobbering for now
 		if len(dbsurveyfield):
-		#	dbsurveyfield.update(**surveydict)
 			dbsurveyfield = dbsurveyfield[0]
 		else:
 			dbsurveyfield = SurveyField.objects.create(**surveydict)
-			#survey_entries += [dbsurveyfield]
 
 		surveymsb = SurveyFieldMSB.objects.filter(name=surveydict['field_id'].split('.')[0])
 		if not len(surveymsb):
@@ -101,11 +99,11 @@ def add_yse_survey_fields(request):
 			surveymsb.save()
 		elif len(surveymsb):
 			surveymsb = surveymsb[0]
-			if surveymsb.survey_fields.count() < 6 and not len(surveymsb.survey_fields.filter(field_id=dbsurveyfield.field_id)):
+			if surveymsb.survey_fields.count() < 6 and \
+               not len(surveymsb.survey_fields.filter(field_id=dbsurveyfield.field_id)):
 				surveymsb.survey_fields.add(dbsurveyfield)
 				surveymsb.save()
 
-	#SurveyField.objects.bulk_create(survey_entries)
 	return_dict = {"message":"success"}
 	return JsonResponse(return_dict)
 
@@ -146,14 +144,35 @@ def add_yse_survey_obs(request):
 				if surveykey == 'photometric_band':
 					fk = fkmodel.objects.filter(name=survey[surveykey].split('-')[1]).filter(instrument__name=survey[surveykey].split('-')[0])
 				elif surveykey == 'survey_field':
-					fk = fkmodel.objects.filter(Q(ra_cen__gt=float(survey['ra_cen'])-0.1) & Q(ra_cen__lt=float(survey['ra_cen'])+0.1) &
-												Q(dec_cen__gt=float(survey['dec_cen'])-0.1) & Q(dec_cen__lt=float(survey['dec_cen'])+0.1))
+					# find survey field, approx 10-arcsec matching
+					fk = fkmodel.objects.filter(Q(ra_cen__gt=float(survey['ra_cen'])-0.003) & Q(ra_cen__lt=float(survey['ra_cen'])+0.003) &
+												Q(dec_cen__gt=float(survey['dec_cen'])-0.003) & Q(dec_cen__lt=float(survey['dec_cen'])+0.003))
+					
+					# if there's no RA/Dec match, find field based on name
 					if not len(fk):
 						fk = fkmodel.objects.filter(field_id=survey[surveykey])
-						fk_edit = fk[0]
-						fk_edit.ra_cen = survey['ra_cen']
-						fk_edit.dec_cen = survey['dec_cen']
-						fk_edit.save()
+
+						fk_new = fk[0]
+						fk_new.ra_cen = survey['ra_cen']
+						fk_new.dec_cen = survey['dec_cen']
+						# replace the field id, add a date to the field name
+						orig_id = fk_new.field_id[:]
+						# could do this numberically but doing w/ MJD for now
+						#if len(orig_id.split('.')) == 3:
+						#	 field_num = int(orig_id.split('.')[-1])+1
+						#else: field_num = 2
+						new_field_id = orig_id.split('.')[0] + '.' + orig_id.split('.')[1] + '.' + str(int(survey['obs_mjd']))
+						fk_new.field_id = new_field_id
+						fk_new.pk = None
+						fk_new.save()
+
+						# then make sure the MSB is up to date
+						msblist = SurveyFieldMSB.objects.filter(survey_fields__in=[fk[0]])
+						for msb in msblist:
+							# hopefully there's only one....
+							msb.survey_fields.remove(fk[0])
+							msb.survey_fields.add(fk_new)
+							
 					if not len(fk):
 						try: ztf_id = survey[surveykey].split('.')[0]
 						except: ztf_id = None
@@ -174,6 +193,7 @@ def add_yse_survey_obs(request):
 
 				surveydict[surveykey] = fk[0]
 
+		# find pre-existing observation record
 		dbsurveyfield = SurveyObservation.objects.filter(
 			survey_field=surveydict['survey_field']).filter(
 				obs_mjd__gt=float(surveydict['obs_mjd'])-0.01).filter(

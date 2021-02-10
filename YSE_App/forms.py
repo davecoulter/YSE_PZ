@@ -81,7 +81,7 @@ class ClassicalResourceForm(ModelForm):
 		fields = [
 			'telescope',
 			'principal_investigator']
-
+        
 class ToOResourceForm(ModelForm):
 
 	awarded_too_hours = forms.FloatField(initial=0)
@@ -184,8 +184,8 @@ class TransientObservationTaskForm(ModelForm):
 			'followup']
 
 class QueryModelChoiceField(forms.ModelChoiceField):
-    def label_from_instance(self, obj):
-        return obj.__unicode__
+	def label_from_instance(self, obj):
+		return obj.__unicode__
 
 class AddDashboardQueryForm(ModelForm):
 	query = QueryModelChoiceField(Query.objects.all(),required=False)
@@ -252,7 +252,7 @@ class SpectrumUploadForm(ModelForm):
 		'OSIRIS','FLOYDS-N','FLOYDS-S','NIRC2',
 		'NIRSPEC','NIRES','KCWI','ESI',
 		'DEIMOS','OSIRIS','MOSFIRE','LRIS',
-		'HIRES','GMOS','Goodman','KAST','WiFeS','WFCCD','DIS']
+		'HIRES','GMOS','Goodman','KAST','WiFeS','WFCCD','DIS','MMT Binospec']
 	instrument = forms.ModelChoiceField(Instrument.objects.filter(Q(name__in=spec_instruments)))
 	#import pdb; pdb.set_trace()
 	class Meta:

@@ -25,6 +25,8 @@ class SurveyField(BaseModel):
 	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
 	ztf_field_id = models.CharField(max_length=64,null=True,blank=True)
 	active = models.NullBooleanField(null=True,blank=True)
+	targeted_transients = models.ManyToManyField('Transient',blank=True)
+	targeted_galaxies = models.TextField(null=True,blank=True)
 
 	# field center
 	ra_cen = models.FloatField()
@@ -45,13 +47,17 @@ class SurveyFieldMSB(BaseModel):
 	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
 	name = models.CharField(max_length=64)
 	survey_fields = models.ManyToManyField(SurveyField,blank=True)
+	active = models.NullBooleanField(null=True,blank=True)
 
 	def __str__(self):
 		return self.name
 
 	def fieldSet(self):
 		return ','.join([sf for sf in survey_fields])
-	
+
+	def CoordString(self):		
+		return GetSexigesimalString(self.survey_fields.first().ra_cen, self.survey_fields.first().dec_cen)
+
 class SurveyObservation(BaseModel):
 
 	mjd_requested = models.FloatField(null=True,blank=True)
@@ -76,6 +82,7 @@ class SurveyObservation(BaseModel):
 	zpt_obs = models.FloatField(null=True, blank=True)
 	quality = models.IntegerField(null=True, blank=True)
 	n_good_skycell = models.IntegerField(null=True, blank=True)
+	msb = models.ForeignKey(SurveyFieldMSB, on_delete=models.CASCADE, null=True, blank=True)
 	
 	def __str__(self):
 		if self.obs_mjd:
