@@ -15,6 +15,7 @@ Welcome to the YSE_PZ documentation!
    observing 
    detail
    triage
+   adding_data
    
 Indices and tables
 ==================
