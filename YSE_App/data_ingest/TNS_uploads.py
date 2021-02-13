@@ -124,6 +124,8 @@ class processTNS:
 								help='database login, if post=True (default=%default)')
 			parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
 								help='database password, if post=True (default=%default)')
+			parser.add_argument('--dbemailpassword', default=config.get('main','dbemailpassword'), type=str,
+								help='database password, if post=True (default=%default)')
 			parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
 								help='URL to POST transients to a database (default=%default)')
 			parser.add_argument('--tnsapi', default=config.get('main','tnsapi'), type=str,
@@ -154,6 +156,8 @@ class processTNS:
 			parser.add_argument('--dbemail', default="", type=str,
 								help='database login, if post=True (default=%default)')
 			parser.add_argument('--dbpassword', default="", type=str,
+								help='database password, if post=True (default=%default)')
+			parser.add_argument('--dbemailpassword', default="", type=str,
 								help='database password, if post=True (default=%default)')
 			parser.add_argument('--url', default="", type=str,
 								help='URL to POST transients to a database (default=%default)')
@@ -650,7 +654,8 @@ class processTNS:
 			ras.append(json_data_single['data']['reply']['ra'])
 			decs.append(json_data_single['data']['reply']['dec'])
 
-		nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=True,doTNS=doTNS)
+		if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=self.redoned,doTNS=doTNS)
+		else: nsn = 0
 		return nsn
 
 	
@@ -929,8 +934,9 @@ def sendemail(from_addr, to_addr,
 			server.login(login, password)
 			resp = server.sendmail(from_addr, [to_addr], msg.as_string())
 			print("Send success")
-		except:
-			print("Send fail")
+		except Exception as e:
+			print("Send fail; %s"%e)
+			import pdb; pdb.set_trace()
 
 def format_to_json(source):
 	# change data to json format and return
@@ -1002,6 +1008,7 @@ class TNS_emails(CronJobBase):
 		tnsproc.password = options.password
 		tnsproc.dblogin = options.dblogin
 		tnsproc.dbpassword = options.dbpassword
+		tnsproc.dbemailpassword = options.dbemailpassword
 		tnsproc.dburl = options.dburl
 		tnsproc.status = options.status
 		tnsproc.settingsfile = options.settingsfile
@@ -1030,7 +1037,7 @@ class TNS_emails(CronJobBase):
 			html_msg += "Error : %s at line number %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e,exc_tb.tb_lineno),
-					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+					  options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
 		print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
@@ -1068,12 +1075,13 @@ class TNS_updates(CronJobBase):
 		tnsproc.password = options.password
 		tnsproc.dblogin = options.dblogin
 		tnsproc.dbpassword = options.dbpassword
+		tnsproc.dbemailpassword = options.dbemailpassword
 		tnsproc.dburl = options.dburl
 		tnsproc.status = options.status
 		tnsproc.settingsfile = options.settingsfile
 		tnsproc.clobber = options.clobber
 		tnsproc.noupdatestatus = options.noupdatestatus
-		tnsproc.redoned = True
+		tnsproc.redoned = False #True
 		tnsproc.nedradius = options.nedradius
 		tnsproc.tnsapi = options.tnsapi
 		tnsproc.tnsapikey = options.tnsapikey
@@ -1093,7 +1101,7 @@ class TNS_updates(CronJobBase):
 			html_msg += "Error : %s at line number %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e,exc_tb.tb_lineno),
-					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+					  options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
 		print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
@@ -1131,12 +1139,13 @@ class TNS_Ignore_updates(CronJobBase):
 		tnsproc.password = options.password
 		tnsproc.dblogin = options.dblogin
 		tnsproc.dbpassword = options.dbpassword
+		tnsproc.dbemailpassword = options.dbemailpassword
 		tnsproc.dburl = options.dburl
 		tnsproc.status = options.status
 		tnsproc.settingsfile = options.settingsfile
 		tnsproc.clobber = options.clobber
 		tnsproc.noupdatestatus = options.noupdatestatus
-		tnsproc.redoned = True
+		tnsproc.redoned = False #True
 		tnsproc.nedradius = options.nedradius
 		tnsproc.tnsapi = options.tnsapi
 		tnsproc.tnsapikey = options.tnsapikey
@@ -1155,7 +1164,7 @@ class TNS_Ignore_updates(CronJobBase):
 			html_msg += "Error : %s at line number %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e,exc_tb.tb_lineno),
-					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+					  options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
 		print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 		
@@ -1192,6 +1201,7 @@ class TNS_recent(CronJobBase):
 		tnsproc.password = options.password
 		tnsproc.dblogin = options.dblogin
 		tnsproc.dbpassword = options.dbpassword
+		tnsproc.dbemailpassword = options.dbemailpassword
 		tnsproc.dburl = options.dburl
 		tnsproc.status = options.status
 		tnsproc.settingsfile = options.settingsfile
@@ -1203,7 +1213,6 @@ class TNS_recent(CronJobBase):
 		tnsproc.tnsapikey = options.tnsapikey
 		tnsproc.ztfurl = options.ztfurl
 		tnsproc.ndays = float(options.tns_recent_ndays)
-		#options.ndays=0.5
 		try:
 			tnsproc.noupdatestatus = True
 			nsn = tnsproc.GetRecentEvents(ndays=tnsproc.ndays)
@@ -1218,6 +1227,6 @@ class TNS_recent(CronJobBase):
 			html_msg += "Error : %s at line number %s"
 			sendemail(from_addr, options.dbemail, subject,
 					  html_msg%(e,exc_tb.tb_lineno),
-					  options.SMTP_LOGIN, options.dbpassword, smtpserver)
+					  options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
 		print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))

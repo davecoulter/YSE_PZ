@@ -267,7 +267,7 @@ def add_transient(request):
 				   transientkey == 'internal_names': continue
 
 				if not isinstance(Transient._meta.get_field(transientkey), ForeignKey):
-					transientdict[transientkey] = transient[transientkey]
+					if transient[transientkey] is not None: transientdict[transientkey] = transient[transientkey]
 				else:
 					fkmodel = Transient._meta.get_field(transientkey).remote_field.model
 					if transientkey == 'non_detect_band' and 'non_detect_instrument' in transient.keys():
