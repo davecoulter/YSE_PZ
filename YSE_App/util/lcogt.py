@@ -13,7 +13,8 @@ from django.conf import settings as djangoSettings
 import numpy as np
 
 class lcogt(object):
-    def __init__(self, username, password, progid):
+    def __init__(self, username, password, progid, telescop,
+        start_date, end_date):
 
         uri_base = 'https://observe.lco.global/'
         archive_base = 'https://archive-api.lco.global/'
@@ -91,6 +92,31 @@ class lcogt(object):
                 }
             }
         }
+
+        self.start_date = Time(start_date).datetime
+        self.end_date = Time(end_date).datetime
+
+        self.telescope = telescop
+        if 'soar' in telescop:
+            self.params['strategy']['spectroscopy']={
+                    'type': 'spectroscopy',
+                    'proposal': [
+                    {'name':progid,'obstype':'NORMAL'},
+                    ],
+                    'min_exposure': 300,
+                    'max_exposure': 2400,
+                    'telescope_class': '4m0',
+                    'instrument_type': 'SOAR_GHTS_REDCAM',
+                    'slit': 'slit_1.0as',
+                    'acquisition_config': 'OFF',
+                    'guiding_config': 'ON',
+                    'window': 6.0,
+                    'ipp': 1.0
+            }
+            self.params['constraints']={
+                'max_airmass': 1.7,
+                'min_lunar_distance': 30
+            }
 
         # List of all proposals to which I have access.  Some of these are old
         # proposals where the data are now public
@@ -426,7 +452,7 @@ class lcogt(object):
                 'extra_params': {'defocus': 0.0}
             }
         # This creates a spectroscopy observing element for FLOYDS
-        elif strat['type']=='spectroscopy':
+        elif strat['type']=='spectroscopy' and 'faulkes' in self.telescope:
             configuration = {
                 "bin_x": 1,
                 "bin_y": 1,
@@ -439,6 +465,20 @@ class lcogt(object):
                     "slit": strat['slit']
                 }
             }
+        elif strat['type']=='spectroscopy' and 'soar' in self.telescope:
+            configuration = {
+                "bin_x": 2,
+                "bin_y": 2,
+                "exposure_count": 1,
+                "exposure_time": exptime,
+                "mode": "GHTS_R_400m1_2x2",
+                "rotator_mode": "SKY",
+                "extra_params": {"rotator_angle": 90},
+                "optical_elements": {
+                    "slit": strat['slit'],
+                    "grating": "SYZY_400"
+                }
+            }
         return([configuration])
 
     # Make an acquisition element for FLOYDS spectroscopy (on coordinate vs.
@@ -449,9 +489,12 @@ class lcogt(object):
         return({'mode': mode})
 
     # Should guiding be on or off
-    def make_guiding_config(self, strat):
+    def make_guiding_config(self, strat, extra_params={}):
         mode = strat['guiding_config']
-        return({'mode': mode})
+        config = {'mode': mode}
+        for key in extra_params.keys():
+            config[key]=extra_params[key]
+        return(config)
 
     """
     Window object for LCOGT API v3.
@@ -461,9 +504,10 @@ class lcogt(object):
     def make_window(self, start, duration):
         fmt = self.params['date_format']
         end = start + timedelta(days=duration)
+        # Note that this is an override for YSE App
         window = [{
-            'start': start.strftime(fmt),
-            'end': end.strftime(fmt)
+            'start': self.start_date.strftime(fmt),
+            'end': self.end_date.strftime(fmt)
         }]
         return(window)
 
@@ -559,7 +603,7 @@ class lcogt(object):
                 }
                 configurations.append(configuration)
 
-        elif strat['type']=='spectroscopy':
+        elif strat['type']=='spectroscopy' and 'faulkes' in self.telescope:
             # Need to construct LAMP FLAT, ARC, SPECTRUM, ARC, LAMP FLAT
             for obstype in ['LAMP_FLAT', 'ARC', 'SPECTRUM', 'ARC', 'LAMP_FLAT']:
 
@@ -591,6 +635,47 @@ class lcogt(object):
                     'guiding_config': guiding_config,
                     'target': target,
                     'instrument_type': strat['instrument_type']
+                }
+                configurations.append(configuration)
+
+        elif strat['type']=='spectroscopy' and 'soar' in self.telescope:
+            for i,obstype in enumerate(['ARC', 'SPECTRUM']):
+                # Use default constraint values
+                constraints = self.make_constraints()
+
+                if obstype=='ARC':
+                    exptime = 0.5
+
+                # Make acquisition and guiding config with strat
+                instrument_configs = self.make_instrument_configs('spec', exptime, strat)
+                if obstype=='SPECTRUM':
+                    acquisition_config = self.make_acquisition_config(strat, mode='MANUAL')
+                    guiding_config = self.make_guiding_config(strat,
+                        extra_params={'optional': False,
+                        "optical_elements": {},
+                        "exposure_time": None,
+                        "extra_params": {}})
+                elif obstype=='ARC':
+                    acquisition_config = self.make_acquisition_config(strat, mode='OFF')
+                    guiding_config = self.make_guiding_config(strat,
+                        extra_params={'optional': True,
+                        "optical_elements": {},
+                        "exposure_time": None,
+                        "extra_params": {}})
+
+                # Make a target object
+                target = self.make_target(obj, ra, dec)
+
+                # Compile everything into configuration
+                configuration = {
+                    'type': obstype,
+                    'constraints': constraints,
+                    'instrument_configs': instrument_configs,
+                    'acquisition_config': acquisition_config,
+                    'guiding_config': guiding_config,
+                    'target': target,
+                    'instrument_type': strat['instrument_type'],
+                    'priority': i+1
                 }
                 configurations.append(configuration)
 
@@ -656,20 +741,27 @@ class lcogt(object):
 #
 #
 
-def main(name, ra, dec, exptime, telescop):
-    progid = 'NOAO2021A-001'
+def main(name, ra, dec, exptime, telescop, start_date, end_date):
+    if 'faulkes' in telescop.lower():
+        progid = 'NOAO2021A-001'
+    elif 'soar' in telescop.lower():
+        progid = 'SOAR2021A-003'
+    else:
+        print('Do not recognize telescope={0}'.format(telescop))
+        sys.exit()
 
-    lco = lcogt(djangoSettings.lcogtuser, djangoSettings.lcogtpass, progid)
+    lco = lcogt(djangoSettings.lcogtuser, djangoSettings.lcogtpass, progid, telescop, start_date,
+        end_date)
 
     coord = SkyCoord(ra, dec, unit='deg')
     response = lco.make_obs_request(name, ra, dec, exptime,
         strategy='spectroscopy', propidx=progid)
 
-if __name__ == "__main__":
-    
-    name = sys.argv[1]
-    ra = sys.argv[2]
-    dec = sys.argv[3]
-    exptime = sys.argv[4]
-    telescop = sys.argv[5]
-    main(name, ra, dec, exptime, telescop)
+name = sys.argv[1]
+ra = sys.argv[2]
+dec = sys.argv[3]
+exptime = sys.argv[4]
+telescop = sys.argv[5]
+start_date = sys.argv[6]
+end_date = sys.argv[7]
+main(name, ra, dec, exptime, telescop, start_date, end_date)
