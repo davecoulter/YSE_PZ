@@ -757,11 +757,12 @@ def main(name, ra, dec, exptime, telescop, start_date, end_date):
     response = lco.make_obs_request(name, ra, dec, exptime,
         strategy='spectroscopy', propidx=progid)
 
-name = sys.argv[1]
-ra = sys.argv[2]
-dec = sys.argv[3]
-exptime = sys.argv[4]
-telescop = sys.argv[5]
-start_date = sys.argv[6]
-end_date = sys.argv[7]
-main(name, ra, dec, exptime, telescop, start_date, end_date)
+if __name__ == "__main__":
+    name = sys.argv[1]
+    ra = sys.argv[2]
+    dec = sys.argv[3]
+    exptime = sys.argv[4]
+    telescop = sys.argv[5]
+    start_date = sys.argv[6]
+    end_date = sys.argv[7]
+    main(name, ra, dec, exptime, telescop, start_date, end_date)
