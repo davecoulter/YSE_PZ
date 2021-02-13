@@ -16,6 +16,7 @@ Welcome to the YSE_PZ documentation!
    detail
    triage
    adding_data
+   forms
    
 Indices and tables
 ==================
