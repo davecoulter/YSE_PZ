@@ -877,7 +877,10 @@ def get_next_name(current_name,ttype='Stack'):
 			break
 		if current_str == s:
 			start = True
-	return next_name
+	try: return next_name
+	except:
+		print('Error : next_name is not defined on string %s!'%s)
+		raise RuntimeError('Error : next_name is not defined on string %s!'%s)
 
 class YSE_Stack(CronJobBase):
 
