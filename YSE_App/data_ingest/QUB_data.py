@@ -868,12 +868,12 @@ class YSE(CronJobBase):
 		except Exception as e:
 			print("Error: %s"%e)
 
-def get_next_name(current_name,ttype='Stack'):
+def get_next_name(current_name,ttype='Stack',year):
 	start = False
-	current_str = current_name.replace('YSE%s%s'%(ttype,datetime.datetime.now().year),'')
+	current_str = current_name.replace('YSE%s%s'%(ttype,year),'')
 	for s in itertools.islice(iter_all_strings(), 20000):
 		if start == True:
-			next_name = 'YSE%s%s%s'%(ttype,datetime.datetime.now().year,s)
+			next_name = 'YSE%s%s%s'%(ttype,year,s)
 			break
 		if current_str == s:
 			start = True
@@ -1001,18 +1001,20 @@ class YSE_Stack(CronJobBase):
 
 			if naming == 'stack':
 				latest_stacked_transients = Transient.objects.filter(tags__name='YSE Stack').order_by('-created_date')
+                year = latest_stacked_transients[0].created_date.year
 				if len(latest_stacked_transients):
 					stacked_name = latest_stacked_transients[0].name
-					self.next_name = get_next_name(stacked_name,ttype='Stack')
+					self.next_name = get_next_name(stacked_name,ttype='Stack',year=year)
 				else:
-					self.next_name = 'YSEStack%sa'%datetime.datetime.now().year
+					self.next_name = 'YSEStack%sa'%year
 			else:
 				latest_agn = Transient.objects.filter(tags__name='YSE AGN').order_by('-created_date')
+                year = latest_agn[0].created_date.year
 				if len(latest_agn):
 					agn_name = latest_agn[0].name
-					self.next_name = get_next_name(agn_name,ttype='AGN')
+					self.next_name = get_next_name(agn_name,ttype='AGN',year=year)
 				else:
-					self.next_name = 'YSEAGN%sa'%datetime.datetime.now().year
+					self.next_name = 'YSEAGN%sa'%year
 			
 			r = requests.get(url=summarylink,
 							 auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
@@ -1146,8 +1148,13 @@ class YSE_Stack(CronJobBase):
 			if stackname: name = stackname[:]
 			else:
 				name = self.next_name[:]
-				if naming_convention == 'stack': self.next_name = get_next_name(self.next_name,ttype='Stack')
-				else: self.next_name = get_next_name(self.next_name,ttype='AGN')
+                year = dateutil.parser.parse(s['followup_flag_date']).year
+				if naming_convention == 'stack':
+                    if year not in self.next_name: self.next_name = 'YSEStack%sa'%year
+                    else: self.next_name = get_next_name(self.next_name,ttype='Stack',year=year)
+				else:
+                    if year not in self.next_name: self.next_name = 'YSEAGN%sa'%year
+                    else: self.next_name = get_next_name(self.next_name,ttype='AGN',year=year)
 				
 			tdict = {'name':name,
 					 'ra':s['ra_psf'],
