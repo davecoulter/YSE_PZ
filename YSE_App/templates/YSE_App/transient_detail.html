@@ -706,6 +706,12 @@
               				</div>
 						</div>
 						<div class="row">
+							<div class="col-xs-6">
+								<input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
+							    {% include "YSE_App/form_snippets/automated_spectrum_form.html" with form=automated_spectrum_form %}
+							</div>
+						</div>
+						<div class="row">
 							<div id="followup_container">
 								{% for f in followups %}
 									<div class="col-xs-12">
@@ -1013,6 +1019,7 @@
 							<thead>
 								<tr>
 									<th>Date</th>
+									<th>MJD</th>
 									<th>Mag</th>
 									<th>Mag Error</th>
 									<th>Filter</th>
@@ -1024,6 +1031,7 @@
 							{%for allphot in allphotdata%}
 								<tr>
 									<td>{{allphot.obs_date|date:"M d, Y H:i:s"}}</td>
+									<td>{{allphot.date_to_mjd|floatformat:1}}</td>
 									<td>{{allphot.mag}}</td>
 									<td>{{allphot.mag_err}}</td>
 									<td>{{allphot.band.name}}</td>
@@ -1458,6 +1466,18 @@
 				} 
 			});
 
+
+			$('#automated_spectrum_date_range').daterangepicker({ 
+				timePicker24Hour: true,
+				timePicker: true, 
+				timePickerIncrement: 1, 
+				format: 'MM/DD/YYYY HH:mm', 
+				locale: {
+					format: 'MM/DD/YYYY HH:mm'
+				} 
+			});
+
+
 			//$('#spec_obs_date').datetimepicker({
         	//	format: 'dd/MM/yyyy hh:mm:ss',
 		    //    language: 'pt-BR'
@@ -1598,6 +1618,50 @@
           });
         }
 
+      $('#automated_spectrum_request').on('submit', function(event){
+        event.preventDefault();
+        automated_spectrum_request();
+      });
+
+      function automated_spectrum_request() {
+        // Grab the form, and associate it with the current transient detail page
+        var data = $('#automated_spectrum_request').serialize()
+        var transient_id = $('#transient_pk').val()
+        data = (data + "&transient=" + transient_id)
+        //alert(data)
+        $.ajax({
+          url : "{% url 'automated_spectrum_request' %}", // the endpoint
+          type : "POST", // http method
+          data : data, // data sent with the post request
+
+          // handle a successful response
+          success : function(json) {
+            	var errors = json.data["errors"]		
+				// Construct HTML to append container
+						if (errors){
+							alert(errors)
+						} else {
+							location.reload();
+						}
+            // Required fields
+            //  
+          },
+
+          // handle a non-successful response
+          error : function(xhr,errmsg,err) {
+            alert(xhr.status + ": " + xhr.responseText);
+          }
+          });
+        }
+
+        // Initialize daterange
+		fdr_spec_picker = $('#automated_spectrum_date_range').data('daterangepicker')
+		$('#spectrum_valid_start').val(fdr_spec_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+		$('#spectrum_valid_stop').val(fdr_spec_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+		$('#automated_spectrum_date_range').on('apply.daterangepicker', function(ev, picker) {
+			$('#spectrum_valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+			$('#spectrum_valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+		});
 			// Initialize date	
 			//date_picker = $('#spec_obs_date').data('datetimepicker')
 			//date_picker.setDate(null)

@@ -28,6 +28,8 @@ import numpy as np
 from django.views.decorators.csrf import csrf_exempt
 from .basicauth import *
 
+from YSE_App.util import lcogt
+
 class AddTransientFollowupFormView(FormView):
 	form_class = TransientFollowupForm
 	template_name = 'YSE_App/form_snippets/transient_followup_form.html'
@@ -661,7 +663,7 @@ class AddFollowupNoticeFormView(FormView):
 			try: instance.profile = Profile.objects.filter(user=self.request.user)[0]
 			except:
 				data = {
-					'message': """User %s has no profile object in the YSE_PZ database.  
+					'message': """User %s has no profile object in the YSE_PZ database.	 
 Contact D. Jones or D. Coulter."""%self.request.user,
 				}
 				return JsonResponse(data)
@@ -691,4 +693,70 @@ class RemoveFollowupNoticeFormView(DeleteView):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
-		
+
+class AddAutomatedSpectrumRequestFormView(FormView):
+	form_class = AutomatedSpectrumRequest
+	template_name = 'YSE_App/form_snippets/spectrum_request_form.html'
+	success_url = '/form-success/'
+	
+	def form_invalid(self, form):
+		response = super(AddAutomatedSpectrumRequestFormView, self).form_invalid(form)
+		if self.request.is_ajax():
+			return JsonResponse(form.errors, status=400)
+		else:
+			return response
+
+	def form_valid(self, form):
+		response = super(AddAutomatedSpectrumRequestFormView, self).form_valid(form)
+		if self.request.is_ajax():
+			tfdict = {}
+			
+			# some hard-coded logic
+			if 'goodman' in form.cleaned_data['instrument'].name.lower():
+				resource = ClassicalResource.objects.filter(telescope__name=form.cleaned_data['instrument'].telescope).\
+					filter(principal_investigator__name='Dimitriadis')
+			else:
+				resource = ToOResource.objects.filter(telescope__name=form.cleaned_data['instrument'].telescope) #.\
+					#filter(principal_investigator__name='Kilpatrick')
+				
+			# make sure the dates line up, with a +/-1 day window to make life easier
+			resource = resource.filter(Q(begin_date_valid__lt=form.cleaned_data['spectrum_valid_start']+datetime.timedelta(1)) &
+									   Q(end_date_valid__gt=form.cleaned_data['spectrum_valid_stop']-datetime.timedelta(1)))
+
+			if not len(resource):
+				data_dict = {'errors':'could not find a matching resource, make sure the dates are valid and the program is still active!',
+							 'errorflag':1}
+				data = {
+					'data':data_dict,
+					'message': "Successfully submitted form data.",
+				}
+				return JsonResponse(data)
+			else:
+				resource = resource[0]
+			
+			status = FollowupStatus.objects.get(name='Requested')
+
+			if 'goodman' in form.cleaned_data['instrument'].name.lower():
+				tf = TransientFollowup(status=status,valid_start=form.cleaned_data['spectrum_valid_start'],
+									   valid_stop=form.cleaned_data['spectrum_valid_stop'],classical_resource=resource,
+									   transient=form.cleaned_data['transient'],created_by=self.request.user,modified_by=self.request.user)
+			else:
+				tf = TransientFollowup(status=status,valid_start=form.cleaned_data['spectrum_valid_start'],
+									   valid_stop=form.cleaned_data['spectrum_valid_stop'],too_resource=resource,
+									   transient=form.cleaned_data['transient'],created_by=self.request.user,modified_by=self.request.user)
+			tf.save()
+
+			# now charlie's code
+			lcogt.main(
+				 tf.transient.name,tf.transient.ra,tf.transient.dec,form.cleaned_data['exp_time'],
+				 form.cleaned_data['instrument'].telescope.name.split()[0])
+
+			data_dict = {'errors':'',
+						 'errorflag':0}
+			data = {
+				'data':data_dict,
+				'message': "Successfully submitted form data.",
+			}
+			return JsonResponse(data)
+		else:
+			return response

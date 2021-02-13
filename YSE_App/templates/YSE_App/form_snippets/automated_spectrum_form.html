@@ -1,0 +1,52 @@
+{% load widget_tweaks %}
+
+{% block content %}
+	<div class="box box-primary box-solid collapsed-box"> <!--collapsed-box-->
+		<div class="box-header with-border">
+			<button id="automated_spectrum_request_btn" type="button" class="btn btn-box-tool" data-widget="collapse" style="height: 30px;"><h3 class="box-title">Automated Spectrum Request</h3></button>
+			<div class="box-tools pull-right">
+				<button id="automated_spectrum_request_btn" type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i></button>
+			</div>
+		</div>
+		<div class="box-body">
+			<form id="automated_spectrum_request" action="{% url 'automated_spectrum_request' %}" method="post">
+				{% csrf_token %}
+				{% for hidden_field in form.hidden_fields %}
+					{{ hidden_field }}
+				{% endfor %}
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Instrument</label>
+						{% render_field form.instrument class+="form-control select2" %}
+					</div>
+				</div>
+				<div class="col-xs-6">
+					<div class="form-group">
+						<label>Exposure Time</label>
+						{% render_field form.exp_time class+="form-control select2" %}
+					</div>
+				</div>
+				<div class="col-xs-12">
+					<div class="form-group">
+						<label>Date Range</label>
+						<div class="input-group">
+							<div class="input-group-addon">
+								<i class="fa fa-clock-o"></i>
+							</div>
+							<input type="text" class="form-control pull-right" id="automated_spectrum_date_range">
+						</div>
+						<input type="hidden" id="spectrum_valid_start" name="spectrum_valid_start">
+						<input type="hidden" id="spectrum_valid_stop" name="spectrum_valid_stop">
+					</div>
+				</div>
+
+				<div class="col-xs-12">
+					<div class="form-group">
+						<br>
+						<button type="submit" class="btn btn-block btn-primary btn-lg">Submit</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+{% endblock %}

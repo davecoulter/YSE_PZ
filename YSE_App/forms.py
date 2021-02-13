@@ -81,7 +81,7 @@ class ClassicalResourceForm(ModelForm):
 		fields = [
 			'telescope',
 			'principal_investigator']
-        
+		
 class ToOResourceForm(ModelForm):
 
 	awarded_too_hours = forms.FloatField(initial=0)
@@ -259,3 +259,16 @@ class SpectrumUploadForm(ModelForm):
 		model = TransientSpectrum
 		fields = ('transient','ra',
 				  'dec','spec_phase')#,'obs_group','instrument')
+
+class AutomatedSpectrumRequest(ModelForm):
+
+	spec_instruments = ['FLOYDS-N','FLOYDS-S','Goodman']
+	instrument = forms.ModelChoiceField(Instrument.objects.filter(Q(name__in=spec_instruments)))
+	exp_time = forms.IntegerField(initial=1800) # 1800s seems like a reasonable default
+	spectrum_valid_start = forms.DateTimeField()
+	spectrum_valid_stop = forms.DateTimeField()
+	
+	class Meta:
+		model = TransientFollowup
+		fields =('transient',)
+  
