@@ -749,7 +749,9 @@ class AddAutomatedSpectrumRequestFormView(FormView):
 			# now charlie's code
 			lcogt.main(
 				 tf.transient.name,tf.transient.ra,tf.transient.dec,form.cleaned_data['exp_time'],
-				 form.cleaned_data['instrument'].telescope.name.split()[0])
+				 form.cleaned_data['instrument'].telescope.name.split()[0],
+				 form.cleaned_data['spectrum_valid_start'].isoformat(),
+				 form.cleaned_data['spectrum_valid_stop'].isoformat())
 
 			data_dict = {'errors':'',
 						 'errorflag':0}
