@@ -100,7 +100,7 @@ def add_yse_survey_fields(request):
 		elif len(surveymsb):
 			surveymsb = surveymsb[0]
 			if surveymsb.survey_fields.count() < 6 and \
-               not len(surveymsb.survey_fields.filter(field_id=dbsurveyfield.field_id)):
+			   not len(surveymsb.survey_fields.filter(field_id=dbsurveyfield.field_id)):
 				surveymsb.survey_fields.add(dbsurveyfield)
 				surveymsb.save()
 
@@ -144,14 +144,14 @@ def add_yse_survey_obs(request):
 				if surveykey == 'photometric_band':
 					fk = fkmodel.objects.filter(name=survey[surveykey].split('-')[1]).filter(instrument__name=survey[surveykey].split('-')[0])
 				elif surveykey == 'survey_field':
-					# find survey field, approx 10-arcsec matching
+					# find survey field, approx 30-arcsec matching
 					fk = fkmodel.objects.filter(Q(ra_cen__gt=float(survey['ra_cen'])-0.01) & Q(ra_cen__lt=float(survey['ra_cen'])+0.01) &
 												Q(dec_cen__gt=float(survey['dec_cen'])-0.01) & Q(dec_cen__lt=float(survey['dec_cen'])+0.01))
 					
 					# if there's no RA/Dec match, find field based on name
 					if not len(fk):
 						fk = fkmodel.objects.filter(field_id=survey[surveykey])
-
+						
 						fk_new = fk[0]
 						fk_new.ra_cen = survey['ra_cen']
 						fk_new.dec_cen = survey['dec_cen']
@@ -172,7 +172,8 @@ def add_yse_survey_obs(request):
 							# hopefully there's only one....
 							msb.survey_fields.remove(fk[0])
 							msb.survey_fields.add(fk_new)
-							
+                            # might end up with 7 fields in the MSB in rare cases
+                                
 					if not len(fk):
 						try: ztf_id = survey[surveykey].split('.')[0]
 						except: ztf_id = None

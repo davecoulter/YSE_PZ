@@ -777,6 +777,7 @@ def transient_detail(request, slug):
 
 	classical_resource_form = ClassicalResourceForm()
 	too_resource_form = ToOResourceForm()
+	automated_spectrum_form = AutomatedSpectrumRequest()
 	
 	transient = Transient.objects.filter(slug=slug)
 	alternate_transient = AlternateTransientNames.objects.filter(slug=slug)
@@ -926,6 +927,12 @@ def transient_detail(request, slug):
 		if transient_obj.postage_stamp_file:
 			context['qub_candidate'] = transient_obj.postage_stamp_file.split('/')[-1].split('_')[0]
 
+		#if automated_spectrum_form.fields["valid_start"].initial:
+		#	context['automated_spectrum_initial_dates'] = \
+		#		(automated_spectrum_form.fields["valid_start"].initial.strftime('%m/%d/%Y HH:MM'),
+		#		 automated_spectrum_form.fields["valid_stop"].initial.strftime('%m/%d/%Y HH:MM'))
+		context['automated_spectrum_form'] = automated_spectrum_form
+			
 		return render(request,
 			'YSE_App/transient_detail.html',
 			context)
