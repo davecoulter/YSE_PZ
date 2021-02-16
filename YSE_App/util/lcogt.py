@@ -750,7 +750,7 @@ def main(name, ra, dec, exptime, telescop, start_date, end_date):
         print('Do not recognize telescope={0}'.format(telescop))
         sys.exit()
 
-    lco = lcogt(djangoSettings.lcogtuser, djangoSettings.lcogtpass, progid, telescop, start_date,
+    lco = lcogt(djangoSettings.LCOGTUSER, djangoSettings.LCOGTPASS, progid, telescop, start_date,
         end_date)
 
     coord = SkyCoord(ra, dec, unit='deg')

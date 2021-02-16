@@ -185,6 +185,8 @@ SMTP_LOGIN = config.get('SMTP_provider', 'SMTP_LOGIN')
 SMTP_PASSWORD = config.get('SMTP_provider', 'SMTP_PASSWORD')
 SMTP_HOST = config.get('SMTP_provider', 'SMTP_HOST')
 SMTP_PORT = config.get('SMTP_provider', 'SMTP_PORT')
+LCOGTUSER = config.get('main', 'lcogtuser')
+LCOGTPASS = config.get('main', 'lcogtpass')
 
 KEPLER_API_ENDPOINT = "http://api.keplerscience.org/is-k2-observing"
 
