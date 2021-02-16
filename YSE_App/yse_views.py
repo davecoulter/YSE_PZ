@@ -95,12 +95,11 @@ def select_yse_fields(request):
 def return_serialized_transients(request):
 
     if len(request.META['QUERY_STRING'].replace('q=','')) >= 5:
-        transients = Transient.objects.filter(name__startswith=request.META['QUERY_STRING'].replace('q=',''))
-
+        transients = Transient.objects.filter(Q(name__startswith=request.META['QUERY_STRING'].replace('q=','')) |
+                                              Q(name=request.META['QUERY_STRING'].replace('q=','')))
         response = []
         for t in transients:
             response += [{"id":t.id,"name":t.name},]
-        #import pdb; pdb.set_trace()
         return JsonResponse(response,safe=False)
     else:
         return JsonResponse([],safe=False)    
