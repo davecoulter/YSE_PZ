@@ -145,8 +145,8 @@ def add_yse_survey_obs(request):
 					fk = fkmodel.objects.filter(name=survey[surveykey].split('-')[1]).filter(instrument__name=survey[surveykey].split('-')[0])
 				elif surveykey == 'survey_field':
 					# find survey field, approx 10-arcsec matching
-					fk = fkmodel.objects.filter(Q(ra_cen__gt=float(survey['ra_cen'])-0.003) & Q(ra_cen__lt=float(survey['ra_cen'])+0.003) &
-												Q(dec_cen__gt=float(survey['dec_cen'])-0.003) & Q(dec_cen__lt=float(survey['dec_cen'])+0.003))
+					fk = fkmodel.objects.filter(Q(ra_cen__gt=float(survey['ra_cen'])-0.01) & Q(ra_cen__lt=float(survey['ra_cen'])+0.01) &
+												Q(dec_cen__gt=float(survey['dec_cen'])-0.01) & Q(dec_cen__lt=float(survey['dec_cen'])+0.01))
 					
 					# if there's no RA/Dec match, find field based on name
 					if not len(fk):
