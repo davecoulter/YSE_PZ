@@ -34,9 +34,9 @@ class SurveyFieldSerializer(serializers.HyperlinkedModelSerializer):
 
 		return instance
 
-class SurveyFieldMSBSerializer(serializers.HyperlinkedModelSerializer):
+class SurveyFieldMSBSerializer(serializers.ModelSerializer):
 	obs_group = serializers.HyperlinkedRelatedField(queryset=ObservationGroup.objects.all(), view_name='observationgroup-detail')
-	survey_fields = serializers.HyperlinkedRelatedField(queryset=SurveyField.objects.all(), many=True, view_name='surveyfield-detail')
+#	survey_fields = serializers.HyperlinkedRelatedField(queryset=SurveyField.objects.all(), many=True, view_name='surveyfield-detail')
 	
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
@@ -44,6 +44,7 @@ class SurveyFieldMSBSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta:
 		model = SurveyFieldMSB
 		fields = "__all__"
+		depth = 1
 
 	def create(self, validated_data):
 
