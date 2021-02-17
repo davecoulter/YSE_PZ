@@ -50,10 +50,12 @@ def select_yse_fields(request):
     first_obs_list = []
     for a in active_yse_fields:
         obs = SurveyObservation.objects.filter(survey_field=a.survey_fields.all()[0]).filter(obs_mjd__isnull=False).order_by('-obs_mjd')
-        obs_mjd = np.array([om for om in obs.values_list('obs_mjd',flat=True)])
+        obs_mjd = np.sort(np.array([om for om in obs.values_list('obs_mjd',flat=True)]))
         if len(obs_mjd):
+
             if len(obs_mjd[:-1][obs_mjd[1:]-obs_mjd[:-1] > 60]):
-                first_obs = obs_mjd[:-1][obs_mjd[1:]-obs_mjd[:-1] > 60][0]
+                first_obs = obs_mjd[1:][obs_mjd[1:]-obs_mjd[:-1] > 60][0]
+                #if a.name == '525': import pdb; pdb.set_trace()
             else:
                 first_obs = obs_mjd[0]
         else:
