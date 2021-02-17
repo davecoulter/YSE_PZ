@@ -39,7 +39,7 @@ class FollowupStatusViewSet(viewsets.ReadOnlyModelViewSet):
 
 ### `SurveyField` Filter Set ###
 class SurveyFieldFilter(django_filters.FilterSet):
-	field_id = django_filters.Filter(field_id="field_id")
+	field_id = django_filters.Filter(name="field_id")
 	class Meta:
 		model = SurveyField
 		fields = ()
