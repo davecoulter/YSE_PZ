@@ -20,6 +20,10 @@ from astropy.time import Time
 from astropy.coordinates import get_moon, SkyCoord
 import astropy.units as u
 
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 _ztf_obs_url = "http://skyvision.caltech.edu/ztf/msip/nightly_summary?obsdate=%04i-%02i-%02i"
 
 def sendemail(from_addr, to_addr,
@@ -157,7 +161,7 @@ class YSE_Scheduler:
         return parser
 
     def get_field_list(self):
-        data = requests.get('http://127.0.0.1:8000/api/surveyfieldmsbs/?active=1',
+        data = requests.get('https://ziggy.ucolick.org/yse/api/surveyfieldmsbs/?active=1',
                             auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword)).json()
         field_list = [data['results'][i]['name'] for i in range(len(data['results']))]
 
@@ -249,7 +253,8 @@ class YSE_Scheduler:
 
         # HACK
         #rootdir = '%s/ztf_obs_record'%djangoSettings.STATIC_ROOT
-        rootdir = '/Users/David/Dropbox/research/YSE_PZ/YSE_PZ/static/ztf_obs_record'
+        rootdir = '/data/yse_pz/YSE_PZ/YSE_PZ/static/ztf_obs_record'
+        #rootdir = '/Users/David/Dropbox/research/YSE_PZ/YSE_PZ/static/ztf_obs_record'
         
         
         # make sure we have the last two weeks
@@ -467,7 +472,7 @@ class YSE_Scheduler:
         fields_to_observe = self.choose_fields(ps_fields,likely_ztf_fields,decam_fields,ps_timedeltas)
 
         for f in fields_to_observe:
-            self.add_obs_requests(date_to_schedule,f)
+            self.add_obs_requests(date_to_schedule-datetime.timedelta(1),f)
         
 if __name__ == "__main__":
 

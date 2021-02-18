@@ -768,8 +768,10 @@ class processTNS:
 				ned_timeout = True
 
 			print('E(B-V)/NED time: %.1f seconds'%(time.time()-ebvtstart))
-
+			signal.alarm(0)
+		
 		tstart = time.time()
+		print('getting TNS data')
 		TNSData = []
 		json_data = []
 		total_objs = 0
@@ -876,7 +878,19 @@ class processTNS:
 			try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
 			except: print(r.text)
 		except Exception as e:
-			raise RuntimeError(e)
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			nsn = 0
+			smtpserver = "%s:%s" % (self.options.SMTP_HOST, self.options.SMTP_PORT)
+			from_addr = "%s@gmail.com" % self.options.SMTP_LOGIN
+			subject = "TNS Transient Upload Failure in GetRecentEvents"
+			print("Sending error email")
+			html_msg = "Alert : YSE_PZ Failed to upload transients in TNS_uploads.TNS_recent()\n"
+			html_msg += "Error : %s at line number %s"
+			sendemail(from_addr, self.options.dbemail, subject,
+					  html_msg%(e,exc_tb.tb_lineno),
+					  self.options.SMTP_LOGIN, self.options.dbemailpassword, smtpserver)
+	
+			#raise RuntimeError(e)
 		print("Process done.")
 
 
