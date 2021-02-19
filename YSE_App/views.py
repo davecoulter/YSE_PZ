@@ -727,12 +727,17 @@ def download_target_list(request, telescope, obs_date):
 	
 	content = "!Data {name %20} ra_h ra_m ra_s dec_d dec_m dec_s equinox {comment *}\n"
 	for f in follow_requests:
+		comments = ';'.join([l.comment for l in Log.objects.filter(transient_followup=f)])
 		if f.transient.recent_mag():
-			content += "%s	%s %s 2000 mag = %.2f\n"%(
-				f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),f.transient.CoordString()[1].replace(':',' '),float(f.transient.recent_mag()))
+			#import pdb; pdb.set_trace()
+			content += "%s	%s %s 2000 mag = %.2f comment = %s\n"%(
+				f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),
+                f.transient.CoordString()[1].replace(':',' '),float(f.transient.recent_mag()),comments)
+
 		else:
-			content += "%s	%s %s 2000\n"%(
-				f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),f.transient.CoordString()[1].replace(':',' '))
+			content += "%s	%s %s 2000 comment = %s\n"%(
+				f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),
+                f.transient.CoordString()[1].replace(':',' '),comments)
 			
 	response = HttpResponse(content, content_type='text/plain')
 	response['Content-Disposition'] = 'attachment; filename=%s' % '%s_%s.txt'%(telescope,obs_date)
