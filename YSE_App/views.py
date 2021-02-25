@@ -549,16 +549,23 @@ def yse_observing_calendar(request):
 			Q(mjd_requested__gte = date_to_mjd(sunset_forobs)-0.1) | Q(obs_mjd__gte = date_to_mjd(sunset_forobs)-0.1)).\
 			filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1))
 		if not len(survey_obs): continue
-		ztf_ids = survey_obs.values_list('survey_field__ztf_field_id',flat=True).distinct()
-
-		ztf_str = ''
-		for z in ztf_ids:
+		ztf_obs_ids = survey_obs.filter(obs_mjd__isnull=False).values_list('survey_field__ztf_field_id',flat=True).distinct()
+		ztf_sched_ids = survey_obs.filter(obs_mjd__isnull=True).values_list('survey_field__ztf_field_id',flat=True).distinct()
+        
+		ztf_obs_str = ''
+		for z in ztf_obs_ids:
 			filters = survey_obs.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
-			ztf_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
+			ztf_obs_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
+		ztf_sched_str = ''
+		for z in ztf_sched_ids:
+			if z in ztf_obs_ids: continue
+			filters = survey_obs.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
+			ztf_sched_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
 
+			
 		if len(survey_obs):
-			obstuple += ((ztf_str[:-2],date,
-						  '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)]),)
+			obstuple += ((ztf_obs_str[:-2],date,
+						  '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)],ztf_sched_str[:-2]),)
 
 			
 	#important_dates_list = [todaydate-datetime.timedelta(1),

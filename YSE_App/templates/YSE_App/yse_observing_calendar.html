@@ -23,6 +23,46 @@
 				<div class="box-header with-border">
 					<h3 class="box-title">Observing Calendar (UT)</h3>
 				</div>
+        <div class="box-body">
+          <div class="row">
+            {% for dates in important_dates %}
+            <div class="col-xs-5">
+              <div class="box box-primary">
+                  <div class="box-header">
+                    <h3 class="box-title">{{dates.0.0|date:"SHORT_DATE_FORMAT"}}</h3>
+                  </div>
+                  <div class="box-body">
+                      <table class="table table-bordered table-striped">
+                        <thead>
+                          <tr>
+                            <th>Field</th>
+                            <th>Subfields</th>
+                            <th>PA</th>
+                            <th>SN on Good Cells</th>
+                          </tr>
+                        </thead>
+                        {% for fieldprop in dates %}
+                        <tbody>
+                          <tr>
+                            <td>{{ fieldprop.1}}</td>
+                            <td>{{ fieldprop.2 }}</td>
+                            <td>{{ fieldprop.3|floatformat:0 }}</td>
+                            <td>{{ fieldprop.4 }}</td>
+                          </tr>
+                        </tbody>
+                        {% endfor %}
+                      </table>
+                  </div>
+              </div>
+          </div>
+        {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="box">
+        <div class="box-header with-border">
+          <h3 class="box-title">Observing Calendar (UT)</h3>
+        </div>
 				<div class="box-body">
 					<div id="calendar"></div>
 				</div>
@@ -31,6 +71,7 @@
 				</div>
 				<!-- /.box-footer-->
 			</div>
+
 		</section>
 {% endblock %}
 
@@ -103,7 +144,13 @@
       events: [
         {% for obs in all_obs %}
             {
-              title          : 'ZTF Fields:\n{{obs.0}}\nMoon: {{obs.2}}',
+              {% if obs.0 and obs.4 %}
+              title          : 'Obs. ZTF Fields:\n{{obs.0}}\nSched. ZTF Fields:\n{{obs.4}}\nMoon: {{obs.2}}',
+              {% elif obs.0 %}
+              title          : 'Obs. ZTF Fields:\n{{obs.0}}\nMoon: {{obs.2}}',
+              {% else %}
+              title          : 'Sched. ZTF Fields:\n{{obs.4}}\nMoon: {{obs.2}}',
+              {% endif %}
               start          : new Date({{ obs.1.year }}, {{ obs.1.month|add:"-1" }}, {{ obs.1.day }}),
               allDay         : true,
               backgroundColor: '{{obs.3}}',
