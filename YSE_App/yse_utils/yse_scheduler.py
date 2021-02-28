@@ -57,14 +57,14 @@ def mjd_to_date(mjd):
     return time.isot
 
 def getmoonpos(ra,dec,obstime):
-	#obstime = datetime.datetime.now(timezone('US/Hawaii'))+datetime.timedelta(1)
-	newtime = obstime.replace(hour=0,minute=0)
+    #obstime = datetime.datetime.now(timezone('US/Hawaii'))+datetime.timedelta(1)
+    newtime = obstime.replace(hour=0,minute=0)
 
-	obstime = Time(newtime+datetime.timedelta(hours=7))
-	mooncoord = get_moon(obstime)
-	mc = SkyCoord(mooncoord.ra.deg,mooncoord.dec.deg,unit=u.deg)
-	cs = SkyCoord("%s %s"%(ra,dec),frame="fk5",unit=u.deg) #(u.hourangle,u.deg))
-	return(cs.separation(mc).deg)
+    obstime = Time(newtime+datetime.timedelta(hours=7))
+    mooncoord = get_moon(obstime)
+    mc = SkyCoord(mooncoord.ra.deg,mooncoord.dec.deg,unit=u.deg)
+    cs = SkyCoord("%s %s"%(ra,dec),frame="fk5",unit=u.deg) #(u.hourangle,u.deg))
+    return(cs.separation(mc).deg)
 
 
 class HTMLTableParser:
@@ -313,8 +313,9 @@ class YSE_Scheduler:
 
         # now get the scheduled observations for tonight
         # if the weather looks to be bad, these are tomorrow's fields!
+        last_date = date_to_schedule - datetime.timedelta(1)
         data = requests.get('http://schedule.ztf.uw.edu/ZTF_ObsLoc_%04i-%02i-%02i.json'%(
-            date_to_schedule.year,date_to_schedule.month,date_to_schedule.day-1)).json()
+            last_date.year,last_date.month,last_date.day)).json()
 
         tonights_fields = []
         for d in data:
@@ -387,7 +388,7 @@ class YSE_Scheduler:
     def choose_fields(self,ps_fields,ztf_fields,decam_fields,ps_timedeltas):
         daily_set_1 = ['523','525','577']
         daily_set_2 = ['575','577','674']
-        do_set_1,do_set_2 = False,False
+        do_set_1,do_set_2 = True,True
 
         # Virgo
         if 'Virgo' in ps_fields: fields_to_observe = ['Virgo']; timegaps = [ps_timedeltas[ps_fields == 'Virgo'][0]]
@@ -405,6 +406,9 @@ class YSE_Scheduler:
                     for i,field in enumerate(ps_fields[iNotRecent]):
                         if field in fieldset and field not in fields_to_observe:
                             if cadence == 'normal':
+                                # max 1 field from each of daily set 1 and daily set 2
+                                if field in daily_set_1: continue
+                                if field in daily_set_2: continue
                                 fields_to_observe += [field]
                                 timegaps += [ps_timedeltas[iNotRecent[i]]]
                             elif field in daily_set_1 and do_set_1:
@@ -415,6 +419,17 @@ class YSE_Scheduler:
                                 fields_to_observe += [field]
                                 timegaps += [ps_timedeltas[iNotRecent[i]]]
                                 do_set_2 = False
+                            #if cadence == 'normal':
+                            #    fields_to_observe += [field]
+                            #    timegaps += [ps_timedeltas[iNotRecent[i]]]
+                            #elif field in daily_set_1 and do_set_1:
+                            #    fields_to_observe += [field]
+                            #    timegaps += [ps_timedeltas[iNotRecent[i]]]
+                            #    do_set_1 = False
+                            #elif field in daily_set_2 and do_set_2:
+                            #    fields_to_observe += [field]
+                            #    timegaps += [ps_timedeltas[iNotRecent[i]]]
+                            #    do_set_2 = False
 
                             # failsafe
                             if (len(fields_to_observe) == 7 and 'Virgo' in fields_to_observe) or \
@@ -448,31 +463,37 @@ class YSE_Scheduler:
         
         # field list from the YSE-PZ API
         # to edit go to ziggy.ucolick.org/yse/select_yse_fields
+        print('getting PS field list')
         field_list = self.get_field_list()
 
-
+        print('finding recent PS1 observations')
         # get the YSE observing history, important to avoid long gaps
         ps_fields,ps_ras,ps_decs,ps_dates,ps_timedeltas = self.get_ps_obs(
             date_to_schedule,field_list=field_list)
 
+        print('cutting out fields near the moon')
         # remove fields too close to the moon
+        #print('hack no moon cut!')
         ps_fields,ps_ras,ps_decs,ps_timedeltas = self.moon_cut(ps_fields,ps_ras,ps_decs,date_to_schedule,timedeltas=ps_timedeltas)
         
         # get the DECam observing history
+        #print('getting DECam fields')
         #self.get_decam_obs()
         decam_fields = []
-        
+
+        print('looking for the ZTF schedule')
         # get the ZTF observing history and plans
         # https://zwickytransientfacility.github.io/schedule_reporting_service/
         # http://schedule.ztf.uw.edu/ZTF_ObsLoc_YYYY-MM-DD.json
         likely_ztf_fields = self.get_ztf_schedule(date_to_schedule,clear=clear,field_list=field_list)
 
+        print('choosing fields')
         # then weight the ZTF constraints against YSE fields w/o recent data
         # and availability of DECam
         fields_to_observe = self.choose_fields(ps_fields,likely_ztf_fields,decam_fields,ps_timedeltas)
-
-        for f in fields_to_observe:
-            self.add_obs_requests(date_to_schedule-datetime.timedelta(1),f)
+        #print('HACK!!!!')
+        #for f in fields_to_observe:
+        #    self.add_obs_requests(date_to_schedule-datetime.timedelta(1),f)
         
 if __name__ == "__main__":
 
