@@ -362,7 +362,7 @@ class YSE_Scheduler:
         for i,f in enumerate(fields):
             sep = getmoonpos(ras[i],decs[i],obstime)
             #if f == '707': set_trace()
-            if sep > 40:
+            if sep > 45:
                 iGood += [i]
 
         if timedeltas is None:
@@ -492,8 +492,8 @@ class YSE_Scheduler:
         # and availability of DECam
         fields_to_observe = self.choose_fields(ps_fields,likely_ztf_fields,decam_fields,ps_timedeltas)
         #print('HACK!!!!')
-        #for f in fields_to_observe:
-        #    self.add_obs_requests(date_to_schedule-datetime.timedelta(1),f)
+        for f in fields_to_observe:
+            self.add_obs_requests(date_to_schedule-datetime.timedelta(1),f)
         
 if __name__ == "__main__":
 
