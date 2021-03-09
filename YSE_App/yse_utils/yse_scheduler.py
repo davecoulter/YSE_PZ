@@ -57,14 +57,14 @@ def mjd_to_date(mjd):
     return time.isot
 
 def getmoonpos(ra,dec,obstime):
-	#obstime = datetime.datetime.now(timezone('US/Hawaii'))+datetime.timedelta(1)
-	newtime = obstime.replace(hour=0,minute=0)
+    #obstime = datetime.datetime.now(timezone('US/Hawaii'))+datetime.timedelta(1)
+    newtime = obstime.replace(hour=0,minute=0)
 
-	obstime = Time(newtime+datetime.timedelta(hours=7))
-	mooncoord = get_moon(obstime)
-	mc = SkyCoord(mooncoord.ra.deg,mooncoord.dec.deg,unit=u.deg)
-	cs = SkyCoord("%s %s"%(ra,dec),frame="fk5",unit=u.deg) #(u.hourangle,u.deg))
-	return(cs.separation(mc).deg)
+    obstime = Time(newtime+datetime.timedelta(hours=7))
+    mooncoord = get_moon(obstime)
+    mc = SkyCoord(mooncoord.ra.deg,mooncoord.dec.deg,unit=u.deg)
+    cs = SkyCoord("%s %s"%(ra,dec),frame="fk5",unit=u.deg) #(u.hourangle,u.deg))
+    return(cs.separation(mc).deg)
 
 
 class HTMLTableParser:
@@ -253,6 +253,7 @@ class YSE_Scheduler:
 
         # HACK
         #rootdir = '%s/ztf_obs_record'%djangoSettings.STATIC_ROOT
+        #print('hack!!!')
         rootdir = '/data/yse_pz/YSE_PZ/YSE_PZ/static/ztf_obs_record'
         #rootdir = '/Users/David/Dropbox/research/YSE_PZ/YSE_PZ/static/ztf_obs_record'
         
@@ -357,13 +358,26 @@ class YSE_Scheduler:
 
     def moon_cut(self,fields,ras,decs,obstime,timedeltas=None):
 
+        data = requests.get('https://ziggy.ucolick.org/yse/api/surveyfieldmsbs/?active=1',
+                            auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword)).json()
+        results = {}
+        for d in data['results']:
+            results[d['name']] = d
+        
         iGood = []
         for i,f in enumerate(fields):
-            sep = getmoonpos(ras[i],decs[i],obstime)
-            #if f == '707': set_trace()
-            if sep > 40:
-                iGood += [i]
-
+            if f not in results.keys():
+                sep = getmoonpos(ras[i],decs[i],obstime)
+                if sep > 40:
+                    iGood += [i]
+            else:
+                sep = 999
+                for d in results[f]['survey_fields']:
+                    sep_ind = getmoonpos(d['ra_cen'],d['dec_cen'],obstime)
+                    if sep_ind < sep: sep = sep_ind
+                if sep > 40:
+                    iGood += [i]
+                    
         if timedeltas is None:
             return np.array(fields)[np.array(iGood)],np.array(ras)[np.array(iGood)],np.array(decs)[np.array(iGood)]
         else:
@@ -374,7 +388,35 @@ class YSE_Scheduler:
                     np.array(decs)[np.array(iGood)],np.array(timedeltas)[np.array(iGood)]
     
     def get_decam_obs(self):
-        raise NotImplementedError
+        # grab the file somehow
+
+        # read in the coordinates
+        fid,ra,dec = np.loadtxt('/Users/David/Downloads/20201122.inv',unpack=True,usecols=[0,1,2],dtype=str)
+        scdecam = SkyCoord(ra,dec,unit=(u.hour,u.deg))
+        
+        # get the coords for active YSE fields(ok this is redundant but whatever)
+        data = requests.get('https://ziggy.ucolick.org/yse/api/surveyfieldmsbs/?active=1',
+                            auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword)).json()
+        name_list,ra_list,dec_list = [],[],[],[]
+        for i in range(len(data['results'])):
+            if data['results'][i]['active']:
+                for s in data['results'][i]['survey_fields']:
+                    name_list += [data['results'][i]['name']]
+                    ra_list += [s['ra_cen']]
+                    dec_list += [s['dec_cen']]
+
+        # match up the coords to active YSE fields
+        # and get the list of YSE fields to observe
+        decam_list_to_schedule = []
+        for n,r,d in zip(name_list,ra_list,dec_list):
+            sc = SkyCoord(r,d,unit=(u.hour,u.deg))
+            sep = sc.separation(scdecam).deg
+            if np.min(sep) < 1.55 and n not in decam_list_to_schedule:
+                decam_list_to_schedule += [n]
+        
+        # return the fields
+        return decam_list_to_schedule
+
 
     def add_obs_requests(self,date_requested,field_id):
         
@@ -387,7 +429,7 @@ class YSE_Scheduler:
     def choose_fields(self,ps_fields,ztf_fields,decam_fields,ps_timedeltas):
         daily_set_1 = ['523','525','577']
         daily_set_2 = ['575','577','674']
-        do_set_1,do_set_2 = False,False
+        do_set_1,do_set_2 = True
 
         # Virgo
         if 'Virgo' in ps_fields: fields_to_observe = ['Virgo']; timegaps = [ps_timedeltas[ps_fields == 'Virgo'][0]]
@@ -405,6 +447,9 @@ class YSE_Scheduler:
                     for i,field in enumerate(ps_fields[iNotRecent]):
                         if field in fieldset and field not in fields_to_observe:
                             if cadence == 'normal':
+                                # max 1 field from each of daily set 1 and daily set 2
+                                if field in daily_set_1: continue
+                                if field in daily_set_2: continue
                                 fields_to_observe += [field]
                                 timegaps += [ps_timedeltas[iNotRecent[i]]]
                             elif field in daily_set_1 and do_set_1:
@@ -456,10 +501,12 @@ class YSE_Scheduler:
             date_to_schedule,field_list=field_list)
 
         # remove fields too close to the moon
+        print('all YSE fields: %s'%(','.join(ps_fields)))
         ps_fields,ps_ras,ps_decs,ps_timedeltas = self.moon_cut(ps_fields,ps_ras,ps_decs,date_to_schedule,timedeltas=ps_timedeltas)
+        print('YSE fields out of the moon: %s'%(','.join(ps_fields)))
         
         # get the DECam observing history
-        #self.get_decam_obs()
+        #decam_fields = self.get_decam_obs()
         decam_fields = []
         
         # get the ZTF observing history and plans
@@ -471,6 +518,7 @@ class YSE_Scheduler:
         # and availability of DECam
         fields_to_observe = self.choose_fields(ps_fields,likely_ztf_fields,decam_fields,ps_timedeltas)
 
+        #print('hack!  not scheduling fields')
         for f in fields_to_observe:
             self.add_obs_requests(date_to_schedule-datetime.timedelta(1),f)
         
@@ -491,7 +539,7 @@ if __name__ == "__main__":
 
     try:
         
-        obs_date = datetime.datetime.utcnow()+datetime.timedelta(1)
+        obs_date = datetime.datetime.utcnow()+datetime.timedelta(hours=9) #datetime.timedelta(1)
         ys.main(dateutil.parser.parse(obs_date.isoformat().split()[0]))
         
     except Exception as e:
