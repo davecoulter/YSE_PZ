@@ -537,8 +537,9 @@ class YSE_Scheduler:
         fields_to_observe = self.choose_fields(ps_fields,likely_ztf_fields,decam_fields,ps_timedeltas)
 
         for f in fields_to_observe:
-            self.add_obs_requests(date_to_schedule-datetime.timedelta(1),f)
-        
+            self.add_obs_requests(date_to_schedule-datetime.timedelta(hours=9),f)
+        print('success!')
+            
 if __name__ == "__main__":
 
     ys = YSE_Scheduler()
