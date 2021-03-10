@@ -157,11 +157,9 @@ def add_yse_survey_obs(request):
 						fk_new.dec_cen = survey['dec_cen']
 						# replace the field id, add a date to the field name
 						orig_id = fk_new.field_id[:]
-						# could do this numberically but doing w/ MJD for now
-						#if len(orig_id.split('.')) == 3:
-						#	 field_num = int(orig_id.split('.')[-1])+1
-						#else: field_num = 2
-						new_field_id = orig_id.split('.')[0] + '.' + orig_id.split('.')[1] + '.' + str(int(survey['obs_mjd']))
+                        if '_' in orig_id: field_ext = orig_id.split('_')[-1]
+                        else: field_ext = '1'
+						new_field_id = orig_id.split('.')[0] + '.' + orig_id.split('.')[1] + '.' + field_ext
 						fk_new.field_id = new_field_id
 						fk_new.pk = None
 						fk_new.save()
