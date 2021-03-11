@@ -40,6 +40,7 @@ class FollowupStatusViewSet(viewsets.ReadOnlyModelViewSet):
 ### `SurveyField` Filter Set ###
 class SurveyFieldFilter(django_filters.FilterSet):
 	field_id = django_filters.Filter(name="field_id")
+	obs_group = django_filters.Filter(name="obs_group__name")
 	class Meta:
 		model = SurveyField
 		fields = ()
@@ -53,13 +54,14 @@ class SurveyFieldMSBFilter(django_filters.FilterSet):
 		fields = ('name','active')
         
 ### `SurveyField ViewSets` ###
-class SurveyFieldViewSet(viewsets.ReadOnlyModelViewSet):
+class SurveyFieldViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = SurveyField.objects.all()
 	serializer_class = SurveyFieldSerializer
 	permission_classes = (permissions.IsAuthenticated,)
 	filter_backends = (DjangoFilterBackend,)
 	filter_class = SurveyFieldFilter
-	
+
+
 class SurveyFieldMSBViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet): #viewsets.ReadOnlyModelViewSet):
 	queryset = SurveyFieldMSB.objects.all()
 	serializer_class = SurveyFieldMSBSerializer
@@ -74,6 +76,7 @@ class SurveyObsFilter(django_filters.FilterSet):
 	obs_mjd_lte = django_filters.Filter(name="obs_mjd", lookup_expr='lte')
 	mjd_requested_gte = django_filters.Filter(name="mjd_requested", lookup_expr='gte')
 	mjd_requested_lte = django_filters.Filter(name="mjd_requested", lookup_expr='lte')
+	survey_field = django_filters.BaseInFilter(name="survey_field__field_id")
 	
 	class Meta:
 		model = SurveyObservation
