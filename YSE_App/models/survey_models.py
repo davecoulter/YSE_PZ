@@ -19,8 +19,6 @@ class SurveyField(BaseModel):
 
 	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
 	field_id = models.CharField(max_length=64)
-	#first_mjd = models.FloatField(null=True, blank=True)
-	#last_mjd = models.FloatField(null=True, blank=True)
 	cadence = models.FloatField(null=True, blank=True)
 	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
 	ztf_field_id = models.CharField(max_length=64,null=True,blank=True)

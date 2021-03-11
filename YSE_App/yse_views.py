@@ -55,7 +55,6 @@ def select_yse_fields(request):
 
             if len(obs_mjd[:-1][obs_mjd[1:]-obs_mjd[:-1] > 60]):
                 first_obs = obs_mjd[1:][obs_mjd[1:]-obs_mjd[:-1] > 60][0]
-                #if a.name == '525': import pdb; pdb.set_trace()
             else:
                 first_obs = obs_mjd[0]
         else:
