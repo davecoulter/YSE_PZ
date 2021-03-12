@@ -177,7 +177,7 @@ class YSE_Scheduler:
             dburl = 'https://ziggy.ucolick.org/yse/api/'
             
         offsetcount = 0
-        r = requests.get('%ssurveyobservations/?obs_mjd_gte=%i&obs_mjd_lte=%i&limit=1000&status_in=Successful'%(
+        r = requests.get('%ssurveyobservations/?obs_mjd_gte=%i&obs_mjd_lte=%i&limit=1000&status_in=Successful&obs_group=YSE'%(
             dburl,nowmjd-40,nowmjd),
                          auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
 
@@ -185,19 +185,19 @@ class YSE_Scheduler:
         data_results = data['results']
         while len(data['results']) == 1000:
             offsetcount += 1000
-            r = requests.get('%ssurveyobservations/?obs_mjd_gte=%i&obs_mjd_lte=%i&limit=1000&offset=%i&status_in=Successful'%(
+            r = requests.get('%ssurveyobservations/?obs_mjd_gte=%i&obs_mjd_lte=%i&limit=1000&offset=%i&status_in=Successful&obs_group=YSE'%(
                 dburl,nowmjd-40,nowmjd,offsetcount),
                              auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
             data = json.loads(r.text)
 
             data_results = np.append(data_results,data['results']) #r['results'])
         
-        r = requests.get('%ssurveyfields/?limit=1000'%dburl,
+        r = requests.get('%ssurveyfields/?limit=1000&obs_group=YSE'%dburl,
                          auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
         surveyfielddata = json.loads(r.text)['results']
         while len(data['results']) == 1000:
             offsetcount += 1000
-            r = requests.get('%ssurveyfields/?limit=1000&offset=%i'%(
+            r = requests.get('%ssurveyfields/?limit=1000&offset=%i&obs_group=YSE'%(
                 self.options.dburl,nowmjd-40,nowmjd,offsetcount),
                              auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
             surveyfielddata_single = json.loads(r.text)['results']
@@ -216,7 +216,6 @@ class YSE_Scheduler:
                     fields = np.append(fields,s['ztf_field_id'])
                     ras = np.append(ras,s['ra_cen'])
                     decs = np.append(decs,s['dec_cen'])
-                    
         unqfields,idx = np.unique(fields,return_index=True)
         ras = ras[idx]; decs = decs[idx]
 

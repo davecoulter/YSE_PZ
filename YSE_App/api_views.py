@@ -77,6 +77,7 @@ class SurveyObsFilter(django_filters.FilterSet):
 	mjd_requested_gte = django_filters.Filter(name="mjd_requested", lookup_expr='gte')
 	mjd_requested_lte = django_filters.Filter(name="mjd_requested", lookup_expr='lte')
 	survey_field = django_filters.BaseInFilter(name="survey_field__field_id")
+	obs_group = django_filters.BaseInFilter(name="survey_field__obs_group__name")
 	
 	class Meta:
 		model = SurveyObservation
