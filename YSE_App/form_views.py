@@ -715,9 +715,25 @@ class AddAutomatedSpectrumRequestFormView(FormView):
 			if 'goodman' in form.cleaned_data['instrument'].name.lower():
 				resource = ClassicalResource.objects.filter(telescope__name=form.cleaned_data['instrument'].telescope).\
 					filter(principal_investigator__name='Dimitriadis')
+				if not len(self.request.user.groups.all().filter(name='SOAR')):
+					data_dict = {'errors':'you need to be in the SOAR permissions group to submit this request!',
+								 'errorflag':1}
+					data = {
+						'data':data_dict,
+						'message': "Successfully submitted form data.",
+					}
+					return JsonResponse(data)
 			else:
 				resource = ToOResource.objects.filter(telescope__name=form.cleaned_data['instrument'].telescope) #.\
 					#filter(principal_investigator__name='Kilpatrick')
+				if not len(self.request.user.groups.all().filter(name='LCOGT')):
+					data_dict = {'errors':'you need to be in the LCOGT permissions group to submit this request!',
+								 'errorflag':1}
+					data = {
+						'data':data_dict,
+						'message': "Successfully submitted form data.",
+					}
+					return JsonResponse(data)
 				
 			# make sure the dates line up, with a +/-1 day window to make life easier
 			resource = resource.filter(Q(begin_date_valid__lt=form.cleaned_data['spectrum_valid_start']+datetime.timedelta(1)) &
@@ -744,6 +760,7 @@ class AddAutomatedSpectrumRequestFormView(FormView):
 				tf = TransientFollowup(status=status,valid_start=form.cleaned_data['spectrum_valid_start'],
 									   valid_stop=form.cleaned_data['spectrum_valid_stop'],too_resource=resource,
 									   transient=form.cleaned_data['transient'],created_by=self.request.user,modified_by=self.request.user)
+
 			tf.save()
 
 			# now charlie's code
