@@ -48,7 +48,7 @@ pluggy==0.6.0
 py==1.5.2
 pycparser==2.18
 pygcn==0.1.17
-Pygments==2.2.0
+Pygments==2.7.4
 pyparsing==2.2.0
 pytest==3.3.2
 python-dateutil==2.7.3
