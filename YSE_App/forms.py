@@ -244,7 +244,7 @@ class SpectrumUploadForm(ModelForm):
 		'LFC','DBSP','lay - MIKE','lay - LDSS-3',
 		'aade - MagE','aade - Boller & Chivens',
 		'WFC3','STIS','IRS','B&C-Asi-1.22m',
-		'aade - IMACS','lay - LDSS-2','AFOSC',
+		'aade - IMACS','lay - LDSS-2','ALFOSC',
 		'uPont - Mod-spec','uPont - B&C-duPont',
 		'uPont - WFCCD','V-grism','UV-grism',
 		'T2 - X-Shooter','.2m - EFOSC-2.2','TT - Sofi',
