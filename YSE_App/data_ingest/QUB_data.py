@@ -623,7 +623,7 @@ class YSE(CronJobBase):
 
 			iLC = (lc['local_designation'] == s['local_designation']) & (nowmjd - lc['mjd_obs'] < self.options.max_days)
 
-			if nowmjd - Time('%s 00:00:00'%s['followup_flag_date'],format='iso',scale='utc').mjd > self.options.max_days:
+			if nowmjd - Time('%s 00:00:00'%s['followup_flag_date'],format='iso',scale='utc').mjd > self.options.max_days+7:
 				status = 'Ignore'
 			else:
 				status = self.options.status
