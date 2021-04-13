@@ -1450,6 +1450,7 @@ def spectrumplot(request, transient_id):
 
 	ax.plot_height = 400+50*len(dbspectra)
 	ax.plot_width = 400
+	ax.x_range=Range1d(3000,10000)
 	
 	ax.xaxis.axis_label = r'Wavelength (Angstrom)'
 	ax.yaxis.axis_label = 'Flux'
