@@ -99,9 +99,9 @@ class ForcedPhot(CronJobBase):
                                 help='YSE-PZ password (default=%default)')
 
             parser.add_argument('--dbemail', default=config.get('main','dbemail'), type=str,
-							    help='database login, if post=True (default=%default)')
+                                help='database login, if post=True (default=%default)')
             parser.add_argument('--dbemailpassword', default=config.get('main','dbemailpassword'), type=str,
-							    help='email password, if post=True (default=%default)')
+                                help='email password, if post=True (default=%default)')
             
             parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
                               help='SMTP login (default=%default)')
@@ -150,7 +150,7 @@ class ForcedPhot(CronJobBase):
 
             try:
                 output_files = ztf.get_ztf_fp(
-                    log_file_name, directory_path='/tmp',
+                    log_file_name, directory_path='/tmp/forced_phot_out',
                     source_name=l.transient.name,verbose=True)
             except Exception as e:
                 print(e)
@@ -162,7 +162,11 @@ class ForcedPhot(CronJobBase):
                 continue
             
             # first we have to figure out how to parse these output files
-            data = at.Table.read('/tmp/%s/%s_lc.txt'%(l.transient.name,l.transient.name),format='ascii',header_start=0)
+            try:
+                data = at.Table.read('/tmp/%s/%s_lc.txt'%(l.transient.name,l.transient.name),format='ascii',header_start=0)
+            except:
+                print('No LC data for %s'%l.transient.name)
+                continue
 
             # then dump everything in a dictionary
             DataForYSEPZ[l.transient.name] = {'name':l.transient.name,

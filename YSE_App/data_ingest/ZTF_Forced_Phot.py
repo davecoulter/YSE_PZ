@@ -421,7 +421,7 @@ class ZTF_Forced_Phot:
         if not os.path.exists(output_directory):
             if verbose:
                 print("Creating %s"%output_directory)
-            os.makedirs(output_directory)
+            os.makedirs(output_directory,mode=0o0775)
 
 
         #
@@ -443,6 +443,7 @@ class ZTF_Forced_Phot:
             for downloaded_file_name in downloaded_file_names:
                 if os.path.exists(downloaded_file_name):
                     shutil.move(downloaded_file_name, "%s/%s"%(output_directory,downloaded_file_name))
+
                     if verbose:
                         print("%sZTF downloaded file: %s/%s"%(' '*5,output_directory,downloaded_file_name))
                     output_files.append("%s/%s"%(output_directory,downloaded_file_name))
@@ -565,7 +566,7 @@ class ZTF_Forced_Phot:
             if not os.path.exists(output_directory):
                 if verbose:
                     print("Creating %s"%output_directory)
-                os.makedirs(output_directory)
+                os.makedirs(output_directory,mode=0o0775)
 
 
             #
