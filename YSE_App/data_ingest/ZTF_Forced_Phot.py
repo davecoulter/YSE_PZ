@@ -536,8 +536,8 @@ class ZTF_Forced_Phot:
                         print("Creating %s"%output_directory)
                     os.makedirs(output_directory)
 
-                shutil.move(log_file_name, "%s/%s"%(output_directory,log_file_name))
-                return "%s/%s"%(output_directory,log_file_name)
+                shutil.move(log_file_name, "%s/%s"%(output_directory,log_file_name.split('/')[-1]))
+                return "%s/%s"%(output_directory,log_file_name.split('/')[-1])
 
         else:
             downloaded_file_names = [plot_file_name] 
