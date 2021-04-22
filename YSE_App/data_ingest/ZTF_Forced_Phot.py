@@ -43,7 +43,8 @@ def random_log_file_name():
 
     log_file_name = None
     while log_file_name is None or os.path.exists(log_file_name):
-        log_file_name = "ztffp_%s.txt"%''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+        log_file_name = "ztffp_%s.txt"%''.join([random.choice(string.ascii_uppercase + string.digits) for i in range(10)])
+        #random.choices(string.ascii_uppercase + string.digits, k=10))
     
     return log_file_name
 
