@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
+from django.conf import settings as djangoSettings
 from django.template import loader
 from django.views import generic
 from django.contrib.auth import authenticate, login, logout
@@ -43,7 +44,7 @@ from astroplan import moon_illumination
 from astropy.time import Time
 from .common.utilities import getRADecBox
 
-from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable
+from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable,ToOFollowupTable
 from .queries.yse_python_queries import *
 from .queries import yse_python_queries
 import django_tables2 as tables
@@ -415,6 +416,100 @@ def observing_calendar(request):
 	return render(request, 'YSE_App/observing_calendar.html', context)
 
 @login_required
+def too_calendar(request):
+
+	colors = ['#dd4b39', 
+			  '#f39c12', 
+			  '#00c0ef', 
+			  '#0073b7', 
+			  '#f012be', 
+			  '#3c8dbc',
+			  '#00a65a',
+			  '#d2d6de',
+			  '#001f3f']
+
+	# don't show everything, for speed
+	first_calendar_date = (datetime.datetime.utcnow()-datetime.timedelta(60)).replace(tzinfo=pytz.UTC)
+	last_calendar_date = (datetime.datetime.utcnow()+datetime.timedelta(60)).replace(tzinfo=pytz.UTC)
+	all_too_resources = ToOResource.objects.filter(~Q(end_date_valid__lt=first_calendar_date) &
+											   ~Q(begin_date_valid__gt=last_calendar_date)).select_related()
+	#import pdb; pdb.set_trace()
+	telescope_colors = {}
+	all_resources = ()
+	for i, c in enumerate(all_too_resources.select_related()):
+		telescope_colors[c.telescope.name] = colors[i % len(colors)]
+
+		if c.begin_date_valid.replace(tzinfo=pytz.UTC) > first_calendar_date: date_start = c.begin_date_valid
+		else: date_start = first_calendar_date
+
+		if c.end_date_valid.replace(tzinfo=pytz.UTC) > last_calendar_date: date_end = last_calendar_date
+		else: date_end = c.end_date_valid
+
+		date_list = [date_start + datetime.timedelta(days=x) \
+					 for x in range(0, (date_end-date_start).days+2)]
+		all_resources += ((c,[(d.year,d.month,d.day) for d in date_list]),)
+		#break
+		#import pdb; pdb.set_trace()
+		
+	context = {
+		'all_resources': all_resources,
+		'telescope_colors': telescope_colors
+	}
+	return render(request, 'YSE_App/too_calendar.html', context)
+
+@login_required
+def too_requests(request, telescope, pi_name):
+
+	nowdate = datetime.datetime.utcnow()
+	# get follow requests for telescope/date
+	too_resource = ToOResource.objects.\
+		filter(telescope__name = telescope.replace('_',' ')).\
+		filter(begin_date_valid__lte=nowdate).filter(end_date_valid__gte=nowdate).select_related()
+	if pi_name != 'None':
+		too_resource = too_resource.filter(principal_investigator__name = pi_name)
+	
+	follow_requests = TransientFollowup.objects.filter(too_resource = too_resource[0]).\
+		filter(valid_start__lte = too_resource[0].end_date_valid).\
+		filter(valid_stop__gte = too_resource[0].begin_date_valid).\
+		filter(Q(status__name='Requested') | Q(status__name='InProcess') | Q(status__name='Failed')).select_related()
+
+	followuptransientfilter = FollowupFilter(
+        request.GET, queryset=follow_requests,prefix=telescope.replace('_',''))
+		
+	followup_table = ToOFollowupTable(followuptransientfilter.qs,prefix=telescope.replace('_',''),too_resource=too_resource)
+	RequestConfig(request, paginate={'per_page': 20}).configure(followup_table)
+	table = (telescope.replace('_',' '),followup_table,telescope,follow_requests,followuptransientfilter)
+
+	location = EarthLocation.from_geodetic(
+		too_resource[0].telescope.longitude*u.deg,too_resource[0].telescope.latitude*u.deg,
+		too_resource[0].telescope.elevation*u.m)
+	time = Time(str(nowdate).split('+')[0], format='iso')
+	tel = Observer(location=location, timezone="UTC")
+
+	sunset = tel.sun_set_time(time,which="previous").isot.split('T')[-1][:-7]
+	night_start_12 = tel.twilight_evening_nautical(time,which="previous").isot.split('T')[-1][:-7]
+	night_start_18 = tel.twilight_evening_astronomical(time,which="previous").isot.split('T')[-1][:-7]
+	night_end_18 = tel.twilight_morning_astronomical(time,which="previous").isot.split('T')[-1][:-7]
+	night_end_12 = tel.twilight_morning_nautical(time,which="previous").isot.split('T')[-1][:-7]
+	sunrise = tel.sun_rise_time(time,which="previous").isot.split('T')[-1][:-7]
+
+	if request.META['QUERY_STRING']:
+		anchor = request.META['QUERY_STRING'].split('-ex')[0]
+	else: anchor = ''
+	context = {
+		'followup_table':table,
+		'anchor':anchor,
+		'all_followup_statuses':FollowupStatus.objects.all(),
+		'all_transient_statuses':TransientStatus.objects.all(),
+		'follow_requests': follow_requests,
+		'telescope':telescope.replace('_',' '),
+		'obs_date':nowdate.isoformat().split('T')[0],
+		'too_resource':too_resource[0],
+		'sunriseset':(sunset,night_start_12,night_start_18,night_end_18,night_end_12,sunrise)
+	}
+	return render(request, 'YSE_App/too_requests.html', context)
+
+@login_required
 def yse_home(request):
 	oncall_form = OncallForm()
 	classical_resource_form = ClassicalResourceForm()
@@ -533,8 +628,8 @@ def yse_observing_calendar(request):
 	tel = Observer(location=location, timezone="UTC")
 
 	todaydate = dateutil.parser.parse(datetime.datetime.today().strftime('%Y-%m-%d 00:00:00'))
-	base = todaydate-datetime.timedelta(30) # hack should be 30!!
-	date_list = [base + datetime.timedelta(days=x) for x in range(40)] # hack should be 40!!
+	base = todaydate-datetime.timedelta(30)
+	date_list = [base + datetime.timedelta(days=x) for x in range(40)]
 	obstuple = ()
 	colors = ['#dd4b39', 
 			  '#f39c12', 
@@ -551,7 +646,7 @@ def yse_observing_calendar(request):
 		if not len(survey_obs): continue
 		ztf_obs_ids = survey_obs.filter(obs_mjd__isnull=False).values_list('survey_field__ztf_field_id',flat=True).distinct()
 		ztf_sched_ids = survey_obs.filter(obs_mjd__isnull=True).values_list('survey_field__ztf_field_id',flat=True).distinct()
-        
+		
 		ztf_obs_str = ''
 		for z in ztf_obs_ids:
 			filters = survey_obs.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
@@ -567,58 +662,68 @@ def yse_observing_calendar(request):
 			obstuple += ((ztf_obs_str[:-2],date,
 						  '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)],ztf_sched_str[:-2]),)
 
-			
-	#important_dates_list = [todaydate-datetime.timedelta(1),
-	#						todaydate,
-	#						todaydate+datetime.timedelta(1)]
-	#important_dates = []
-	#for i,date in enumerate(important_dates_list):
+	context = {
+		'all_obs': obstuple,
+		'utc_time': datetime.datetime.utcnow().isoformat().replace(' ','T'),
+	}
+	return render(request, 'YSE_App/yse_observing_calendar.html', context)
 
-	#	time = Time(date_to_mjd(date.strftime('%Y-%m-%d 00:00:00')),format='mjd')
+@login_required
+def decam_observing_calendar(request):
+
+	all_obs = SurveyObservation.objects.all().select_related()
+	all_dates,all_decam_ids,all_filters = np.array([]),np.array([]),np.array([])
+
+	telescope = Telescope.objects.get(name='Pan-STARRS1')
+	location = EarthLocation.from_geodetic(
+		telescope.longitude*u.deg,telescope.latitude*u.deg,
+		telescope.elevation*u.m)
+	tel = Observer(location=location, timezone="UTC")
+
+	todaydate = dateutil.parser.parse(datetime.datetime.today().strftime('%Y-%m-%d 00:00:00'))
+	base = todaydate-datetime.timedelta(30)
+	date_list = [base + datetime.timedelta(days=x) for x in range(40)]
+	obstuple = ()
+	colors = ['#dd4b39', 
+			  '#f39c12', 
+			  '#00c0ef']
+	for i,date in enumerate(date_list):
+
+		time = Time(date_to_mjd(date.strftime('%Y-%m-%d 00:00:00')),format='mjd')
 		
-	#	sunset_forobs = tel.sun_set_time(time,which="next")
-	#	sunrise_forobs = tel.sun_rise_time(time,which="next")
-	#	survey_obs = SurveyObservation.objects.filter(
-	#		Q(mjd_requested__gte = date_to_mjd(sunset_forobs)-0.1) | Q(obs_mjd__gte = date_to_mjd(sunset_forobs)-0.1)).\
-	#		filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1))
-	#	if not len(survey_obs): continue
-	#	ztf_ids = survey_obs.values_list('survey_field__ztf_field_id',flat=True).distinct()
-	#	field_ids = survey_obs.values_list('survey_field__field_id',flat=True).distinct()
+		sunset_forobs = tel.sun_set_time(time,which="next")
+		sunrise_forobs = tel.sun_rise_time(time,which="next")
+		survey_obs = SurveyObservation.objects.filter(
+			Q(mjd_requested__gte = date_to_mjd(sunset_forobs)-0.1) | Q(obs_mjd__gte = date_to_mjd(sunset_forobs)-0.1)).\
+			filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
+			filter(survey_field__obs_group__name='DECAT')
+		if not len(survey_obs): continue
+		decam_obs_ids = survey_obs.filter(obs_mjd__isnull=False).values_list('survey_field__field_id',flat=True).distinct()
+		decam_sched_ids = survey_obs.filter(obs_mjd__isnull=True).values_list('survey_field__field_id',flat=True).distinct()
+		
+		decam_obs_str = ''
+		for z in decam_obs_ids:
+			filters = survey_obs.filter(survey_field__field_id=z).filter(survey_field__obs_group__name='DECAT').\
+				values_list('photometric_band__name',flat=True).distinct()
+			decam_obs_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
+		decam_sched_str = ''
+		for z in decam_sched_ids:
+			if z in decam_obs_ids: continue
+			filters = survey_obs.filter(survey_field__decam_field_id=z).filter(survey_field__obs_group__name='DECAT').\
+				values_list('photometric_band__name',flat=True).distinct()
+			decam_sched_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
 
-	#	yse_pas,transients_on_goodcells = [],[]
-	#	for msb_name in ztf_ids:
-	#		so = survey_obs.filter(survey_field__ztf_field_id = msb_name)
-	#		if len(so) and so[0].pos_angle_deg is None:
-	#			pa,tog = yse_pa(msb_name)
-	#		elif len(so):
-	#			pa,tog = None,[]
-	#			pa,tog = yse_pa(msb_name,pa=so[0].pos_angle_deg)
-	#		else:
-	#			pa,tog = None,[]
-	#		yse_pas += [pa]
-	#		transients_on_goodcells += [','.join(tog)]
-	#		if pa is not None:
-	#			 for s in so:
-	#				 if s.pos_angle_deg is None:
-	#					 s.pos_angle_deg = pa
-	#					 s.save()
 			
-	#	date_info = ()
-	#	subfields = [', '.join([f for f in field_ids if f.startswith(z)]) for z in ztf_ids]
-	#	for p,z,f,t in zip(yse_pas,ztf_ids,subfields,transients_on_goodcells):
-	#		date_info += ((date,z,f,p,t),)
-
-	#	important_dates += [date_info]
-		#import pdb; pdb.set_trace()
+		if len(survey_obs):
+			obstuple += ((decam_obs_str[:-2],date,
+						  '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)],decam_sched_str[:-2]),)
 
 	context = {
 		'all_obs': obstuple,
 		'utc_time': datetime.datetime.utcnow().isoformat().replace(' ','T'),
-	#	'important_dates': important_dates
-		#'telescope_colors': telescope_colors
 	}
-	#import pdb; pdb.set_trace()
 	return render(request, 'YSE_App/yse_observing_calendar.html', context)
+
 
 @login_required
 def observing_night(request, telescope, obs_date, pi_name):
@@ -739,12 +844,12 @@ def download_target_list(request, telescope, obs_date):
 			#import pdb; pdb.set_trace()
 			content += "%s	%s %s 2000 mag = %.2f comment = %s\n"%(
 				f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),
-                f.transient.CoordString()[1].replace(':',' '),float(f.transient.recent_mag()),comments)
+				f.transient.CoordString()[1].replace(':',' '),float(f.transient.recent_mag()),comments)
 
 		else:
 			content += "%s	%s %s 2000 comment = %s\n"%(
 				f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),
-                f.transient.CoordString()[1].replace(':',' '),comments)
+				f.transient.CoordString()[1].replace(':',' '),comments)
 			
 	response = HttpResponse(content, content_type='text/plain')
 	response['Content-Disposition'] = 'attachment; filename=%s' % '%s_%s.txt'%(telescope,obs_date)
@@ -1410,3 +1515,46 @@ class SearchResultsView(ListView):
 		context['transient_search_results'] = (table,'Search Results','Search Results',transientfilter)
 
 		return context
+
+@login_required
+def ztf_forced_phot(request,slug):
+
+
+    from YSE_App.data_ingest import ZTF_Forced_Phot
+
+    transient = Transient.objects.get(slug=slug)
+
+    # make sure this request wasn't run w/i the last 12 hours
+    old_log = Log.objects.filter(transient=transient).\
+        filter(modified_date__gt=datetime.datetime.utcnow().replace(tzinfo=pytz.UTC)-datetime.timedelta(0.5))
+    if len(old_log):
+        context = {'msg':'error: forced phot was requested %.1f hours ago (must be >12)'%((datetime.datetime.utcnow().replace(tzinfo=pytz.UTC)-old_log[0].modified_date).seconds/3600.)}
+        #response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
+        return JsonResponse(context) #HttpResponse('')
+    
+    # run ZTF forced phot script
+    ztf = ZTF_Forced_Phot.ZTF_Forced_Phot(
+        ztf_email_address='%s@gmail.com'%djangoSettings.SMTP_LOGIN,ztf_email_password=djangoSettings.SMTP_PASSWORD,
+        ztf_email_imapserver='imap.gmail.com',ztf_user_address='%s@gmail.com'%djangoSettings.SMTP_LOGIN,
+        ztf_user_password=djangoSettings.ZTFPASS)
+
+    log_file_name = ztf.run_ztf_fp(
+        all_jd=False, days=60, decl=transient.dec, directory_path='/tmp',
+        do_plot=False, emailcheck=0, fivemindelay=60, jdend=None,
+        jdstart=None, logfile=None, mjdend=None, mjdstart=None,
+        plotfile=None, ra=transient.ra, skip_clean=False, source_name=slug,
+        verbose=False)
+
+    # then need to do some logging
+    commentstr = """ZTF Forced Phot
+log_file_name=%s
+job_submitted=%s"""%(log_file_name,datetime.datetime.utcnow().isoformat())
+
+    l = Log.objects.create(
+        created_by=request.user,modified_by=request.user,
+        transient=transient,comment=commentstr)
+
+    context = {'msg':'success'}
+    #response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
+    return JsonResponse(context) #HttpResponse('')
+

@@ -79,6 +79,7 @@ CRON_CLASSES = [
 	'YSE_App.data_ingest.TNS_uploads.TNS_recent',
     'YSE_App.data_ingest.QUB_data.CheckDuplicates',
     'YSE_App.data_ingest.PhotometryUploadExample.PhotometryUploads'
+    'YSE_App.data_ingest.ZTF_Forced_Phot_Cron.ForcedPhot'
 ]
 
 MIDDLEWARE = [
@@ -187,7 +188,7 @@ SMTP_HOST = config.get('SMTP_provider', 'SMTP_HOST')
 SMTP_PORT = config.get('SMTP_provider', 'SMTP_PORT')
 LCOGTUSER = config.get('main', 'lcogtuser')
 LCOGTPASS = config.get('main', 'lcogtpass')
-
+ZTFPASS = config.get('yse_forcedphot','ztfforcedphotpass')
 KEPLER_API_ENDPOINT = "http://api.keplerscience.org/is-k2-observing"
 
 # Internationalization

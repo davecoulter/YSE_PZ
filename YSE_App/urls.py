@@ -45,7 +45,9 @@ urlpatterns = [
     url(r'^transient_summary/(?P<status_or_query_name>.*)/$', views.transient_summary, name='transient_summary'),
 
     url(r'^observing_calendar/$', views.observing_calendar, name='observing_calendar'),
+    url(r'^too_calendar/$', views.too_calendar, name='too_calendar'),
     url(r'^yse_observing_calendar/$', views.yse_observing_calendar, name='yse_observing_calendar'),
+    url(r'^decam_observing_calendar/$', views.decam_observing_calendar, name='decam_observing_calendar'),
     url(r'^yse_planning/$', yse_views.yse_planning, name='yse_planning'),
     url(r'^yse_fields/(?P<ra_min_hour>.*)/(?P<ra_max_hour>.*)/(?P<min_mag>.*)/$', yse_views.yse_fields, name='yse_fields'),
     url(r'^yse_sky/$', yse_views.yse_sky, name='yse_sky'),
@@ -75,6 +77,7 @@ urlpatterns = [
 
     url(r'^yse_oncall_calendar/$', views.yse_oncall_calendar, name='yse_oncall_calendar'),
     url(r'^observing_night/(?P<telescope>.*)/(?P<obs_date>[a-zA-Z0-9_-]+)/(?P<pi_name>.*)$', views.observing_night, name='observing_night'),
+    url(r'^too_requests/(?P<telescope>.*)/(?P<pi_name>.*)/$', views.too_requests, name='too_requests'),
     #url(r'^survey_observing_calendar/$', views.survey_observing_calendar, name='survey_observing_calendar'),
     url(r'^yse_observing_night/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.yse_observing_night, name='yse_observing_night'),
     url(r'^view_yse_fields/$', view_utils.view_yse_fields, name='view_yse_fields'),
@@ -88,6 +91,7 @@ urlpatterns = [
 	url(r'^add_gw_candidate/', data_utils.add_gw_candidate, name='add_gw_candidate'),
 	url(r'^add_transient_phot/', data_utils.add_transient_phot, name='add_transient_phot'),
 	url(r'^add_transient_spec/', data_utils.add_transient_spec, name='add_transient_spec'),
+	url(r'^ztf_forced_phot/(?P<slug>.*)/$', views.ztf_forced_phot, name='ztf_forced_phot'),
 	url(r'^get_host/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<sep>\d+\.?\d*)/$', data_utils.get_host, name='get_host'),
 	url(r'^get_rising_transients_box/(?P<ra>\d+\.\d+)/(?P<dec>[+-]?\d+\.\d+)/(?P<ra_width>\d+\.?\d*)/(?P<dec_width>\d+\.?\d*)/$', 
 		data_utils.get_rising_transients_box, name='get_rising_transients_box'),
@@ -105,7 +109,7 @@ urlpatterns = [
 	url(r'^download_spectra/(?P<slug>.*)/$', views.download_spectra, name='download_spectra'),
 	url(r'^download_photometry/(?P<slug>.*)/$', views.download_photometry, name='download_photometry'),
 	url(r'^download_bulk_photometry/(?P<query_title>[a-zA-Z0-9_-]+)/$', views.download_bulk_photometry, name='download_bulk_photometry'),
-	url(r'^download_target_list/(?P<telescope>[a-zA-Z0-9_-]+)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.download_target_list, name='download_target_list'),
+	url(r'^download_target_list/(?P<telescope>.*)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.download_target_list, name='download_target_list'),
 	url(r'^download_targets_and_finders/(?P<telescope>[a-zA-Z0-9_-]+)/(?P<obs_date>[a-zA-Z0-9_-]+)/$', views.download_targets_and_finders, name='download_targets_and_finders'),
 	url(r'^upload_spectrum/', views.upload_spectrum, name='upload_spectrum'),
 	

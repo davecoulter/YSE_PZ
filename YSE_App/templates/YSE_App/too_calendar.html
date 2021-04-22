@@ -1,4 +1,4 @@
-{{% extends 'YSE_App/base.html' %}
+{% extends 'YSE_App/base.html' %}
 {% load static %}
 {% block content %}
 {% load transient_detail_extras %}
@@ -20,8 +20,8 @@
 			<!-- Default box -->
 			<div class="box">
 				<div class="box-header with-border">
-					<h3 class="box-title">Observing Calendar</h3>
-          <h5 class="box-subtitle"><a href="{% url 'too_calendar' %}">Link to ToO Calendar</a></h5>
+					<h3 class="box-title">ToO Calendar</h3>
+          <h5 class="box-subtitle">Shows +/- 60 days from today</h5>
 				</div>
 				<div class="box-body">
 					<div id="calendar"></div>
@@ -138,23 +138,25 @@
       //   }
       // ],
       events: [
-        {% for date in all_dates %}
+      {% for resource in all_resources %}
+        {% for date in resource.1 %}
             {
-              {% if date.resource.principal_investigator %}
-              title          : '{{ date.resource.telescope.name }}, PI: {{ date.resource.principal_investigator.name }}',
+              {% if resource.0.principal_investigator %}
+              title          : '{{ resource.0.telescope.name }}, PI: {{ resource.0.principal_investigator.name }}',
               {% else %}
-              title          : '{{ date.resource.telescope.name }}',
+              title          : '{{ resource.0.telescope.name }}',
               {% endif %}
-              start          : new Date({{ date.obs_date.date.year }}, {{ date.obs_date.month|add:"-1" }}, {{ date.obs_date.day }}),
+              start          : new Date({{ date.0 }}, {{ date.1|add:"-1" }}, {{ date.2 }}),
               allDay         : true,
-              backgroundColor: '{{ telescope_colors|get_item:date.resource.telescope.name }}',
-              borderColor    : '{{ telescope_colors|get_item:date.resource.telescope.name }}',
-              {% if date.resource.principal_investigator %}
-              url: "{% url 'observing_night' date.resource.telescope|replace_space date.obs_date|date:'Y-m-d' date.resource.principal_investigator.name %}"
+              backgroundColor: '{{ telescope_colors|get_item:resource.0.telescope.name }}',
+              borderColor    : '{{ telescope_colors|get_item:resource.0.telescope.name }}',
+              {% if resource.0.principal_investigator %}
+              url: "{% url 'too_requests' resource.0.telescope|replace_space resource.0.principal_investigator.name %}"
               {% else %}
-              url: "{% url 'observing_night' date.resource.telescope|replace_space date.obs_date|date:'Y-m-d' None %}"
+              url: "{% url 'too_requests' resource.0.telescope|replace_space None %}"
               {% endif %}
             },
+        {% endfor %}
         {% endfor %}
       ],
       editable  : true,

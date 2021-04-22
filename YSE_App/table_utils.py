@@ -58,7 +58,7 @@ class TransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -86,11 +86,11 @@ SELECT pd.mag
    WHERE pd.photometry_id = p.id AND
    YSE_App_transient.id = t.id AND
    pd.id = (
-         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
-         ORDER BY pd2.obs_date DESC
-         LIMIT 1
-     )
+		 SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+		 WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+		 ORDER BY pd2.obs_date DESC
+		 LIMIT 1
+	 )
 """
 
 		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
@@ -177,7 +177,7 @@ class FieldTransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -205,11 +205,11 @@ SELECT pd.mag
    WHERE pd.photometry_id = p.id AND
    YSE_App_transient.id = t.id AND
    pd.id = (
-         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
-         ORDER BY pd2.obs_date DESC
-         LIMIT 1
-     )
+		 SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+		 WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+		 ORDER BY pd2.obs_date DESC
+		 LIMIT 1
+	 )
 """
 
 		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
@@ -296,7 +296,7 @@ class AdjustFieldTransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -324,11 +324,11 @@ SELECT pd.mag
    WHERE pd.photometry_id = p.id AND
    YSE_App_transient.id = t.id AND
    pd.id = (
-         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
-         ORDER BY pd2.obs_date DESC
-         LIMIT 1
-     )
+		 SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+		 WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+		 ORDER BY pd2.obs_date DESC
+		 LIMIT 1
+	 )
 """
 
 		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
@@ -414,7 +414,7 @@ class YSETransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -483,11 +483,11 @@ SELECT pd.mag
    WHERE pd.photometry_id = p.id AND
    YSE_App_transient.id = t.id AND
    pd.id = (
-         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
-         ORDER BY pd2.obs_date DESC
-         LIMIT 1
-     )
+		 SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+		 WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+		 ORDER BY pd2.obs_date DESC
+		 LIMIT 1
+	 )
 """
 
 		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
@@ -569,7 +569,7 @@ class YSEFullTransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -629,11 +629,11 @@ SELECT pd.mag
    WHERE pd.photometry_id = p.id AND
    YSE_App_transient.id = t.id AND
    pd.id = (
-         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
-         ORDER BY pd2.obs_date DESC
-         LIMIT 1
-     )
+		 SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+		 WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+		 ORDER BY pd2.obs_date DESC
+		 LIMIT 1
+	 )
 """
 
 		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
@@ -721,7 +721,7 @@ class YSERisingTransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -785,11 +785,11 @@ SELECT pd.mag
    WHERE pd.photometry_id = p.id AND
    YSE_App_transient.id = t.id AND
    pd.id = (
-         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
-         ORDER BY pd2.obs_date DESC
-         LIMIT 1
-     )
+		 SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+		 WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+		 ORDER BY pd2.obs_date DESC
+		 LIMIT 1
+	 )
 """
 
 		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
@@ -871,7 +871,7 @@ class NewTransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -898,11 +898,11 @@ SELECT pd.mag
    WHERE pd.photometry_id = p.id AND
    YSE_App_transient.id = t.id AND
    pd.id = (
-         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
-         ORDER BY pd2.obs_date DESC
-         LIMIT 1
-     )
+		 SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+		 WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+		 ORDER BY pd2.obs_date DESC
+		 LIMIT 1
+	 )
 """
 
 		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
@@ -969,7 +969,7 @@ class FollowupTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_followup_statuses %}
-    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -994,11 +994,11 @@ SELECT pd.mag
    WHERE pd.photometry_id = p.id AND
    YSE_App_transient.id = t.id AND
    pd.id = (
-         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
-         ORDER BY pd2.obs_date DESC
-         LIMIT 1
-     )
+		 SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+		 WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+		 ORDER BY pd2.obs_date DESC
+		 LIMIT 1
+	 )
 """
 
 		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
@@ -1052,7 +1052,7 @@ class ObsNightFollowupTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.transient.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.transient.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -1065,7 +1065,7 @@ class ObsNightFollowupTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_followup_statuses %}
-    												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="followupStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="followupStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -1136,11 +1136,11 @@ SELECT pd.mag
    WHERE pd.photometry_id = p.id AND
    YSE_App_transient.id = t.id AND
    pd.id = (
-         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
-         ORDER BY pd2.obs_date DESC
-         LIMIT 1
-     )
+		 SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+		 WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+		 ORDER BY pd2.obs_date DESC
+		 LIMIT 1
+	 )
 """
 
 		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
@@ -1169,7 +1169,145 @@ SELECT pd.mag
 			"order": [[ 2, "desc" ]],
 		}
 
+class ToOFollowupTable(tables.Table):
 
+	name_string = tables.TemplateColumn("<a href=\"{% url 'transient_detail' record.transient.slug %}\">{{ record.transient.name }}</a>",
+										verbose_name='Name',orderable=True,order_by='name')
+	ra_string = tables.Column(accessor='transient.CoordString.0',
+							  verbose_name='RA',orderable=True,order_by='transient.ra')
+	dec_string = tables.Column(accessor='transient.CoordString.1',
+							   verbose_name='DEC',orderable=True,order_by='transient.dec')
+	recent_mag = tables.Column(accessor='transient.recent_mag',
+							   verbose_name='Recent Mag',orderable=True)
+
+
+	#observation_window = tables.Column(accessor='observation_window',
+	#						  verbose_name='Observation Window',orderable=True,order_by='valid_start')
+
+	rise_time = tables.Column(verbose_name='Rise Time (UT)',orderable=False,accessor='transient.CoordString')
+	set_time = tables.Column(verbose_name='Set Time (UT)',orderable=False,accessor='transient.CoordString')
+	moon_angle = tables.Column(verbose_name='Moon Angle',orderable=False,accessor='transient.CoordString')
+	created_by = tables.Column(verbose_name='Added By',orderable=True,accessor='created_by')
+	comment = tables.Column(verbose_name='Comments',orderable=True,accessor='id')
+
+	transient_status_string = tables.TemplateColumn("""<div class="btn-group">
+<button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
+											<span id="{{ record.transient.id }}_status_name" class="dropbtn">{{ record.transient.status }}</span>
+										</button>
+										<ul class="dropdown-menu">
+											{% for status in all_transient_statuses %}
+													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.transient.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+											{% endfor %}
+										</ul>
+</div>""",
+										  verbose_name='Transient Status',orderable=True,order_by='status')
+
+	
+	followup_status_string = tables.TemplateColumn("""<div class="btn-group">
+<button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
+											<span id="{{ record.id }}_status_name" class="dropbtn">{{ record.status }}</span>
+										</button>
+										<ul class="dropdown-menu">
+											{% for status in all_followup_statuses %}
+													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="followupStatusChange" href="#">{{ status.name }}</a></li>
+											{% endfor %}
+										</ul>
+</div>""",
+										  verbose_name='Followup Status',orderable=True,order_by='status')
+
+    
+	def __init__(self,*args, too_resource=None, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		location = EarthLocation.from_geodetic(
+			too_resource[0].telescope.longitude*u.deg,too_resource[0].telescope.latitude*u.deg,
+			too_resource[0].telescope.elevation*u.m)
+		self.tel = Observer(location=location, timezone="UTC")
+		self.tme = Time(str(datetime.datetime.now()).split()[0])
+
+	def render_rise_time(self, value):
+		sc = SkyCoord('%s %s'%(value[0],value[1]),unit=(u.hourangle,u.deg))
+		target_rise_time = self.tel.target_rise_time(self.tme,sc,horizon=18*u.deg,which="previous")
+
+		if target_rise_time and target_rise_time.value == target_rise_time.value:
+			risetime = target_rise_time.isot.split('T')[-1].split('.')[0]
+		else:
+			risetime = None
+		
+		return risetime
+	
+	def render_set_time(self, value):
+		sc = SkyCoord('%s %s'%(value[0],value[1]),unit=(u.hourangle,u.deg))
+		target_set_time = self.tel.target_set_time(self.tme,sc,horizon=18*u.deg,which="previous")
+
+		if target_set_time and target_set_time.value == target_set_time.value:
+			settime = target_set_time.isot.split('T')[-1].split('.')[0]
+		else:
+			settime = None
+		
+		return settime
+
+	def render_moon_angle(self, value):
+		mooncoord = get_moon(self.tme)
+		sc = SkyCoord('%s %s'%(value[0],value[1]),unit=(u.hourangle,u.deg))
+		return('%.1f'%sc.separation(mooncoord).deg)
+	
+	def render_airmass(self, value):
+		from astroplan.plots import plot_airmass
+
+	def render_comment(self, value):
+
+		comments = Log.objects.filter(transient_followup__id=value)
+		comment_list = []
+		for c in comments:
+			comment_list += [c.comment]
+		if len(comment_list): return '; '.join(comment_list)
+		else: return ''
+
+		
+	def order_recent_mag(self, queryset, is_descending):
+
+		raw_query = """
+SELECT pd.mag
+   FROM YSE_App_transient t, YSE_App_transientphotdata pd, YSE_App_transientphotometry p
+   WHERE pd.photometry_id = p.id AND
+   YSE_App_transient.id = t.id AND
+   pd.id = (
+		 SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
+		 WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+		 ORDER BY pd2.obs_date DESC
+		 LIMIT 1
+	 )
+"""
+
+		queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
+		
+		return (queryset, True)
+		
+	class Meta:
+		model = TransientFollowup
+		fields = ('name_string','ra_string','dec_string','recent_mag',
+				  'rise_time','set_time','moon_angle','transient_status_string',
+				  'created_by')
+		template_name='YSE_App/django-tables2/bootstrap.html'
+		attrs = {
+			'th' : {
+				'_ordering': {
+					'orderable': 'sortable', # Instead of `orderable`
+					'ascending': 'ascend',	 # Instead of `asc`
+					'descending': 'descend'	 # Instead of `desc`
+				}
+			},
+			"columnDefs": [
+				{"type":"title-numeric","targets":1},
+				{"type":"title-numeric","targets":2},
+			],
+			'class': 'table table-bordered table-hover',
+			"order": [[ 2, "desc" ]],
+		}
+
+        
+		
 class YSEObsNightTable(tables.Table):
 
 	field_id = tables.Column(accessor="survey_field.field_id",verbose_name="Field ID",order_by="survey_field.field_id")
@@ -1192,7 +1330,7 @@ class YSEObsNightTable(tables.Table):
 	#									</button>
 	#									<ul class="dropdown-menu">
 	#										{% for status in all_followup_statuses %}
-    #												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+	#												<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 	#										{% endfor %}
 	#									</ul>
 #</div>""",

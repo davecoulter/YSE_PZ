@@ -301,6 +301,9 @@
 											<button style="margin-bottom:5px;" type="button" class="photdownload" onclick="window.open('{% url 'download_photometry' transient.slug %}')">
 												Download Photometry</span>
 											</button>
+											<button style="margin-bottom:5px;" type="button" class="ztfrequest">
+												Request ZTF Forced Phot</span>
+											</button>
 											</div>
 											<div class="box-body" id="lcplot"></div>
 										</div>
@@ -1791,6 +1794,17 @@
 	  				$(rows).html(htmlresponse)
 				});
 			});
+
+			$('.ztfrequest').on('click', function(event){
+
+				var url = "{% url 'ztf_forced_phot' transient.slug %}";
+
+				$.get(url).done(function(json){
+					var message = json.msg;
+					alert(message);
+				});
+			});
+
 
 			$('.plotSALT2').on('click', function(event){
 				//var spec_id = $(this).attr('spec_plot-id')
