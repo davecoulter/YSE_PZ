@@ -124,6 +124,7 @@ class ForcedPhot(CronJobBase):
         # we don't do extra work
         list_already_done = []
         for l in logs:
+            if l.transient is None: continue
             t = l.transient
             # these ones already have had photometry uploaded in the last 12 hours
             # assume it doesn't need to happen again
@@ -144,6 +145,7 @@ class ForcedPhot(CronJobBase):
         # now recover the data
         DataForYSEPZ = {'noupdatestatus':True}
         for l in logs:
+            if l.transient is None: continue
             if l.transient.name in list_already_done: continue
             print(l.transient.name)
             log_file_name = l.comment.split('=')[-2].split('\n')[0]
