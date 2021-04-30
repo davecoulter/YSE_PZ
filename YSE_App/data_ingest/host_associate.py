@@ -50,18 +50,18 @@ class YSE(CronJobBase):
             #get rid of objects that have panstarrs_objids already
             mask=[]
             for T in transients:
-                if hasattr(T.host,'panstarrs_objid'):
+                if T.host.panstarrs_objid:
                     mask.append(False)
                 else:
                     mask.append(True)
+            
+            #reduce transients using the mask
             transients = [T for i,T in enumerate(transients) if mask[i]]
 
-            #note that host.id or host.name isn't unique.
-            snName = ['SN'+str(j) for j in range(len(transients))]
-            
+
+            #construct a new mask
+            mask = []
             for i,T in enumerate(transients):
-                if mask[i] == False:
-                    continue
                 if T.host.redshift is not None or T.redshift is not None:
                    redshift = coalesce((T.host.redshift,T.redshift))
                    t_ra = np.pi*T.ra/180
@@ -70,36 +70,40 @@ class YSE(CronJobBase):
                    h_dec = np.pi*T.host.dec/180
                    
                    if (np.arccos(np.sin(t_dec)*np.sin(h_dec) + np.cos(t_dec)*np.cos(h_dec)*np.cos(abs(t_ra - h_ra)))*(3e5*redshift/73)/(pow(1.0 + redshift, 2)*1000) ) < 80:
-                       mask[i] = False
+                       mask.append(False)
                    else:
+                       mask.append(True)
                        continue
+                mask.append(True)
                 continue
             
- 
-            RA = [T.ra for i,T in enumerate(transients) if mask[i]]
-            DEC = [T.dec for i,T in enumerate(transients) if mask[i]]
+            #reduce transients using the mask
+            transients = [T for i,T in enumerate(transients) if mask[i]]
+            
+            #Now get the coordinates and make up a unique temp name
+            #for all the transients in order
+            RA = [T.ra for i,T in enumerate(transients)]
+            DEC = [T.dec for i,T in enumerate(transients)]
             snCoord = [SkyCoord(ra*u.deg, dec*u.deg, frame='icrs') for ra,dec in zip(RA,DEC)] 
             
-            snName = snName[0:2]
-            snCoord = snCoord[0:2]
+            snName = ['SN'+str(j) for j in range(len(transients))]
+            
             
             hosts = getTransientHosts(snName, snCoord, verbose=True, starcut='normal', gradientAscent=False)
             
-            #pd.to_csv('hosts.csv',hosts)
-            
-            j=0#this counts the number of hosts we expect we might have
+            #hosts is a df that may or may not have the hosts, so 
+            #we can use the fact that the names are ordered to
+            #find which ones we got back, and place them correctly
             for i,T in enumerate(transients):
-                if mask[i] == False: #this skips over those we done have
+            
+                if len(hosts[hosts['TransientName']=='SN'+str(i)]) ==0:
                     continue
-                if len(hosts[hosts['TransientName']=='SN'+str(j)]) ==0:
-                    j+=1
-                    continue
-                T.host.ra = hosts[hosts['TransientName']=='SN'+str(j)]['raMean'].values[0]
-                T.host.dec = hosts[hosts['TransientName']=='SN'+str(j)]['decMean'].values[0]
-                T.host.panstarrs_objid = hosts[hosts['TransientName']=='SN'+str(j)]['objID'].values[0]
+
+                T.host.ra = hosts[hosts['TransientName']=='SN'+str(i)]['raMean'].values[0]
+                T.host.dec = hosts[hosts['TransientName']=='SN'+str(i)]['decMean'].values[0]
+                T.host.panstarrs_objid = hosts[hosts['TransientName']=='SN'+str(i)]['objID'].values[0]
                 T.host.save()
-                j+=1
-                
+
     
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
