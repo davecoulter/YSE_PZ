@@ -21,6 +21,12 @@ import pylab
 import json
 import requests
 
+from photoz_helper import serial_objID_search
+from photoz_helper import get_common_constraints_columns
+from photoz_helper import load_lupton_model
+from photoz_helper import preprocess
+from photoz_helper import evaluate
+
 try: # Python 3.x
     from urllib.parse import quote as urlencode
     from urllib.request import urlretrieve
@@ -35,8 +41,6 @@ except ImportError:  # Python 2.x
     
 import sfdmap #https://github.com/kbarbary/sfdmap
 
-from photoz_helper import photo_z_cone
-
 class YSE(CronJobBase):
     RUN_EVERY_MINS = 30
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
@@ -45,60 +49,49 @@ class YSE(CronJobBase):
     def do(self):
         try:
             nowdate = datetime.datetime.utcnow() - datetime.timedelta(1)
-            from django.db.models import Q #HAS To Remain Here, I dunno why
-            print('Entered the photo_z Pan-Starrs cron')        
+            from django.db.models import Q #HAS To Remain Here     
             #save time b/c the other cron jobs print a time for completion
-                
-            #m = sfdmap.SFDMap(mapdir=djangoSettings.STATIC_ROOT+'/sfddata-master')
-            model_filepath = os.path.join(djangoSettings.STATIC_ROOT,'MLP_lupton.hdf5')
             
             transients = Transient.objects.filter(Q(host__isnull=False))
+            mask = []
+            objIDs = []
+            key = {}
+            for T in transients:
+                if T.host.panstarrs_objid:
+                    mask.append(True)
+                    objIDs.append(T.host.panstarrs_objid)
+                    key[T.host.panstarrs_objid] = T
+                else:
+                    mask.append(False)
+                    
+            print('photoz len(objids): ',len(objIDs))
+            if len(objIDs) ==0:
+                #print('return nothing since nothing in objIDs')
+                #since nothing in objIDs, no search, so we are done
+                return
+            constraints, columns = get_common_constraints_columns()
+            DFs = serial_objID_search(objIDs,columns=columns,**constraints)
 
-            mymodel = tf.keras.models.load_model(model_filepath,custom_objects={'LeakyReLU':tf.keras.layers.LeakyReLU})
-        
-            RA = [T.host.ra for T in transients]
-            DEC = [T.host.dec for T in transients]
+            DF = pd.concat(DFs)
             
-            data = []
-            print('made it to the cone search step')
-            for i,ra,dec in zip(range(len(RA)),RA,DEC):    
-                X = photo_z_cone(ra,dec,search=10.0,sfddata_path=djangoSettings.STATIC_ROOT+'/sfddata-master') #given ra return X
-                data.append(X.astype(np.float32).reshape(31))
-                print(i)
-                if i >5:
-                    break #debug
-            #turn that into a numpy array
-            data = np.array(data)
-            transients = transients[0:len(data)] #debug
-            mask = np.logical_not(np.any(np.isnan(data),axis=1))
-            #now evaluate in bulk
-            posterior = mymodel(data[mask],training=False).numpy()
-            ####Now define some stuff I forgot about
-            NB_BINS=360
-            ZMIN=0.0
-            ZMAX=1.0
-            BINS_SIZE = (ZMAX-ZMIN)/NB_BINS
-            range_z = np.linspace(ZMIN,ZMAX, NB_BINS+1)[:NB_BINS]
-            print('mask: ',mask)
-            point_estimates = np.sum(range_z*posterior,1)
-            error = np.ones(len(point_estimates))
-            for i in range(len(point_estimates)):
-                error[i] = np.std(np.random.choice(a=range_z,size=1000,p=posterior[i,:]/np.sum(posterior[i,:]),replace=True)) #this could be parallized i'm sure
-            j=0 #skip masked transients
-            for i,T in enumerate(transients):
-                if not(mask[i]): #skip over hosts we couldnt find
-            	    continue
-            	
-                #T = transient_dictionary[value]
-                #if not(T.host.photo_z_lutpon):
-                if True:
-                    print(point_estimates[j])
-                    print(error[j])
-                    T.host.photo_z_lupton = point_estimates[j]
-                    T.host.photo_z_err_lupton = error[j]
-                    j+=1
+            dust_PATH = os.path.join(djangoSettings.STATIC_ROOT,'sfddata-master/')
+            model_PATH = os.path.join(djangoSettings.STATIC_ROOT,'MLP_lupton.hdf5')
+            
+            mymodel, range_z = load_lupton_model(model_PATH)
+            
+            X = preprocess(DF,dust_PATH)
+            
+            posteriors, point_estimates, errors  = evaluate(X,mymodel,range_z)
+            
+            objids_returned = DF['objID'].values
 
-                    #T.host.save() #takes a long time and then my query needs to be reset which is also a long time
+            for j,objID in enumerate(objids_returned):                
+                T = key[int(objID)]
+                T.host.photo_z_internal = point_estimates[j]
+                T.host.photo_z_err_internal = errors[j]
+                #T.host.save() #!!!
+
+
     
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -106,5 +99,3 @@ class YSE(CronJobBase):
             #html_msg = """Photo-z cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno)
             #sendemail(from_addr, user.email, subject, html_msg,
             #          djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
-YSE_instance = YSE()
-YSE_instance.do()

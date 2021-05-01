@@ -111,5 +111,3 @@ class YSE(CronJobBase):
             #html_msg = """host associate cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno)
             #sendemail(from_addr, user.email, subject, html_msg,
             #          djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
-YSE_instance = YSE()
-YSE_instance.do()
