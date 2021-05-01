@@ -89,7 +89,7 @@ class YSE(CronJobBase):
                 T = key[int(objID)]
                 T.host.photo_z_internal = point_estimates[j]
                 T.host.photo_z_err_internal = errors[j]
-                #T.host.save() #!!!
+                T.host.save()
 
 
     
