@@ -14,7 +14,7 @@ import os
 from configparser import RawConfigParser
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-configFile = os.path.join(__location__, 'public_settings.ini')
+configFile = os.path.join(__location__, 'settings.ini')
 
 config = RawConfigParser()
 config.read(configFile)
@@ -31,7 +31,6 @@ SECRET_KEY = 'f9zh73k2z&-p*k^fzj!sydk03zwlxdm%*13rd9t$*n0i6*sr6%'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(config.get('site_settings', 'IS_DEBUG'))
-DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -187,8 +186,8 @@ SMTP_LOGIN = config.get('SMTP_provider', 'SMTP_LOGIN')
 SMTP_PASSWORD = config.get('SMTP_provider', 'SMTP_PASSWORD')
 SMTP_HOST = config.get('SMTP_provider', 'SMTP_HOST')
 SMTP_PORT = config.get('SMTP_provider', 'SMTP_PORT')
-#LCOGTUSER = config.get('main', 'lcogtuser')
-#LCOGTPASS = config.get('main', 'lcogtpass')
+LCOGTUSER = config.get('main', 'lcogtuser')
+LCOGTPASS = config.get('main', 'lcogtpass')
 
 KEPLER_API_ENDPOINT = "http://api.keplerscience.org/is-k2-observing"
 
