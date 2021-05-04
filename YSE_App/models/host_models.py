@@ -69,6 +69,7 @@ class Host(BaseModel):
 	photo_z_err_PSCNN = models.FloatField(null=True, blank=True)
 	photo_z_source = models.CharField(max_length=64, null=True, blank=True)
 	transient_host_rank = models.IntegerField(null=True, blank=True)
+	panstarrs_objid = models.BigIntegerField(null=True, blank=True)
 
 	def HostString(self):
 		ra_str, dec_str = GetSexigesimalString(self.ra, self.dec)
