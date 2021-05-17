@@ -39,16 +39,16 @@ class FollowupStatusViewSet(viewsets.ReadOnlyModelViewSet):
 
 ### `SurveyField` Filter Set ###
 class SurveyFieldFilter(django_filters.FilterSet):
-	field_id = django_filters.Filter(name="field_id")
-	obs_group = django_filters.Filter(name="obs_group__name")
+	field_id = django_filters.Filter(field_name="field_id")
+	obs_group = django_filters.Filter(field_name="obs_group__name")
 	class Meta:
 		model = SurveyField
 		fields = ()
 
 ### `SurveyFieldMSB` Filter Set ###
 class SurveyFieldMSBFilter(django_filters.FilterSet):
-	name = django_filters.Filter(name="name")
-	active = django_filters.Filter(name="active")
+	name = django_filters.Filter(field_name="name")
+	active = django_filters.Filter(field_name="active")
 	class Meta:
 		model = SurveyFieldMSB
 		fields = ('name','active')
@@ -71,13 +71,13 @@ class SurveyFieldMSBViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet): #v
     
 ### `Transient` Filter Set ###
 class SurveyObsFilter(django_filters.FilterSet):
-	status_in = django_filters.BaseInFilter(name="status__name")#, lookup_expr='in')
-	obs_mjd_gte = django_filters.Filter(name="obs_mjd", lookup_expr='gte')
-	obs_mjd_lte = django_filters.Filter(name="obs_mjd", lookup_expr='lte')
-	mjd_requested_gte = django_filters.Filter(name="mjd_requested", lookup_expr='gte')
-	mjd_requested_lte = django_filters.Filter(name="mjd_requested", lookup_expr='lte')
-	survey_field = django_filters.BaseInFilter(name="survey_field__field_id")
-	obs_group = django_filters.BaseInFilter(name="survey_field__obs_group__name")
+	status_in = django_filters.BaseInFilter(field_name="status__name")#, lookup_expr='in')
+	obs_mjd_gte = django_filters.Filter(field_name="obs_mjd", lookup_expr='gte')
+	obs_mjd_lte = django_filters.Filter(field_name="obs_mjd", lookup_expr='lte')
+	mjd_requested_gte = django_filters.Filter(field_name="mjd_requested", lookup_expr='gte')
+	mjd_requested_lte = django_filters.Filter(field_name="mjd_requested", lookup_expr='lte')
+	survey_field = django_filters.BaseInFilter(field_name="survey_field__field_id")
+	obs_group = django_filters.BaseInFilter(field_name="survey_field__obs_group__name")
 	
 	class Meta:
 		model = SurveyObservation
@@ -393,15 +393,15 @@ class TelescopeViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 
 ### `Transient` Filter Set ###
 class TransientFilter(django_filters.FilterSet):
-	created_date_gte = django_filters.DateTimeFilter(name="created_date", lookup_expr='gte')
-	modified_date_gte = django_filters.DateTimeFilter(name="modified_date", lookup_expr='gte')
-	status_in = django_filters.BaseInFilter(name="status__name")#, lookup_expr='in')
-	ra_gte = django_filters.Filter(name="ra", lookup_expr='gte')
-	ra_lte = django_filters.Filter(name="ra", lookup_expr='lte')
-	dec_gte = django_filters.Filter(name="dec", lookup_expr='gte')
-	dec_lte = django_filters.Filter(name="dec", lookup_expr='lte')
-	tag_in = django_filters.BaseInFilter(name="tags__name")
-	name = django_filters.Filter(name="name")
+	created_date_gte = django_filters.DateTimeFilter(field_name="created_date", lookup_expr='gte')
+	modified_date_gte = django_filters.DateTimeFilter(field_name="modified_date", lookup_expr='gte')
+	status_in = django_filters.BaseInFilter(field_name="status__name")#, lookup_expr='in')
+	ra_gte = django_filters.Filter(field_name="ra", lookup_expr='gte')
+	ra_lte = django_filters.Filter(field_name="ra", lookup_expr='lte')
+	dec_gte = django_filters.Filter(field_name="dec", lookup_expr='gte')
+	dec_lte = django_filters.Filter(field_name="dec", lookup_expr='lte')
+	tag_in = django_filters.BaseInFilter(field_name="tags__name")
+	name = django_filters.Filter(field_name="name")
 
 	class Meta:
 		model = Transient

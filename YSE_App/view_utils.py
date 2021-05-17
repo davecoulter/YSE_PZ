@@ -778,7 +778,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 	ax.xaxis[0].major_label_overrides = overridedict
 	
 	if salt2:
-		model = sncosmo.Model(source='salt2')
+		model = sncosmo.Model(source='salt3')
 		if transient.redshift:
 			model.set(z=transient.redshift); fitparams = ['t0', 'x0', 'x1', 'c']
 		elif transient.host and transient.host.redshift:
@@ -1799,7 +1799,7 @@ def get_hst_image(request,transient_id):
 	if len(hst.jpglist):
 		jpegurldict = {"jpegurl":hst.jpglist,
 					   "fitsurl":fitsurllist,#list(hst.obstable["dataURL"]),
-					   "obsdate":list(Time(hst.obstable["t_min"],format='mjd',out_subfmt='date').iso),
+					   "obsdate":list(Time(hst.obstable["t_min"],format='mjd').iso), #,out_subfmt='date'
 					   "filters":list(hst.obstable["filters"]),
 					   "inst":list(hst.obstable["instrument_name"])}
 	else:
