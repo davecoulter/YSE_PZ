@@ -296,7 +296,7 @@
 											</div>
 											&ensp;&nbsp;<div class="btn-group">
 											<button style="margin-bottom:5px;" type="button" class="plotSALT2" id="salt2plot">
-												Show SALT2 Fit</span>
+												Show SALT3 Fit</span>
 											</button>
 											<button style="margin-bottom:5px;" type="button" class="photdownload" onclick="window.open('{% url 'download_photometry' transient.slug %}')">
 												Download Photometry</span>
@@ -930,7 +930,7 @@
 								</div>
 								&ensp;&nbsp;<div class="btn-group">
 									<button style="margin-bottom:5px;" type="button" class="plotSALT2flux" id="salt2fluxplot">
-									Show SALT2 Fit</span>
+									Show SALT3 Fit</span>
 									</button>
 									</div>
 								<td><button type="button" class="plotFlux">Show Flux Plot</button></td>
@@ -1822,7 +1822,7 @@
 						var rows = $("#lcplot");
 	  					$(rows).html(htmlresponse);
 
-	  					$(".plotSALT2").html("Hide SALT2 Fit");
+	  					$(".plotSALT2").html("Hide SALT3 Fit");
 	  				});
 	  			} else {
 	  				url = "{% url 'salt2plot' transient.id 0 %}";
@@ -1833,7 +1833,7 @@
 						var rows = $("#lcplot");
 	  					$(rows).html(htmlresponse);
 
-	  					$(".plotSALT2").html("Show SALT2 Fit");
+	  					$(".plotSALT2").html("Show SALT3 Fit");
 	  				});
 				}
 			});
@@ -1854,7 +1854,7 @@
 						var rows = $("#lcfluxplot");
 	  					$(rows).html(htmlresponse);
 
-	  					$(".plotSALT2flux").html("Hide SALT2 Fit");
+	  					$(".plotSALT2flux").html("Hide SALT3 Fit");
 	  				});
 	  			} else {
 	  				url = "{% url 'salt2fluxplot' transient.id 0 %}";
@@ -1865,7 +1865,7 @@
 						var rows = $("#lcfluxplot");
 	  					$(rows).html(htmlresponse);
 
-	  					$(".plotSALT2flux").html("Show SALT2 Fit");
+	  					$(".plotSALT2flux").html("Show SALT3 Fit");
 	  				});
 				}
 			});

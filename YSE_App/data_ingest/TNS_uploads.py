@@ -658,6 +658,33 @@ class processTNS:
 		else: nsn = 0
 		return nsn
 
+	def GetRecentMissingEvents(self,ndays=None,doTNS=True):
+		from YSE_App.models import Transient
+		#date_format = '%Y-%m-%d'
+		datemin = (datetime.now() - timedelta(days=ndays)).isoformat() #strftime(date_format)
+		search_obj=[("ra",""), ("dec",""), ("radius",""), ("units",""),
+					("objname",""), ("internal_name",""),("public_timestamp",datemin)]
+		response=search(self.tnsapi, search_obj, self.tnsapikey)
+		json_data = format_to_json(response.text)
+
+		objs,ras,decs = [],[],[]
+		for jd in json_data['data']['reply']:
+			if len(Transient.objects.filter(name=jd['objname'])): continue
+			TNSGetSingle = [("objname",jd['objname']),
+							("photometry","0"),
+							("spectra","0")]
+
+			response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey)
+			json_data_single = format_to_json(response_single.text)
+
+			objs.append(json_data_single['data']['reply']['objname'])
+			ras.append(json_data_single['data']['reply']['ra'])
+			decs.append(json_data_single['data']['reply']['dec'])
+
+		if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=self.redoned,doTNS=doTNS)
+		else: nsn = 0
+		return nsn
+
 	
 	def ProcessTNSEmails(self):
 		body = ""
@@ -775,6 +802,7 @@ class processTNS:
 		TNSData = []
 		json_data = []
 		total_objs = 0
+
 		for j in range(len(objs)):
 			if objs[j].startswith('20'):
 				if doTNS:
@@ -1229,7 +1257,7 @@ class TNS_recent(CronJobBase):
 		tnsproc.ndays = float(options.tns_recent_ndays)
 		try:
 			tnsproc.noupdatestatus = True
-			nsn = tnsproc.GetRecentEvents(ndays=tnsproc.ndays)
+			nsn = tnsproc.GetRecentMissingEvents(ndays=tnsproc.ndays)
 		except Exception as e:
 			exc_type, exc_obj, exc_tb = sys.exc_info()
 			nsn = 0

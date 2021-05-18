@@ -35,8 +35,10 @@ def iter_all_strings():
 		for s in itertools.product(ascii_lowercase, repeat=size):
 			yield "".join(s)
 
-psst_image_url = "https://star.pst.qub.ac.uk/sne/ps13pi/site_media/images/data/ps13pi"
-yse_image_url = "https://star.pst.qub.ac.uk/sne/ps1yse/site_media/images/data/ps1yse"
+#psst_image_url = "https://star.pst.qub.ac.uk/sne/ps13pi/site_media/images/data/ps13pi"
+#yse_image_url = "https://star.pst.qub.ac.uk/sne/ps1yse/site_media/images/data/ps1yse"
+psst_image_url = "https://psweb.mp.qub.ac.uk/sne/ps13pi/site_media/images/data/ps13pi"
+yse_image_url = "https://psweb.mp.qub.ac.uk/sne/ps1yse/site_media/images/data/ps1yse"
 
 try:
   from dustmaps.sfd import SFDQuery
@@ -601,8 +603,9 @@ class YSE(CronJobBase):
 		nsn = 0
 
 		for i,s in enumerate(summary[transient_idx:transient_idx+max_transients]):
-			
-			r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'])
+
+			r = requests.get(url='https://psweb.mp.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'])
+			#r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'])
 
 			if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
 			try:
@@ -1079,9 +1082,11 @@ class YSE_Stack(CronJobBase):
 			else: stackname = None
 
 			if naming_convention == 'stack':
-				r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1ysestack/psdb/lightcurveforced/%s'%s['id'])
+				#r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1ysestack/psdb/lightcurveforced/%s'%s['id'])
+				r = requests.get(url='https://psweb.mp.qub.ac.uk/sne/ps1ysestack/psdb/lightcurveforced/%s'%s['id'])
 			else:
-				r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'])
+				#r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'])
+				r = requests.get(url='https://psweb.mp.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'])
 				
 			if r.status_code != 200: raise RuntimeError('problem accessing forcedphot link %s')
 			try:

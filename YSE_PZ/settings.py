@@ -62,6 +62,7 @@ CRON_CLASSES = [
 	'YSE_App.data_ingest.Photo_Z.YSE',
 	'YSE_App.data_ingest.SDSS_Photo_Z.YSE',
 	'YSE_App.data_ingest.PS1_cutouts.YSE',
+	'YSE_App.data_ingest.host_associate.YSE',
 	'YSE_App.data_ingest.PS1_PhotoZ.YSE',
 	'YSE_App.data_ingest.Apply_Tags.Tags',
 	'YSE_App.data_ingest.YSE_observations.SurveyObs',

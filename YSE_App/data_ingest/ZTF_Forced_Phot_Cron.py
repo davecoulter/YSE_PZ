@@ -99,9 +99,9 @@ class ForcedPhot(CronJobBase):
                                 help='YSE-PZ password (default=%default)')
 
             parser.add_argument('--dbemail', default=config.get('main','dbemail'), type=str,
-							    help='database login, if post=True (default=%default)')
+                                help='database login, if post=True (default=%default)')
             parser.add_argument('--dbemailpassword', default=config.get('main','dbemailpassword'), type=str,
-							    help='email password, if post=True (default=%default)')
+                                help='email password, if post=True (default=%default)')
             
             parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
                               help='SMTP login (default=%default)')
@@ -124,6 +124,7 @@ class ForcedPhot(CronJobBase):
         # we don't do extra work
         list_already_done = []
         for l in logs:
+            if l.transient is None: continue
             t = l.transient
             # these ones already have had photometry uploaded in the last 12 hours
             # assume it doesn't need to happen again
@@ -144,13 +145,14 @@ class ForcedPhot(CronJobBase):
         # now recover the data
         DataForYSEPZ = {'noupdatestatus':True}
         for l in logs:
+            if l.transient is None: continue
             if l.transient.name in list_already_done: continue
             print(l.transient.name)
             log_file_name = l.comment.split('=')[-2].split('\n')[0]
 
             try:
                 output_files = ztf.get_ztf_fp(
-                    log_file_name, directory_path='/tmp',
+                    log_file_name, directory_path='/tmp/forced_phot_out',
                     source_name=l.transient.name,verbose=True)
             except Exception as e:
                 print(e)
@@ -162,7 +164,11 @@ class ForcedPhot(CronJobBase):
                 continue
             
             # first we have to figure out how to parse these output files
-            data = at.Table.read('/tmp/%s/%s_lc.txt'%(l.transient.name,l.transient.name),format='ascii',header_start=0)
+            try:
+                data = at.Table.read('/tmp/forced_phot_out/%s/%s_lc.txt'%(l.transient.name,l.transient.name),format='ascii',header_start=0)
+            except:
+                print('No LC data for %s'%l.transient.name)
+                continue
 
             # then dump everything in a dictionary
             DataForYSEPZ[l.transient.name] = {'name':l.transient.name,
@@ -178,18 +184,20 @@ class ForcedPhot(CronJobBase):
             
             # loop over the photometry
             for i,d in enumerate(data):
-                mag = -2.5*np.log10(d['forcediffimfluxap,'])+d['zpdiff,']
-                mag_err = 1.086*d['forcediffimfluxuncap,']/d['forcediffimfluxap,']
+                if d['forcediffimfluxap,'] == 'null': continue
+                
+                mag = -2.5*np.log10(float(d['forcediffimfluxap,']))+float(d['zpdiff,'])
+                mag_err = 1.086*float(d['forcediffimfluxuncap,'])/float(d['forcediffimfluxap,'])
                 if mag != mag: mag = None; mag_err = None
 
-                PhotDataDict = {'obs_date':jd_to_date(d['jd,']),
+                PhotDataDict = {'obs_date':jd_to_date(float(d['jd,'])),
                                 'mag':mag,
                                 'mag_err':mag_err,
                                 'band':'%s-ZTF'%d['filter,'][-1],
                                 'data_quality':0,
                                 'diffim':1,
-                                'flux':d['forcediffimfluxap,']*10**(-0.4*(d['zpdiff,']-27.5)),
-                                'flux_err':d['forcediffimfluxuncap,']*10**(-0.4*(d['zpdiff,']-27.5)),
+                                'flux':float(d['forcediffimfluxap,'])*10**(-0.4*(float(d['zpdiff,'])-27.5)),
+                                'flux_err':float(d['forcediffimfluxuncap,'])*10**(-0.4*(float(d['zpdiff,'])-27.5)),
                                 'flux_zero_point':27.5,
                                 'forced':1,
                                 'discovery_point':0}
