@@ -936,15 +936,15 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		iPlotUlimFlux3 = mags_ulim == mags_ulim
 		upperlimmag = np.append(upperlimmag,mags_ulim[iPlotUlimFlux3])
 		upperlimmjd = np.append(upperlimmjd,mjds[iPlotUlimFlux][iPlotUlimFlux2][iPlotUlimFlux3].tolist())
-        
-        
+		
+		
 		source = ColumnDataSource(data=dict(x=mjds[iPlot].tolist(),
 											y=mags[iPlot].tolist(),
 											date=obs_dates_str[iPlot].tolist(),
 											data_quality=data_quality[iPlot].tolist(),
 											magsys=mag_sys[iPlot].tolist(),
 											band=['%s - %s'%(inn,bn)]*len(mjds[iPlot].tolist())))
-            
+			
 		p = plotmethod('x','y',source=source,
 				   color=color,size=size, muted_alpha=0.2)
 		g1_hover = HoverTool(renderers=[p],
@@ -997,7 +997,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 		ax.x_range=Range1d(minmjd,np.max(mjds)+10)
 		ax.extra_x_ranges = {"dateax": Range1d(minmjd,np.max(mjds)+10)}
 		ax.y_range=Range1d(np.max(np.append(mags[mags != None],upperlimmag))+0.25,np.min(mags[mags != None])-0.5)
-        
+		
 	#ax.y_range=Range1d(np.max(mags[mags != None])+0.25,np.min(mags[mags != None])-0.5)
 	ax.add_layout(LinearAxis(x_range_name="dateax"), 'above')
 
@@ -1397,21 +1397,20 @@ def spectrumplot(request, transient_id):
 		wave = list(spec.values_list('wavelength',flat=True))
 		flux = list(spec.values_list('flux',flat=True))
 
-		#figure is a function in the bokeh module
-		#HELLO
-		#wave,flux = [],[]
-		#for s in spec:
-		#	wave += [s.wavelength]
-		#	flux += [s.flux]
+		
 		flux = np.array(flux)[np.argsort(wave)]
 		wave = np.sort(wave)
-			
+
+		wave2 = np.arange(2000,10000,5)
+		flux = np.interp(wave2,wave,flux)
+		wave = wave2
+		
 		spec = Table([wave,flux],names=['wave','flux'])			
 		spectra[i] = spec
 		spectra[i].mjd = date_to_mjd(spectrum.obs_date.isoformat().split('+')[0])
 		n_pix = len(wave)
 		sort_flux = np.sort(flux)
-
+		#import pdb; pdb.set_trace()
 		if len(flux):
 			minval = sort_flux[round(n_pix*0.05)]
 			maxval = sort_flux[round(n_pix*0.95)]
@@ -1647,7 +1646,7 @@ def rise_time(request,transient_id,obs_id):
 
 	return JsonResponse(risedict)
 
-    
+	
 def set_time(request,transient_id,obs_id):
 
 	def set_func(transient_id,obs_id,setdict):
@@ -1684,7 +1683,7 @@ def set_time(request,transient_id,obs_id):
 
 	return JsonResponse(setdict)
 
-        
+		
 def moon_angle(request,transient_id,obs_id):
 	transient = Transient.objects.filter(id=transient_id)[0]
 	coords = transient.CoordString()
