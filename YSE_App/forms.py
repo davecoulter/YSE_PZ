@@ -240,7 +240,7 @@ class SpectrumUploadForm(ModelForm):
 			required=False)
 	
 	spec_instruments = [
-		'SED-Machine','P200-TSPEC',
+		'SED-Machine','P200-TSPEC','SPRAT',
 		'LFC','DBSP','lay - MIKE','lay - LDSS-3',
 		'aade - MagE','aade - Boller & Chivens',
 		'WFC3','STIS','IRS','B&C-Asi-1.22m',
