@@ -23,7 +23,7 @@ coreschema==0.0.4
 cryptography==3.4.7
 cycler==0.10.0
 decorator==5.0.8
-Django==2.0.4
+Django==2.2.24
 django-autoslug==1.9.8
 django-bootstrap3==10.0.1
 django-common-helpers==0.9.2
