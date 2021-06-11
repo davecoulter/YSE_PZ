@@ -1,3 +1,4 @@
+
 import requests
 import time
 import imaplib
@@ -24,7 +25,6 @@ from astropy.coordinates import SkyCoord
 from astropy.coordinates import ICRS, Galactic, FK4, FK5
 from astropy.time import Time
 import coreapi
-import wget
 from urllib.parse import quote,unquote
 import requests
 from requests.auth import HTTPBasicAuth
@@ -45,6 +45,8 @@ from django_cron import CronJobBase, Schedule
 from django.conf import settings as djangoSettings
 import argparse, configparser
 import signal
+from astro_ghost.ghostHelperFunctions import *
+
 
 reg_obj = "https://www.wis-tns.org/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -106,8 +108,8 @@ class processTNS:
                             help='if set, scrape TNS pages to update events already in YSE_PZ')
         parser.add_argument('--updatefromZTF', default=False, action="store_true",
                             help='if set, update photometry from ZTF')
-        parser.add_argument('--redoned', default=False, action="store_true",
-                            help='if set, repeat NED search to find host matches (slow-ish)')
+        parser.add_argument('--redohost', default=False, action="store_true",
+                            help='if set, repeat search to find host matches (slow-ish)')
         parser.add_argument('--nedradius', default=5, type=float,
                             help='NED search radius, in arcmin')
         parser.add_argument('--ndays', default=None, type=int,
@@ -448,8 +450,11 @@ class processTNS:
             Spectrum = {}
             SpecData = {}
             os.system('rm spec_tns_upload.txt')
+            headers={'User-Agent':'tns_marker{"tns_id":'+str(self.tns_user_id)+', "type":"user",'
+             ' "name":"'+self.tns_user_name+'"}'}
+
             try:
-                dlfile = requests.get(s).text
+                dlfile = requests.get(s,headers=headers).text
             except: continue
             with open('spec_tns_upload.txt','w') as fout:
                 print('# wavelength flux',file=fout)
@@ -517,6 +522,19 @@ class processTNS:
                       
         return SpecDictAll
 
+    def getGHOSTData(self,jd,sc,ghost_host):
+        hostdict = {}; hostcoords = ''
+        hostdict = {'name':ghost_host['objName'].to_numpy()[0],'ra':ghost_host['raMean'].to_numpy()[0],
+                    'dec':ghost_host['decMean'].to_numpy()[0]}
+
+        hostcoords = f"ra={hostdict['ra']:.7f}, dec={hostdict['dec']:.7f}\n"
+        if 'photo_z' in ghost_host.keys():
+            hostdict['photo_z_internal'] = ghost_host['photo_z'].to_numpy()[0]
+        if 'NED_redshift' in ghost_host.keys() and ghost_host['NED_redshift'].to_numpy()[0] == ghost_host['NED_redshift'].to_numpy()[0]:
+            hostdict['redshift'] = ghost_host['NED_redshift'].to_numpy()[0]
+            
+        return hostdict,hostcoords
+        
     def getNEDData(self,jd,sc,ned_table):
 
         gal_candidates = 0
@@ -588,7 +606,7 @@ class processTNS:
                 cosmo = FlatLambdaCDM(70,0.3)
                 if sep*60/cosmo.arcsec_per_kpc_proper(z).value < 100:
                     hostdict = {'name':name,'ra':ra,'dec':dec,'redshift':z}
-            hostcoords += 'ra=%.7f, dec=%.7f\n'%(ra,dec)
+            hostcoords += f'ra={ra:.7f}, dec={dec:.7f}\n'
 
         # if this didn't work, let's get the nearest potential host
         if 'name' not in hostdict.keys():
@@ -634,8 +652,8 @@ class processTNS:
                 objs.append(transient['name'])
                 ras.append(transient['ra'])
                 decs.append(transient['dec'])
-        if self.redoned: nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=True,doTNS=doTNS)
-        else: nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=False,doTNS=doTNS)
+        if self.redohost: nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=True,doEBV=True,doTNS=doTNS)
+        else: nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=False,doEBV=False,doTNS=doTNS)
         return nsn
 
     def GetRecentEvents(self,ndays=None,doTNS=True):
@@ -659,7 +677,7 @@ class processTNS:
             ras.append(json_data_single['data']['reply']['ra'])
             decs.append(json_data_single['data']['reply']['dec'])
 
-        if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=self.redoned,doTNS=doTNS)
+        if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=self.redohost,doEBV=self.redohost,doTNS=doTNS)
         else: nsn = 0
         return nsn
 
@@ -686,7 +704,7 @@ class processTNS:
             ras.append(json_data_single['data']['reply']['ra'])
             decs.append(json_data_single['data']['reply']['dec'])
 
-        if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doNED=self.redoned,doTNS=doTNS)
+        if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=self.redohost,doEBV=self.redohost,doTNS=doTNS)
         else: nsn = 0
         return nsn
 
@@ -760,19 +778,57 @@ class processTNS:
         else: nsn = 0
         return nsn
 
-    def GetAndUploadAllData(self,objs,ras,decs,doNED=True,doTNS=True):
+    def GetAndUploadAllData(self,objs,ras,decs,doGHOST=True,doEBV=True,doTNS=True): #doNED=True
         TransientUploadDict = {}
         assert len(ras) == len(decs)
-        
-        if type(ras[0]) == float:
-            scall = SkyCoord(ras,decs,frame="fk5",unit=u.deg)
-        else:
-            scall = SkyCoord(ras,decs,frame="fk5",unit=(u.hourangle,u.deg))
 
         ebvall,nedtables = [],[]
         ebvtstart = time.time()
         ebv_timeout,ned_timeout = False,False
-        if doNED:
+        if doGHOST:
+            
+            def handler(signum, frame):
+                raise Exception("timeout!")
+                
+            signal.signal(signal.SIGALRM, handler)
+            try:
+                signal.alarm(600)
+                if type(ras[0]) == float:
+                    scall = [SkyCoord(r,d,unit=u.deg) for r,d in zip(ras,decs)]
+                else:
+                    scall = [SkyCoord(r,d,unit=(u.hourangle,u.deg)) for r,d in zip(ras,decs)]
+                
+                ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='normal', ascentMatch=False)
+                os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
+            except:
+                print('GHOST timeout!')
+                ned_timeout = True
+
+
+            if type(ras[0]) == float:
+                scall = SkyCoord(ras,decs,frame="fk5",unit=u.deg)
+            else:
+                scall = SkyCoord(ras,decs,frame="fk5",unit=(u.hourangle,u.deg))
+            
+            signal.signal(signal.SIGALRM, handler)
+            try:
+                signal.alarm(600)
+                ebvall = sfd(scall)*0.86
+            except:
+                print('MW E(B-V) timeout!')
+                ebv_timeout = True
+
+                        
+            print('E(B-V)/GHOST time: %.1f seconds'%(time.time()-ebvtstart))
+
+            signal.alarm(0)
+
+        if doEBV and not doGHOST:
+            if type(ras[0]) == float:
+                scall = SkyCoord(ras,decs,frame="fk5",unit=u.deg)
+            else:
+                scall = SkyCoord(ras,decs,frame="fk5",unit=(u.hourangle,u.deg))
+                        
             def handler(signum, frame):
                 raise Exception("timeout!")
             signal.signal(signal.SIGALRM, handler)
@@ -783,21 +839,21 @@ class processTNS:
                 print('MW E(B-V) timeout!')
                 ebv_timeout = True
 
-            signal.signal(signal.SIGALRM, handler)              
-            try:
-                signal.alarm(600)
-                for sc in scall:
-                    try:
-                        ned_region_table = \
-                            Ned.query_region(
-                                sc, radius=self.nedradius*u.arcmin,
-                                equinox='J2000.0')
-                    except:
-                        ned_region_table = None
-                    nedtables += [ned_region_table]
-            except:
-                print('NED timeout!')
-                ned_timeout = True
+        #    signal.signal(signal.SIGALRM, handler)              
+        #    try:
+        #        signal.alarm(600)
+        #        for sc in scall:
+        #            try:
+        #                ned_region_table = \
+        #                    Ned.query_region(
+        #                        sc, radius=self.nedradius*u.arcmin,
+        #                        equinox='J2000.0')
+        #            except:
+        #                ned_region_table = None
+        #            nedtables += [ned_region_table]
+        #    except:
+        #        print('NED timeout!')
+        #        ned_timeout = True
 
             print('E(B-V)/NED time: %.1f seconds'%(time.time()-ebvtstart))
             signal.alarm(0)
@@ -834,15 +890,25 @@ class processTNS:
             if len(iobj) > 1: iobj = int(iobj[0])
             else: iobj = int(iobj)
 
-            if doNED:
-                sc = scall[iobj]
-                if not ned_timeout:
-                    nedtable = nedtables[iobj]
-                else: nedtable = None
+            sc = scall[iobj]
+            if doEBV:
                 if not ebv_timeout: ebv = '%.3f'%ebvall[iobj]
                 else: ebv = None
-            else: sc = scall[iobj]; ebv = None; nedtable = None
+            else:
+                ebv = None
+
+            if doGHOST:
+                ghost_host = ghost_hosts[ghost_hosts['TransientName'] == objs[j]]
+                if not len(ghost_host): ghost_host = None
+            else:
+                ghost_host = None
                 
+            #if doNED:
+            #    if not ned_timeout:
+            #        nedtable = nedtables[iobj]
+            #    else: nedtable = None
+            #else: nedtable = None
+            
             print("Object: %s\nRA: %s\nDEC: %s" % (obj,ras[iobj],decs[iobj]))
 
             ########################################################
@@ -865,22 +931,29 @@ class processTNS:
                     transientdict['transientphotometry'] = photdict
                     specdict = self.getTNSSpectra(jd,sc)
                     transientdict['transientspectra'] = specdict
-                        
+
                     if nondetectdate: transientdict['non_detect_date'] = nondetectdate
                     if nondetectmaglim: transientdict['non_detect_limit'] = nondetectmaglim
                     if nondetectfilt: transientdict['non_detect_band'] =  nondetectfilt
                     if nondetectfilt: transientdict['non_detect_instrument'] =  nondetectins
                 elif photdict is not None: transientdict['transientphotometry'] = photdict
             except Exception as e: pass
-                #exc_type, exc_obj, exc_tb = sys.exc_info()
-                #raise RuntimeError('error %s at line number %s'%(e,exc_tb.tb_lineno))
+            #exc_type, exc_obj, exc_tb = sys.exc_info()
+            #raise RuntimeError('error %s at line number %s'%(e,exc_tb.tb_lineno))
 
-            try:
-                if doNED:
-                    hostdict,hostcoords = self.getNEDData(jd,sc,nedtable)
-                    transientdict['host'] = hostdict
-                    transientdict['candidate_hosts'] = hostcoords
-            except: pass
+            #try:
+            #    if doNED:
+            #        hostdict,hostcoords = self.getNEDData(jd,sc,nedtable)
+            #        transientdict['host'] = hostdict
+            #        transientdict['candidate_hosts'] = hostcoords
+            #except: pass
+
+            if ghost_host is not None:
+                hostdict,hostcoords = self.getGHOSTData(jd,sc,ghost_host)
+                transientdict['host'] = hostdict
+                transientdict['candidate_hosts'] = hostcoords
+
+            
             #try:
             #   phot_ps1dr2 = self.get_PS_DR2_data(sc)
             #   if phot_ps1dr2 is not None:
@@ -1036,6 +1109,7 @@ class TNS_emails(CronJobBase):
     code = 'YSE_App.data_ingest.TNS_uploads.TNS_emails'
 
     def do(self):
+
         # execute only if run as a script
         print("running TNS emails at {}".format(datetime.now().isoformat()))
         usagestring = "TNS_Synopsis.py <options>"
@@ -1066,7 +1140,7 @@ class TNS_emails(CronJobBase):
         tnsproc.settingsfile = options.settingsfile
         tnsproc.clobber = options.clobber
         tnsproc.noupdatestatus = options.noupdatestatus
-        tnsproc.redoned = options.redoned
+        tnsproc.redohost = options.redohost
         tnsproc.nedradius = options.nedradius
         tnsproc.tnsapi = options.tnsapi
         tnsproc.tnsapikey = options.tnsapikey
@@ -1135,7 +1209,7 @@ class TNS_updates(CronJobBase):
         tnsproc.settingsfile = options.settingsfile
         tnsproc.clobber = options.clobber
         tnsproc.noupdatestatus = options.noupdatestatus
-        tnsproc.redoned = False #True
+        tnsproc.redohost = False #True
         tnsproc.nedradius = options.nedradius
         tnsproc.tnsapi = options.tnsapi
         tnsproc.tnsapikey = options.tnsapikey
@@ -1201,7 +1275,7 @@ class TNS_Ignore_updates(CronJobBase):
         tnsproc.settingsfile = options.settingsfile
         tnsproc.clobber = options.clobber
         tnsproc.noupdatestatus = options.noupdatestatus
-        tnsproc.redoned = False #True
+        tnsproc.redohost = False #True
         tnsproc.nedradius = options.nedradius
         tnsproc.tnsapi = options.tnsapi
         tnsproc.tnsapikey = options.tnsapikey
@@ -1265,7 +1339,7 @@ class TNS_recent(CronJobBase):
         tnsproc.settingsfile = options.settingsfile
         tnsproc.clobber = options.clobber
         tnsproc.noupdatestatus = options.noupdatestatus
-        tnsproc.redoned = True
+        tnsproc.redohost = True
         tnsproc.nedradius = options.nedradius
         tnsproc.tnsapi = options.tnsapi
         tnsproc.tnsapikey = options.tnsapikey
