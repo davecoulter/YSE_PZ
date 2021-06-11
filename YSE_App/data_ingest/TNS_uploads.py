@@ -786,6 +786,9 @@ class processTNS:
         ebvtstart = time.time()
         ebv_timeout,ned_timeout = False,False
         if doGHOST:
+
+            if not os.path.exists('database/GHOST.csv'):
+                getGHOST(real=True, verbose=True)
             
             def handler(signum, frame):
                 raise Exception("timeout!")
