@@ -46,6 +46,7 @@ from django.conf import settings as djangoSettings
 import argparse, configparser
 import signal
 from astro_ghost.ghostHelperFunctions import *
+import os
 
 
 reg_obj = "https://www.wis-tns.org/object/(\w+)"
