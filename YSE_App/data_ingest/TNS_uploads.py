@@ -843,6 +843,12 @@ class processTNS:
                 print('MW E(B-V) timeout!')
                 ebv_timeout = True
 
+        if type(ras[0]) == float:
+            scall = SkyCoord(ras,decs,frame="fk5",unit=u.deg)
+        else:
+            scall = SkyCoord(ras,decs,frame="fk5",unit=(u.hourangle,u.deg))
+
+                
         #    signal.signal(signal.SIGALRM, handler)              
         #    try:
         #        signal.alarm(600)
@@ -1220,7 +1226,7 @@ class TNS_updates(CronJobBase):
         tnsproc.tns_user_id = options.tns_user_id
         tnsproc.tns_user_name = options.tns_user_name
         tnsproc.ztfurl = options.ztfurl
-        #options.ndays=0.5
+        #options.ndays=13
         try:
             tnsproc.noupdatestatus = True
             nsn = tnsproc.UpdateFromTNS(ndays=options.ndays,doTNS=True)
