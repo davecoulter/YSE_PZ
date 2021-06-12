@@ -807,7 +807,7 @@ class processTNS:
             except:
                 print('GHOST timeout!')
                 ned_timeout = True
-
+                ghost_hosts = None
 
             if type(ras[0]) == float:
                 scall = SkyCoord(ras,decs,frame="fk5",unit=u.deg)
@@ -907,7 +907,7 @@ class processTNS:
             else:
                 ebv = None
 
-            if doGHOST:
+            if doGHOST and ghost_hosts is not None:
                 ghost_host = ghost_hosts[ghost_hosts['TransientName'] == objs[j]]
                 if not len(ghost_host): ghost_host = None
             else:
