@@ -42,15 +42,15 @@ def do(debug=False):
 
 	for t in transients_to_classify: #.filter(Q(name = '2019np') | Q(name = '2019gf')):
 		ra, dec, objid, redshift = t.ra, t.dec, t.name,t.z_or_hostz()
-
 		if not t.mw_ebv is None:
 			mwebv = t.mw_ebv
 		else:
 			mwebv = 0.0
 
 		photdata = get_all_phot_for_transient(user, t.id)
-		if t.name=='2021aoh': continue  #TODO: WHY DOES THIS FAIL??? IT has data...
+		if t.name=='2021aoh': continue	#TODO: WHY DOES THIS FAIL??? IT has data...
 		if not photdata: continue
+
 		gobs = photdata.filter(band__name = 'g')
 		robs = photdata.filter(band__name = 'r')
 		iobs = photdata.filter(band__name = 'i')
@@ -65,7 +65,7 @@ def do(debug=False):
 		for obs,filt in zip([gobs.order_by('obs_date'),robs.order_by('obs_date'), iobs.order_by('obs_date'), zobs.order_by('obs_date'), ztf_gobs.order_by('obs_date'), ztf_robs.order_by('obs_date')], ['g', 'r', 'i', 'z', 'X', 'Y']):
 			for p in obs:
 				if p.data_quality: continue
-				if not p.mag: continue       # for some reason if no mag, skip!
+				if not p.mag: continue		 # for some reason if no mag, skip!
 				if len(np.where((filt == passband) & (np.abs(mjd - date_to_mjd(p.obs_date)) < 0.001))[0]): continue
 				mag += [p.mag]
 				if p.mag_err:
@@ -117,13 +117,13 @@ def do(debug=False):
 										passbands=('g', 'r', 'i', 'z', 'X', 'Y'),
 										class_names=tuple(('Pre-explosion', 'SNII', 'SNIbc', 'SNIa-norm')),
 										nobs=50,
-	                                    mintime=-70,
-	                                    maxtime=80,
-	                                    timestep=3.0,
-	                                    bcut=False,
-	                                    zcut=None,
-	                                    graph=None,
-	                                    model=None)
+										mintime=-70,
+										maxtime=80,
+										timestep=3.0,
+										bcut=False,
+										zcut=None,
+										graph=None,
+										model=None)
 
 			predictions_z = classification_z.get_predictions(light_curve_list_z)
 			#print(classification_z.class_names)   #CHECK this matches class_names
