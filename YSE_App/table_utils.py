@@ -434,7 +434,7 @@ class YSETransientTable(tables.Table):
 		return (queryset, True)
 
 	def render_requested_followup_resources(self, value):
-		#import pdb; pdb.set_trace()
+
 		qs_too = TransientFollowup.objects.filter(transient__id=value).filter(Q(status__name='Requested') | Q(status__name='InProcess')).\
 			values_list('too_resource__telescope__name',flat=True)
 		qs_class = TransientFollowup.objects.filter(transient__id=value).filter(Q(status__name='Requested') | Q(status__name='InProcess')).\
@@ -450,7 +450,7 @@ class YSETransientTable(tables.Table):
 		return ', '.join(np.unique(resource_list))
 
 	def render_successful_followup_resources(self, value):
-		#import pdb; pdb.set_trace()
+
 		qs_too = TransientFollowup.objects.filter(transient__id=value).filter(status__name='Successful').\
 			values_list('too_resource__telescope__name',flat=True)
 		qs_class = TransientFollowup.objects.filter(transient__id=value).filter(status__name='Successful').\
@@ -589,7 +589,7 @@ class YSEFullTransientTable(tables.Table):
 		return (queryset, True)
 
 	def render_requested_followup_resources(self, value):
-		#import pdb; pdb.set_trace()
+
 		qs_too = TransientFollowup.objects.filter(transient__id=value).filter(Q(status__name='Requested') | Q(status__name='InProcess')).\
 			values_list('too_resource__telescope__name',flat=True)
 		qs_class = TransientFollowup.objects.filter(transient__id=value).filter(Q(status__name='Requested') | Q(status__name='InProcess')).\
@@ -605,7 +605,7 @@ class YSEFullTransientTable(tables.Table):
 		return ', '.join(np.unique(resource_list))
 
 	def render_successful_followup_resources(self, value):
-		#import pdb; pdb.set_trace()
+
 		qs_too = TransientFollowup.objects.filter(transient__id=value).filter(status__name='Successful').\
 			values_list('too_resource__telescope__name',flat=True)
 		qs_class = TransientFollowup.objects.filter(transient__id=value).filter(status__name='Successful').\
@@ -741,7 +741,7 @@ class YSERisingTransientTable(tables.Table):
 		return (queryset, True)
 
 	def render_requested_followup_resources(self, value):
-		#import pdb; pdb.set_trace()
+
 		qs_too = TransientFollowup.objects.filter(transient__id=value).filter(Q(status__name='Requested') | Q(status__name='InProcess')).\
 			values_list('too_resource__telescope__name',flat=True)
 		qs_class = TransientFollowup.objects.filter(transient__id=value).filter(Q(status__name='Requested') | Q(status__name='InProcess')).\
@@ -757,7 +757,7 @@ class YSERisingTransientTable(tables.Table):
 		return ', '.join(np.unique(resource_list))
 
 	def render_successful_followup_resources(self, value):
-		#import pdb; pdb.set_trace()
+
 		qs_too = TransientFollowup.objects.filter(transient__id=value).filter(status__name='Successful').\
 			values_list('too_resource__telescope__name',flat=True)
 		qs_class = TransientFollowup.objects.filter(transient__id=value).filter(status__name='Successful').\
@@ -1461,13 +1461,13 @@ class RisingTransientFilter(django_filters.FilterSet):
 	#										label='Name')
 
 	#name = django_filters.CharFilter(name='name',lookup_expr='icontains',method='filter_name')
-	recent_mag_lt = django_filters.NumberFilter(name='recent_mag',label='Max Recent Mag',lookup_expr='lt')
-	days_since_disc = django_filters.NumberFilter(name='days_since_disc',label='Max Days Since Disc',lookup_expr='lt')
-	ra_min = django_filters.NumberFilter(name='ra',label='Min. RA (deg)',lookup_expr='gt')
-	ra_max = django_filters.NumberFilter(name='ra',label='Max. RA (deg)',lookup_expr='lt')
-	dec_min = django_filters.NumberFilter(name='dec',label='Min. Dec (deg)',lookup_expr='gt')
-	dec_max = django_filters.NumberFilter(name='dec',label='Max. Dec (deg)',lookup_expr='lt')
-	ebv_max = django_filters.NumberFilter(name='mw_ebv',label='Max. MW E(B-V)',lookup_expr='lt')
+	recent_mag_lt = django_filters.NumberFilter(field_name='recent_mag',label='Max Recent Mag',lookup_expr='lt')
+	days_since_disc = django_filters.NumberFilter(field_name='days_since_disc',label='Max Days Since Disc',lookup_expr='lt')
+	ra_min = django_filters.NumberFilter(field_name='ra',label='Min. RA (deg)',lookup_expr='gt')
+	ra_max = django_filters.NumberFilter(field_name='ra',label='Max. RA (deg)',lookup_expr='lt')
+	dec_min = django_filters.NumberFilter(field_name='dec',label='Min. Dec (deg)',lookup_expr='gt')
+	dec_max = django_filters.NumberFilter(field_name='dec',label='Max. Dec (deg)',lookup_expr='lt')
+	ebv_max = django_filters.NumberFilter(field_name='mw_ebv',label='Max. MW E(B-V)',lookup_expr='lt')
 	
 	#recent_mag__gt = django_filters.NumberFilter(name='recent_mag', lookup_expr='recent_mag__gt')
 	#recent_mag__lt = django_filters.NumberFilter(name='recent_mag', lookup_expr='recent_mag__lt')
