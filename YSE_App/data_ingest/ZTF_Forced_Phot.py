@@ -43,7 +43,7 @@ def random_log_file_name():
 
     log_file_name = None
     while log_file_name is None or os.path.exists(log_file_name):
-        log_file_name = "/tmp/ztffp_%s.txt"%''.join([random.choice(string.ascii_uppercase + string.digits) for i in range(10)])
+        log_file_name = "/data/yse_pz/tmp/forced_phot_out/ztffp_%s.txt"%''.join([random.choice(string.ascii_uppercase + string.digits) for i in range(10)])
         #random.choices(string.ascii_uppercase + string.digits, k=10))
     
     return log_file_name
@@ -54,13 +54,14 @@ def download_ztf_url(url, verbose=True):
 
     wget_command = "wget --http-user=%s --http-password=%s -O %s \"%s\""%(
         _ztfuser,_ztfinfo,url.split('/')[-1],url)
-    
+
     if verbose:
         print("Downloading file...")
         print('\t' + wget_command)
     p = subprocess.Popen(wget_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     stdout, stderr = p.communicate()
 
+    #os.system(wget_command)
     return url.split('/')[-1]
 
 
@@ -307,8 +308,8 @@ class ZTF_Forced_Phot:
                 p = subprocess.Popen(wget_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                 stdout, stderr = p.communicate()
 
-                if verbose:
-                    print(stdout.decode('utf-8'))
+                #if verbose:
+                #    print(stdout.decode('utf-8'))
 
 
             return log_file_name
