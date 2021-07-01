@@ -73,9 +73,9 @@ def match_ztf_message(job_info, message_body, message_time_epoch):
     #
     # Only continue if the message was received AFTER the job was submitted
     #
-    if message_time_epoch < job_info['cdatetime'].to_list()[0]:
+    #if message_time_epoch < job_info['cdatetime'].to_list()[0]:
 
-        return match
+    #    return match
 
 
     message_lines = message_body.splitlines()
@@ -104,6 +104,7 @@ def match_ztf_message(job_info, message_body, message_time_epoch):
 
                match = True
 
+    #import pdb; pdb.set_trace()
 
     return match
 
@@ -227,6 +228,8 @@ class ZTF_Forced_Phot:
                                     else:
                                         lc_final_name = source_name.replace(' ','')+"_"+lc_initial_file_name.split('_')[-1]
                                         log_final_name = source_name.replace(' ','')+"_"+log_initial_file_name.split('_')[-1]
+                                        #import pdb; pdb.set_trace()
+                                        #
                                         os.rename(lc_initial_file_name, lc_final_name)
                                         os.rename(log_initial_file_name, log_final_name)
                                         downloaded_file_names = [lc_final_name, log_final_name]
@@ -236,7 +239,7 @@ class ZTF_Forced_Phot:
 
 
         # Connection could be broken
-        except Exception:
+        except Exception as e:
             pass
 
         if downloaded_file_names is not None:
@@ -299,7 +302,6 @@ class ZTF_Forced_Phot:
                            "jdstart=%s&"%jdstart_str +\
                            "jdend=%s&"%jdend_str + \
                            "email=%s&userpass=%s\""%(self._ztffp_user_address,self._ztffp_user_password)
-
             if verbose:
                 print(wget_command)
 
@@ -311,6 +313,7 @@ class ZTF_Forced_Phot:
                 #if verbose:
                 #    print(stdout.decode('utf-8'))
 
+            os.chmod(log_file_name,0o0777)
 
             return log_file_name
 
@@ -405,6 +408,7 @@ class ZTF_Forced_Phot:
         time_start_seconds = time.time()
 
         downloaded_file_names = self.query_ztf_email(log_file_name, source_name=source_name, verbose=verbose)
+
         if downloaded_file_names == -1:
             if verbose:
                 print("%s was not found."%log_file_name)
@@ -414,6 +418,7 @@ class ZTF_Forced_Phot:
         # Clean-up
         #
         output_directory = ("%s/%s"%(directory_path,source_name)).replace('//','/')
+
         # Trim potential extra '/'
         if output_directory[-1:]=='/':
             output_directory = output_directory[:-1]
@@ -422,9 +427,11 @@ class ZTF_Forced_Phot:
         if not os.path.exists(output_directory):
             if verbose:
                 print("Creating %s"%output_directory)
-            os.makedirs(output_directory,mode=0o0775)
 
-
+            os.makedirs(output_directory,mode=0o0777)
+            try:
+                os.chmod(output_directory,mode=0o0777)
+            except: pass
         #
         # Move all files to this location
         #

@@ -151,7 +151,7 @@ class ForcedPhot(CronJobBase):
             log_file_name = l.comment.split('=')[-2].split('\n')[0]
             if 'forced_phot_out' not in log_file_name:
                 log_file_name = log_file_name.replace('/tmp','/data/yse_pz/tmp/forced_phot_out')
-            
+
             try:
                 output_files = ztf.get_ztf_fp(
                     log_file_name, directory_path='/data/yse_pz/tmp/forced_phot_out',

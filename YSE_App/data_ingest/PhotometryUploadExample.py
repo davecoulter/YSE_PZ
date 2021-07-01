@@ -92,7 +92,7 @@ class PhotometryUploads(CronJobBase):
 
     def UploadTransients(self,TransientUploadDict):
 
-        url = 'http://127.0.0.1:8000/add_transient/'
+        url = 'https://ziggy.ucolick.org/yse_test/add_transient/' #''http://127.0.0.1:8000/add_transient/'
         try:
             r = requests.post(
             url = url, data = json.dumps(TransientUploadDict),

@@ -19,7 +19,7 @@ from astropy.coordinates import SkyCoord, Angle
 import astropy.units as u
 import time
 import coreapi
-from alerce.api import AlerceAPI
+#from alerce.api import AlerceAPI
 import sys
 from astropy.io import fits
 import astropy.table as at
