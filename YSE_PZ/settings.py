@@ -78,6 +78,7 @@ CRON_CLASSES = [
 	'YSE_App.data_ingest.TNS_uploads.TNS_updates',
 	'YSE_App.data_ingest.TNS_uploads.TNS_Ignore_updates',
 	'YSE_App.data_ingest.TNS_uploads.TNS_recent',
+	'YSE_App.data_ingest.TNS_uploads.TNS_recent_realtime',
     'YSE_App.data_ingest.QUB_data.CheckDuplicates',
     'YSE_App.data_ingest.PhotometryUploadExample.PhotometryUploads'
     'YSE_App.data_ingest.ZTF_Forced_Phot_Cron.ForcedPhot'
@@ -103,12 +104,12 @@ CACHE_MIDDLEWARE_KEY_PREFIX = ''
 
 ROOT_URLCONF = 'YSE_PZ.urls'
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
-        'LOCATION': '127.0.0.1:11211',
-    }
-}
+#CACHES = {
+#    'default': {
+#        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+#        'LOCATION': '127.0.0.1:11211',
+#    }
+#}
 
 TEMPLATES = [
     {

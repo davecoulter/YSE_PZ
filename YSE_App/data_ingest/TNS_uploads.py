@@ -1,4 +1,3 @@
-
 import requests
 import time
 import imaplib
@@ -135,13 +134,15 @@ class processTNS:
                                 help='TNS API URL (default=%default)')
             parser.add_argument('--tnsapikey', default=config.get('main','tnsapikey'), type=str,
                                 help='TNS API key (default=%default)')
-            parser.add_argument('--tns_user_id', default=config.get('main','tns_user_id'), type=str,
+            parser.add_argument('--tns_bot_id', default=config.get('main','tns_bot_id'), type=str,
                                 help='TNS API key (default=%default)')
-            parser.add_argument('--tns_user_name', default=config.get('main','tns_user_name'), type=str,
+            parser.add_argument('--tns_bot_name', default=config.get('main','tns_bot_name'), type=str,
                                 help='TNS API key (default=%default)')
 
             parser.add_argument('--tns_recent_ndays', default=config.get('main','tns_recent_ndays'), type=str,
                                 help='time interval for grabbing recent TNS events (default=%default)')
+            parser.add_argument('--tns_fastupdates_nminutes', default=config.get('main','tns_fastupdates_nminutes'), type=str,
+                                help='time interval for grabbing very recent TNS events (default=%default)')
             parser.add_argument('--hostmatchrad', default=config.get('main','hostmatchrad'), type=float,
                                 help='matching radius for hosts (arcmin) (default=%default)')
             parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
@@ -451,8 +452,8 @@ class processTNS:
             Spectrum = {}
             SpecData = {}
             os.system('rm spec_tns_upload.txt')
-            headers={'User-Agent':'tns_marker{"tns_id":'+str(self.tns_user_id)+', "type":"user",'
-             ' "name":"'+self.tns_user_name+'"}'}
+            headers={'User-Agent':'tns_marker{"tns_id":'+str(self.tns_bot_id)+', "type":"user",'
+             ' "name":"'+self.tns_bot_name+'"}'}
 
             try:
                 dlfile = requests.get(s,headers=headers).text
@@ -662,7 +663,7 @@ class processTNS:
         datemin = (datetime.now() - timedelta(days=ndays)).isoformat() #strftime(date_format)
         search_obj=[("ra",""), ("dec",""), ("radius",""), ("units",""),
                     ("objname",""), ("internal_name",""),("public_timestamp",datemin)]
-        response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_user_id, self.tns_user_name)
+        response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
         json_data = format_to_json(response.text)
 
         objs,ras,decs = [],[],[]
@@ -671,7 +672,7 @@ class processTNS:
                             ("photometry","0"),
                             ("spectra","0")]
 
-            response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_user_id, self.tns_user_name)
+            response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
             json_data_single = format_to_json(response_single.text)
 
             objs.append(json_data_single['data']['reply']['objname'])
@@ -688,7 +689,7 @@ class processTNS:
         datemin = (datetime.now() - timedelta(days=ndays)).isoformat() #strftime(date_format)
         search_obj=[("ra",""), ("dec",""), ("radius",""), ("units",""),
                     ("objname",""), ("internal_name",""),("public_timestamp",datemin)]
-        response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_user_id, self.tns_user_name)
+        response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
         json_data = format_to_json(response.text)
 
         objs,ras,decs = [],[],[]
@@ -698,7 +699,7 @@ class processTNS:
                             ("photometry","0"),
                             ("spectra","0")]
 
-            response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_user_id, self.tns_user_name)
+            response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
             json_data_single = format_to_json(response_single.text)
 
             objs.append(json_data_single['data']['reply']['objname'])
@@ -881,7 +882,7 @@ class processTNS:
                                     ("photometry","1"),
                                     ("spectra","1")]
 
-                    response=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_user_id, self.tns_user_name)
+                    response=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
                     json_data += [format_to_json(response.text)]
                     total_objs += 1
                 else:
@@ -1074,13 +1075,13 @@ def format_to_json(source):
     return parsed #result
 
 # function for search obj
-def search(url,json_list,api_key,tns_user_id,tns_user_name):
+def search(url,json_list,api_key,tns_bot_id,tns_bot_name):
   try:
     # url for search obj
     search_url=url+'/search'
     # headers
-    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_user_id)+', "type":"user",'\
-             ' "name":"'+tns_user_name+'"}'}
+    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_bot_id)+', "type":"user",'\
+             ' "name":"'+tns_bot_name+'"}'}
     # change json_list to json format
     json_file=OrderedDict(json_list)
     # construct a dictionary of api key data and search obj data
@@ -1093,13 +1094,13 @@ def search(url,json_list,api_key,tns_user_id,tns_user_name):
     return [None,'Error message : \n'+str(e)]
 
 # function for get obj
-def get(url,json_list,api_key,tns_user_id,tns_user_name):
+def get(url,json_list,api_key,tns_bot_id,tns_bot_name):
   try:
     # url for get obj
     get_url=url+'/object'
     # headers
-    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_user_id)+', "type":"user",'\
-             ' "name":"'+tns_user_name+'"}'}
+    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_bot_id)+', "type":"user",'\
+             ' "name":"'+tns_bot_name+'"}'}
     # change json_list to json format
     json_file=OrderedDict(json_list)
     # construct a dictionary of api key data and get obj data
@@ -1154,8 +1155,8 @@ class TNS_emails(CronJobBase):
         tnsproc.nedradius = options.nedradius
         tnsproc.tnsapi = options.tnsapi
         tnsproc.tnsapikey = options.tnsapikey
-        tnsproc.tns_user_id = options.tns_user_id
-        tnsproc.tns_user_name = options.tns_user_name
+        tnsproc.tns_bot_id = options.tns_bot_id
+        tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
 
         try:
@@ -1223,13 +1224,12 @@ class TNS_updates(CronJobBase):
         tnsproc.nedradius = options.nedradius
         tnsproc.tnsapi = options.tnsapi
         tnsproc.tnsapikey = options.tnsapikey
-        tnsproc.tns_user_id = options.tns_user_id
-        tnsproc.tns_user_name = options.tns_user_name
+        tnsproc.tns_bot_id = options.tns_bot_id
+        tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
-        #options.ndays=13
         try:
             tnsproc.noupdatestatus = True
-            nsn = tnsproc.UpdateFromTNS(ndays=options.ndays,doTNS=True)
+            nsn = tnsproc.UpdateFromTNS(ndays=options.ndays,doTNS=False)
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             nsn = 0
@@ -1289,8 +1289,8 @@ class TNS_Ignore_updates(CronJobBase):
         tnsproc.nedradius = options.nedradius
         tnsproc.tnsapi = options.tnsapi
         tnsproc.tnsapikey = options.tnsapikey
-        tnsproc.tns_user_id = options.tns_user_id
-        tnsproc.tns_user_name = options.tns_user_name
+        tnsproc.tns_bot_id = options.tns_bot_id
+        tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
         try:
             tnsproc.noupdatestatus = True
@@ -1353,13 +1353,80 @@ class TNS_recent(CronJobBase):
         tnsproc.nedradius = options.nedradius
         tnsproc.tnsapi = options.tnsapi
         tnsproc.tnsapikey = options.tnsapikey
-        tnsproc.tns_user_id = options.tns_user_id
-        tnsproc.tns_user_name = options.tns_user_name
+        tnsproc.tns_bot_id = options.tns_bot_id
+        tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
         tnsproc.ndays = float(options.tns_recent_ndays)
+        tnsproc.tns_fastupdates_nminutes = float(options.tns_fastupdates_nminutes)
         try:
             tnsproc.noupdatestatus = True
             nsn = tnsproc.GetRecentMissingEvents(ndays=tnsproc.ndays)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            nsn = 0
+            smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+            from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+            subject = "TNS Transient Upload Failure in GetRecentEvents"
+            print("Sending error email")
+            html_msg = "Alert : YSE_PZ Failed to upload transients in TNS_uploads.TNS_recent()\n"
+            html_msg += "Error : %s at line number %s"
+            sendemail(from_addr, options.dbemail, subject,
+                      html_msg%(e,exc_tb.tb_lineno),
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+
+        print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
+
+class TNS_recent_realtime(CronJobBase):
+
+    RUN_AT_TIMES = ['00:00', '08:00']
+
+    schedule = Schedule(run_at_times=RUN_AT_TIMES)
+    code = 'YSE_App.data_ingest.TNS_uploads.TNS_updates'
+
+    def do(self):
+
+        # execute only if run as a script
+        print("checking for recent TNS events at {}".format(datetime.now().isoformat()))
+        usagestring = "TNS_Synopsis.py <options>"
+
+        tstart = time.time()
+        tnsproc = processTNS()
+
+        # read in the options from the param file and the command line
+        # some convoluted syntax here, making it so param file is not required
+        parser = tnsproc.add_options(usage=usagestring)
+        options,  args = parser.parse_known_args()
+        options.settingsfile = "%s/settings.ini"%djangoSettings.PROJECT_DIR
+        
+        config = configparser.ConfigParser()
+        config.read(options.settingsfile)
+
+        parser = tnsproc.add_options(usage=usagestring,config=config)
+        options,  args = parser.parse_known_args()
+        tnsproc.hostmatchrad = options.hostmatchrad
+
+        tnsproc.login = options.login
+        tnsproc.password = options.password
+        tnsproc.dblogin = options.dblogin
+        tnsproc.dbpassword = options.dbpassword
+        tnsproc.dbemailpassword = options.dbemailpassword
+        tnsproc.dburl = options.dburl
+        tnsproc.status = options.status
+        tnsproc.settingsfile = options.settingsfile
+        tnsproc.clobber = options.clobber
+        tnsproc.noupdatestatus = options.noupdatestatus
+        tnsproc.redohost = True
+        tnsproc.nedradius = options.nedradius
+        tnsproc.tnsapi = options.tnsapi
+        tnsproc.tnsapikey = options.tnsapikey
+        tnsproc.tns_bot_id = options.tns_bot_id
+        tnsproc.tns_bot_name = options.tns_bot_name
+        tnsproc.ztfurl = options.ztfurl
+        tnsproc.ndays = float(options.tns_recent_ndays)
+        tnsproc.tns_fastupdates_nminutes = float(options.tns_fastupdates_nminutes)
+        try:
+            tnsproc.noupdatestatus = True
+            nsn = tnsproc.GetRecentEvents(ndays=tnsproc.tns_fastupdates_nminutes/60./24.)
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             nsn = 0
