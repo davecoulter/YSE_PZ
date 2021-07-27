@@ -115,7 +115,8 @@ class YSE(CronJobBase):
                     transient_dictionary.pop(i)
                 
             DF_pre=pd.DataFrame()
-            DF_pre['myindex'] = list(transient_dictionary.keys())
+            try: DF_pre['myindex'] = list(transient_dictionary.keys())
+            except: import pdb; pdb.set_trace()
             DF_pre['RA'] = RA
             DF_pre['DEC'] = DEC
             
