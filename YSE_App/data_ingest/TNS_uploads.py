@@ -534,7 +534,11 @@ class processTNS:
             hostdict['photo_z_internal'] = ghost_host['photo_z'].to_numpy()[0]
         if 'NED_redshift' in ghost_host.keys() and ghost_host['NED_redshift'].to_numpy()[0] == ghost_host['NED_redshift'].to_numpy()[0]:
             hostdict['redshift'] = ghost_host['NED_redshift'].to_numpy()[0]
-            
+
+		if 'photo_z_internal' in hostdict.keys():
+			if hostdict['photo_z_internal'] != hostdict['photo_z_internal']:
+				hostdict['photo_z_internal'] = None
+        
         return hostdict,hostcoords
         
     def getNEDData(self,jd,sc,ned_table):
