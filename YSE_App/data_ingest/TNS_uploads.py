@@ -452,11 +452,9 @@ class processTNS:
             Spectrum = {}
             SpecData = {}
             os.system('rm spec_tns_upload.txt')
-            headers={'User-Agent':'tns_marker{"tns_id":'+str(self.tns_bot_id)+', "type":"user",'
-             ' "name":"'+self.tns_bot_name+'"}'}
 
             try:
-                dlfile = requests.get(s,headers=headers).text
+                dlfile = get_file(s,self.tnsapikey,self.tns_bot_id,self.tns_bot_name).text
             except: continue
             with open('spec_tns_upload.txt','w') as fout:
                 print('# wavelength flux',file=fout)
@@ -1084,7 +1082,7 @@ def search(url,json_list,api_key,tns_bot_id,tns_bot_name):
     # url for search obj
     search_url=url+'/search'
     # headers
-    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_bot_id)+', "type":"user",'\
+    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_bot_id)+', "type":"bot",'\
              ' "name":"'+tns_bot_name+'"}'}
     # change json_list to json format
     json_file=OrderedDict(json_list)
@@ -1103,7 +1101,7 @@ def get(url,json_list,api_key,tns_bot_id,tns_bot_name):
     # url for get obj
     get_url=url+'/object'
     # headers
-    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_bot_id)+', "type":"user",'\
+    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_bot_id)+', "type":"bot",'\
              ' "name":"'+tns_bot_name+'"}'}
     # change json_list to json format
     json_file=OrderedDict(json_list)
@@ -1116,6 +1114,20 @@ def get(url,json_list,api_key,tns_bot_id,tns_bot_name):
   except Exception as e:
     return [None,'Error message : \n'+str(e)]
 
+def get_file(url,api_key,tns_bot_id,tns_bot_name):
+  try:
+    # take filename
+    filename=os.path.basename(url)
+    # headers
+    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_bot_id)+', "type":"bot",'\
+             ' "name":"'+tns_bot_name+'"}'}
+    # downloading file using request module
+    response=requests.post(url, headers=headers, data={'api_key':api_key}, stream=True)
+    return response
+  except Exception as e:
+    print ('Error message : \n'+str(e))
+    return None
+    
 class TNS_emails(CronJobBase):
 
     RUN_EVERY_MINS = 3
