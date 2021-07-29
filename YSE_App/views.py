@@ -1162,6 +1162,8 @@ def download_photometry(request, slug):
 
 			telescope = data[transient[0].name]['photometry'][pd]['fields']['instrument'].split(' - ')[0]
 			instrument = data[transient[0].name]['photometry'][pd]['fields']['instrument'].split(' - ')[1]
+			telescope = telescope.replace(' ','_')
+			instrument = instrument.replace(' ','_')
 			
 			photdata = PhotometryService.GetAuthorizedTransientPhotData_ByPhotometry(user, p.id, includeBadData=True).order_by('obs_date')
 			data[transient[0].name]['photometry'][pd]['data'] = json.loads(serializers.serialize("json", photdata, use_natural_foreign_keys=True))
