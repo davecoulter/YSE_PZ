@@ -68,7 +68,8 @@ class SurveyFieldMSBViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet): #v
 	permission_classes = (permissions.IsAuthenticated,)
 	filter_backends = (DjangoFilterBackend,)
 	filter_class = SurveyFieldMSBFilter
-    
+
+
 ### `Transient` Filter Set ###
 class SurveyObsFilter(django_filters.FilterSet):
 	status_in = django_filters.BaseInFilter(field_name="status__name")#, lookup_expr='in')
@@ -78,6 +79,10 @@ class SurveyObsFilter(django_filters.FilterSet):
 	mjd_requested_lte = django_filters.Filter(field_name="mjd_requested", lookup_expr='lte')
 	survey_field = django_filters.BaseInFilter(field_name="survey_field__field_id")
 	obs_group = django_filters.BaseInFilter(field_name="survey_field__obs_group__name")
+	ra_gt = django_filters.Filter(field_name="survey_field__ra_cen", lookup_expr='gt')
+	ra_lt = django_filters.Filter(field_name="survey_field__ra_cen", lookup_expr='lt')
+	dec_gt = django_filters.Filter(field_name="survey_field__dec_cen", lookup_expr='gt')
+	dec_lt = django_filters.Filter(field_name="survey_field__dec_cen", lookup_expr='lt')
 	
 	class Meta:
 		model = SurveyObservation
