@@ -102,6 +102,7 @@ class SurveyObservationSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta:
 		model = SurveyObservation
 		fields = "__all__"
+		depth = 1
 
 	def create(self, validated_data):
 		return SurveyObservation.objects.create(**validated_data)
