@@ -439,7 +439,7 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
         obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
         obs_date = obsnight.obs_date
     else:
-        obs_date = datetime.date.today() #time.now()
+        obs_date = datetime.date.today()
             
     telescope = Telescope.objects.get(pk=telescope_id)
     
@@ -449,9 +449,8 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
     location = EarthLocation.from_geodetic(telescope.longitude*u.deg, telescope.latitude*u.deg,telescope.elevation*u.m)
     tel = Observer(location=location, name=telescope.name, timezone="UTC")
         
-    fig=Figure()#dpi=288,figsize=(1,1))
+    fig=Figure()
     ax=fig.add_subplot(111)
-    #ax=fig.add_axes([0.2,0.2,0.75,0.65])
     canvas=FigureCanvas(fig)
 
     ax.set_title("%s, %s, %s"%(telescope.tostring(),transient.name, obs_date))
@@ -461,7 +460,7 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
     if night_end < night_start:
         night_end = tel.twilight_morning_astronomical(time,which="next")
     delta_t = night_end - night_start
-    observe_time = night_start + delta_t*np.linspace(0, 1, 75)
+    observe_time = night_start +datetime.timedelta(hours=6)#+ datetime.timedelta(night_end-night_end #delta_t*np.linspace(0, 1, 75)
     plot_airmass(target, tel, observe_time, ax=ax)    
 
     yr,mn,day,hr,minu,sec = night_start.iso.replace(':',' ').replace('-',' ').split()
@@ -473,10 +472,10 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
     yr,mn,day,hr,minu,sec = night_end.iso.replace(':',' ').replace('-',' ').split()
     endtime = datetime.datetime(int(yr),int(mn),int(day),int(hr),int(minu))
     xhi = datetime.datetime(int(yr),int(mn),int(day),int(hr)+1,int(minu))
-    ax.axvline(starttime,color='r',label='18 deg twilight')#night_start.iso)
-    ax.axvline(endtime,color='r')
+    ax.axvline(Time(starttime).plot_date,color='r',label='18 deg twilight')
+    ax.axvline(Time(endtime).plot_date,color='r')
     ax.legend(loc='lower right')
-    ax.set_xlim([xlow,xhi])
+    ax.set_xlim([Time(xlow).plot_date,Time(xhi).plot_date])
 
     response=django.http.HttpResponse(content_type='image/png')
     canvas.print_jpg(response)
