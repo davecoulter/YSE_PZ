@@ -37,8 +37,8 @@ def iter_all_strings():
 
 #psst_image_url = "https://star.pst.qub.ac.uk/sne/ps13pi/site_media/images/data/ps13pi"
 #yse_image_url = "https://star.pst.qub.ac.uk/sne/ps1yse/site_media/images/data/ps1yse"
-psst_image_url = "https://psweb.mp.qub.ac.uk/sne/ps13pi/site_media/images/data/ps13pi"
-yse_image_url = "https://psweb.mp.qub.ac.uk/sne/ps1yse/site_media/images/data/ps1yse"
+psst_image_url = "https://psweb.mp.qub.ac.uk/sne/ps13pi/media/images/data/ps13pi"
+yse_image_url = "https://psweb.mp.qub.ac.uk/sne/ps1yse/media/images/data/ps1yse"
 
 try:
   from dustmaps.sfd import SFDQuery
@@ -1533,20 +1533,24 @@ def format_to_json(source):
 	#result=json.dumps(parsed,indent=4)
 	return parsed #result
 
-def get(url,json_list,api_key):
-	try:
-		# url for get obj
-		get_url=url+'/object'
-		# change json_list to json format
-		json_file=OrderedDict(json_list)
-		# construct the list of (key,value) pairs
-		get_data=[('api_key',(None, api_key)),
-				  ('data',(None,json.dumps(json_file)))]
-		# get obj using request module
-		response=requests.post(get_url, files=get_data)
-		return response
-	except Exception as e:
-		return [None,'Error message : \n'+str(e)]
+# function for get obj
+def get(url,json_list,api_key,tns_user_id,tns_user_name):
+  try:
+    # url for get obj
+    get_url=url+'/object'
+    # headers
+    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_user_id)+', "type":"user",'\
+             ' "name":"'+tns_user_name+'"}'}
+    # change json_list to json format
+    json_file=OrderedDict(json_list)
+    # construct a dictionary of api key data and get obj data
+    get_data={'api_key':api_key, 'data':json.dumps(json_file)}
+    # get obj using request module
+    response=requests.post(get_url, headers=headers, data=get_data)
+    # return response
+    return response
+  except Exception as e:
+    return [None,'Error message : \n'+str(e)]
 
 	
 if __name__ == """__main__""":
