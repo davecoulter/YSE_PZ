@@ -12,6 +12,14 @@ def main():
                    'SN Ib/c':['SN Ic','	SN Ib/c','SN Ib-Ca-rich','SN Ibn','SN Ib-pec','SN Ic-pec','SN Ic-BL','SN Icn'],
                    'SN II':['SN II','SN IIP','SN IIL','SN IIn','SN IIb']}
     all_labels = np.concatenate((class_names['SN Ia'],class_names['SN Ib/c'],class_names['SN II']))
+
+    transients_to_classify = \
+        Transient.objects.filter(Q(status__name = 'New') |
+                                 Q(status__name = 'Watch') |
+                                 Q(status__name = 'Interesting') |
+                                 Q(status__name = 'FollowupRequested') |
+                                 Q(status__name = 'Following') |
+                                 Q(tags__name = 'YSE') | Q(tags__name = 'YSE Forced Phot')).distinct()
     
     matrix = np.zeros([3,3])
     for i,class1 in enumerate(['SN Ia','SN Ib/c','SN II']):
@@ -19,8 +27,8 @@ def main():
             class1list = class_names[class1]
             class2list = class_names[class2]
             
-            list_correct = len(Transient.objects.filter(photo_class__name=class1).filter(best_spec_class__name__in=class2list))
-            list_full = len(Transient.objects.filter(best_spec_class__name__in=class2list).filter(photo_class__name__in=['SN Ia','SN Ib/c','SN II']))
+            list_correct = len(transients_to_classify.filter(photo_class__name=class1).filter(best_spec_class__name__in=class2list))
+            list_full = len(transients_to_classify.filter(best_spec_class__name__in=class2list).filter(photo_class__name__in=['SN Ia','SN Ib/c','SN II']))
 
             matrix[j,i] = float(list_correct)/list_full
 
