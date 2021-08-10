@@ -108,7 +108,7 @@ def do(debug=False):
 	#else: predictions_noz = [[]]
 
 	dirname = os.path.dirname(__file__)
-	model_filepath_z = os.path.join(dirname, 'V20210715_3Model_YSE_ZTF_no_cuts_2000epochs_dropout0pt2_keras_model.hdf5')
+	model_filepath_z = os.path.join(dirname, 'V20210807_3Model_YSE_ZTF_50k_no_cuts_2000epochs_dropout0pt2_keras_model.hdf5')
 
 	try:
 		if len(light_curve_list_z):
