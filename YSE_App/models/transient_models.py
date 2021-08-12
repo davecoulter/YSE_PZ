@@ -66,7 +66,7 @@ class Transient(BaseModel):
 	postage_stamp_file_fits = models.CharField(max_length=512, null=True, blank=True)
 	postage_stamp_ref_fits = models.CharField(max_length=512, null=True, blank=True)
 	postage_stamp_diff_fits = models.CharField(max_length=512, null=True, blank=True)
-	k2_validated = models.NullBooleanField(null=True, blank=True)
+	k2_validated = models.BooleanField(null=True, blank=True)
 	k2_msg = models.TextField(null=True, blank=True)
 	TNS_spec_class = models.CharField(max_length=64, null=True, blank=True) # To hold the TNS classiciation in case we don't have a matching enum
 	point_source_probability = models.FloatField(null=True, blank=True)
@@ -75,9 +75,9 @@ class Transient(BaseModel):
 
 	real_bogus_score = models.FloatField(null=True, blank=True)
 	
-	has_hst = models.NullBooleanField(null=True, blank=True)
-	has_spitzer = models.NullBooleanField(null=True, blank=True)
-	has_chandra = models.NullBooleanField(null=True, blank=True)
+	has_hst = models.BooleanField(null=True, blank=True)
+	has_spitzer = models.BooleanField(null=True, blank=True)
+	has_chandra = models.BooleanField(null=True, blank=True)
 
 	def CoordString(self):
 		return GetSexigesimalString(self.ra, self.dec)

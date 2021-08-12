@@ -28,7 +28,7 @@ class Spectrum(BaseModel):
 	# Optional
 	redshift = models.FloatField(null=True, blank=True)
 	redshift_err = models.FloatField(null=True, blank=True)
-	redshift_quality = models.NullBooleanField(blank=True)
+	redshift_quality = models.BooleanField(null=True,blank=True)
 	spec_plot_file = models.CharField(max_length=512, null=True, blank=True)
 	spec_data_file = models.CharField(max_length=512, null=True, blank=True)
 	spectrum_notes = models.TextField(null=True, blank=True)

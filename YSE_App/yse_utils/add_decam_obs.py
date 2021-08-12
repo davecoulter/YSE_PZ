@@ -61,14 +61,13 @@ class DECAM_YSEPZ:
         else: yseurl = 'https://ziggy.ucolick.org/yse'
 
         data = pd.read_fwf(self.options.obsfilename)
-        
         # get the full list of DECAT survey fields in YSE-PZ
         fielddata = requests.get(url='%s/api/surveyfields/?obs_group=DECAT'%yseurl,
                                  auth=HTTPBasicAuth(self.options.yseuser,self.options.ysepass)).json()
         existingfields = [f['field_id'] for f in fielddata['results']]
 
         field_url_dict = {}
-        for field in np.unique(data['Object'].values):
+        for field in np.unique(data['Object'].values[data['Object'].values == data['Object'].values]):
             if field not in existingfields:
                 if field in ['pointing','MaxVis']: continue
                 if field.startswith('Tile'): continue
@@ -93,16 +92,17 @@ class DECAM_YSEPZ:
         isodate = self.options.obsfilename.split('/')[-1].split('.')[0]
         obsdate_init = dateutil.parser.parse(isodate)
         for i in data.index:
+            if data['Object'][i] !=  data['Object'][i]: continue
             if data['Object'][i] in ['pointing','MaxVis']: continue
             if data['Object'][i].startswith('Tile'): continue
-            if data['fil'][i] == 'VR': continue
-            
+            if data['fil'][i] not in ['u','g','r','i','z']: continue
+
             if int(data['ut'][i][:2]) > 16: obsdate = obsdate_init + datetime.timedelta(days=1)
             else: obsdate = obsdate_init + datetime.timedelta(0)
 
             fulltime = obsdate.isoformat().split('T')[0] + 'T'+data['ut'][i] + ':00'
             if 'time' in data.keys():
-                time,secz = data['secz'][i],data['time'][i]
+                time,secz = float(data['secz'][i]),float(data['time'][i])
             elif 'time secz' in data.keys():
                 time,secz = data['time secz'][i].split()
                 time,secz = float(time),float(secz)
@@ -129,9 +129,11 @@ class DECAM_YSEPZ:
                 print('warning : duplicate observation found')
                 continue
 
+
             r = requests.post(
                 url='%s/api/surveyobservations/'%yseurl,json=survey_obs_dict,
                 auth=HTTPBasicAuth(self.options.yseuser,self.options.ysepass))
+
             if r.status_code != 201:
                 raise RuntimeError('failed to add observation!')
         

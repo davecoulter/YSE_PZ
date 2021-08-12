@@ -22,7 +22,7 @@ class SurveyField(BaseModel):
 	cadence = models.FloatField(null=True, blank=True)
 	instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
 	ztf_field_id = models.CharField(max_length=64,null=True,blank=True)
-	active = models.NullBooleanField(null=True,blank=True)
+	active = models.BooleanField(null=True,blank=True)
 	targeted_transients = models.ManyToManyField('Transient',blank=True)
 	targeted_galaxies = models.TextField(null=True,blank=True)
 
@@ -45,7 +45,7 @@ class SurveyFieldMSB(BaseModel):
 	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
 	name = models.CharField(max_length=64)
 	survey_fields = models.ManyToManyField(SurveyField,blank=True)
-	active = models.NullBooleanField(null=True,blank=True)
+	active = models.BooleanField(null=True,blank=True)
 
 	def __str__(self):
 		return self.name

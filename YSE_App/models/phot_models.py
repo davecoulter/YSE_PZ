@@ -76,9 +76,9 @@ class PhotData(BaseModel):
 	flux_err = models.FloatField(null=True, blank=True)
 	mag = models.FloatField(null=True, blank=True)
 	mag_err = models.FloatField(null=True, blank=True)
-	forced = models.NullBooleanField(null=True, blank=True)
-	diffim = models.NullBooleanField(null=True, blank=True)
-	# dq = models.NullBooleanField(null=True, blank=True)
+	forced = models.BooleanField(null=True, blank=True)
+	diffim = models.BooleanField(null=True, blank=True)
+	# dq = models.BooleanField(null=True, blank=True)
 
 
 class TransientPhotData(PhotData):
@@ -88,7 +88,7 @@ class TransientPhotData(PhotData):
 
 	### Properties ###
 	# Optional
-	discovery_point = models.NullBooleanField(null=True, blank=True)
+	discovery_point = models.BooleanField(null=True, blank=True)
 
 	def __str__(self):
 		return '%s - %s - %s' % (self.photometry.transient.name, self.band.name, self.obs_date.strftime('%m/%d/%Y'))
@@ -152,7 +152,7 @@ class TransientDiffImage(DiffImage):
 	### Entity relationships ###
 	# Required
 	phot_data = models.ForeignKey(TransientPhotData, on_delete=models.CASCADE)
-	valid_pixels = models.NullBooleanField(null=True, blank=True)
+	valid_pixels = models.BooleanField(null=True, blank=True)
 
 	def __str__(self):
 		return 'Img: %s - %s' % (self.phot_data.photometry.transient.name, self.phot_data.obs_date.strftime('%m/%d/%Y'))

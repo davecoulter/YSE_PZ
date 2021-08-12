@@ -752,7 +752,7 @@ def main(name, ra, dec, exptime, telescop, start_date, end_date):
 
     lco = lcogt(djangoSettings.LCOGTUSER, djangoSettings.LCOGTPASS, progid, telescop, start_date,
         end_date)
-
+    print(djangoSettings.LCOGTUSER, djangoSettings.LCOGTPASS, progid, telescop, start_date,end_date)
     coord = SkyCoord(ra, dec, unit='deg')
     response = lco.make_obs_request(name, ra, dec, exptime,
         strategy='spectroscopy', propidx=progid)

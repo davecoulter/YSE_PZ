@@ -79,7 +79,7 @@ def main():
 """%(d['Name'],d['RA'],d['DEC'],d['Obj. Type'],redshift,
      d['Reporting Group/s'],d['Discovery Mag/Flux'],d['Discovery Filter'],
      d['Discovery Date (UT)'])
-            print(dataline,file=fout) 
+            print(dataline,file=fout)
         print(htmlfooter,file=fout)
     
 if __name__ == "__main__":
