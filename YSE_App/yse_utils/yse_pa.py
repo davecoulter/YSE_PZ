@@ -3,7 +3,7 @@ import astropy.units as u
 import numpy as np
 from YSE_App.models import *
 from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
-from django.shortcuts import render, get_object_or_404, render_to_response
+from django.shortcuts import render, get_object_or_404
 from YSE_App.common.utilities import GetSexigesimalString
 from matplotlib.patches import Rectangle
 import matplotlib
