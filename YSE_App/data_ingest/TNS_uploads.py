@@ -454,8 +454,15 @@ class processTNS:
             os.system('rm spec_tns_upload.txt')
 
             try:
-                dlfile = get_file(s,self.tnsapikey,self.tns_bot_id,self.tns_bot_name).text
-            except: continue
+                try:
+                    dlfile = get_file(s,self.tnsapikey,self.tns_bot_id,self.tns_bot_name).text
+                except:
+                    print('TNS request failed.  Waiting 60 seconds to try again...')
+                    time.sleep(60)
+                    dlfile = get_file(s,self.tnsapikey,self.tns_bot_id,self.tns_bot_name).text
+            except:
+                continue
+            
             with open('spec_tns_upload.txt','w') as fout:
                 print('# wavelength flux',file=fout)
                 print('# instrument %s'%si,file=fout)
@@ -673,8 +680,13 @@ class processTNS:
             TNSGetSingle = [("objname",jd['objname']),
                             ("photometry","0"),
                             ("spectra","0")]
-
-            response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            try:
+                response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            except:
+                print('TNS request failed.  Waiting 60 seconds to try again...')
+                time.sleep(60)
+                response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            
             json_data_single = format_to_json(response_single.text)
 
             objs.append(json_data_single['data']['reply']['objname'])
@@ -701,7 +713,13 @@ class processTNS:
                             ("photometry","0"),
                             ("spectra","0")]
 
-            response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            try:
+                response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            except:
+                print('TNS request failed.  Waiting 60 seconds to try again...')
+                time.sleep(60)
+                response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+                
             json_data_single = format_to_json(response_single.text)
 
             objs.append(json_data_single['data']['reply']['objname'])
@@ -884,7 +902,11 @@ class processTNS:
                                     ("photometry","1"),
                                     ("spectra","1")]
 
-                    response=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+                    try:
+                        response=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+                    except:
+                        time.sleep(60)
+                        response=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
                     json_data += [format_to_json(response.text)]
                     total_objs += 1
                 else:
