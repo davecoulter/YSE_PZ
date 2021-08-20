@@ -454,15 +454,15 @@ class processTNS:
             os.system('rm spec_tns_upload.txt')
 
             try:
-                try:
-                    dlfile = get_file(s,self.tnsapikey,self.tns_bot_id,self.tns_bot_name).text
-                except:
+                dlfileresp = get_file(s,self.tnsapikey,self.tns_bot_id,self.tns_bot_name)
+                if dlfileresp.status_code == 429:
                     print('TNS request failed.  Waiting 60 seconds to try again...')
                     time.sleep(60)
-                    dlfile = get_file(s,self.tnsapikey,self.tns_bot_id,self.tns_bot_name).text
+                    dlfileresp = get_file(s,self.tnsapikey,self.tns_bot_id,self.tns_bot_name)
+                dlfile = dlfileresp.text
             except:
                 continue
-            
+
             with open('spec_tns_upload.txt','w') as fout:
                 print('# wavelength flux',file=fout)
                 print('# instrument %s'%si,file=fout)
@@ -672,7 +672,12 @@ class processTNS:
         datemin = (datetime.now() - timedelta(days=ndays)).isoformat() #strftime(date_format)
         search_obj=[("ra",""), ("dec",""), ("radius",""), ("units",""),
                     ("objname",""), ("internal_name",""),("public_timestamp",datemin)]
+        
         response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+        if response.status_code == 429:
+            print('TNS request failed.  Waiting 60 seconds to try again...')
+            time.sleep(60)
+            response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
         json_data = format_to_json(response.text)
 
         objs,ras,decs = [],[],[]
@@ -680,13 +685,12 @@ class processTNS:
             TNSGetSingle = [("objname",jd['objname']),
                             ("photometry","0"),
                             ("spectra","0")]
-            try:
-                response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
-            except:
+
+            response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            if response_single.status_code == 429:
                 print('TNS request failed.  Waiting 60 seconds to try again...')
                 time.sleep(60)
                 response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
-            
             json_data_single = format_to_json(response_single.text)
 
             objs.append(json_data_single['data']['reply']['objname'])
@@ -704,6 +708,10 @@ class processTNS:
         search_obj=[("ra",""), ("dec",""), ("radius",""), ("units",""),
                     ("objname",""), ("internal_name",""),("public_timestamp",datemin)]
         response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+        if response.status_code == 429:
+            print('TNS request failed.  Waiting 60 seconds to try again...')
+            time.sleep(60)
+            response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
         json_data = format_to_json(response.text)
 
         objs,ras,decs = [],[],[]
@@ -713,13 +721,13 @@ class processTNS:
                             ("photometry","0"),
                             ("spectra","0")]
 
-            try:
-                response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
-            except:
+            
+            response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            if response_single.status_code == 429:
                 print('TNS request failed.  Waiting 60 seconds to try again...')
                 time.sleep(60)
                 response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
-                
+
             json_data_single = format_to_json(response_single.text)
 
             objs.append(json_data_single['data']['reply']['objname'])
@@ -807,6 +815,7 @@ class processTNS:
         ebvall,nedtables = [],[]
         ebvtstart = time.time()
         ebv_timeout,ned_timeout = False,False
+
         if doGHOST:
 
             if not os.path.exists('database/GHOST.csv'):
@@ -902,11 +911,13 @@ class processTNS:
                                     ("photometry","1"),
                                     ("spectra","1")]
 
-                    try:
-                        response=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
-                    except:
+
+                    response=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+                    if response.status_code == 429:
+                        print('TNS failed!  waiting 60 seconds...')
                         time.sleep(60)
                         response=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+                        
                     json_data += [format_to_json(response.text)]
                     total_objs += 1
                 else:
@@ -949,6 +960,7 @@ class processTNS:
             ########################################################
             # For Item in Email, Get NED
             ########################################################
+
             if jd is not None:
                 if type(jd['data']['reply']['objname']) == str:
                     jd = jd['data']['reply']
