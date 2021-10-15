@@ -833,6 +833,7 @@ class processTNS:
                     scall = [SkyCoord(r,d,unit=(u.hourangle,u.deg)) for r,d in zip(ras,decs)]
 
                 ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False)
+                ghost_hosts = calc_photoz(ghost_hosts)
                 os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
             except:
                 print('GHOST timeout!')
