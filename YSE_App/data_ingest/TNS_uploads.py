@@ -45,6 +45,7 @@ from django.conf import settings as djangoSettings
 import argparse, configparser
 import signal
 from astro_ghost.ghostHelperFunctions import *
+from astro_ghost.photoz_helper import calc_photoz
 import os
 
 
@@ -543,7 +544,7 @@ class processTNS:
         if 'photo_z_internal' in hostdict.keys():
             if hostdict['photo_z_internal'] != hostdict['photo_z_internal']:
                 hostdict['photo_z_internal'] = None
-        
+        import pdb; pdb.set_trace()
         return hostdict,hostcoords
         
     def getNEDData(self,jd,sc,ned_table):
@@ -687,7 +688,7 @@ class processTNS:
                             ("spectra","0")]
 
             response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
-            if response_single.status_code == 429:
+            while response_single.status_code == 429:
                 print('TNS request failed.  Waiting 60 seconds to try again...')
                 time.sleep(60)
                 response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)

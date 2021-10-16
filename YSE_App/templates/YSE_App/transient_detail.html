@@ -238,9 +238,9 @@
 													{% elif transient.host.photo_z %}
 														<p class="text-muted">Lum. Dist. = {{ transient.host.photo_z|DL }} Mpc</p>
 														<p class="text-muted">&mu; = {{ transient.host.photo_z|distmod }}</p>
-													{% elif transient.host.photo_z_PSCNN %}
-														<p class="text-muted">Lum. Dist. = {{ transient.host.photo_z_PSCNN|DL }} Mpc</p>
-														<p class="text-muted">&mu; = {{ transient.host.photo_z_PSCNN|distmod }}</p>
+													{% elif transient.host.photo_z_internal %}
+														<p class="text-muted">Lum. Dist. = {{ transient.host.photo_z_internal|DL }} Mpc</p>
+														<p class="text-muted">&mu; = {{ transient.host.photo_z_internal|distmod }}</p>
 													{% else %}
 														<p class="text-muted">Unknown</p>
 													{% endif %}
@@ -389,8 +389,8 @@
 												<strong>Photo-z (Pan-STARRS CNN)</strong>
 												<p class="text-muted">
 													{% if transient.host %}
-														{% if transient.host.photo_z_PSCNN %}
-															{{ transient.host.photo_z_PSCNN|floatformat:3 }} 
+														{% if transient.host.photo_z_internal %}
+															{{ transient.host.photo_z_internal|floatformat:3 }} 
 
 															{% if transient.host.photo_z_err_PSCNN %}
 																+/- {{ transient.host.photo_z_err_PSCNN|floatformat:3 }}
