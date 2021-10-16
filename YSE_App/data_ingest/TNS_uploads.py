@@ -544,7 +544,7 @@ class processTNS:
         if 'photo_z_internal' in hostdict.keys():
             if hostdict['photo_z_internal'] != hostdict['photo_z_internal']:
                 hostdict['photo_z_internal'] = None
-        import pdb; pdb.set_trace()
+
         return hostdict,hostcoords
         
     def getNEDData(self,jd,sc,ned_table):
