@@ -1394,7 +1394,7 @@ def upload_spectrum(request):
 				tspec = tspec[0]
 			tspec.save()
 
-			if form.data['permissions']:
+			if 'permissions' in form.data.keys() and form.data['permissions']:
 				for p in form.cleaned_data['permissions']:
 					tspec.groups.add(Group.objects.filter(name=p)[0])
 				tspec.save()
@@ -1518,6 +1518,23 @@ class SearchResultsView(ListView):
 
 		return context
 
+#@login_required
+#def atlas_forced_phot(request,slug):
+#
+#    from YSE_App.data_ingest import kirstys_script
+#    
+#    transient = Transient.objects.get(slug=slug)
+#
+#    ### request forced photometry for this transient.name from ATLAS
+#    ###  transient.ra, transient.dec
+#
+#    ### save the photometry to the database
+#
+#    context = {'msg':'success'}
+#    #response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
+#    return JsonResponse(context) #HttpResponse('')
+
+    
 @login_required
 def ztf_forced_phot(request,slug):
 

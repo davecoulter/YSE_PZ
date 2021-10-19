@@ -36,6 +36,8 @@ class chandraImages():
     url += "&grating=NONE"
 
     r=requests.get(url)
+    if r.status_code != 200:
+        return
     f=io.BytesIO(r.text.encode())
     votable = parse(f)
     tbdata=votable.get_first_table().to_table()
