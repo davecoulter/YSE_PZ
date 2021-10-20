@@ -19,6 +19,7 @@ import astropy.coordinates as cd
 import astropy.units as u
 from YSE_App.models.survey_models import *
 import datetime
+from auditlog.registry import auditlog
 
 class Transient(BaseModel):
 
@@ -26,7 +27,7 @@ class Transient(BaseModel):
 	# Required
 	status = models.ForeignKey(TransientStatus, models.SET(get_sentinel_transientstatus))
 	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
-	
+    
 	# Optional
 	non_detect_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 	best_spec_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
@@ -258,7 +259,9 @@ class Transient(BaseModel):
 
 	def natural_key(self):
 		return self.name
-	
+
+auditlog.register(Transient)
+
 @receiver(models.signals.post_save, sender=Transient)
 def execute_after_save(sender, instance, created, *args, **kwargs):
 
