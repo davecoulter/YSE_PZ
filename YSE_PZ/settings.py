@@ -54,6 +54,7 @@ INSTALLED_APPS = [
 	'django_filters',
 	'django_cron',
 	'el_pagination',
+    'auditlog',
 	#'silk'
 ]
 
@@ -95,6 +96,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     #'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'auditlog.middleware.AuditlogMiddleware',
     #'django.middleware.cache.FetchFromCacheMiddleware'
 ]
 
