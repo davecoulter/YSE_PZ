@@ -263,7 +263,6 @@ SELECT pd.mag
 			(transient_followup_form.fields["valid_start"].initial.strftime('%m/%d/%Y HH:MM'),
 			 transient_followup_form.fields["valid_stop"].initial.strftime('%m/%d/%Y HH:MM'))
 	
-	#import pdb; pdb.set_trace()
 	if extra_context is not None:
 		context.update(extra_context)
 	else:
@@ -433,7 +432,7 @@ def too_calendar(request):
 	last_calendar_date = (datetime.datetime.utcnow()+datetime.timedelta(60)).replace(tzinfo=pytz.UTC)
 	all_too_resources = ToOResource.objects.filter(~Q(end_date_valid__lt=first_calendar_date) &
 											   ~Q(begin_date_valid__gt=last_calendar_date)).select_related()
-	#import pdb; pdb.set_trace()
+
 	telescope_colors = {}
 	all_resources = ()
 	for i, c in enumerate(all_too_resources.select_related()):
@@ -448,8 +447,6 @@ def too_calendar(request):
 		date_list = [date_start + datetime.timedelta(days=x) \
 					 for x in range(0, (date_end-date_start).days+2)]
 		all_resources += ((c,[(d.year,d.month,d.day) for d in date_list]),)
-		#break
-		#import pdb; pdb.set_trace()
 		
 	context = {
 		'all_resources': all_resources,
@@ -474,7 +471,7 @@ def too_requests(request, telescope, pi_name):
 		filter(Q(status__name='Requested') | Q(status__name='InProcess') | Q(status__name='Failed')).select_related()
 
 	followuptransientfilter = FollowupFilter(
-        request.GET, queryset=follow_requests,prefix=telescope.replace('_',''))
+		request.GET, queryset=follow_requests,prefix=telescope.replace('_',''))
 		
 	followup_table = ToOFollowupTable(followuptransientfilter.qs,prefix=telescope.replace('_',''),too_resource=too_resource)
 	RequestConfig(request, paginate={'per_page': 20}).configure(followup_table)
@@ -547,7 +544,7 @@ def yse_home(request):
 		filter(begin_date_valid__lte=datetime.datetime.utcnow()+datetime.timedelta(5)).\
 		filter(begin_date_valid__gte=datetime.datetime.utcnow()-datetime.timedelta(1)).\
 		select_related().order_by('begin_date_valid')
-	#import pdb; pdb.set_trace()
+
 	too_resources = view_utils.get_too_resources(request.user)
 	all_transient_statuses = TransientStatus.objects.all()
 
@@ -841,7 +838,6 @@ def download_target_list(request, telescope, obs_date):
 	for f in follow_requests:
 		comments = ';'.join([l.comment for l in Log.objects.filter(transient_followup=f)])
 		if f.transient.recent_mag():
-			#import pdb; pdb.set_trace()
 			content += "%s	%s %s 2000 mag = %.2f comment = %s\n"%(
 				f.transient.name.ljust(20),f.transient.CoordString()[0].replace(':',' '),
 				f.transient.CoordString()[1].replace(':',' '),float(f.transient.recent_mag()),comments)
@@ -969,8 +965,16 @@ def transient_detail(request, slug):
 		if hostdata:
 			hostphotdata = view_utils.get_recent_phot_for_host(request.user, host_id=hostdata[0].id)
 			transient_obj.hostdata = hostdata[0]
+
+			ramin,ramax,decmin,decmax = getRADecBox(transient_obj.hostdata.ra,transient_obj.hostdata.dec,size=1/60.)
+			
+			transients_near_host = Transient.objects.filter(
+				Q(ra__gt=ramin) & Q(ra__lt=ramax) &
+				Q(dec__gt=decmin) & Q(dec__lt=decmax) & ~Q(name=transient_obj.name)).values_list('name',flat=True)
+			transients_near_host = ','.join(transients_near_host)
 		else:
 			hostphotdata = None
+			transients_near_host = None
 
 		if hostphotdata: transient_obj.hostphotdata = hostphotdata
 
@@ -1025,7 +1029,8 @@ def transient_detail(request, slug):
 			'diff_images':TransientDiffImage.objects.filter(phot_data__photometry__transient__name=transient_obj.name),
 			'classical_resource_form':classical_resource_form,
 			'too_resource_form':too_resource_form,
-			'new_comment':has_new_comment
+			'new_comment':has_new_comment,
+			'transients_near_host':transients_near_host
 		}
 
 		if transient_followup_form.fields["valid_start"].initial:
@@ -1043,7 +1048,7 @@ def transient_detail(request, slug):
 			context['allphotdata']=allphotdata
 		if transient_obj.postage_stamp_file:
 			context['qub_candidate'] = transient_obj.postage_stamp_file.split('/')[-1].split('_')[0]
-
+			
 		#if automated_spectrum_form.fields["valid_start"].initial:
 		#	context['automated_spectrum_initial_dates'] = \
 		#		(automated_spectrum_form.fields["valid_start"].initial.strftime('%m/%d/%Y HH:MM'),
@@ -1521,59 +1526,59 @@ class SearchResultsView(ListView):
 #@login_required
 #def atlas_forced_phot(request,slug):
 #
-#    from YSE_App.data_ingest import kirstys_script
-#    
-#    transient = Transient.objects.get(slug=slug)
+#	 from YSE_App.data_ingest import kirstys_script
+#	 
+#	 transient = Transient.objects.get(slug=slug)
 #
-#    ### request forced photometry for this transient.name from ATLAS
-#    ###  transient.ra, transient.dec
+#	 ### request forced photometry for this transient.name from ATLAS
+#	 ###  transient.ra, transient.dec
 #
-#    ### save the photometry to the database
+#	 ### save the photometry to the database
 #
-#    context = {'msg':'success'}
-#    #response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
-#    return JsonResponse(context) #HttpResponse('')
+#	 context = {'msg':'success'}
+#	 #response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
+#	 return JsonResponse(context) #HttpResponse('')
 
-    
+	
 @login_required
 def ztf_forced_phot(request,slug):
 
 
-    from YSE_App.data_ingest import ZTF_Forced_Phot
+	from YSE_App.data_ingest import ZTF_Forced_Phot
 
-    transient = Transient.objects.get(slug=slug)
+	transient = Transient.objects.get(slug=slug)
 
-    # make sure this request wasn't run w/i the last 12 hours
-    old_log = Log.objects.filter(transient=transient).\
-        filter(modified_date__gt=datetime.datetime.utcnow().replace(tzinfo=pytz.UTC)-datetime.timedelta(0.5))
-    if len(old_log):
-        context = {'msg':'error: forced phot was requested %.1f hours ago (must be >12)'%((datetime.datetime.utcnow().replace(tzinfo=pytz.UTC)-old_log[0].modified_date).seconds/3600.)}
-        #response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
-        return JsonResponse(context) #HttpResponse('')
-    
-    # run ZTF forced phot script
-    ztf = ZTF_Forced_Phot.ZTF_Forced_Phot(
-        ztf_email_address='%s@gmail.com'%djangoSettings.SMTP_LOGIN,ztf_email_password=djangoSettings.SMTP_PASSWORD,
-        ztf_email_imapserver='imap.gmail.com',ztf_user_address='%s@gmail.com'%djangoSettings.SMTP_LOGIN,
-        ztf_user_password=djangoSettings.ZTFPASS)
+	# make sure this request wasn't run w/i the last 12 hours
+	old_log = Log.objects.filter(transient=transient).\
+		filter(modified_date__gt=datetime.datetime.utcnow().replace(tzinfo=pytz.UTC)-datetime.timedelta(0.5))
+	if len(old_log):
+		context = {'msg':'error: forced phot was requested %.1f hours ago (must be >12)'%((datetime.datetime.utcnow().replace(tzinfo=pytz.UTC)-old_log[0].modified_date).seconds/3600.)}
+		#response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
+		return JsonResponse(context) #HttpResponse('')
+	
+	# run ZTF forced phot script
+	ztf = ZTF_Forced_Phot.ZTF_Forced_Phot(
+		ztf_email_address='%s@gmail.com'%djangoSettings.SMTP_LOGIN,ztf_email_password=djangoSettings.SMTP_PASSWORD,
+		ztf_email_imapserver='imap.gmail.com',ztf_user_address='%s@gmail.com'%djangoSettings.SMTP_LOGIN,
+		ztf_user_password=djangoSettings.ZTFPASS)
 
-    log_file_name = ztf.run_ztf_fp(
-        all_jd=False, days=60, decl=transient.dec, directory_path='/tmp',
-        do_plot=False, emailcheck=0, fivemindelay=60, jdend=None,
-        jdstart=None, logfile=None, mjdend=None, mjdstart=None,
-        plotfile=None, ra=transient.ra, skip_clean=False, source_name=slug,
-        verbose=False)
+	log_file_name = ztf.run_ztf_fp(
+		all_jd=False, days=60, decl=transient.dec, directory_path='/tmp',
+		do_plot=False, emailcheck=0, fivemindelay=60, jdend=None,
+		jdstart=None, logfile=None, mjdend=None, mjdstart=None,
+		plotfile=None, ra=transient.ra, skip_clean=False, source_name=slug,
+		verbose=False)
 
-    # then need to do some logging
-    commentstr = """ZTF Forced Phot
+	# then need to do some logging
+	commentstr = """ZTF Forced Phot
 log_file_name=%s
 job_submitted=%s"""%(log_file_name,datetime.datetime.utcnow().isoformat())
 
-    l = Log.objects.create(
-        created_by=request.user,modified_by=request.user,
-        transient=transient,comment=commentstr)
+	l = Log.objects.create(
+		created_by=request.user,modified_by=request.user,
+		transient=transient,comment=commentstr)
 
-    context = {'msg':'success'}
-    #response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
-    return JsonResponse(context) #HttpResponse('')
+	context = {'msg':'success'}
+	#response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
+	return JsonResponse(context) #HttpResponse('')
 

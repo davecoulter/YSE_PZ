@@ -417,6 +417,20 @@
 												</div>
 											</div>
 										</div>
+										<div class="row">
+											<div class="col-xs-4">
+												<div class="form-group">
+													<strong>Other transients w/i 1 arcmin of host</strong>
+													<p class="text-muted">
+														{% if transient.host %}
+															{{ transients_near_host }}<br>
+														{% else %}
+															Unknown
+														{% endif %}
+													</p>
+												</div>
+											</div>
+										</div>
 									
 
 										<!-- Start 2 column -->
