@@ -3,6 +3,7 @@
 # look for objects w/o host galaxies, run GHOST and upload the results
 
 from astro_ghost.ghostHelperFunctions import *
+from astro_ghost.photoz_helper import calc_photoz
 import numpy as np
 from YSE_App.models import *
 from astropy.coordinates import SkyCoord
@@ -29,11 +30,13 @@ def getGHOSTData(ghost_host):
 
 def main():
 
-    transients = Transient.objects.filter(tags__name='YSE').filter(Q(host__isnull=True) | Q(host__redshift__isnull=True))
+    transients = Transient.objects.filter(tags__name='YSE').filter(name__startswith='20') #.filter(Q(host__isnull=True) | Q(host__redshift__isnull=True))
     for t in transients:
+        print(t)
         sc = [SkyCoord(t.ra,t.dec,unit=u.deg)]
-        ghost_hosts = getTransientHosts([t.name], sc, verbose=True, starcut='normal', ascentMatch=False)
-        if ghost_hosts is not None:
+        ghost_hosts = getTransientHosts([t.name], sc, verbose=True, starcut='gentle', ascentMatch=False)
+        if not ghost_hosts.empty:
+            ghost_hosts = calc_photoz(ghost_hosts)
             ghost_host = ghost_hosts[ghost_hosts['TransientName'] == t.name]
             if not len(ghost_host): ghost_host = None
             else:
@@ -44,7 +47,7 @@ def main():
                 host.save()
                 t.host = host
                 t.save()
-        
+
         os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
 
     return
