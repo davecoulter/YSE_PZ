@@ -1434,9 +1434,9 @@ def upload_spectrum(request):
 				elif len(line.split(',')) == 2:
 					wavelength,flux = line.split(',')
 					wavelength,flux = float(wavelength),float(flux)
-					td += TransientSpecData(
+					td += [TransientSpecData(
 						spectrum=tspec,wavelength=wavelength,flux=flux,
-						created_by=request.user,modified_by=request.user)
+						created_by=request.user,modified_by=request.user)]
 				else:
 					raise RuntimeError('bad input')
 
