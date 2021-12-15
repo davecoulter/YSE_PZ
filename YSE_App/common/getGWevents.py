@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# Python 2/3 compatibility 
+#!/usr/bin/env python 
+# Python 2/3 compatibility
 from __future__ import print_function
 import re,sys,string,math,os,types,exceptions,glob
 from astropy.table import Table
