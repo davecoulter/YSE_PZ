@@ -50,7 +50,7 @@ class Transient(BaseModel):
 	# Optional
 	ra_err = models.FloatField(null=True, blank=True)
 	dec_err = models.FloatField(null=True, blank=True)
-
+    
 	disc_date = models.DateTimeField(null=True, blank=True)
 	candidate_hosts = models.TextField(null=True, blank=True) # A string field to hold n hosts -- if we don't quite know which is the correct one
 	redshift = models.FloatField(null=True, blank=True)
@@ -71,7 +71,8 @@ class Transient(BaseModel):
 	k2_msg = models.TextField(null=True, blank=True)
 	TNS_spec_class = models.CharField(max_length=64, null=True, blank=True) # To hold the TNS classiciation in case we don't have a matching enum
 	point_source_probability = models.FloatField(null=True, blank=True)
-
+	alt_status = models.CharField(max_length=64,null=True,blank=True) # QUB statuses
+    
 	slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
 
 	real_bogus_score = models.FloatField(null=True, blank=True)

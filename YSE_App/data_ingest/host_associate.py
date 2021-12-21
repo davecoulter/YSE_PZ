@@ -39,24 +39,26 @@ class YSE(CronJobBase):
             #nowdate = datetime.datetime.utcnow() - datetime.timedelta(1)
             from django.db.models import Q #HAS To Remain Here,
             #save time b/c the other cron jobs print a time for completion
-                
-            getGHOST(real=True, verbose=False)
+
+            if not os.path.exists('database/GHOST.csv'):
+                getGHOST(real=True, verbose=False)
             #we might reset this once when we update
             
-            transients = (Transient.objects.filter(~Q(tags__name__in='YSE') & Q(host__isnull=False)))
+            transients = Transient.objects.filter(~Q(tags__name__in='YSE') &
+                                                  Q(host__isnull=False) &
+                                                  Q(host__panstarrs_objid__isnull=True))
             #transients = (Transient.objects.filter(Q(host__isnull=False)))
             
-            
             #get rid of objects that have panstarrs_objids already
-            mask=[]
-            for T in transients:
-                if T.host.panstarrs_objid:
-                    mask.append(False)
-                else:
-                    mask.append(True)
+            #mask=[]
+            #for T in transients:
+            #    if T.host.panstarrs_objid:
+            #        mask.append(False)
+            #    else:
+            #        mask.append(True)
             
             #reduce transients using the mask
-            transients = [T for i,T in enumerate(transients) if mask[i]]
+            #transients = [T for i,T in enumerate(transients) if mask[i]]
 
 
             #construct a new mask
@@ -86,10 +88,8 @@ class YSE(CronJobBase):
             DEC = [T.dec for i,T in enumerate(transients)]
             snCoord = [SkyCoord(ra*u.deg, dec*u.deg, frame='icrs') for ra,dec in zip(RA,DEC)] 
             
-            snName = ['SN'+str(j) for j in range(len(transients))]
-            
-            
-            hosts = getTransientHosts(snName, snCoord, verbose=True, starcut='normal', gradientAscent=False)
+            snName = ['SN'+T.name for i,T in enumerate(transients)]
+            hosts = getTransientHosts(snName, snCoord, verbose=True, starcut='normal', ascentMatch=False)
             
             #hosts is a df that may or may not have the hosts, so 
             #we can use the fact that the names are ordered to
@@ -107,7 +107,7 @@ class YSE(CronJobBase):
     
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
-            print("""PS Photo-z cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno))
+            print("""GHOST cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno))
             #html_msg = """host associate cron failed with error %s at line number %s"""%(e,exc_tb.tb_lineno)
             #sendemail(from_addr, user.email, subject, html_msg,
             #          djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)

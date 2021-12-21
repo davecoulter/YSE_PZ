@@ -91,6 +91,8 @@ class ForcedPhot(CronJobBase):
         if config:
             parser.add_argument('--ztfforcedphotpass', default=config.get('yse_forcedphot','ztfforcedphotpass'), type=str,
                                 help='ZTF password (default=%default)')
+            parser.add_argument('--ztfforcedtmpdir', default=config.get('yse_forcedphot','ztfforcedtmpdir'), type=str,
+                                help='directory for ZTF forced phot (default=%default)')
             parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
                                 help='YSE-PZ API URL (default=%default)')
             parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
@@ -149,25 +151,26 @@ class ForcedPhot(CronJobBase):
             if l.transient.name in list_already_done: continue
             print(l.transient.name)
             log_file_name = l.comment.split('=')[-2].split('\n')[0]
-            if 'forced_phot_out' not in log_file_name:
-                log_file_name = log_file_name.replace('/tmp','/data/yse_pz/tmp/forced_phot_out')
+            #if 'forced_phot_out' not in log_file_name:
+            #    log_file_name = log_file_name.replace('/tmp','/data/yse_pz/tmp/forced_phot_out')
 
-            try:
-                output_files = ztf.get_ztf_fp(
-                    log_file_name, directory_path='/data/yse_pz/tmp/forced_phot_out',
-                    source_name=l.transient.name,verbose=True)
-            except Exception as e:
-                print(e)
-                print('No data yet for %s'%l.transient.name)
-                continue
-
+            #try:
+            output_files = ztf.get_ztf_fp(
+                log_file_name, directory_path=f'{self.options.ztfforcedtmpdir}/forced_phot_out',  #directory_path='/data/yse_pz/tmp/forced_phot_out',
+                source_name=l.transient.name,verbose=True)
+            #except Exception as e:
+            #    print(e)
+            #    print('No data yet for %s'%l.transient.name)
+            #    continue
+            #import pdb; pdb.set_trace()
             if output_files is None:
                 print('No data yet for %s'%l.transient.name)
                 continue
             
             # first we have to figure out how to parse these output files
             try:
-                data = at.Table.read('/data/yse_pz/tmp/forced_phot_out/%s/%s_lc.txt'%(l.transient.name,l.transient.name),format='ascii',header_start=0)
+                #/data/yse_pz
+                data = at.Table.read(f'{self.options.ztfforcedtmpdir}/forced_phot_out/%s/%s_lc.txt'%(l.transient.name,l.transient.name),format='ascii',header_start=0)
             except:
                 print('No LC data for %s'%l.transient.name)
                 continue

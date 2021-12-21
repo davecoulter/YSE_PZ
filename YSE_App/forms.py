@@ -185,7 +185,7 @@ class TransientObservationTaskForm(ModelForm):
 
 class QueryModelChoiceField(forms.ModelChoiceField):
 	def label_from_instance(self, obj):
-		return obj.__unicode__
+		return obj.__str__
 
 class AddDashboardQueryForm(ModelForm):
 	query = QueryModelChoiceField(Query.objects.all(),required=False)

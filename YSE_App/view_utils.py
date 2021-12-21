@@ -1,9 +1,13 @@
 # utils for generating webpage views
+import multiprocessing as mp
+try: mp.set_start_method('fork')
+except: pass
 import django
 from django.http import HttpResponse,JsonResponse
 from django.shortcuts import render, get_object_or_404, render
 import copy
 from .models import *
+#from .common.riseset import rise_func,set_func
 from django.db import models
 from astropy.coordinates import EarthLocation
 from astropy.coordinates import get_moon, SkyCoord, Angle
@@ -58,7 +62,8 @@ from django.db import connection, reset_queries
 import time
 import functools
 import signal
-from multiprocessing import Process
+from multiprocessing import Process, Queue
+Q = Queue()
 
 def query_debugger(func):
 
@@ -631,8 +636,9 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
                     if p.mag_err: mag_err = p.mag_err
                     else: mag_err = 0.02
                     salt2mjd = np.append(salt2mjd,[dbmjd])
-                    flux = np.append(flux,10**(-0.4*(p.mag-27.5)))
-                    fluxerr = np.append(fluxerr,p.mag*mag_err*0.4*np.log(10))
+                    flux_single = 10**(-0.4*(p.mag-27.5))
+                    flux = np.append(flux,flux_single)
+                    fluxerr = np.append(fluxerr,flux_single*mag_err*0.4*np.log(10))
                     salt2band = np.append(salt2band,bandpassdict[str(p.band)])
                     if 'bessell' in bandpassdict[str(p.band)]: zpsys = np.append(zpsys,'Vega')
                     else: zpsys = np.append(zpsys,'AB')
@@ -918,8 +924,9 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
                 salt2mag_errs = mag_errs[iBand]
                 salt2mag_errs[(salt2mag_errs < 0.01) | (salt2mag_errs == None)] = 0.01
                 salt2mjd = np.append(salt2mjd,mjds[iBand])
-                salt2flux = np.append(salt2flux,10**(-0.4*(mags[iBand]-27.5)))
-                salt2fluxerr = np.append(salt2fluxerr,mags[iBand]*salt2mag_errs*0.4*np.log(10))
+                fluxes_single = 10**(-0.4*(mags[iBand]-27.5))
+                salt2flux = np.append(salt2flux,fluxes_single)
+                salt2fluxerr = np.append(salt2fluxerr,fluxes_single*salt2mag_errs*0.4*np.log(10))
                 salt2band = np.append(salt2band,[bandpassdict[bandkey]]*len(salt2mag_errs))
                 if 'bessell' in bandpassdict[bandkey]: zpsys = np.append(zpsys,['Vega']*len(mag_errs[iBand]))
                 else: zpsys = np.append(zpsys,['AB']*len(mag_errs[iBand]))
@@ -1144,10 +1151,11 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
             if p.data_quality is None: data_quality = np.append(data_quality,['Good'])
             else: data_quality = np.append(data_quality,[p.data_quality.name])
             if not p.flux or not p.flux_err:
-                flux = np.append(flux,10**(-0.4*(p.mag-27.5)))
+                flux_single = 10**(-0.4*(p.mag-27.5))
+                flux = np.append(flux,flux_single)
                 if p.mag_err: mag_err = p.mag_err
                 else: mag_err = 0.02
-                fluxerr = np.append(fluxerr,p.mag*mag_err*0.4*np.log(10))
+                fluxerr = np.append(fluxerr,flux_single*mag_err*0.4*np.log(10))
             else:
                 flux = np.append(flux,p.flux)
                 fluxerr = np.append(fluxerr,p.flux_err)
@@ -1164,9 +1172,10 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
                 if str(p.band) in bandpassdict.keys():
                     if p.mag_err: mag_err = p.mag_err
                     else: mag_err = 0.02
+                    flux_single = 10**(-0.4*(p.mag-27.5))
                     salt2mjd = np.append(salt2mjd,[dbmjd])
-                    salt2flux = np.append(salt2flux,10**(-0.4*(p.mag-27.5)))
-                    salt2fluxerr = np.append(salt2fluxerr,p.mag*mag_err*0.4*np.log(10))
+                    salt2flux = np.append(salt2flux,flux_single)
+                    salt2fluxerr = np.append(salt2fluxerr,flux_single*mag_err*0.4*np.log(10))
                     salt2band = np.append(salt2band,bandpassdict[str(p.band)])
                     if 'bessell' in bandpassdict[str(p.band)]: zpsys = np.append(zpsys,'Vega')
                     else: zpsys = np.append(zpsys,'AB')
@@ -1609,75 +1618,94 @@ def spectrumplotsingle(request, transient_id, spec_id):
 
     return HttpResponse(g.replace('width: 90%','width: 100%'))
 
+def set_func(coords,obs_date,longitude,latitude,elevation,setdict):
+    tstart = time.time()
+
+    #transient = Transient.objects.filter(id=transient_id)[0]
+    #coords = transient.CoordString()
+
+    #obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
+
+    tme = Time(str(obs_date).split()[0])
+    sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
+
+    location = EarthLocation.from_geodetic(
+        longitude*u.deg,latitude*u.deg,
+        elevation*u.m)
+    tel = Observer(location=location, timezone="UTC")
+
+    target_set_time = tel.target_set_time(tme,sc,horizon=18*u.deg,which="previous")
+
+    if target_set_time:
+        try: settime = target_set_time.isot.split('T')[-1]
+        except: settime = None
+    else: 
+        settime = None
+
+    print('set time took %s'%(time.time()-tstart))
+    Q.put(settime)
+    #setdict['set_time'] = settime
+    
+def rise_func(coords,obs_date,longitude,latitude,elevation,risedict):
+    tstart = time.time()
+    #transient = Transient.objects.filter(id=transient_id)[0]
+    #coords = transient.CoordString()
+
+    #obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
+
+    tme = Time(str(obs_date).split()[0])
+    sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
+
+    location = EarthLocation.from_geodetic(
+        longitude*u.deg,latitude*u.deg,
+        elevation*u.m)
+    tel = Observer(location=location, timezone="UTC")
+
+    target_rise_time = tel.target_rise_time(
+        tme,sc,horizon=18*u.deg,which="previous")
+
+    if target_rise_time:
+        try: risetime = target_rise_time.isot.split('T')[-1]
+        except: risetime = None
+    else: 
+        risetime = None
+
+    print('rise time took %s'%(time.time()-tstart))
+    Q.put(risetime)
+
 def rise_time(request,transient_id,obs_id):
-
-    def rise_func(transient_id,obs_id,risedict):
-        tstart = time.time()
-        transient = Transient.objects.filter(id=transient_id)[0]
-        coords = transient.CoordString()
-
-        obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
-
-        tme = Time(str(obsnight.obs_date).split()[0])
-        sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
-
-        location = EarthLocation.from_geodetic(
-            obsnight.resource.telescope.longitude*u.deg,obsnight.resource.telescope.latitude*u.deg,
-            obsnight.resource.telescope.elevation*u.m)
-        tel = Observer(location=location, timezone="UTC")
-
-        target_rise_time = tel.target_rise_time(tme,sc,horizon=18*u.deg,which="previous")
-
-        if target_rise_time:
-            try: risetime = target_rise_time.isot.split('T')[-1]
-            except: risetime = None
-        else: 
-            risetime = None
-
-        print('rise time took %s'%(time.time()-tstart))
-        risedict = {'rise_time':risetime}
-        return
         
     risedict = {'rise_time':''}
-    action = Process(target=rise_func,args=(transient_id,obs_id,risedict))
+    transient = Transient.objects.filter(id=transient_id)[0]
+    coords = transient.CoordString()
+    obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
+    obs_date = obsnight.obs_date
+    longitude = obsnight.resource.telescope.longitude
+    latitude = obsnight.resource.telescope.latitude
+    elevation = obsnight.resource.telescope.elevation
+    
+    action = Process(target=rise_func,args=(coords,obs_date,longitude,latitude,elevation,risedict))
     action.start()
+    risedict['rise_time'] = Q.get()
     action.join(timeout=1)
     action.terminate()
 
     return JsonResponse(risedict)
 
-    
 def set_time(request,transient_id,obs_id):
 
-    def set_func(transient_id,obs_id,setdict):
-        tstart = time.time()
-        transient = Transient.objects.filter(id=transient_id)[0]
-        coords = transient.CoordString()
-
-        obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
-
-        tme = Time(str(obsnight.obs_date).split()[0])
-        sc = SkyCoord('%s %s'%(coords[0],coords[1]),unit=(u.hourangle,u.deg))
-
-        location = EarthLocation.from_geodetic(
-            obsnight.resource.telescope.longitude*u.deg,obsnight.resource.telescope.latitude*u.deg,
-            obsnight.resource.telescope.elevation*u.m)
-        tel = Observer(location=location, timezone="UTC")
-
-        target_set_time = tel.target_set_time(tme,sc,horizon=18*u.deg,which="previous")
-
-        if target_set_time:
-            try: settime = target_set_time.isot.split('T')[-1]
-            except: settime = None
-        else: 
-            settime = None
-
-        print('set time took %s'%(time.time()-tstart))
-        setdict = {'set_time':settime}
-
     setdict = {'set_time':''}
-    action = Process(target=set_func,args=(transient_id,obs_id,setdict))
+    transient = Transient.objects.filter(id=transient_id)[0]
+    coords = transient.CoordString()
+    obsnight = ClassicalObservingDate.objects.get(pk=obs_id)
+    obs_date = obsnight.obs_date
+    longitude = obsnight.resource.telescope.longitude
+    latitude = obsnight.resource.telescope.latitude
+    elevation = obsnight.resource.telescope.elevation
+    
+    action = Process(target=set_func,args=(coords,obs_date,longitude,latitude,elevation,setdict))
     action.start()
+    setdict['set_time'] = Q.get()
     action.join(timeout=1.0)
     action.terminate()
 
