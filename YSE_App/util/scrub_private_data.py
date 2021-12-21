@@ -12,7 +12,7 @@ import numpy as np
 import pytz
 
 tnsapi = 'https://www.wis-tns.org/api/get'
-tnsapikey = 'ecd2dec8cee4ed72a39fe8467ddd405fec4eef14'
+tnsapikey = ''
 
 def get(url,json_list,api_key):
     try:
