@@ -30,6 +30,9 @@ from .basicauth import *
 
 from YSE_App.util import lcogt
 
+def is_ajax(request):
+    return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+
 class AddTransientFollowupFormView(FormView):
 	form_class = TransientFollowupForm
 	template_name = 'YSE_App/form_snippets/transient_followup_form.html'
@@ -37,14 +40,14 @@ class AddTransientFollowupFormView(FormView):
 	
 	def form_invalid(self, form):
 		response = super(AddTransientFollowupFormView, self).form_invalid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
 
 	def form_valid(self, form):
 		response = super(AddTransientFollowupFormView, self).form_valid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 
 			instance = form.save(commit=False)
 			instance.created_by = self.request.user
@@ -112,14 +115,14 @@ class AddClassicalResourceFormView(FormView):
 	
 	def form_invalid(self, form):
 		response = super(AddClassicalResourceFormView, self).form_invalid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
 
 	def form_valid(self, form):
 		response = super(AddClassicalResourceFormView, self).form_valid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 
 			instance = form.save(commit=False)
 			instance.created_by = self.request.user
@@ -153,14 +156,14 @@ class AddToOResourceFormView(FormView):
 	
 	def form_invalid(self, form):
 		response = super(AddToOResourceFormView, self).form_invalid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
 
 	def form_valid(self, form):
 		response = super(AddToOResourceFormView, self).form_valid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 
 			instance = form.save(commit=False)
 			instance.created_by = self.request.user
@@ -185,14 +188,14 @@ class AddTransientObservationTaskFormView(FormView):
 
 	def form_invalid(self, form):
 		response = super(AddTransientObservationTaskFormView, self).form_invalid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
 
 	def form_valid(self, form):
 		response = super(AddTransientObservationTaskFormView, self).form_valid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			instance = form.save(commit=False)
 			instance.created_by = self.request.user
 			instance.modified_by =self.request.user
@@ -242,14 +245,14 @@ class AddSurveyFieldFormView(FormView):
 
 	def form_invalid(self, form):
 		response = super(AddSurveyFieldFormView, self).form_invalid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
 
 	def form_valid(self, form):
 		response = super(AddSurveyFieldFormView, self).form_valid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			instance = form.save(commit=False)
 			instance.created_by = self.request.user
 			instance.modified_by = self.request.user
@@ -329,7 +332,7 @@ class AddSurveyObsFormView(FormView):
 	@login_or_basic_auth_required
 	def dispatch(self, request, *args, **kwargs):
 
-		if not self.request.is_ajax():
+		if not is_ajax(self.request):
 			auth_method, credentials = self.request.META['HTTP_AUTHORIZATION'].split(' ', 1)
 			credentials = base64.b64decode(credentials.strip()).decode('utf-8')
 			username, password = credentials.split(':', 1)
@@ -339,14 +342,14 @@ class AddSurveyObsFormView(FormView):
 	
 	def form_invalid(self, form):
 		response = super(AddSurveyObsFormView, self).form_invalid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
 
 	def form_valid(self, form):
 		response = super(AddSurveyObsFormView, self).form_valid(form)
-		if 'hi': #self.request.is_ajax():
+		if 'hi': #is_ajax(self.request):
 			instance = form.save(commit=False)
 
 			telescope = Telescope.objects.get(name='Pan-STARRS1')
@@ -456,14 +459,14 @@ class AddOncallUserFormView(FormView):
 
 	def form_invalid(self, form):
 		response = super(AddOncallUserFormView, self).form_invalid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
 
 	def form_valid(self, form):
 		response = super(AddOncallUserFormView, self).form_valid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			instance = form.save(commit=False)
 			#instance.created_by = self.request.user
 			#instance.modified_by = self.request.user
@@ -521,14 +524,14 @@ class AddTransientCommentFormView(FormView):
 
 	def form_invalid(self, form):
 		response = super(AddTransientCommentFormView, self).form_invalid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
 
 	def form_valid(self, form):
 		response = super(AddTransientCommentFormView, self).form_valid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 
 			instance = form.save(commit=False)
 			instance.created_by = self.request.user
@@ -602,14 +605,14 @@ class AddDashboardQueryFormView(FormView):
 	
 	def form_invalid(self, form):
 		response = super(AddDashboardQueryFormView, self).form_invalid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
 
 	def form_valid(self, form):
 		response = super(AddDashboardQueryFormView, self).form_valid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 
 			instance = form.save(commit=False)
 			instance.created_by = self.request.user
@@ -636,7 +639,7 @@ class RemoveDashboardQueryFormView(DeleteView):
 	def form_invalid(self, form):
 		response = super(RemoveDashboardQueryFormView, self).form_invalid(form)
 
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
@@ -648,14 +651,14 @@ class AddFollowupNoticeFormView(FormView):
 	
 	def form_invalid(self, form):
 		response = super(AddFollowupNoticeFormView, self).form_invalid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
 
 	def form_valid(self, form):
 		response = super(AddFollowupNoticeFormView, self).form_valid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 
 			instance = form.save(commit=False)
 			instance.created_by = self.request.user
@@ -689,7 +692,7 @@ class RemoveFollowupNoticeFormView(DeleteView):
 	def form_invalid(self, form):
 		response = super(RemoveFollowupNoticeFormView, self).form_invalid(form)
 
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
@@ -701,14 +704,14 @@ class AddAutomatedSpectrumRequestFormView(FormView):
 	
 	def form_invalid(self, form):
 		response = super(AddAutomatedSpectrumRequestFormView, self).form_invalid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
 
 	def form_valid(self, form):
 		response = super(AddAutomatedSpectrumRequestFormView, self).form_valid(form)
-		if self.request.is_ajax():
+		if is_ajax(self.request):
 			tfdict = {}
 			
 			# some hard-coded logic

@@ -24,6 +24,7 @@ import subprocess
 import sys
 import time
 import traceback
+from django.conf import settings as djangoSettings
 
 import matplotlib
 matplotlib.use('AGG') # This makes it run faster, comment out for interactive plotting
@@ -39,11 +40,11 @@ warnings.filterwarnings("ignore") # We'll get warnings from log10 when there are
 _ztfuser = "ztffps"
 _ztfinfo = "dontgocrazy!"
 
-def random_log_file_name():
+def random_log_file_name(log_file_dir='/tmp'):
 
     log_file_name = None
     while log_file_name is None or os.path.exists(log_file_name):
-        log_file_name = "/tmp/forced_phot_out/ztffp_%s.txt"%''.join([random.choice(string.ascii_uppercase + string.digits) for i in range(10)])
+        log_file_name = f"{log_file_dir}/forced_phot_out/ztffp_%s.txt"%''.join([random.choice(string.ascii_uppercase + string.digits) for i in range(10)])
         #random.choices(string.ascii_uppercase + string.digits, k=10))
     
     return log_file_name
@@ -291,7 +292,7 @@ class ZTF_Forced_Phot:
             decl_str = np.format_float_positional(float(skycoord.dec.deg), precision=6)
 
 
-            log_file_name = random_log_file_name() # Unique file name
+            log_file_name = random_log_file_name(log_file_dir=djangoSettings.ZTFTMPDIR) # Unique file name
 
             if verbose:
                 print("Sending ZTF request for (R.A.,Decl)=(%s,%s)"%(ra,decl))

@@ -59,6 +59,9 @@ from django.views.generic.list import ListView
 
 # Create your views here.
 
+def is_ajax(request):
+    return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+
 def index(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect(reverse_lazy('dashboard'))
@@ -268,7 +271,7 @@ SELECT pd.mag
     else:
         template = 'YSE_App/transient_summary.html'
         context['page_template'] = page_template
-    if request.is_ajax():
+    if is_ajax(request):
         template = 'YSE_App/transient_summary_paginate.html'
 
     return render(request, template, context)
@@ -1562,7 +1565,7 @@ def ztf_forced_phot(request,slug):
         ztf_user_password=djangoSettings.ZTFPASS)
 
     log_file_name = ztf.run_ztf_fp(
-        all_jd=False, days=60, decl=transient.dec, directory_path='/tmp',
+        all_jd=False, days=60, decl=transient.dec, directory_path=djangoSettings.ZTFTMPDIR,
         do_plot=False, emailcheck=0, fivemindelay=60, jdend=None,
         jdstart=None, logfile=None, mjdend=None, mjdstart=None,
         plotfile=None, ra=transient.ra, skip_clean=False, source_name=slug,
