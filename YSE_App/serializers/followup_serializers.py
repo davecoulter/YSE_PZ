@@ -31,7 +31,7 @@ class TransientFollowupSerializer(serializers.HyperlinkedModelSerializer):
 	status = serializers.HyperlinkedRelatedField(queryset=FollowupStatus.objects.all(), view_name='followupstatus-detail')
 
 	too_resource = serializers.HyperlinkedRelatedField(queryset=ToOResource.objects.all(), allow_null=True, required=False, view_name='tooresource-detail')
-	classical_resource = serializers.HyperlinkedRelatedField(queryset=ClassicalResource.objects.all(), allow_null=True, required=False, view_name='classicalresource-detail', lookup_field="id")
+	classical_resource = serializers.HyperlinkedRelatedField(queryset=ClassicalResource.objects.all(), allow_null=True, required=False, view_name='classicalresource-detail') #, lookup_field="id")
 	queued_resource = serializers.HyperlinkedRelatedField(queryset=QueuedResource.objects.all(), allow_null=True, required=False, view_name='queuedresource-detail')
 
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')

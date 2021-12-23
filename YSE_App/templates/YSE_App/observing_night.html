@@ -108,6 +108,7 @@ $(document).ready(function(){
 
       $('.transientStatusChange').on('click', function(event){
         var status_id = $(this).attr('data-status_id')
+        var status_name = $(this).attr('data-status_name')
         var transient_id = $(this).attr('transient_id')
         var url_target = "{% url 'transient-detail' -1 %}".replace('-1', transient_id);
         var status_target = "{% url 'transientstatus-list' %}" + status_id + "/";
@@ -133,10 +134,14 @@ $(document).ready(function(){
             if (jqXHR.status == 200 && textStatus == "success") {
 
               var tokens = data.status.split("/")
-              var status_name = tokens[tokens.length-2]
+              var status_id_out= tokens[tokens.length-2]
               //alert("hi "+status_name+" hi");
-              var button_id = "#"+transient_id+"_status_name"
-              $(button_id).text(status_name)
+              if (status_id_out == status_id){
+                  var button_id = "#"+transient_id+"_status_name"
+                  $(button_id).text(status_name)
+              } else {
+                transientStatusChangeErr()
+              }
               {#alert(textStatus)#}
             } else {
               transientStatusChangeErr()
@@ -155,6 +160,7 @@ $(document).ready(function(){
 
       $('.followupStatusChange').on('click', function(event){
         var status_id = $(this).attr('data-status_id')
+        var status_name = $(this).attr('data-status_name')
         var transient_id = $(this).attr('transient_id')
         var url_target = "{% url 'transientfollowup-detail' -1 %}".replace('-1', transient_id);
         var status_target = "{% url 'followupstatus-list' %}" + status_id + "/";
@@ -180,17 +186,16 @@ $(document).ready(function(){
             if (jqXHR.status == 200 && textStatus == "success") {
 
               var tokens = data.status.split("/")
-              var status_name = tokens[tokens.length-2]
-              //alert("hi "+status_name+" hi");
-              var button_id = "#"+transient_id+"_status_name"
-              $(button_id).text(status_name)
-              {#alert(textStatus)#}
-            } else {
-              transientStatusChangeErr()
-            }
-          },
+              var status_id_out = tokens[tokens.length-2]
+              if (status_id_out == status_id){
+                  var button_id = "#"+transient_id+"_status_name"
+                  $(button_id).text(status_name)
+              } else {
+                followupStatusChangeErr()
+              }
+          }},
           error: function(XMLHttpRequest, textStatus, errorThrown) {
-            transientStatusChangeErr()
+            followupStatusChangeErr()
             {#alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));#}
           }
         });

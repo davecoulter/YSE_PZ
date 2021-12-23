@@ -67,11 +67,12 @@ $(document).ready(function(){
       }
 
       $('.transientStatusChange').on('click', function(event){
-
         var status_id = $(this).attr('data-status_id')
         var transient_id = $(this).attr('transient_id')
+        var status_name = $(this).attr('data-status_name')
         var url_target = "{% url 'transient-detail' -1 %}".replace('-1', transient_id);
         var status_target = "{% url 'transientstatus-list' %}" + status_id + "/"
+
         var base_url = window.location.protocol + "//" + window.location.hostname
         var port = window.location.port
         var api_url = base_url + url_target
@@ -81,6 +82,7 @@ $(document).ready(function(){
           api_url = base_url + ":" + port + url_target
           status_url = base_url + ":" + port + status_target
         }
+
         var putData = { "status": status_url }
 
         $.ajax({
@@ -90,13 +92,15 @@ $(document).ready(function(){
           data: putData,
           success: function(data, textStatus, jqXHR) {
             if (jqXHR.status == 200 && textStatus == "success") {
-
               var tokens = data.status.split("/")
-              var status_name = tokens[tokens.length-2]
-              var button_id = "#"+transient_id+"_status_name"
-              $(button_id).text(status_name)
-              
-              {#alert(textStatus)#}
+              var status_id_out = tokens[tokens.length-2]
+              if (status_id_out == status_id){
+                  var button_id = "#"+transient_id+"_status_name"
+                  $(button_id).text(status_name)
+              } else {
+                transientStatusChangeErr()
+              }
+              //alert(status_url)
             } else {
               transientStatusChangeErr()
             }

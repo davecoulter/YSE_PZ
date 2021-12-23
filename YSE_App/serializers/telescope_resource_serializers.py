@@ -197,9 +197,9 @@ class ClassicalResourceSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta:
 		model = ClassicalResource
 		fields = "__all__"
-		extra_kwargs = {
-			'url': {'view_name': 'classicalresource-detail', 'lookup_field': 'id'}
-		}
+		#extra_kwargs = {
+		#	'url': {'view_name': 'classicalresource-detail', 'lookup_field': 'id'}
+		#}
 
 	def create(self, validated_data):
 		groups_exist = 'groups' in validated_data.keys()

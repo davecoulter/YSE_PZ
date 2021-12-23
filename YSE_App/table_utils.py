@@ -58,7 +58,7 @@ class TransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -177,7 +177,7 @@ class FieldTransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -296,7 +296,7 @@ class AdjustFieldTransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -414,7 +414,7 @@ class YSETransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -569,7 +569,7 @@ class YSEFullTransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -721,7 +721,7 @@ class YSERisingTransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -871,7 +871,7 @@ class NewTransientTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -969,7 +969,7 @@ class FollowupTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_followup_statuses %}
-													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -1052,7 +1052,7 @@ class ObsNightFollowupTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.transient.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.transient.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -1065,7 +1065,7 @@ class ObsNightFollowupTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_followup_statuses %}
-													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="followupStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="followupStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -1196,7 +1196,7 @@ class ToOFollowupTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_transient_statuses %}
-													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.transient.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.transient.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",
@@ -1209,7 +1209,7 @@ class ToOFollowupTable(tables.Table):
 										</button>
 										<ul class="dropdown-menu">
 											{% for status in all_followup_statuses %}
-													<li><a data-status_id="{{ status.id }}" transient_id="{{ record.id }}" class="followupStatusChange" href="#">{{ status.name }}</a></li>
+													<li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="followupStatusChange" href="#">{{ status.name }}</a></li>
 											{% endfor %}
 										</ul>
 </div>""",

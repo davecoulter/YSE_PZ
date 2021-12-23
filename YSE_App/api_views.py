@@ -375,7 +375,7 @@ class QueuedResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 
 class ClassicalResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	serializer_class = ClassicalResourceSerializer
-	lookup_field = "id"
+	#lookup_field = "id"
 	permission_classes = (permissions.IsAuthenticated,)
 
 	def get_queryset(self):
