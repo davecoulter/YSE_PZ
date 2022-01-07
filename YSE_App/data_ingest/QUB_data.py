@@ -690,9 +690,13 @@ class YSE(CronJobBase):
 
             PhotUploadAll = {"mjdmatchmin":0.01,
                              "clobber":self.options.clobber}
-            photometrydict = {'instrument':'GPC1',
-                              'obs_group':'YSE',
-                              'photdata':{}}
+            gpc1photometrydict = {'instrument':'GPC1',
+                                  'obs_group':'YSE',
+                                  'photdata':{}}
+            gpc2photometrydict = {'instrument':'GPC2',
+                                  'obs_group':'YSE',
+                                  'photdata':{}}
+
             if has_forced_phot:
                 for j,lf in enumerate(lc_forced[np.argsort(lc_forced['mjd'])]):
                     if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-lf['mjd']) < 1: disc_point = 1
@@ -702,7 +706,7 @@ class YSE(CronJobBase):
                         forced_mag,forced_mag_err = None,None
                     else:
                         forced_mag,forced_mag_err = lf['cal_psf_mag'],lf['psf_inst_mag_sig']
-
+ 
                     # forced photometry
                     phot_upload_dict = {'obs_date':mjd_to_date(lf['mjd']),
                                         'band':lf['filter'],
@@ -716,8 +720,10 @@ class YSE(CronJobBase):
                                         'flux_zero_point':27.5,
                                         'discovery_point':disc_point,
                                         'diffim':1}
-                    photometrydict['photdata']['%s_%i'%(mjd_to_date(lf['mjd']),j)] = phot_upload_dict
 
+                    if lf['pscamera'] == 'GPC1': gpc1photometrydict['photdata']['%s_%i'%(mjd_to_date(lf['mjd']),j)] = phot_upload_dict
+                    elif lf['pscamera'] == 'GPC2': gpc2photometrydict['photdata']['%s_%i'%(mjd_to_date(lf['mjd']),j)] = phot_upload_dict
+                    else: raise RuntimeError(f"unknown camera! {lf['pscamera']}")
 
             for j,l in enumerate(lc[iLC][np.argsort(lc['mjd_obs'][iLC])]):
                 if has_forced_phot and np.min(np.abs(lc_forced['mjd']-l['mjd_obs'])) < 0.01: continue
@@ -746,9 +752,14 @@ class YSE(CronJobBase):
                                     'discovery_point':disc_point,
                                     'diffim':1}
 
-                photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
-
-            PhotUploadAll['PS1'] = photometrydict
+                if 'pscamera' in l.keys():
+                    if l['pscamera'] == 'GPC1': gpc1photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
+                    elif l['pscamera'] == 'GPC2': gpc2photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
+                    else: raise RuntimeError(f"unknown camera! {lf['pscamera']}")
+                else:
+                    gpc1photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
+            PhotUploadAll['PS1'] = gpc1photometrydict
+            PhotUploadAll['PS2'] = gpc2photometrydict
             transientdict[s['local_designation']] = tdict
             transientdict[s['local_designation']]['transientphotometry'] = PhotUploadAll
 
