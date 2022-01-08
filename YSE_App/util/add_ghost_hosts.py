@@ -28,9 +28,9 @@ def getGHOSTData(ghost_host):
     return hostdict,hostcoords
 
 
-def main():
-
-    transients = Transient.objects.filter(tags__name='YSE').filter(name__startswith='20') #.filter(Q(host__isnull=True) | Q(host__redshift__isnull=True))
+def main(transients=None):
+    if transients is not None:
+        transients = Transient.objects.filter(tags__name='YSE').filter(name__startswith='20') #.filter(Q(host__isnull=True) | Q(host__redshift__isnull=True))
     for t in transients:
         print(t)
         sc = [SkyCoord(t.ra,t.dec,unit=u.deg)]
