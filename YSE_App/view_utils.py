@@ -937,8 +937,6 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
         iPlotUlimFlux2 = fluxes[iPlotUlimFlux]/flux_errs[iPlotUlimFlux] < 3
         mags_ulim = -2.5*np.log10((fluxes[iPlotUlimFlux][iPlotUlimFlux2] + \
             3*flux_errs[iPlotUlimFlux][iPlotUlimFlux2]).astype(float)) + flux_zpts[iPlotUlimFlux][iPlotUlimFlux2]
-        upperlimmag = np.append(upperlimmag,mags_ulim)
-        upperlimmjd = np.append(upperlimmjd,mjds[iPlotUlimFlux][iPlotUlimFlux2].tolist())
         iPlotUlimFlux3 = mags_ulim == mags_ulim
         upperlimmag = np.append(upperlimmag,mags_ulim[iPlotUlimFlux3])
         upperlimmjd = np.append(upperlimmjd,mjds[iPlotUlimFlux][iPlotUlimFlux2][iPlotUlimFlux3].tolist())
@@ -999,7 +997,10 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
         ax.y_range = Range1d(np.max(np.append(mags[mags != None][mjds[mags != None] > limmjd],upperlimmag[upperlimmjd > limmjd]))+0.25,
                              np.min(mags[mags != None][mjds[mags != None] > limmjd])-0.5)
     else:
-        minmjd = np.max([np.min(mjds)-10,date_to_mjd(transient.disc_date)-30])
+        if transient.disc_date is not None:
+            minmjd = np.max([np.min(mjds)-10,date_to_mjd(transient.disc_date)-30])
+        else:
+            minmjd = np.min(mjds)-10
         ax.x_range=Range1d(minmjd,np.max(mjds)+10)
         ax.extra_x_ranges = {"dateax": Range1d(minmjd,np.max(mjds)+10)}
         ax.y_range=Range1d(np.max(np.append(mags[mags != None],upperlimmag))+0.25,np.min(mags[mags != None])-0.5)
@@ -1105,7 +1106,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
                        text="\uD835\uDC50  = %.2f"%(result['parameters'][4]))
         for latex in [latex1,latex2,latex3,latex4,latex5,latex6]:
             ax.add_layout(latex)
-
+    import pdb; pdb.set_trace()
     g = file_html(ax,CDN,"my plot")
     print("plotting took %s"%(time.time()-tstart))
     return HttpResponse(g.replace('width: 90%','width: 100%'))
