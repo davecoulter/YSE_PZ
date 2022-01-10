@@ -11,7 +11,6 @@ import configparser
 import time
 from html.parser import HTMLParser
 import astropy.table as at
-import docx
 import re
 import os
 from bs4 import BeautifulSoup
