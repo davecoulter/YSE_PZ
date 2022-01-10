@@ -11,7 +11,6 @@ import configparser
 import time
 from html.parser import HTMLParser
 import astropy.table as at
-import docx
 import re
 import os
 from bs4 import BeautifulSoup
@@ -268,7 +267,8 @@ class DECam(CronJobBase):
             # run GHOST
             #import pdb; pdb.set_trace()
             try:
-                ghost_hosts = getTransientHosts([candid], sc, verbose=True, starcut='gentle', ascentMatch=False)
+                ghost_hosts = getTransientHosts(
+                    ['tmp'+candid],[SkyCoord(ra,dec,unit=(u.hour,u.deg))], verbose=True, starcut='gentle', ascentMatch=False)
                 ghost_hosts = calc_photoz(ghost_hosts)
             except:
                 ghost_hosts = None
