@@ -1106,7 +1106,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
                        text="\uD835\uDC50  = %.2f"%(result['parameters'][4]))
         for latex in [latex1,latex2,latex3,latex4,latex5,latex6]:
             ax.add_layout(latex)
-    import pdb; pdb.set_trace()
+
     g = file_html(ax,CDN,"my plot")
     print("plotting took %s"%(time.time()-tstart))
     return HttpResponse(g.replace('width: 90%','width: 100%'))
