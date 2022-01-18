@@ -231,7 +231,7 @@ class finder(TemplateView):
         import os
         from .util import mkFinderChart
 
-        from django.contrib.staticfiles.templatetags.staticfiles import static
+        from django.templatetags.static import static
         from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
         from matplotlib.figure import Figure
     
@@ -359,7 +359,7 @@ class finder(TemplateView):
         import os
         from .util import mkFinderChart
 
-        from django.contrib.staticfiles.templatetags.staticfiles import static
+        from django.templatetags.static import static
         from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
         from matplotlib.figure import Figure
     
