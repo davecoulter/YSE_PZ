@@ -333,7 +333,7 @@ class DECam(CronJobBase):
                      #'disc_date':None,
                      'mw_ebv':mw_ebv,
                      'tags':['DECAT']}
-            if transient_exists:
+            if not transient_exists:
                 tdict['point_source_probability'] = ps_prob
             
             if ghost_host is not None:
