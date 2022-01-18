@@ -210,7 +210,21 @@ class DECam(CronJobBase):
         # get all the DECam links
         good_transient_data = requests.get(_google_doc_url).text
         urls = re.findall(_google_doc_regex,good_transient_data)
-        
+
+        # let's grab the most recent phot. data for each transient
+        # if the DECam data on the sniff pages doesn't have more recent
+        # data, hopefully we can assume things are up to date
+        tr = requests.get(f"{self.options.dburl.replace('/api','')}query_api/DECAT_transients_mags/",
+                          auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
+        etdata = tr.json()['transients']
+        etdict = {}; ra = []; dec = []; dict_names = np.array([])
+        for et in etdata:
+            etdict[et['name']] = et
+            ra += [et['ra']]
+            dec += [et['dec']]
+            dict_names = np.append(dict_names,et['name'])
+        scexisting = SkyCoord(ra,dec,unit=u.deg)
+            
         # prelims
         transientdict = {}
         if not os.path.exists('database/GHOST.csv'):
@@ -221,6 +235,7 @@ class DECam(CronJobBase):
         nowdate = datetime.datetime.now()
         for (str1,str2,str3) in urls:
             if '#' not in str3: continue
+            #if '21466' not in str3: continue
             url_single = f"https://stsci{str2}{str3}"
             candid_toupload = str3.split('#')[-1]
             r = requests.get(url_single)
@@ -242,46 +257,74 @@ class DECam(CronJobBase):
             candid = data['rowval'][data['rowname'] == 'ID'][0]
             if candid != candid_toupload: continue
 
+            field = url_single.split('/')[-2]
+            tname = f"{field.replace('.','_')}_cand{candid}"  #
+            print(f'trying to upload data for transient {tname}')
+            
+            transient_exists = False
+            sc = None
+            if tname in etdict.keys():
+                transient_exists = True
+                dict_name = tname[:]
+            else:
+                sc = SkyCoord([ra],[dec],unit=(u.hour,u.deg))
+                sep_arcsec = scexisting.separation(sc).arcsec
+                if np.min(sep_arcsec) < 2:
+                    transient_exists = True
+                    dict_name = dict_names[sep_arcsec == np.min(sep_arcsec)][0]
+                    print(f'transient {tname} is called {dict_name} on YSE-PZ!')
+            if transient_exists:
+                print(f'transient {tname} is already on YSE-PZ!  I will ignore metadata queries')
 
             lcurlbase = '/'.join(url_single.split('/')[:-1])
             lcurldatebase = '/'.join(url_single.split('/')[:-2])
             rdatetext = requests.get(lcurldatebase).text
             rdate = rdatetext.split('Last updated :')[-1].split('\n')[0]
             date_updated = dateutil.parser.parse(rdate)
-            if (nowdate-date_updated).days > self.options.max_decam_days: continue
+            #if (nowdate-date_updated).days > self.options.max_decam_days: continue
 
             
-            field = url_single.split('/')[-2]
             # get the lightcurve file
             lcr = requests.get(f"{lcurlbase}/{field}_cand{candid}.difflc.txt")
+            if lcr.status_code != 200:
+                lcr = requests.get(f"{lcurlbase}/{field}_cand{candid}.forced.difflc.txt")
             lcdata = at.Table.read(lcr.text,format='ascii')
-            
+
+            # is the most recent photometry greater than what exists on YSE-PZ?
+            if transient_exists:
+                tdate = dateutil.parser.parse(mjd_to_date(np.max(lcdata['MJD'])))
+                ysedate = dateutil.parser.parse(etdict[dict_name]['obs_date'])
+                if ysedate < tdate + datetime.timedelta(0.1):
+                    print(f'the latest data for transient {tname} already exists on YSE-PZ!  skipping...')
+                    continue
+                
             # some metadata
-            sc = SkyCoord([ra],[dec],unit=(u.hour,u.deg))
-            mw_ebv = float('%.3f'%(sfd(sc[0])*0.86))
-            try:
-                ps_prob = get_ps_score(sc[0].ra.deg,sc[0].dec.deg)
-            except:
-                ps_prob = None
+            if not transient_exists:
+                # only do this if YSE-PZ doesn't already have the transient!
+                if sc is None:
+                    sc = SkyCoord([ra],[dec],unit=(u.hour,u.deg))
+                mw_ebv = float('%.3f'%(sfd(sc[0])*0.86))
+                try:
+                    ps_prob = get_ps_score(sc[0].ra.deg,sc[0].dec.deg)
+                except:
+                    ps_prob = None
 
-            # run GHOST
-            #import pdb; pdb.set_trace()
-            try:
-                ghost_hosts = getTransientHosts(
-                    ['tmp'+candid],[SkyCoord(ra,dec,unit=(u.hour,u.deg))], verbose=True, starcut='gentle', ascentMatch=False)
-                ghost_hosts = calc_photoz(ghost_hosts)
-            except:
-                ghost_hosts = None
+                # run GHOST
+                try:
+                    ghost_hosts = getTransientHosts(
+                        ['tmp'+candid],[SkyCoord(ra,dec,unit=(u.hour,u.deg))], verbose=True, starcut='gentle', ascentMatch=False)
+                    ghost_hosts = calc_photoz(ghost_hosts)
+                except:
+                    ghost_hosts = None
 
-            if ghost_hosts is not None:
-                ghost_host = ghost_hosts[ghost_hosts['TransientName'] == candid]
-                if not len(ghost_host): ghost_host = None
-            else:
-                ghost_host = None
+                if ghost_hosts is not None:
+                    ghost_host = ghost_hosts[ghost_hosts['TransientName'] == candid]
+                    if not len(ghost_host): ghost_host = None
+                else:
+                    ghost_host = None
+            else: ghost_host = None
 
-                        
             # get photometry
-            tname = f"{field.replace('.','_')}_cand{candid}"  #
             tdict = {'name':tname,
                      'ra':sc[0].ra.deg,
                      'dec':sc[0].dec.deg,
@@ -289,9 +332,10 @@ class DECam(CronJobBase):
                      'status':self.options.status,
                      #'disc_date':None,
                      'mw_ebv':mw_ebv,
-                     'point_source_probability':ps_prob,
                      'tags':['DECAT']}
-
+            if transient_exists:
+                tdict['point_source_probability'] = ps_prob
+            
             if ghost_host is not None:
                 hostdict,hostcoords = self.getGHOSTData(sc,ghost_host)
                 tdict['host'] = hostdict
