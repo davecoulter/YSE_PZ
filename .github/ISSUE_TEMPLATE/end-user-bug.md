@@ -31,5 +31,5 @@ If applicable, add screenshots to help explain your problem.
 Add any other context about the problem here. 
 
 If you provide a snippet of python code:
- -python version: [e.g. 3.8]
- -Used python package versions: [e.g. astropy 3.2.1, ...]
+ - python version: [e.g. 3.8]
+ - Used python package versions: [e.g. astropy 3.2.1, ...]
