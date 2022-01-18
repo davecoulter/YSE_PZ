@@ -17,6 +17,7 @@ Welcome to the YSE_PZ documentation!
    triage
    adding_data
    forms
+   docker
    
 Indices and tables
 ==================
