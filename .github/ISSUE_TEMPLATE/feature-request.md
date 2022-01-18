@@ -1,3 +1,12 @@
+---
+name: Feature request
+about: Request a new feature for YSE_PZ
+title: ''
+labels: feature request
+assignees: ''
+
+---
+
 ### Is your proposal related to a problem?
 
 <!--
