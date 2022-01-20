@@ -820,7 +820,10 @@ class processTNS:
         if doGHOST:
 
             if not os.path.exists('database/GHOST.csv'):
-                getGHOST(real=True, verbose=True)
+                try:
+                    getGHOST(real=True, verbose=True)
+                except:
+                    pass
             
             def handler(signum, frame):
                 raise Exception("timeout!")
