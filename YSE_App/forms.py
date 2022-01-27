@@ -251,7 +251,7 @@ class SpectrumUploadForm(ModelForm):
 		'TT - EFOSC2-NTT','TT - EMMI','.6m - EFOSC2-3.6',
 		'OSIRIS','FLOYDS-N','FLOYDS-S','NIRC2',
 		'NIRSPEC','NIRES','KCWI','ESI',
-		'DEIMOS','OSIRIS','MOSFIRE','LRIS',
+		'DEIMOS','OSIRIS','MOSFIRE','LRIS','LRS2',
 		'HIRES','GMOS','Goodman','KAST','WiFeS','WFCCD','DIS','MMT Binospec','SpeX']
 	instrument = forms.ModelChoiceField(Instrument.objects.filter(Q(name__in=spec_instruments)))
 	#import pdb; pdb.set_trace()
