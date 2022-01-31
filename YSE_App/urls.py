@@ -14,6 +14,7 @@ from .yse_utils.yse_forms import MoveYSEFormView
 from . import surveypages
 from YSE_App.yse_utils import yse_pointings, yse_view_utils
 from YSE_App.views import SearchResultsView
+from YSE_App.util import submit_to_tns
 
 schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
 
@@ -41,6 +42,7 @@ urlpatterns = [
     re_path(r'^transient_edit/$', views.transient_edit, name='transient_edit'),
     re_path(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
     re_path(r'^transient_detail/(?P<slug>.*)/$', views.transient_detail, name='transient_detail'),
+    re_path(r'^submit_to_tns/(?P<transient_name>.*)/$', submit_to_tns.submit_to_tns, name='submit_to_tns'),
     re_path(r'^transient_summary/(?P<status_or_query_name>.*)/$', views.transient_summary, name='transient_summary'),
 
     re_path(r'^observing_calendar/$', views.observing_calendar, name='observing_calendar'),

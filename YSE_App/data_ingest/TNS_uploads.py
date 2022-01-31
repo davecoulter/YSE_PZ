@@ -45,7 +45,11 @@ from django.conf import settings as djangoSettings
 import argparse, configparser
 import signal
 from astro_ghost.ghostHelperFunctions import *
-from astro_ghost.photoz_helper import calc_photoz
+try:
+    from astro_ghost.photoz_helper import calc_photoz
+except:
+    print('warning: can\'t import tensorflow')
+    pass
 import os
 
 
@@ -688,6 +692,7 @@ class processTNS:
                             ("spectra","0")]
 
             response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            import pdb; pdb.set_trace()
             while response_single.status_code == 429:
                 print('TNS request failed.  Waiting 60 seconds to try again...')
                 time.sleep(60)
@@ -718,9 +723,9 @@ class processTNS:
         objs,ras,decs = [],[],[]
         for jd in json_data['data']['reply']:
             if len(Transient.objects.filter(name=jd['objname'])): continue
-            TNSGetSingle = [("objname",jd['objname']),
-                            ("photometry","0"),
-                            ("spectra","0")]
+            TNSGetSingle = [("objname",'2022sk'), #jd['objname']),
+                             ("photometry","1"),
+                             ("spectra","0")]
 
             
             response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
@@ -730,7 +735,7 @@ class processTNS:
                 response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
 
             json_data_single = format_to_json(response_single.text)
-
+            import pdb; pdb.set_trace()
             objs.append(json_data_single['data']['reply']['objname'])
             ras.append(json_data_single['data']['reply']['ra'])
             decs.append(json_data_single['data']['reply']['dec'])

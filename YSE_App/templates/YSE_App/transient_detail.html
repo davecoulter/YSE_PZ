@@ -548,6 +548,13 @@
 												</div>
 											</div>
 											{% endif %}
+											{% if submit_to_tns %}
+												<div class="col-xs-6">
+													<div class="form-group">
+														<a class="btn btn-block btn-primary submit_to_tns">Submit to TNS</a>
+													</div>
+												</div>
+											{% endif %}
 										</div>
 									</div>
 								<!--<div class="col-xs-13">-->
@@ -1828,6 +1835,16 @@
 			$('.ztfrequest').on('click', function(event){
 
 				var url = "{% url 'ztf_forced_phot' transient.slug %}";
+
+				$.get(url).done(function(json){
+					var message = json.msg;
+					alert(message);
+				});
+			});
+
+			$('.submit_to_tns').on('click', function(event){
+
+				var url = "{% url 'submit_to_tns' transient.name %}";
 
 				$.get(url).done(function(json){
 					var message = json.msg;
