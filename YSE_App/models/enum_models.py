@@ -6,8 +6,12 @@ def get_sentinel_transientstatus():
 	return TransientStatus.objects.get_or_create(name='StatusDeleted', created_by_id='1', modified_by_id='1')[0]
 
 class TransientStatus(BaseModel):
-	### Properties ###
-	# Required
+	"""
+	Tracks a given type of live status of a transient in YSE_PZ.
+	
+	Attributes:
+		name (CharField): name of the status to be displayed.
+	"""
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
