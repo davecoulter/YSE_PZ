@@ -1844,12 +1844,22 @@
 
 			$('.submit_to_tns').on('click', function(event){
 
-				var url = "{% url 'submit_to_tns' transient.name %}";
+				{% if tns_sandbox_url %}
+					var r1 = confirm('Please check the sandbox link {{ tns_sandbox_url }}.  Are you SURE you want to send this to TNS?');
+				{% else %}
+					alert('this event will go to the sandbox so you can make sure it looks ok')
+					r1 = true;
+				{% endif %}
 
-				$.get(url).done(function(json){
-					var message = json.msg;
-					alert(message);
-				});
+				if (r1 == true){
+					var url = "{% url 'submit_to_tns' transient.name %}";
+
+					$.get(url).done(function(json){
+						var message = json.msg;
+						alert(message);
+					reload();
+					});
+				};
 			});
 
 

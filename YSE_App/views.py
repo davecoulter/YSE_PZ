@@ -1058,12 +1058,15 @@ def transient_detail(request, slug):
         # for transients that don't have TNS names
         # - for now, this is only DECam transients
         tns_submit_logs = logs.filter(comment__startswith='Submitted to TNS')
+        tns_sandbox_logs = logs.filter(comment__startswith='TNS sandbox')
         if not len(tns_submit_logs) and '_cand' in transient_obj.name and \
            'DECAT' in list(assigned_transient_tags.values_list('name',flat=True)):
             submit_to_tns = True
         else:
             submit_to_tns = False
         context['submit_to_tns'] = submit_to_tns
+        if len(tns_sandbox_logs):
+            context['tns_sandbox_url'] = tns_sandbox_logs[0].comment.split()[2]
         
         return render(request,
             'YSE_App/transient_detail.html',

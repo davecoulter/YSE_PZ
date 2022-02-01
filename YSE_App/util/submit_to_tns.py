@@ -5,8 +5,12 @@ from django.db.models import FloatField,ExpressionWrapper, F, Q
 from YSE_App.util import tnsAPI
 from django.conf import settings as djangoSettings
 from django.http import JsonResponse
+import numpy as np
 
-_author_list = "DECAT/YSE Team: A. Rest (JHU, STScI), A. Agnello, C. R. Angus, Z. Ansari, N. Arendse, C. Gall, C. Grillo, S. H. Bruun, C. Hede, J. Hjorth, L. Izzo, H. Korhonen, S. Raimundo, D. Kodi Ramanah, A. Sarangi, R. Wojtak, H. Pfister (DARK, U Copenhagen), K. Auchettl (DARK, UC Santa Cruz, U Melbourne), K. C. Chambers, M. E. Huber, E. A. Magnier, T. J. L. de Boer, J. R. Fairlamb, C. C. Lin, R. J. Wainscoat, T. Lowe, M. Willman, J. Bulger, A. S. B. Schultz (IfA, Hawaii), N. Earl, A. Engel, K. D. French, A. Gagliano, G. Narayan, M. Soraisam (Illinois), R. Angulo, Q. Wang (JHU), F. Valdes, A. Zenteno (NOIRLab), S. J. Smartt, K. W. Smith (Queen's University Belfast), K. Alexander, P. Blanchard, L. DeMarchi, A. Hajela, C. D. Kilpatrick, C. Stauffer, M. Stroh (Northwestern U.), W. Jacobson-Galán, R. Margutti, D. Matthews (UC Berkeley), S. Gomez, J. Pierel, R. Ridden-Harper, L. Strolger (STScI), M. Drout (U Toronto), D. A. Coulter, G. Dimitriadis, R. J. Foley, D. Jones, T. Hung, C. Rojas-Bravo, M. R. Siebert (UC Santa Cruz), E. Ramirez-Ruiz (UC Santa Cruz, DARK)"
+_author_list = np.array(["S. Dhawan", "K. Mandel", "S. Thorp", "S. Ward (Cambridge)", "A. Agnello", "C. R. Angus", "Z. Ansari", "N. Arendse", "C. Cold", "D. Farias", "C. Gall", "C. Grillo", "S. H. Bruun", "J. Hjorth", "A. Kolborg", "L. Izzo", "N. Khetan", "S. L. Schrøder (DARK)", "H. Korhonen", "S. Raimundo (UCLA, DARK Univ. Copenhagen, Univ. Southampton)", "D. Kodi Ramanah", "A. Sarangi", "R. Wojtak (DARK U Copenhagen)", "H. Pfister (DARK, U Copenhagen)", "K. Auchettl (U Melbourne, UC Santa Cruz, DARK)", "M. Soraisam (Gemini Observatory)", "K. C. Chambers", "M. E. Huber", "E. A. Magnier", "T. J. L. de Boer", "J. R. Fairlamb", "C. C. Lin", "R. J. Wainscoat", "T. Lowe", "M. Willman", "J. Bulger", "A. S. B. Schultz (IfA, Hawaii)", "P. D. Aleo", "D. Chatterjee", "N. Earl", "K. D. French", "A. Gagliano", "K. L. Malanchev", "F. Matasic", "G. Narayan", "S. Sharief", "A. Thiruvengadam", "J. Vazquez (Illinois)", "R. Angulo", "Q. Wang (JHU)", "A. Rest (JHU, STScI)", "G. Terreran (Las Cumbres Observatory)", "Y.-C. Pan (NCU)", "F. Valdes", "A. Zenteno (NOIRLab)", "K. Alexander", "P. Blanchard", "L. DeMarchi (Northwestern U.)", "A. Hajela", "C. D. Kilpatrick", "C. Stauffer", "M. Stroh (Northwestern University)", "V. A. Villar", "K. de Soto", "K. Yadavalli (PSU)", "S. J. Smartt", "K. W. Smith (Queen's University Belfast)", "S. Gomez", "J. Pierel", "L. Strolger (STScI)", "G. Dimitriadis (Trinity College Dublin)", "W. Jacobson-Galán", "R. Margutti", "D. Matthews (UC Berkeley)", "D. A. Coulter", "K. W. Davis", "S. A. Dodd", "R. J. Foley", "D. O. Jones", "J. A. P. Law-Smith", "B. Mockler", "C. Rojas-Bravo", "M. R. Siebert", "K. Taggart", "S. Tinyanont (UC Santa Cruz)", "E. Ramirez-Ruiz (UC Santa Cruz, DARK)", "R. Ridden-Harper (University of Canterbury)", "M. Drout (U Toronto)", "V. F. Baldassare (WSU)"])
+_first_author_list = ["A. Rest (JHU, STScI)", "Q. Wang (JHU)", "K. Auchettl (U Melbourne, UC Santa Cruz, DARK)","A. Gagliano (Illinois)","C. D. Kilpatrick (Northwestern University)",
+                      "D. O. Jones (UCSC)","R. J. Foley (UCSC)","V. A. Villar (PSU)","K. D. French (Illinois)","W. Jacobson-Galán (UC Berkeley)","C. R. Angus (DARK)",
+                      "R. Ridden-Harper (University of Canterbury)","J. Pierel (STScI)"]
 
 _groupid = '83'
 
@@ -96,7 +100,7 @@ def submit_to_tns(request,transient_name):
     tp_seconddisc = tp_det.filter(Q(obs_date__gt=disc_date-datetime.timedelta(0.2)) &
                                   Q(obs_date__lt=disc_date+datetime.timedelta(0.2)) &
                                   ~Q(id=disc_data.id))
-                
+
     # non-detection if possible
     tp_nondet = tp.filter(snr__lt=3).filter(obs_date__lt=disc_date).order_by('-obs_date')
 
@@ -113,11 +117,26 @@ def submit_to_tns(request,transient_name):
     # now let's throw all this in to the template
     json_tmpl = _json_template.copy()
 
+    # let's figure out the author list
+    first_author = np.random.choice(_first_author_list)
+    first_author_noaffil = first_author.split(' (')[0]
+    first_author_affil = first_author.split(' (')[-1].split(')')[0]
+    # now we have to see if the first author has an affiliation listed in the _author_list, and if so
+    # we have to add that affiliation to the previous author in the list if they're from the same institution
+    if len(_author_list[_author_list == first_author]):
+        author_idx = np.where(_author_list == first_author)[0][0]
+        prev_author_idx = author_idx-1
+        if ')' not in _author_list[prev_author_idx]:
+            _author_list[prev_author_idx] = f"{_author_list[prev_author_idx]} ({first_author_affil})"
+        
+    # now remove the first author from the other list
+    author_list = first_author + ", " + ", ".join(_author_list[(_author_list != first_author) & (_author_list != first_author_noaffil)])
+    
     ra_str,dec_str = GetSexigesimalString(t.ra,t.dec)
     json_tmpl['at_report']["0"]["ra"]["value"] = ra_str
     json_tmpl['at_report']["0"]["dec"]["value"] = dec_str
     json_tmpl['at_report']["0"]["groupid"] = _groupid
-    json_tmpl['at_report']["0"]["reporter"] = _author_list
+    json_tmpl['at_report']["0"]["reporter"] = author_list
 
     decimal_date = disc_date.hour/24.+disc_date.minute/60./24.+disc_date.second/60./60./24.
     json_tmpl['at_report']["0"]["discovery_datetime"] = f"{disc_date.strftime('%Y-%m-%d')}.{decimal_date*1000:.0f}"
@@ -143,7 +162,7 @@ def submit_to_tns(request,transient_name):
                 "limiting_flux": f"{mag_lim:.1f}",
                 "flux_units": "1",
                 "filter_value": tns_filt_ids[tp_nondet[0].band.name],
-                "instrument_value": "87",
+                "instrument_value": "172",
                 "exptime": "50", # hard-coded
                 "observer": "DECAT/YSE Team",
                 "comments": "",
@@ -171,7 +190,7 @@ def submit_to_tns(request,transient_name):
          "limiting_flux": "",
          "flux_units": "1",
          "filter_value": tns_filt_ids[tp_det[0].band.name],
-         "instrument_value": "87",
+         "instrument_value": "172",
          "exptime": "50",
          "observer": "DECAT/YSE Team",
          "comments": ""
@@ -189,14 +208,25 @@ def submit_to_tns(request,transient_name):
              "limiting_flux": "",
              "flux_units": "1",
              "filter_value": tns_filt_ids[tp_seconddisc[0].band.name],
-             "instrument_value": "87",
+             "instrument_value": "172",
              "exptime": "50",
              "observer": "DECAT/YSE Team",
              "comments": ""
              }
 
+    # do we want to send this to the sandbox or the real TNS?
+    # if it's going to the real TNS, we first need to make sure that the sandbox link
+    # is available for inspection and the user is aware
+    #
+    # let's use Log objects for this
+    tns_log = Log.objects.filter(transient__name=t.name).filter(comment__startswith='TNS sandbox')
+    if len(tns_log):
+        do_sandbox=False
+    else:
+        do_sandbox=True
+        
     # send to TNS
-    response = tnsAPI.main(djangoSettings.TNSAPIKEY,djangoSettings.TNSID,djangoSettings.TNSUSER,json_tmpl)
+    response = tnsAPI.main(djangoSettings.TNSDECAMAPIKEY,djangoSettings.TNSDECAMID,djangoSettings.TNSDECAMUSER,json_tmpl,do_sandbox=do_sandbox)
 
     if 'id_code' in response.keys() and response['id_code'] == 200:
         success = True
@@ -207,7 +237,14 @@ def submit_to_tns(request,transient_name):
         message = response.copy()
         
 
-    if success:
+    if success and do_sandbox:
+        context = {'msg':f'success!  This SN is now called: {obj_name} in the TNS sandbox.  Please check https://sandbox.wis-tns.org/object/{obj_name} to make sure it looks ok, then reload this page and submit again to send to real TNS'}
+
+        l = Log.objects.create(
+	        created_by=request.user,modified_by=request.user,
+            transient=t,comment=f'TNS sandbox https://sandbox.wis-tns.org/object/{obj_name}')
+        
+    elif success:
         old_name = t.name
 
         t_qs = Transient.objects.filter(name=obj_name)
