@@ -281,7 +281,7 @@ class DECam(CronJobBase):
             rdatetext = requests.get(lcurldatebase).text
             rdate = rdatetext.split('Last updated :')[-1].split('\n')[0]
             date_updated = dateutil.parser.parse(rdate)
-            #if (nowdate-date_updated).days > self.options.max_decam_days: continue
+            if (nowdate-date_updated).days > self.options.max_decam_days: continue
 
             
             # get the lightcurve file
