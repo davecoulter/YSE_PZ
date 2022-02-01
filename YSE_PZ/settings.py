@@ -208,6 +208,12 @@ LCOGTUSER = config.get('main', 'lcogtuser')
 LCOGTPASS = config.get('main', 'lcogtpass')
 ZTFPASS = config.get('yse_forcedphot','ztfforcedphotpass')
 KEPLER_API_ENDPOINT = "http://api.keplerscience.org/is-k2-observing"
+TNSUSER = config.get('main','tns_bot_name')
+TNSID = config.get('main','tns_bot_id')
+TNSAPIKEY = config.get('main','tnsapikey')
+TNSDECAMUSER = config.get('main','tns_decam_bot_name')
+TNSDECAMID = config.get('main','tns_decam_bot_id')
+TNSDECAMAPIKEY = config.get('main','tnsdecamapikey')
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
