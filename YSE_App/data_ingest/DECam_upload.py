@@ -235,7 +235,7 @@ class DECam(CronJobBase):
         nowdate = datetime.datetime.now()
         for (str1,str2,str3) in urls:
             if '#' not in str3: continue
-            #if '21466' not in str3: continue
+            print(count)
             url_single = f"https://stsci{str2}{str3}"
             candid_toupload = str3.split('#')[-1]
             r = requests.get(url_single)
@@ -331,11 +331,11 @@ class DECam(CronJobBase):
                      'obs_group':'YSE',
                      'status':self.options.status,
                      #'disc_date':None,
-                     'mw_ebv':mw_ebv,
                      'tags':['DECAT']}
             if not transient_exists:
                 tdict['point_source_probability'] = ps_prob
-            
+                tdict['mw_ebv'] = mw_ebv
+                
             if ghost_host is not None:
                 hostdict,hostcoords = self.getGHOSTData(sc,ghost_host)
                 tdict['host'] = hostdict
