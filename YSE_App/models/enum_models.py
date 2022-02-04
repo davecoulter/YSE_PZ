@@ -87,7 +87,7 @@ class InternalSurvey(BaseModel):
 	A way to add a tag to data designating its source.
 	
 	Attributes:
-		name (CharField): name source of the data.
+		name (CharField): name of the source of the data.
 	
 	"""
 	name = models.CharField(max_length=64)
@@ -103,7 +103,7 @@ class ObservationGroup(BaseModel):
 	A way to add a tag to data designating its external source.
 	
 	Attributes:
-		name (CharField): name source of the data.
+		name (CharField): name of the source of the data.
 	
 	"""
 	name = models.CharField(max_length=64)
@@ -183,8 +183,15 @@ class TransientClass(BaseModel):
 		return self.name
 
 class ClassicalNightType(BaseModel):
-	### Properties ###
-	# Required
+	"""
+	Describes the observation mode of a transient on a classically scheduled night.
+	
+	Example usage, FirstHalf, SecondHalf, Full or Queue.
+	
+	Attributes:
+		name (CharField): name of the classical night type.
+	
+	"""
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
