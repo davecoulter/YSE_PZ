@@ -7,7 +7,9 @@ def get_sentinel_transientstatus():
 
 class TransientStatus(BaseModel):
 	"""
-	Tracks a given type of live status of a transient in YSE_PZ.
+	A general type of status for a transient in YSE_PZ.
+	
+	Examples of usage are, a transinet status could be New, FollowupRequested, or Interesting.
 	
 	Attributes:
 		name (CharField): name of the status to be displayed.
@@ -25,8 +27,15 @@ def get_sentinel_followupstatus():
 	return FollowupStatus.objects.get_or_create(name='StatusDeleted', created_by_id='1', modified_by_id='1')[0]
 
 class FollowupStatus(BaseModel):
-	### Properties ###
-	# Required
+	"""
+	A followup status of a transient in YSE_PZ
+	
+	Examples of usage are, a transinet could have had a Sucessful, Inprogress, Requested or Failed followup.
+	
+	Attributes:
+		name (CharField): name of the followup status to be displayed.
+	
+	"""
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
@@ -40,8 +49,15 @@ def get_sentinel_taskstatus():
 	return TaskStatus.objects.get_or_create(name='StatusDeleted', created_by_id='1', modified_by_id='1')[0]
 
 class TaskStatus(BaseModel):
-	### Properties ###
-	# Required
+	"""
+	The status of a compute task in YSE_PZ
+	
+	Examples of usage are, a task could be Sucessful, Failed, Requested, or InProgress.
+	
+	Attributes:
+		name (CharField): name of the followup status to be displayed.
+	
+	"""
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
@@ -51,8 +67,13 @@ class TaskStatus(BaseModel):
 		return self.name
 
 class AntaresClassification(BaseModel):
-	### Properties ###
-	# Required
+	"""
+	The Antares broker classification of a transient in YSE_PZ
+	
+	Attributes:
+		name (CharField): name of the Antares classification.
+	
+	"""
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
@@ -62,8 +83,13 @@ class AntaresClassification(BaseModel):
 		return self.name
 
 class InternalSurvey(BaseModel):
-	### Properties ###
-	# Required
+	"""
+	A way to add a tag to data designating its source.
+	
+	Attributes:
+		name (CharField): name source of the data.
+	
+	"""
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
@@ -73,8 +99,13 @@ class InternalSurvey(BaseModel):
 		return self.name
 
 class ObservationGroup(BaseModel):
-	### Properties ###
-	# Required
+	"""
+	A way to add a tag to data designating its external source.
+	
+	Attributes:
+		name (CharField): name source of the data.
+	
+	"""
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
@@ -84,8 +115,13 @@ class ObservationGroup(BaseModel):
 		return self.name
 
 class SEDType(BaseModel):
-	### Properties ###
-	# Required
+	"""
+	Type of Spectral Energry Distrubtion of a transient.
+	
+	Attributes:
+		name (CharField): name of the Spectral Energry Distrubtion type.
+	
+	"""
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
@@ -95,8 +131,13 @@ class SEDType(BaseModel):
 		return self.name
 
 class HostMorphology(BaseModel):
-	### Properties ###
-	# Required
+	"""
+	Morphological type of the transient host galaxy.
+	
+	Attributes:
+		name (CharField): Morphological type.
+	
+	"""
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
@@ -106,8 +147,15 @@ class HostMorphology(BaseModel):
 		return self.name
 
 class Phase(BaseModel):
-	### Properties ###
-	# Required
+	"""
+	Phase of the transient.
+	
+	Example usage, PreExplosiona and PostExplosion.
+	
+	Attributes:
+		name (CharField): Name of the phase of the transient
+	
+	"""
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
@@ -117,8 +165,15 @@ class Phase(BaseModel):
 		return self.name
 
 class TransientClass(BaseModel):
-	### Properties ###
-	# Required
+	"""
+	Class of a transient.
+	
+	Example usage, SN, SN I, SN IB.
+	
+	Attributes:
+		name (CharField): Name of the transient class.
+	
+	"""
 	name = models.CharField(max_length=64)
 
 	def __str__(self):
