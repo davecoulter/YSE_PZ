@@ -733,9 +733,12 @@ def observing_night(request, telescope, obs_date, pi_name):
     if pi_name != 'None':
         classical_obs_date = classical_obs_date.filter(resource__principal_investigator__name = pi_name)
     
+    #follow_requests = TransientFollowup.objects.filter(classical_resource = classical_obs_date[0].resource).\
+    #    filter(valid_start__lte = classical_obs_date[0].obs_date).\
+    #    filter(valid_stop__gte = classical_obs_date[0].obs_date).select_related()
     follow_requests = TransientFollowup.objects.filter(classical_resource = classical_obs_date[0].resource).\
-        filter(valid_start__lte = classical_obs_date[0].obs_date).\
-        filter(valid_stop__gte = classical_obs_date[0].obs_date).select_related()
+        filter(valid_start__lte = classical_obs_date[0].resource.begin_date_valid).\
+        filter(valid_stop__gte = classical_obs_date[0].resource.end_date_valid).select_related()
 
     followuptransientfilter = FollowupFilter(request.GET, queryset=follow_requests,prefix=telescope)
         
