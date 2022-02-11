@@ -52,7 +52,7 @@ class SurveyFieldMSBFilter(django_filters.FilterSet):
 	class Meta:
 		model = SurveyFieldMSB
 		fields = ('name','active')
-        
+		
 ### `SurveyField ViewSets` ###
 class SurveyFieldViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	queryset = SurveyField.objects.all()
@@ -373,10 +373,19 @@ class QueuedResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 		allowed_resource = ObservingResourceService.GetAuthorizedQueuedResource_ByUser(self.request.user)
 		return allowed_resource
 
+### `ClassicalResource` Filter Set ###
+class ClassicalResourceFilter(django_filters.FilterSet):
+	telescope_name = django_filters.Filter(field_name="telescope__name")
+
+	class Meta:
+		model = ClassicalResource
+		fields = ()
+	
 class ClassicalResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 	serializer_class = ClassicalResourceSerializer
-	#lookup_field = "id"
 	permission_classes = (permissions.IsAuthenticated,)
+	filter_backends = (DjangoFilterBackend,)
+	filter_class = ClassicalResourceFilter
 
 	def get_queryset(self):
 		allowed_resource = ObservingResourceService.GetAuthorizedClassicalResource_ByUser(self.request.user)

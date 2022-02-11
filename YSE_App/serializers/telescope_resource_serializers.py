@@ -279,7 +279,7 @@ class ClassicalResourceSerializer(serializers.HyperlinkedModelSerializer):
 		return instance
 
 class ClassicalObservingDateSerializer(serializers.HyperlinkedModelSerializer):
-	resource = serializers.HyperlinkedRelatedField(queryset=ClassicalResource.objects.all(), view_name='classicalresource-detail', lookup_field="id")
+	resource = serializers.HyperlinkedRelatedField(queryset=ClassicalResource.objects.all(), view_name='classicalresource-detail') #, lookup_field="id")
 	night_type = serializers.HyperlinkedRelatedField(queryset=ClassicalNightType.objects.all(), view_name='classicalnighttype-detail')
 	
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
