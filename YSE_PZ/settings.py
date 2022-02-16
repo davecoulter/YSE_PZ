@@ -237,3 +237,4 @@ STATIC_URL = config.get('site_settings', 'STATIC')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+ZTFTMPDIR = config.get('yse_forcedphot','ztfforcedtmpdir')
