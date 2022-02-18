@@ -1,7 +1,7 @@
 Docker
 ******
 
-This pages walks you through running :code:`YSE_PZ` locally with docker. It will be really terrific!
+This pages walks you through running :code:`YSE_PZ` locally with docker. It will hopefully be terrific!
 
 Install the Docker desktop app
 -------------------------------
