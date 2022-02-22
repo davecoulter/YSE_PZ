@@ -3,6 +3,8 @@ Contributing
 
 This page walks you through how to contribute to the development of YSE_PZ.
 
+General workflow
+----------------
 The normal develop workflow of YSE_PZ is to branch off develop, commit and push
 changes, and then merge to the develop branch with a pull request. Finally, after
 the pull request has be approved and your changes have been merged you can delete
@@ -41,7 +43,7 @@ code and push changes to github.
 
 When you have finished working and you are ready for your changes to be merged
 into the YSE_PZ codebase you open a pull request. To do this, go to the YSE_PZ
-github repository page and got to the pull requests tab.
+github repository page and go to the pull requests tab.
 
 .. image:: _static/contributing_pull_request_tab.png
 
