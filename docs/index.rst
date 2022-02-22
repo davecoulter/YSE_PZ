@@ -18,6 +18,7 @@ Welcome to the YSE_PZ documentation!
    adding_data
    forms
    docker
+   contributing
    api
    
 Indices and tables
