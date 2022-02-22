@@ -5,6 +5,7 @@ This page walks you through how to contribute to the development of YSE_PZ.
 
 General workflow
 ----------------
+
 The normal develop workflow of YSE_PZ is to branch off develop, commit and push
 changes, and then merge to the develop branch with a pull request. Finally, after
 the pull request has be approved and your changes have been merged you can delete
