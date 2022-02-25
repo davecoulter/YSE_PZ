@@ -271,7 +271,7 @@ class ForcedPhot(CronJobBase):
         # candidate transients
         min_date = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.options.max_time_minutes)
         nowmjd = date_to_mjd(datetime.datetime.utcnow())
-        #transient_name='2020sck'
+        #transient_name='2022ann'; self.options.max_days_yseimage = 60
         if transient_name is None and not update_forced:
             transients = Transient.objects.filter(
                 created_date__gte=min_date).filter(~Q(tags__name='YSE') & ~Q(tags__name='YSE Stack')).order_by('-created_date')
@@ -288,7 +288,6 @@ class ForcedPhot(CronJobBase):
         # candidate survey images
         survey_images = SurveyObservation.objects.filter(status__name='Successful').\
             filter(obs_mjd__gt=nowmjd-self.options.max_days_yseimage).filter(diff_id__isnull=False)
-
         transient_list,ra_list,dec_list,diff_id_list,warp_id_list,mjd_list,filt_list = \
             [],[],[],[],[],[],[]
         for t in transients:
@@ -747,7 +746,7 @@ class ForcedPhot(CronJobBase):
             zip(transient_list,ra_list,dec_list,diff_id_list):
             if diff_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc1','null','null','stamp',2049,'byid','diff',diff_id,'RINGS.V3',
+            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','diff',diff_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'diff.for.%s'%snid) )
             count += 1
         
@@ -755,7 +754,7 @@ class ForcedPhot(CronJobBase):
             zip(transient_list,ra_list,dec_list,warp_id_list):
             if warp_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc1','null','null','stamp',2049,'byid','warp',warp_id,'RINGS.V3',
+            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','warp',warp_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'warp.for.%s'%snid) )
             count += 1
             
@@ -763,7 +762,7 @@ class ForcedPhot(CronJobBase):
             zip(transient_list,ra_list,dec_list,stack_id_list):
             if stack_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc1','null','null','stamp',2049,'byid','stack',stack_id,'RINGS.V3',
+            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','stack',stack_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'stack.for.%s'%snid) )
             count += 1
 
@@ -790,14 +789,13 @@ class ForcedPhot(CronJobBase):
         request_names = []
         count = 0
         for snid_unq in np.unique(transient_list):
-            data = at.Table(names=('ROWNUM','RA1_DEG','DEC1_DEG','RA2_DEG','DEC2_DEG','FILTER','MJD-OBS','FPA_ID','COMPONENT_ID'),
-                            dtype=('S20','>f8','>f8','>f8','>f8','S20','>f8','>i4','S64'))
+            data = at.Table(names=('ROWNUM','PROJECT','RA1_DEG','DEC1_DEG','RA2_DEG','DEC2_DEG','FILTER','MJD-OBS','FPA_ID','COMPONENT_ID'),
+                            dtype=('S20','S16','>f8','>f8','>f8','>f8','S20','>f8','>i4','S64'))
             for snid,ra,dec,mjd,filt,diff_id in \
                 zip(transient_list[transient_list == snid_unq],ra_list[transient_list == snid_unq],dec_list[transient_list == snid_unq],
                     mjd_list[transient_list == snid_unq],filt_list[transient_list == snid_unq],diff_id_list[transient_list == snid_unq]):
                 if diff_id is None or diff_id == 'NULL': continue
-                try: data.add_row(('forcedphot_ysebot_{}'.format(count),ra,dec,ra,dec,filt,mjd,diff_id,skycelldict[snid_unq]) )
-                except: import pdb; pdb.set_trace()
+                data.add_row(('forcedphot_ysebot_{}'.format(count),'gpc2',ra,dec,ra,dec,filt,mjd,diff_id,skycelldict[snid_unq]) )
                 count += 1
 
             if len(data) > 0:
