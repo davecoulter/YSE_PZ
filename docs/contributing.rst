@@ -42,13 +42,11 @@ This means you can push changes to github where they can be saved before you
 are ready for a pull request. Now you can make your changes and additions to the
 code and push changes to github.
 
-When you have finished working and you are ready for your changes to be merged
-into the YSE_PZ codebase you open a pull request. To do this, go to the YSE_PZ
-github repository page and go to the pull requests tab.
+Next go to to the YSE_PZ github repository page and go to the pull requests tab.
 
 .. image:: _static/contributing_pull_request_tab.png
 
-Then open a new pull request.
+Then open a new draft pull request.
 
 .. image:: _static/contributing_new_pull_request.png
 
@@ -56,7 +54,14 @@ Create a pull request with your branch and develop.
 
 .. image:: _static/contributing_create_pull_request.png
 
-Your code changes will be reviewed and then eventually merged into develop.
+.. image:: _static/contributing_new_draft_pull_request.png
+
+Now as your commit and push changes to your branch on master they will show up
+in the draft pull request. When you are a happy for you changes to be reviewed
+and then eventually merged into develop, click request review.
+
+.. image:: _static/contributing_ready_for_review.png
+
 After your branch has been merged, delete the branch from your local repository.
 
 .. code:: none
