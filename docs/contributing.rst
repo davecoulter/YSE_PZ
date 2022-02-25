@@ -8,7 +8,7 @@ General workflow
 
 The normal develop workflow of YSE_PZ is to branch off develop, commit and push
 changes, and then merge to the develop branch with a pull request. Finally, after
-the pull request has be approved and your changes have been merged you can delete
+the pull request has been approved and your changes have been merged you can delete
 your branch.
 
 Starting from scratch, the typical development workflow would be the following.
@@ -42,13 +42,11 @@ This means you can push changes to github where they can be saved before you
 are ready for a pull request. Now you can make your changes and additions to the
 code and push changes to github.
 
-When you have finished working and you are ready for your changes to be merged
-into the YSE_PZ codebase you open a pull request. To do this, go to the YSE_PZ
-github repository page and go to the pull requests tab.
+Next go to to the YSE_PZ github repository page and go to the pull requests tab.
 
 .. image:: _static/contributing_pull_request_tab.png
 
-Then open a new pull request.
+Then open a new draft pull request.
 
 .. image:: _static/contributing_new_pull_request.png
 
@@ -56,8 +54,20 @@ Create a pull request with your branch and develop.
 
 .. image:: _static/contributing_create_pull_request.png
 
-Your code changes will be reviewed and then eventually merged into develop.
-After your branch has been merged, delete the branch from your local repository.
+Fill in the title and describe what you are trying to do in the description, and
+open a draft pull request.
+
+.. image:: _static/contributing_draft_pull_request.png
+
+As you commit and push changes to your branch on github they will show up
+in the draft pull request. When you are a happy for you changes to be reviewed
+and then eventually merged into develop, click ready for review.
+
+.. image:: _static/contributing_ready_for_review.png
+
+Your code will now be reviewed and when it is accepted it will be merged into
+develop. After your branch has been merged, delete the branch from your local
+repository.
 
 .. code:: none
 
