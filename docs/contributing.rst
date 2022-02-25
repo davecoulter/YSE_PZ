@@ -8,7 +8,7 @@ General workflow
 
 The normal develop workflow of YSE_PZ is to branch off develop, commit and push
 changes, and then merge to the develop branch with a pull request. Finally, after
-the pull request has be approved and your changes have been merged you can delete
+the pull request has been approved and your changes have been merged you can delete
 your branch.
 
 Starting from scratch, the typical development workflow would be the following.
