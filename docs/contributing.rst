@@ -54,14 +54,18 @@ Create a pull request with your branch and develop.
 
 .. image:: _static/contributing_create_pull_request.png
 
-.. image:: _static/contributing_new_draft_pull_request.png
+Fill in the title and describe what you are trying to do in the description, and
+open a draft pull request.
+
+.. image:: _static/contributing_draft_pull_request.png
 
 Now as your commit and push changes to your branch on master they will show up
 in the draft pull request. When you are a happy for you changes to be reviewed
-and then eventually merged into develop, click request review.
+and then eventually merged into develop, click ready for review.
 
 .. image:: _static/contributing_ready_for_review.png
 
+Your code will now be reviewed and when accepted it will be merged into develop.
 After your branch has been merged, delete the branch from your local repository.
 
 .. code:: none
