@@ -368,7 +368,9 @@ class ForcedPhot(CronJobBase):
             done_stamp,success_stamp = self.get_status(stack_request_name)
             if done_stamp: jobs_done = True
         if not success_stamp:
-            raise RuntimeError('jobs failed!')
+            # need to proceed with the ones that are working for now
+            pass
+            #raise RuntimeError('jobs failed!')
         if not jobs_done:
             raise RuntimeError('job timeout!')
         
@@ -432,7 +434,7 @@ class ForcedPhot(CronJobBase):
 
             PhotUploadAll = {"mjdmatchmin":0.0001,
                              "clobber":True}
-            photometrydict = {'instrument':'GPC1',
+            photometrydict = {'instrument':'GPC2',
                               'obs_group':'YSE',
                               'photdata':{}}
 
