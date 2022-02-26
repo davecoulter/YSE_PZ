@@ -6,7 +6,7 @@ services:
           context: ""
           dockerfile: Dockerfile.web
 #        image: "davecoulter/ysepz_test:5.0"
-        image: "yse_pz_web:latest"
+        image: "yse_pz_web:1.0"
         volumes:
             - ${VOL}:/app
         links:
