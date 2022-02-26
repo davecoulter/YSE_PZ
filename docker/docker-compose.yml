@@ -1,0 +1,39 @@
+version: '2'
+services:
+    web:
+        container_name: ysepz_web_container
+        build:
+          context: ""
+          dockerfile: Dockerfile.web
+#        image: "davecoulter/ysepz_test:5.0"
+        image: "yse_pz_web:latest"
+        volumes:
+            - ${VOL}:/app
+        links:
+            - yse_db
+        command: python3 manage.py runserver 0.0.0.0:8000
+        ports:
+        - "8000:8000"
+        environment:
+          CONDA_DEFAULT_ENV: base
+          _: /opt/conda/bin/python
+          CONDA_EXE: /opt/conda/bin/conda
+          SHLVL: 1
+          CONDA_PYTHON_EXE: /opt/conda/bin/python
+          CONDA_SHLVL: 1
+          CONDA_PROMPT_MODIFIER: (base)
+          PROJ_LIB: /opt/conda/share/proj
+          CONDA_PREFIX: /opt/conda
+          DB_CONFIG: ${REL_DB_CONFIG}
+    yse_db:
+      container_name: ysepz_db_container
+      image: "mysql:8.0.25"
+      command: mysqld --default-authentication-plugin=mysql_native_password
+      ports:
+        - "53306:3306"
+      volumes:
+        - ${VOL_DB}:/var/lib/mysql
+        - ${VOL_DB_CONFIG}:/etc/mysql/conf.d
+      environment:
+        MYSQL_ROOT_PASSWORD: ${DB_PWD}
+
