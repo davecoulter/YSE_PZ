@@ -572,7 +572,7 @@ class YSE(CronJobBase):
             except: continue
 
             nsn = 0
-            nsn_single = 25
+            nsn_single = 10
 
             scall = SkyCoord(summary['ra_psf'],summary['dec_psf'],unit=u.deg)
             iSummary = np.array([],dtype=int)
@@ -584,14 +584,19 @@ class YSE(CronJobBase):
             
             nowmjd = Time.now().mjd
             #summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
-            iSummary = np.append(iSummary,np.where(nowmjd - summary['mjd_obs'] < self.options.max_days)[0])
+            #self.options.max_days = 14
+            iSummary = np.append(iSummary,np.where((nowmjd - summary['mjd_obs'] < self.options.max_days) |
+                                                   (nowmjd - summary['latest_mjd_forced'] < self.options.max_days))[0])
             summary_upload = summary[iSummary]
-            while nsn_single == 25:
-                transientdict,nsn_single = self.parse_data(summary_upload,lc,transient_idx=nsn,max_transients=25)
+            #import pdb; pdb.set_trace()
+            #summary_upload = summary_upload[summary_upload['local_designation'] == '12BYSEaup']
+            #summary_upload = summary_upload[summary_upload['tns_name'] == '2022czy']
+            while nsn_single == 10:
+                transientdict,nsn_single = self.parse_data(summary_upload,lc,transient_idx=nsn,max_transients=10)
                 print('uploading %i transients'%nsn_single)
                 self.send_data(transientdict)
                 self.copy_stamps(transientdict)
-                nsn += 25
+                nsn += 10
 
         return nsn
         
