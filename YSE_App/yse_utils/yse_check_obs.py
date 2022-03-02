@@ -103,8 +103,11 @@ class check_obs:
 
         active_fields_missing = [a for a in active_fields if a not in msbs_observed]
         if len(active_fields_missing):
+            print(f"fields {','.join(active_fields_missing)} have not been observed in {self.options.ndays} days")
             self.send_email(active_fields_missing,n_active)
-        
+        else:
+            print(f"all {n_active} fields have been observed in the last {self.options.ndays} days!")
+            
     def send_email(self,field_list,n_active):
 
         smtpserver = "%s:%s" % (self.options.SMTP_HOST, self.options.SMTP_PORT)
