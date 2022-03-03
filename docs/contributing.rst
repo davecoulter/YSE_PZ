@@ -105,3 +105,55 @@ Then delete the branch from Github.
     git push -d origin <your branch name>
 
 
+Documentation
+-------------
+
+Contributing to the documentation is probably the best place to start. Writing and
+building the documentation locally is straightforward. For most documentation
+contributions you'll be working inside of the `docs/` directory. The
+documentation is build using `sphinx <https://www.sphinx-doc.org/en/master/>`_
+and you should check our their documentation for the basics.
+
+In order to build the docs and view them your browser locally you will need to
+install a couple of packages. To do this we recommend using a
+`conda<https://docs.conda.io/en/latest/>`_ environment. Once you have installed
+conda, go head and create a new environment.
+
+.. code:: none
+
+    conda create --name yse_pz_docs
+
+The activate the environment.
+
+.. code:: none
+
+    conda activate yse_pz_docs
+
+Then `pip<https://pip.pypa.io/en/stable/cli/pip_install/>`_ install the
+documentation requirements.
+
+.. code:: none
+
+    pip install -r docs/requirements.txt
+
+Then go into the docs/ directory and if all is working you should build the
+documentation with with
+
+.. code:: none
+
+    make html
+
+After you have run the build command open the `docs/_build/html/index.html`
+file in your web browser and you should see the YSE_PZ documentation. As you
+make changes and additions to the documentation you can build it locally and
+check that nothing breaks.
+
+When you push changes to a draft or open pull request, github will build a
+preview of the documentation automatically for you. You can see this preview
+here.
+
+.. image:: _static/contributing_docs_ci.png
+
+
+
+
