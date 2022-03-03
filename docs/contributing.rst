@@ -116,7 +116,7 @@ and you should check our their documentation for the basics.
 
 In order to build the docs and view them your browser locally you will need to
 install a couple of packages. To do this we recommend using a
-`conda<https://docs.conda.io/en/latest/>`_ environment. Once you have installed
+`conda <https://docs.conda.io/en/latest/>`_ environment. Once you have installed
 conda, go head and create a new environment.
 
 .. code:: none
@@ -129,7 +129,7 @@ The activate the environment.
 
     conda activate yse_pz_docs
 
-Then `pip<https://pip.pypa.io/en/stable/cli/pip_install/>`_ install the
+Then `pip <https://pip.pypa.io/en/stable/cli/pip_install/>`_ install the
 documentation requirements.
 
 .. code:: none
