@@ -137,7 +137,7 @@ documentation requirements.
     pip install -r docs/requirements.txt
 
 Then go into the docs/ directory and if all is working you should build the
-documentation with with
+documentation with
 
 .. code:: none
 
