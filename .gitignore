@@ -9,5 +9,5 @@ YSE_App/static/YSE_App/images/stamps/*
 node_modules/*
 *snana.dat
 
-_build/
+docs/_build/
 
