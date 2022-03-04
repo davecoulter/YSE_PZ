@@ -4,7 +4,7 @@
 Installation
 ************
 
-This is a quick guide to performing a local installation
+This is a easy guide to performing a local installation
 of :code:`YSE_PZ`.
 
 Prerequisites
