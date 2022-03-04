@@ -260,6 +260,12 @@ HAVING sep < 3.3
 
 	return qs
 
+def rising_tde(field_id):
+
+	print("test")
+
+	return
+
 def sne_in_yse_field_with_ignore(field_id):
 
 	qs = None
