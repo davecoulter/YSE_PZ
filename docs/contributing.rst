@@ -3,6 +3,31 @@ Contributing
 
 This page walks you through how to contribute to the development of YSE_PZ.
 
+We want your help. No, really. There may be a little voice inside your head that
+is telling you that you're not ready to be an open source contributor; that your
+skills aren't nearly good enough to contribute. What could you possibly offer a
+project like this one?
+
+We assure you - the little voice in your head is wrong. If you can write code or
+documentation, you can contribute code to open source. Contributing to open
+source projects is a fantastic way to advance one's coding and open source
+workflow skills. Writing perfect code isn't the measure of a good developer
+(that would disqualify all of us!); it's trying to create something, making
+mistakes, and learning from those mistakes. That's how we all improve, and we
+are happy to help others learn.
+
+Being an open source contributor doesn't just mean writing code, either. You can
+help out by writing documentation, tests, or even giving feedback about the
+project (and yes - that includes giving feedback about the contribution
+process). Some of these contributions may be the most valuable to the project
+as a whole, because you're coming to the project with fresh eyes, so you can
+see the errors and assumptions that seasoned contributors have glossed over.
+
+.. note::
+    This text was originally written by Adrienne Lowe for a PyCon talk,
+    and was adapted by YSE_PZ based on its use in the README file for the MetPy
+    project and `Astropy <https://www.astropy.org>`_ project.
+
 General workflow
 ----------------
 
@@ -78,5 +103,57 @@ Then delete the branch from Github.
 .. code:: none
 
     git push -d origin <your branch name>
+
+
+Documentation
+-------------
+
+Contributing to the documentation is probably the best place to start. Writing and
+building the documentation locally is straightforward. For most documentation
+contributions you'll be working inside of the `docs/` directory. The
+documentation is build using `sphinx <https://www.sphinx-doc.org/en/master/>`_
+and you should check our their documentation for the basics.
+
+In order to build the docs and view them your browser locally you will need to
+install a couple of packages. To do this we recommend using a
+`conda <https://docs.conda.io/en/latest/>`_ environment. Once you have installed
+conda, go head and create a new environment.
+
+.. code:: none
+
+    conda create --name yse_pz_docs
+
+The activate the environment.
+
+.. code:: none
+
+    conda activate yse_pz_docs
+
+Then `pip <https://pip.pypa.io/en/stable/cli/pip_install/>`_ install the
+documentation requirements.
+
+.. code:: none
+
+    pip install -r docs/requirements.txt
+
+Then go into the docs/ directory and if all is working you should build the
+documentation with
+
+.. code:: none
+
+    make html
+
+After you have run the build command open the `docs/_build/html/index.html`
+file in your web browser and you should see the YSE_PZ documentation. As you
+make changes and additions to the documentation you can build it locally and
+check that nothing breaks.
+
+When you push changes to a draft or open pull request, github will build a
+preview of the documentation automatically for you. You can see this preview
+here.
+
+.. image:: _static/contributing_docs_ci.png
+
+
 
 

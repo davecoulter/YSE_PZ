@@ -379,6 +379,7 @@ class ForcedPhot(CronJobBase):
         if not success_stamp:
             pass
             #import pdb; pdb.set_trace()
+
             #raise RuntimeError('jobs failed!')
         if not jobs_done:
             raise RuntimeError('job timeout!')
@@ -773,7 +774,7 @@ class ForcedPhot(CronJobBase):
             zip(transient_list,ra_list,dec_list,stack_id_list):
             if stack_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc1','null','null','stamp',2049,'byid','stack',stack_id,'RINGS.V3',
+            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','stack',stack_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'stack.for.%s'%snid) )
             count += 1
 
