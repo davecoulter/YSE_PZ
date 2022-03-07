@@ -528,7 +528,10 @@ class YSE_Scheduler:
         # get the ZTF observing history and plans
         # https://zwickytransientfacility.github.io/schedule_reporting_service/
         # http://schedule.ztf.uw.edu/ZTF_ObsLoc_YYYY-MM-DD.json
-        likely_ztf_fields = self.get_ztf_schedule(date_to_schedule,clear=clear,field_list=field_list)
+        try:
+            likely_ztf_fields = self.get_ztf_schedule(date_to_schedule,clear=clear,field_list=field_list)
+        except:
+            likely_ztf_fields = ps_fields[:]
 
         print('choosing fields')
         # then weight the ZTF constraints against YSE fields w/o recent data
@@ -556,7 +559,7 @@ if __name__ == "__main__":
 
     try:
         
-        obs_date = datetime.datetime.utcnow()+datetime.timedelta(hours=9) #datetime.timedelta(1)
+        obs_date = datetime.datetime.utcnow()+datetime.timedelta(1) #hours=9) #datetime.timedelta(1)
         ys.main(dateutil.parser.parse(obs_date.isoformat().split()[0]))
         
     except Exception as e:
