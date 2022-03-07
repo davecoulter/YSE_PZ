@@ -29,7 +29,7 @@ def getGHOSTData(ghost_host):
 
 
 def main(transients=None):
-    if transients is not None:
+    if transients is None:
         transients = Transient.objects.filter(tags__name='YSE').filter(name__startswith='20') #.filter(Q(host__isnull=True) | Q(host__redshift__isnull=True))
     for t in transients:
         print(t)

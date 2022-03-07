@@ -8,6 +8,7 @@ __pycache__/
 YSE_App/static/YSE_App/images/stamps/*
 node_modules/*
 *snana.dat
+docs/_build/
 docker_mysql/*
 !docker_mysql/readme.txt
 db_configuration/*.ini

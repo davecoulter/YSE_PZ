@@ -192,7 +192,7 @@ class ForcedPhot(CronJobBase):
             parser = self.add_options(usage='',config=config)
             options,  args = parser.parse_known_args()
             self.options = options
-
+            #nsn = self.doall_main()
             nsn = self.main()
         except Exception as e:
             print(e)
@@ -265,7 +265,15 @@ class ForcedPhot(CronJobBase):
 
 
         return(parser)
-        
+
+    def doall_main(self):
+        min_date = datetime.datetime.utcnow() - datetime.timedelta(days=30) #minutes=self.options.max_time_minutes)
+        transients = Transient.objects.filter(
+            created_date__gte=min_date).filter(~Q(tags__name='YSE') & ~Q(tags__name='YSE Stack')).order_by('-created_date')
+        for t in transients:
+            print(t.name)
+            self.main(transient_name=t.name)
+            
     def main(self,transient_name=None,update_forced=False):
 
         # candidate transients
@@ -290,6 +298,7 @@ class ForcedPhot(CronJobBase):
             filter(obs_mjd__gt=nowmjd-self.options.max_days_yseimage).filter(diff_id__isnull=False)
         transient_list,ra_list,dec_list,diff_id_list,warp_id_list,mjd_list,filt_list = \
             [],[],[],[],[],[],[]
+
         for t in transients:
 
             sit = survey_images.filter(Q(survey_field__ra_cen__gt=t.ra-1.55) | Q(survey_field__ra_cen__lt=t.ra+1.55) |
@@ -368,8 +377,9 @@ class ForcedPhot(CronJobBase):
             done_stamp,success_stamp = self.get_status(stack_request_name)
             if done_stamp: jobs_done = True
         if not success_stamp:
-            # need to proceed with the ones that are working for now
             pass
+            #import pdb; pdb.set_trace()
+
             #raise RuntimeError('jobs failed!')
         if not jobs_done:
             raise RuntimeError('job timeout!')
@@ -613,7 +623,7 @@ class ForcedPhot(CronJobBase):
                         phot_dict[tn]['dec'] += [dec]
                         phot_dict[tn]['exptime'] += [exptime]
                         phot_dict[tn]['zpt'] += [ff[0].header['FPA.ZP']]
-                    
+
         return phot_dict
 
     def get_stamps(self,request_name,transient_list):
