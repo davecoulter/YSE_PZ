@@ -12,7 +12,7 @@ define(function () {
       return words[2];
     }
   };
-  
+
   return {
     errorLoading: function () {
       return 'Nie można załadować wyników.';
@@ -24,7 +24,7 @@ define(function () {
     },
     inputTooShort: function (args) {
       var remainingChars = args.minimum - args.input.length;
-      
+
       return 'Podaj przynajmniej ' + remainingChars + ' ' +
         pluralWord(remainingChars, charsWords);
     },

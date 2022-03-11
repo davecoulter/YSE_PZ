@@ -78,7 +78,7 @@ describe '#labelSeries', ->
       ["2012-01-29", new Date(2012, 0, 29).getTime()],
       ["2012-02-05", new Date(2012, 1, 5).getTime()]
     ])
-    
+
   it 'should generate day intervals', ->
     Morris.labelSeries(
       new Date(2012, 0, 1).getTime(),

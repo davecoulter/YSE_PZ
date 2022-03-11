@@ -35,7 +35,7 @@ function toggle(source) {
       <thead>
         <tr>
           <th>Sunset (UT)</th>
-          <th>12 Deg. Twilight</th>  
+          <th>12 Deg. Twilight</th>
           <th>18 Deg. Twilight</th>
           <th>18 Deg. Twilight</th>
           <th>12 Deg. Twilight</th>
@@ -96,9 +96,9 @@ function toggle(source) {
     </div>
   </div>
     <!-- /.box-footer-->
-  
+
   <!-- /.box -->
-    
+
 {% endblock %}
 
 
@@ -118,17 +118,17 @@ $(document).ready(function(){
 
     $(function() {
       checkboxes = document.getElementsByName('selection');
-      
-      //$('#survey_field_date_range').daterangepicker({ 
+
+      //$('#survey_field_date_range').daterangepicker({
       //  timePicker24Hour: true,
-      //  timePicker: true, 
-      //  timePickerIncrement: 1, 
+      //  timePicker: true,
+      //  timePickerIncrement: 1,
       //  startDate: '{{obs_date_str}} {{sunriseset.1}}',
       //  endDate:'{{obs_date_str}} {{sunriseset.1}}',
-      //  format: 'MM/DD/YYYY HH:mm', 
+      //  format: 'MM/DD/YYYY HH:mm',
       //  locale: {
       //    format: 'MM/DD/YYYY HH:mm'
-      //  } 
+      //  }
       //});
 
       // Initialize daterange
@@ -140,15 +140,15 @@ $(document).ready(function(){
       //  $('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
       //});
 
-      $('#survey_obs_date').datepicker({ 
+      $('#survey_obs_date').datepicker({
         timePicker24Hour: true,
-        timePicker: true, 
-        timePickerIncrement: 1, 
-        format: 'mm/dd/yyyy', 
+        timePicker: true,
+        timePickerIncrement: 1,
+        format: 'mm/dd/yyyy',
         //todayBtn: "linked",
         locale: {
           format: 'mm/dd/yyyy'
-        } 
+        }
       });
 
       // Initialize daterange
@@ -201,7 +201,7 @@ $(document).ready(function(){
                     var obs_id = checkboxes[i].value
                     var box_id = '#'+obs_id+'_status'
                     $(box_id).text(status_name_change)
-                    }  
+                    }
                   //alert(status_name_change)
                } else {
                  ChangeErr()
@@ -237,16 +237,16 @@ $(document).ready(function(){
 
           // handle a successful response
           success : function(json) {
-            
+
             // Required fields
 
               // Re-initialize the datepicker
               $('#valid_date').val("")
-              $('#survey_obs_date').datepicker({ 
+              $('#survey_obs_date').datepicker({
                 timePicker24Hour: true,
-                timePicker: true, 
-                timePickerIncrement: 1, 
-                format: 'MM/DD/YYYY HH:mm', 
+                timePicker: true,
+                timePickerIncrement: 1,
+                format: 'MM/DD/YYYY HH:mm',
                 locale: {
                   format: 'MM/DD/YYYY HH:mm'
                 }
@@ -279,16 +279,16 @@ $(document).ready(function(){
 
           // handle a successful response
           success : function(json) {
-            
+
             // Required fields
 
               // Re-initialize the datepicker
               $('#valid_date').val("")
-              $('#survey_obs_date').datepicker({ 
+              $('#survey_obs_date').datepicker({
                 timePicker24Hour: true,
-                timePicker: true, 
-                timePickerIncrement: 1, 
-                format: 'mm/dd/yyyy', 
+                timePicker: true,
+                timePickerIncrement: 1,
+                format: 'mm/dd/yyyy',
                 locale: {
                   format: 'mm/dd/yyyy'
                 }
@@ -360,4 +360,3 @@ $(document).ready(function(){
 
 </script>
 {% endblock %}
-

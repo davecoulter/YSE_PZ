@@ -9,9 +9,9 @@
             html,
             body {height:100%},
             .tab { margin-left: 40px; }
-            canvas {background-color: #F0F8FF; 
-                    height: {{ viewContent.fov_y_pixels }}px; 
-                    width: {{ viewContent.fov_x_pixels }}px; 
+            canvas {background-color: #F0F8FF;
+                    height: {{ viewContent.fov_y_pixels }}px;
+                    width: {{ viewContent.fov_x_pixels }}px;
                     outline: 2px solid black;}
             /*canvas {height: 500px; width: 500px; outline: 2px solid black;}*/
 
@@ -125,9 +125,9 @@
 
     </style>
 
-        <!-- Load jquery -->    
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js" 
-            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" 
+        <!-- Load jquery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
             crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 
@@ -139,7 +139,7 @@
 
 
 
-    <!-- Load the cookie stuff -->    
+    <!-- Load the cookie stuff -->
     <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
     <!-- Load the Paper.js library -->
     <script src=https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.0/paper-full.min.js ></script>
@@ -147,9 +147,9 @@
     <script type="text/paperscript" src="{% static 'YSE_App/js/paperBasic.js' %}" canvas="myCanvas"></script>
     <!-- Load my js, don't worry about caching; disabled for now because ajax urls...-->
     <!-- <script type="text/javascript" src="{% static 'gw_assessor/js/main.js' %}"></script> -->
-            <!-- Load popper -->    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" 
-            integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" 
+            <!-- Load popper -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+            integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
             crossorigin="anonymous"></script>
 
     <!-- Aladin -->
@@ -399,7 +399,7 @@
     </script>
 
     <!-- Now link up the buttons with JS actions -->
-    <script type="text/javascript" > 
+    <script type="text/javascript" >
 
         //connect the buttons to their functions
         window.onload = function() {
@@ -440,7 +440,7 @@
         </center>
     </div>
 
-    
+
 {% block content %}
 {% endblock %}
 

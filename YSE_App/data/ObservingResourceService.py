@@ -12,32 +12,40 @@ def GetUserGroupQuery(user):
 
     return no_group, contains_group
 
+
 def GetAuthorizedToOResource_ByUser(user):
     group_query_tuple = GetUserGroupQuery(user)
-    allowed_too_resources = ToOResource.objects.filter(group_query_tuple[0] | group_query_tuple[1]).distinct()
+    allowed_too_resources = ToOResource.objects.filter(
+        group_query_tuple[0] | group_query_tuple[1]
+    ).distinct()
 
     return allowed_too_resources
 
+
 def GetAuthorizedQueuedResource_ByUser(user):
     group_query_tuple = GetUserGroupQuery(user)
-    allowed_queuedresources = QueuedResource.objects.filter(group_query_tuple[0] | group_query_tuple[1]).distinct()
+    allowed_queuedresources = QueuedResource.objects.filter(
+        group_query_tuple[0] | group_query_tuple[1]
+    ).distinct()
 
     return allowed_queuedresources
 
+
 def GetAuthorizedClassicalResource_ByUser(user):
     group_query_tuple = GetUserGroupQuery(user)
-    allowed_classicalresources = ClassicalResource.objects.filter(group_query_tuple[0] | group_query_tuple[1]).distinct()
+    allowed_classicalresources = ClassicalResource.objects.filter(
+        group_query_tuple[0] | group_query_tuple[1]
+    ).distinct()
 
     return allowed_classicalresources
 
+
 def GetAuthorizedClassicalObservingDate_ByUser(user):
     allowed_classical_resource = GetAuthorizedClassicalResource_ByUser(user)
-    classical_resource_ids = allowed_classical_resource.values('id')
+    classical_resource_ids = allowed_classical_resource.values("id")
     allowed_classical_obs_dates_query = Q(resource__id__in=classical_resource_ids)
-    allowed_classical_obs_dates = ClassicalObservingDate.objects.filter(allowed_classical_obs_dates_query)
+    allowed_classical_obs_dates = ClassicalObservingDate.objects.filter(
+        allowed_classical_obs_dates_query
+    )
 
     return allowed_classical_obs_dates
-
-
-
-

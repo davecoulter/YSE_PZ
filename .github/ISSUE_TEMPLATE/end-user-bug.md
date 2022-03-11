@@ -28,7 +28,7 @@ If applicable, add screenshots to help explain your problem.
  - Browser [e.g. chrome, safari]
 
 **Additional context**
-Add any other context about the problem here. 
+Add any other context about the problem here.
 
 If you provide a snippet of python code:
  - python version: [e.g. 3.8]

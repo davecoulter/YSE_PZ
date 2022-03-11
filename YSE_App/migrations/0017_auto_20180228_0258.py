@@ -7,18 +7,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0016_auto_20180213_0409'),
-    ]
+    dependencies = [("YSE_App", "0016_auto_20180213_0409")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='transienttag',
-            name='transients',
-        ),
+        migrations.RemoveField(model_name="transienttag", name="transients"),
         migrations.AddField(
-            model_name='transient',
-            name='tags',
-            field=models.ManyToManyField(blank=True, to='YSE_App.TransientTag'),
+            model_name="transient",
+            name="tags",
+            field=models.ManyToManyField(blank=True, to="YSE_App.TransientTag"),
         ),
     ]

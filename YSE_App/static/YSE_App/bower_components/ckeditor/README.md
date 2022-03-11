@@ -10,7 +10,7 @@ They differ in the number of plugins that are compiled into the main `ckeditor.j
 
 See the [comparison](http://ckeditor.com/presets) of the `basic`, `standard`, and `full` installation presets for more details.
 
-The `standard-all` build includes all official CKSource plugins with only those from the `standard` installation preset compiled into the `ckeditor.js` file and enabled in the configuration. 
+The `standard-all` build includes all official CKSource plugins with only those from the `standard` installation preset compiled into the `ckeditor.js` file and enabled in the configuration.
 
 All versions available in this repository were built using [CKBuilder](http://ckeditor.com/builder), so they are optimized and ready to be used in a production environment.
 
@@ -25,7 +25,7 @@ Developer documentation for CKEditor is available online at: <http://docs.ckedit
 To install one of the available releases, just clone this repository and switch to the respective branch (see next section):
 
 	git clone -b <release branch> git://github.com/ckeditor/ckeditor-releases.git
-	
+
 ### Git submodule
 
 If you are using git for your project and you want to integrate CKEditor, we recommend to add this repository as a

@@ -7,30 +7,34 @@ import numpy as np
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 
+
 def date_to_mjd(date):
-    time = Time(date,scale='utc')
+    time = Time(date, scale="utc")
     return time.mjd
 
+
 def mjd_to_date(mjd):
-    time = Time(mjd,format='mjd',scale='utc')
+    time = Time(mjd, format="mjd", scale="utc")
     return time.isot
 
+
 def GetSexigesimalString(ra_decimal, dec_decimal):
-    c = SkyCoord(ra_decimal,dec_decimal,unit=(u.deg, u.deg))
+    c = SkyCoord(ra_decimal, dec_decimal, unit=(u.deg, u.deg))
     ra = c.ra.hms
     dec = c.dec.dms
 
-    ra_string = "%02d:%02d:%06.3f" % (ra[0],ra[1],ra[2])
+    ra_string = "%02d:%02d:%06.3f" % (ra[0], ra[1], ra[2])
     if dec[0] >= 0:
-        dec_string = "+%02d:%02d:%06.3f" % (dec[0],np.abs(dec[1]),np.abs(dec[2]))
+        dec_string = "+%02d:%02d:%06.3f" % (dec[0], np.abs(dec[1]), np.abs(dec[2]))
     else:
-        dec_string = "%03d:%02d:%06.3f" % (dec[0],np.abs(dec[1]),np.abs(dec[2]))
+        dec_string = "%03d:%02d:%06.3f" % (dec[0], np.abs(dec[1]), np.abs(dec[2]))
 
     # Python has a -0.0 object. If the deg is this (because object lies < 60 min south), the string formatter will drop the negative sign
     if c.dec < 0.0 and dec[0] == 0.0:
-        dec_string = "-00:%02d:%06.3f" % (np.abs(dec[1]),np.abs(dec[2]))
+        dec_string = "-00:%02d:%06.3f" % (np.abs(dec[1]), np.abs(dec[2]))
 
     return (ra_string, dec_string)
+
 
 htmlheader = """
 <html>
@@ -77,66 +81,93 @@ htmlfooter = """
 <script src="sorttable.js"></script>
 """
 
+
 def main():
 
-    nowmjd = date_to_mjd((datetime.datetime.now()+datetime.timedelta(hours=10)).isoformat())
-    
-    r = requests.get('http://ziggy.ucolick.org/yse/api/surveyobservations/?obs_mjd_gte=%i&limit=1000'%(nowmjd-7),
-                     auth=HTTPBasicAuth())
+    nowmjd = date_to_mjd(
+        (datetime.datetime.now() + datetime.timedelta(hours=10)).isoformat()
+    )
+
+    r = requests.get(
+        "http://ziggy.ucolick.org/yse/api/surveyobservations/?obs_mjd_gte=%i&limit=1000"
+        % (nowmjd - 7),
+        auth=HTTPBasicAuth(),
+    )
     data = json.loads(r.text)
-    data_results = data['results']
-    #import pdb; pdb.set_trace()
+    data_results = data["results"]
+    # import pdb; pdb.set_trace()
 
     results_dict = {}
-    
-    field,ra,dec,mjd,maglim,filters = np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+
+    field, ra, dec, mjd, maglim, filters = (
+        np.array([]),
+        np.array([]),
+        np.array([]),
+        np.array([]),
+        np.array([]),
+        np.array([]),
+    )
     for d in data_results:
 
         # save the foreign keys when possible
-        if d['photometric_band'] not in results_dict.keys():
-            photo_results = requests.get(d['photometric_band'],auth=HTTPBasicAuth())
+        if d["photometric_band"] not in results_dict.keys():
+            photo_results = requests.get(d["photometric_band"], auth=HTTPBasicAuth())
             p = json.loads(photo_results.text)
-            results_dict[d['photometric_band']] = p
+            results_dict[d["photometric_band"]] = p
         else:
-            p = results_dict[d['photometric_band']]
-        if d['survey_field'] not in results_dict.keys():
-            field_results = requests.get(d['survey_field'],auth=HTTPBasicAuth())
+            p = results_dict[d["photometric_band"]]
+        if d["survey_field"] not in results_dict.keys():
+            field_results = requests.get(d["survey_field"], auth=HTTPBasicAuth())
             f = json.loads(field_results.text)
-            results_dict[d['survey_field']] = f
+            results_dict[d["survey_field"]] = f
         else:
-            f = results_dict[d['survey_field']]
-            
-        if f['field_id'] in field and len(np.where(np.abs(d['obs_mjd'] - mjd[field == f['field_id']]) < 0.1)[0]):
-            iMJDMatch = np.where((field == f['field_id']) & (np.abs(d['obs_mjd'] - mjd) < 0.1))[0][0]
+            f = results_dict[d["survey_field"]]
+
+        if f["field_id"] in field and len(
+            np.where(np.abs(d["obs_mjd"] - mjd[field == f["field_id"]]) < 0.1)[0]
+        ):
+            iMJDMatch = np.where(
+                (field == f["field_id"]) & (np.abs(d["obs_mjd"] - mjd) < 0.1)
+            )[0][0]
             filt = filters[iMJDMatch]
-            if filt == 'z' or p['name'] == 'g' or (p['name'] == 'r' and filt in ['i','z']):
-                filters[iMJDMatch] = p['name']+','+filters[iMJDMatch]
-                maglim[iMJDMatch] = '%.2f, %s'%(d['mag_lim'],maglim[iMJDMatch])
+            if (
+                filt == "z"
+                or p["name"] == "g"
+                or (p["name"] == "r" and filt in ["i", "z"])
+            ):
+                filters[iMJDMatch] = p["name"] + "," + filters[iMJDMatch]
+                maglim[iMJDMatch] = "%.2f, %s" % (d["mag_lim"], maglim[iMJDMatch])
             else:
-                filters[iMJDMatch] = filters[iMJDMatch][0] + ',' + p['name']
-                maglim[iMJDMatch] = '%s, %.2f'%(maglim[iMJDMatch],d['mag_lim'])
+                filters[iMJDMatch] = filters[iMJDMatch][0] + "," + p["name"]
+                maglim[iMJDMatch] = "%s, %.2f" % (maglim[iMJDMatch], d["mag_lim"])
         else:
-            field = np.append(field,f['field_id'])
-            ra = np.append(ra,f['ra_cen'])
-            dec = np.append(dec,f['dec_cen'])
-            maglim = np.append(maglim,'%.2f'%d['mag_lim'])
-            mjd = np.append(mjd,d['obs_mjd'])
-            filters = np.append(filters,p['name'])
-        #if f['field_id'] == '403.F':
+            field = np.append(field, f["field_id"])
+            ra = np.append(ra, f["ra_cen"])
+            dec = np.append(dec, f["dec_cen"])
+            maglim = np.append(maglim, "%.2f" % d["mag_lim"])
+            mjd = np.append(mjd, d["obs_mjd"])
+            filters = np.append(filters, p["name"])
+        # if f['field_id'] == '403.F':
         #    import pdb; pdb.set_trace()
 
     iSortMJD = np.argsort(mjd)[::-1]
-    field,ra,dec,maglim,mjd,filters = \
-        field[iSortMJD],ra[iSortMJD],dec[iSortMJD],maglim[iSortMJD],mjd[iSortMJD],filters[iSortMJD]
-    
-    with open('/data/yse_pz/YSE_PZ/YSE_PZ/static/yse_latest_fields.html','w') as fout:
-    #with open('yse_latest_fields.html','w') as fout:
-        print(htmlheader,file=fout)
+    field, ra, dec, maglim, mjd, filters = (
+        field[iSortMJD],
+        ra[iSortMJD],
+        dec[iSortMJD],
+        maglim[iSortMJD],
+        mjd[iSortMJD],
+        filters[iSortMJD],
+    )
 
-        for f,r,d,mj,m,flt in zip(field,ra,dec,mjd,maglim,filters):
+    with open("/data/yse_pz/YSE_PZ/YSE_PZ/static/yse_latest_fields.html", "w") as fout:
+        # with open('yse_latest_fields.html','w') as fout:
+        print(htmlheader, file=fout)
 
-            ra_string,dec_string = GetSexigesimalString(r,d)
-            
+        for f, r, d, mj, m, flt in zip(field, ra, dec, mjd, maglim, filters):
+
+            ra_string, dec_string = GetSexigesimalString(r, d)
+
             dataline = """
 <tr>
 <td>%s</td>
@@ -144,15 +175,20 @@ def main():
 <td>%s</td>
 <td><i>%s</i></td>
 </tr>
-"""%(f,ra_string,dec_string,flt)
+""" % (
+                f,
+                ra_string,
+                dec_string,
+                flt,
+            )
 
-            
-            print(dataline,file=fout)
-        print(htmlfooter,file=fout)
+            print(dataline, file=fout)
+        print(htmlfooter, file=fout)
 
-	#<td>%s</td>
-	#<td>%s</td>
-	#mjd_to_date(mj).replace('T',' '),m
+    # <td>%s</td>
+    # <td>%s</td>
+    # mjd_to_date(mj).replace('T',' '),m
+
 
 if __name__ == "__main__":
     main()

@@ -6,14 +6,18 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0033_auto_20190925_2043'),
-    ]
+    dependencies = [("YSE_App", "0033_auto_20190925_2043")]
 
     operations = [
         migrations.AddField(
-            model_name='alternatetransientnames',
-            name='slug',
-            field=autoslug.fields.AutoSlugField(default=None, editable=False, null=True, populate_from='name', unique=True),
-        ),
+            model_name="alternatetransientnames",
+            name="slug",
+            field=autoslug.fields.AutoSlugField(
+                default=None,
+                editable=False,
+                null=True,
+                populate_from="name",
+                unique=True,
+            ),
+        )
     ]

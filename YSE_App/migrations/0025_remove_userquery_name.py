@@ -5,13 +5,6 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0024_userquery'),
-    ]
+    dependencies = [("YSE_App", "0024_userquery")]
 
-    operations = [
-        migrations.RemoveField(
-            model_name='userquery',
-            name='name',
-        ),
-    ]
+    operations = [migrations.RemoveField(model_name="userquery", name="name")]

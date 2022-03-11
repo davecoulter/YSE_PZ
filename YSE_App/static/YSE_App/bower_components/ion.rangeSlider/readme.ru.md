@@ -69,7 +69,7 @@
 * ion.rangeSlider.skinModern.css + sprite-skin-modern.png
 * ion.rangeSlider.skinNice.css + sprite-skin-nice.png
 * ion.rangeSlider.skinSimple.css + sprite-skin-simple.png
-                            
+
 Либо воспользуйтесь вложенным в архив PSD файлом, и нарисуйте собственный скин (не забудьте модифицировать размеры элементов в CSS файле)
 
 

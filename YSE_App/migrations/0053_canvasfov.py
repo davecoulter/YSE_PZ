@@ -6,22 +6,52 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0052_auto_20200329_2300'),
-    ]
+    dependencies = [("YSE_App", "0052_auto_20200329_2300")]
 
     operations = [
         migrations.CreateModel(
-            name='CanvasFOV',
+            name="CanvasFOV",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('raCenter', models.FloatField(validators=[django.core.validators.MinValueValidator(0.0), django.core.validators.MaxValueValidator(360.0)], verbose_name='RA Center (deg)')),
-                ('decCenter', models.FloatField(validators=[django.core.validators.MinValueValidator(-89.9999), django.core.validators.MaxValueValidator(89.9999)], verbose_name='Dec Center (deg)')),
-                ('fovWidth', models.FloatField(validators=[django.core.validators.MinValueValidator(0.0)], verbose_name='FOV Width (deg)')),
-                ('canvas_x_grid_size', models.IntegerField(default=500)),
-                ('canvas_y_grid_size', models.IntegerField(default=500)),
-                ('author', models.CharField(max_length=50)),
-                ('created', models.DateTimeField()),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "raCenter",
+                    models.FloatField(
+                        validators=[
+                            django.core.validators.MinValueValidator(0.0),
+                            django.core.validators.MaxValueValidator(360.0),
+                        ],
+                        verbose_name="RA Center (deg)",
+                    ),
+                ),
+                (
+                    "decCenter",
+                    models.FloatField(
+                        validators=[
+                            django.core.validators.MinValueValidator(-89.9999),
+                            django.core.validators.MaxValueValidator(89.9999),
+                        ],
+                        verbose_name="Dec Center (deg)",
+                    ),
+                ),
+                (
+                    "fovWidth",
+                    models.FloatField(
+                        validators=[django.core.validators.MinValueValidator(0.0)],
+                        verbose_name="FOV Width (deg)",
+                    ),
+                ),
+                ("canvas_x_grid_size", models.IntegerField(default=500)),
+                ("canvas_y_grid_size", models.IntegerField(default=500)),
+                ("author", models.CharField(max_length=50)),
+                ("created", models.DateTimeField()),
             ],
-        ),
+        )
     ]

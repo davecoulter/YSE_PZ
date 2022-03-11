@@ -412,4 +412,3 @@
             target.render();
         }
     };
-

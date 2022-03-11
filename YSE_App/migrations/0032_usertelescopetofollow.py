@@ -9,23 +9,55 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('YSE_App', '0031_auto_20190622_0354'),
+        ("YSE_App", "0031_auto_20190622_0354"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='UserTelescopeToFollow',
+            name="UserTelescopeToFollow",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_date', models.DateTimeField(auto_now_add=True)),
-                ('modified_date', models.DateTimeField(auto_now=True)),
-                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='usertelescopetofollow_created_by', to=settings.AUTH_USER_MODEL)),
-                ('modified_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='usertelescopetofollow_modified_by', to=settings.AUTH_USER_MODEL)),
-                ('profile', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='YSE_App.Profile')),
-                ('telescope', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='YSE_App.Telescope')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_date", models.DateTimeField(auto_now_add=True)),
+                ("modified_date", models.DateTimeField(auto_now=True)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="usertelescopetofollow_created_by",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "modified_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="usertelescopetofollow_modified_by",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "profile",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="YSE_App.Profile",
+                    ),
+                ),
+                (
+                    "telescope",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="YSE_App.Telescope",
+                    ),
+                ),
             ],
-            options={
-                'abstract': False,
-            },
-        ),
+            options={"abstract": False},
+        )
     ]

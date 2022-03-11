@@ -21,7 +21,7 @@ Welcome to the YSE_PZ documentation!
    docker
    contributing
    api
-   
+
 Indices and tables
 ==================
 

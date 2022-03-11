@@ -6,14 +6,18 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0047_auto_20191201_0420'),
-    ]
+    dependencies = [("YSE_App", "0047_auto_20191201_0420")]
 
     operations = [
         migrations.AddField(
-            model_name='transient',
-            name='context_class',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='YSE_App.TransientClass'),
-        ),
+            model_name="transient",
+            name="context_class",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to="YSE_App.TransientClass",
+            ),
+        )
     ]

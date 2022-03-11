@@ -496,4 +496,3 @@ Morris.parseDate = (date) ->
         msecs)
   else
     new Date(parseInt(date, 10), 0, 1).getTime()
-

@@ -985,7 +985,7 @@ v1.4.3 (2009-12-22)
 
 - added destroy method
 - Google Calendar event pages respect currentTimezone
-- caching now handled by jQuery's ajax	
+- caching now handled by jQuery's ajax
 - protection from setting aspectRatio to zero
 - bugfixes
 	- parseISO8601 and DST caused certain events to display day before

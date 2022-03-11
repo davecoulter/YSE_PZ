@@ -17,24 +17,26 @@ from pytz import timezone
 from django.utils.text import slugify
 from autoslug import AutoSlugField
 
+
 class GWCandidate(BaseModel):
 
-	### Properties ###
-	# Required
-	field_name = models.CharField(max_length=64)
-	candidate_id = models.CharField(max_length=64)
-	name = models.CharField(max_length=64)
-	transient = models.ForeignKey(Transient, on_delete=models.CASCADE)
-	
-	# Optional
-	websniff_url = models.CharField(max_length=256, null=True, blank=True)
+    ### Properties ###
+    # Required
+    field_name = models.CharField(max_length=64)
+    candidate_id = models.CharField(max_length=64)
+    name = models.CharField(max_length=64)
+    transient = models.ForeignKey(Transient, on_delete=models.CASCADE)
+
+    # Optional
+    websniff_url = models.CharField(max_length=256, null=True, blank=True)
+
 
 class GWCandidateImage(BaseModel):
 
-	### Properties ###
-	# Required
-	obs_date = models.DateTimeField(null=True, blank=True)
-	gw_candidate = models.ForeignKey(GWCandidate, on_delete=models.CASCADE)
-	image_filename = models.CharField(max_length=256)
-	image_filter = models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
-	dophot_class = models.IntegerField(null=True, blank=True)
+    ### Properties ###
+    # Required
+    obs_date = models.DateTimeField(null=True, blank=True)
+    gw_candidate = models.ForeignKey(GWCandidate, on_delete=models.CASCADE)
+    image_filename = models.CharField(max_length=256)
+    image_filter = models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
+    dophot_class = models.IntegerField(null=True, blank=True)

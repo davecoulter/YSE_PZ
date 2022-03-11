@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * ========================================================= */
- 
+
 !function( $ ) {
 
 	var Slider = function(element, options) {
@@ -154,14 +154,14 @@
 
 		over: false,
 		inDrag: false,
-		
+
 		showTooltip: function(){
 			this.tooltip.addClass('in');
 			//var left = Math.round(this.percent*this.width);
 			//this.tooltip.css('left', left - this.tooltip.outerWidth()/2);
 			this.over = true;
 		},
-		
+
 		hideTooltip: function(){
 			if (this.inDrag === false) {
 				this.tooltip.removeClass('in');
@@ -171,7 +171,7 @@
 
 		layout: function(){
       var positionPercentages;
-      
+
       if(this.reversed) {
         positionPercentages = [ this.percentage[1] - this.percentage[0], this.percentage[1] ];
       } else {
@@ -190,8 +190,8 @@
 
       if (this.range) {
         this.tooltipInner.text(
-          this.formater(this.value[0]) + 
-          ' : ' + 
+          this.formater(this.value[0]) +
+          ' : ' +
           this.formater(this.value[1])
         );
         this.tooltip[0].style[this.stylePos] = this.size * (positionPercentages[0] + (positionPercentages[1] - positionPercentages[0])/2)/100 - (this.orientation === 'vertical' ? this.tooltip.outerHeight()/2 : this.tooltip.outerWidth()/2) +'px';
@@ -204,7 +204,7 @@
     },
 
 		mousedown: function(ev) {
-			
+
 			if (!this.dragLocked){
 			// Touch: Get the original event:
 			if (this.touchCapable && ev.type === 'touchstart') {
@@ -242,7 +242,7 @@
 
 			this.inDrag = true;
 			var val = this.calculateValue();
-			
+
 			this.setValue(val);
 			this.element.trigger({
 				type: 'slideStart',
@@ -280,7 +280,7 @@
 				this.layout();
 				var val = this.calculateValue();
 				this.setValue(val);
-			
+
 				this.element
 				.trigger({
 					type: 'slide',

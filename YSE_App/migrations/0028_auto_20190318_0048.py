@@ -5,14 +5,10 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0027_gwcandidate_gwcandidateimage'),
-    ]
+    dependencies = [("YSE_App", "0027_gwcandidate_gwcandidateimage")]
 
     operations = [
         migrations.RenameField(
-            model_name='gwcandidate',
-            old_name='alt_transient_name',
-            new_name='name',
-        ),
+            model_name="gwcandidate", old_name="alt_transient_name", new_name="name"
+        )
     ]

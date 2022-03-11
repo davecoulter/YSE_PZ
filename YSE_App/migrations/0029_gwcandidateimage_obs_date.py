@@ -5,14 +5,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0028_auto_20190318_0048'),
-    ]
+    dependencies = [("YSE_App", "0028_auto_20190318_0048")]
 
     operations = [
         migrations.AddField(
-            model_name='gwcandidateimage',
-            name='obs_date',
+            model_name="gwcandidateimage",
+            name="obs_date",
             field=models.DateTimeField(blank=True, null=True),
-        ),
+        )
     ]

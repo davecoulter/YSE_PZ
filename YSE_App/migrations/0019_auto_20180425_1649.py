@@ -6,44 +6,44 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-#        ('auth', '0009_alter_user_last_name_max_length'),
-        ('YSE_App', '0018_merge_20180228_0749'),
+        #        ('auth', '0009_alter_user_last_name_max_length'),
+        ("YSE_App", "0018_merge_20180228_0749")
     ]
 
     operations = [
         migrations.AddField(
-            model_name='classicalresource',
-            name='groups',
-            field=models.ManyToManyField(blank=True, to='auth.Group'),
+            model_name="classicalresource",
+            name="groups",
+            field=models.ManyToManyField(blank=True, to="auth.Group"),
         ),
         migrations.AddField(
-            model_name='hostphotometry',
-            name='groups',
-            field=models.ManyToManyField(blank=True, to='auth.Group'),
+            model_name="hostphotometry",
+            name="groups",
+            field=models.ManyToManyField(blank=True, to="auth.Group"),
         ),
         migrations.AddField(
-            model_name='hostspectrum',
-            name='groups',
-            field=models.ManyToManyField(blank=True, to='auth.Group'),
+            model_name="hostspectrum",
+            name="groups",
+            field=models.ManyToManyField(blank=True, to="auth.Group"),
         ),
         migrations.AddField(
-            model_name='queuedresource',
-            name='groups',
-            field=models.ManyToManyField(blank=True, to='auth.Group'),
+            model_name="queuedresource",
+            name="groups",
+            field=models.ManyToManyField(blank=True, to="auth.Group"),
         ),
         migrations.AddField(
-            model_name='tooresource',
-            name='groups',
-            field=models.ManyToManyField(blank=True, to='auth.Group'),
+            model_name="tooresource",
+            name="groups",
+            field=models.ManyToManyField(blank=True, to="auth.Group"),
         ),
         migrations.AddField(
-            model_name='transientphotometry',
-            name='groups',
-            field=models.ManyToManyField(blank=True, to='auth.Group'),
+            model_name="transientphotometry",
+            name="groups",
+            field=models.ManyToManyField(blank=True, to="auth.Group"),
         ),
         migrations.AddField(
-            model_name='transientspectrum',
-            name='groups',
-            field=models.ManyToManyField(blank=True, to='auth.Group'),
+            model_name="transientspectrum",
+            name="groups",
+            field=models.ManyToManyField(blank=True, to="auth.Group"),
         ),
     ]

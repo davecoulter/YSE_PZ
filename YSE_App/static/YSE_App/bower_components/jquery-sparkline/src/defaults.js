@@ -153,4 +153,3 @@
             'font: 10px arial, san serif;' +
             'text-align: left;' +
             '}';
-

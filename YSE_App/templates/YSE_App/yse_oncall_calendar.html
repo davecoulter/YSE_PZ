@@ -58,16 +58,16 @@
   <script>
   $(function () {
 
-      $('#oncall_date_range').daterangepicker({ 
+      $('#oncall_date_range').daterangepicker({
         timePicker24Hour: true,
-        timePicker: true, 
-        timePickerIncrement: 1, 
+        timePicker: true,
+        timePickerIncrement: 1,
         startDate: '{{date_start}} 00:00',
         endDate:'{{date_end}} 00:00',
-        format: 'YYYY-MM-DD HH:mm', 
+        format: 'YYYY-MM-DD HH:mm',
         locale: {
           format: 'YYYY-MM-DD HH:mm'
-        } 
+        }
       });
 
       // Initialize daterange
@@ -98,17 +98,17 @@
 
           // handle a successful response
           success : function(json) {
-            
+
             // Required fields
 
               // Re-initialize the datepicker
               $('#valid_start').val("")
               $('#valid_stop').val("")
-              $('#follow_date_range').daterangepicker({ 
+              $('#follow_date_range').daterangepicker({
                 timePicker24Hour: true,
-                timePicker: true, 
-                timePickerIncrement: 1, 
-                format: 'MM/DD/YYYY HH:mm', 
+                timePicker: true,
+                timePickerIncrement: 1,
+                format: 'MM/DD/YYYY HH:mm',
                 locale: {
                   format: 'MM/DD/YYYY HH:mm'
                 }

@@ -87,7 +87,7 @@
             <thead>
               <tr>
                 <th>Telescope</th>
-                <th>Night</th>  
+                <th>Night</th>
                 <th>PI</th>
               </tr>
             </thead>
@@ -122,7 +122,7 @@
               <tr>
                 <th>Telescope</th>
                 <th type='numeric'>ToO Hours</th>
-                <th>PI</th>  
+                <th>PI</th>
               </tr>
             </thead>
             <tbody>
@@ -271,7 +271,7 @@
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Email</th>  
+                <th>Email</th>
               </tr>
             </thead>
             <tbody>
@@ -301,9 +301,9 @@
     </div>
   </div>
     <!-- /.box-footer-->
-  
+
   <!-- /.box -->
-    
+
 {% endblock %}
 
 
@@ -337,14 +337,14 @@
   $(function () {
 
       // too resource
-      $('#too_resource_date_range').daterangepicker({ 
+      $('#too_resource_date_range').daterangepicker({
         timePicker24Hour: true,
-        timePicker: true, 
-        timePickerIncrement: 1, 
-        format: 'YYYY-MM-DD HH:mm', 
+        timePicker: true,
+        timePickerIncrement: 1,
+        format: 'YYYY-MM-DD HH:mm',
         locale: {
           format: 'YYYY-MM-DD HH:mm'
-        } 
+        }
       });
 
       // Initialize daterange
@@ -357,7 +357,7 @@
       });
 
       // classical resource
-      $('#observing_date').datepicker({ 
+      $('#observing_date').datepicker({
         timePicker24Hour: true,
         timePicker: true,
         timePickerIncrement: 1,
@@ -365,20 +365,20 @@
         //todayBtn: "linked",
         locale: {
           format: 'mm/dd/yyyy'
-        } 
+        }
       });
 
       // on-call date range
-      $('#oncall_date_range').daterangepicker({ 
+      $('#oncall_date_range').daterangepicker({
         timePicker24Hour: true,
-        timePicker: true, 
-        timePickerIncrement: 1, 
+        timePicker: true,
+        timePickerIncrement: 1,
         startDate: '{{date_start}} 00:00',
         endDate:'{{date_end}} 00:00',
-        format: 'YYYY-MM-DD HH:mm', 
+        format: 'YYYY-MM-DD HH:mm',
         locale: {
           format: 'YYYY-MM-DD HH:mm'
-        } 
+        }
       });
 
       // Initialize daterange
@@ -409,7 +409,7 @@
 
           // handle a successful response
           success : function(json) {
-            
+
             // Required fields
 
               // Re-initialize the datepicker
@@ -442,7 +442,7 @@
 
           // handle a successful response
           success : function(json) {
-            
+
             // Required fields
               location.reload();
           },
@@ -473,7 +473,7 @@
 
           // handle a successful response
           success : function(json) {
-            
+
             // Required fields
               location.reload();
           },

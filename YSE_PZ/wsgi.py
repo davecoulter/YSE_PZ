@@ -8,6 +8,7 @@ https://docs.djangoproject.com/en/1.11/howto/deployment/wsgi/
 """
 
 import sys
+
 sys.stdout = sys.__stdout__
 sys.stderr = sys.__stderr__
 
@@ -18,7 +19,7 @@ from django.core.wsgi import get_wsgi_application
 from configparser import RawConfigParser
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-configFile = os.path.join(__location__, 'settings.ini')
+configFile = os.path.join(__location__, "settings.ini")
 
 config = RawConfigParser()
 config.read(configFile)

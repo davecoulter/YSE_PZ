@@ -7,13 +7,6 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0012_transient_slug'),
-    ]
+    dependencies = [("YSE_App", "0012_transient_slug")]
 
-    operations = [
-        migrations.RemoveField(
-            model_name='transient',
-            name='slug',
-        ),
-    ]
+    operations = [migrations.RemoveField(model_name="transient", name="slug")]

@@ -7,14 +7,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0009_transient_tns_spec_class'),
-    ]
+    dependencies = [("YSE_App", "0009_transient_tns_spec_class")]
 
     operations = [
         migrations.AddField(
-            model_name='transientphotdata',
-            name='discovery_point',
+            model_name="transientphotdata",
+            name="discovery_point",
             field=models.NullBooleanField(),
-        ),
+        )
     ]

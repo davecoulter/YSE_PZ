@@ -67,7 +67,7 @@ Start up MySQL and run a few commands to get the database
 permissions set properly::
 
   mysql -u root -p
-  
+
 Inside MySQL::
 
   CREATE DATABASE YSE;
@@ -85,7 +85,7 @@ that command would be::
   mysql -u root -p YSE < YSE_db_public_20201018.sql
 
 If this fails with a collation error, you might have to
-open up the file and replace :code:`utf8mb4_0900_ai_ci` 
+open up the file and replace :code:`utf8mb4_0900_ai_ci`
 with :code:`utf8mb4_unicode_ci` or vice versa.
 
 Installing the YSE_PZ Code
@@ -104,7 +104,7 @@ directory (**not** the main repository directory, the directory
 with the same name one level down).
 
 Please note that sometimes the extinction module is buggy.
-It is needed for some functionality but I would 
+It is needed for some functionality but I would
 recommend trying to install it last.
 
 Alternatively, I haven't tried this myself, but - the latest YSE_PZ conda environment from my mac
@@ -113,7 +113,7 @@ much as possible you can try::
 
   conda env create -f yse_pz_latest.yml
   conda activate yse_pz
-  
+
 Starting the Web Server
 =======================
 

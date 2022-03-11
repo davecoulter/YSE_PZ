@@ -9,23 +9,46 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('YSE_App', '0044_auto_20191114_0425'),
+        ("YSE_App", "0044_auto_20191114_0425"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='YSEOnCallDate',
+            name="YSEOnCallDate",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_date', models.DateTimeField(auto_now_add=True)),
-                ('modified_date', models.DateTimeField(auto_now=True)),
-                ('on_call_date', models.DateTimeField()),
-                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='yseoncalldate_created_by', to=settings.AUTH_USER_MODEL)),
-                ('modified_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='yseoncalldate_modified_by', to=settings.AUTH_USER_MODEL)),
-                ('user', models.ManyToManyField(blank=True, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_date", models.DateTimeField(auto_now_add=True)),
+                ("modified_date", models.DateTimeField(auto_now=True)),
+                ("on_call_date", models.DateTimeField()),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="yseoncalldate_created_by",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "modified_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="yseoncalldate_modified_by",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "user",
+                    models.ManyToManyField(blank=True, to=settings.AUTH_USER_MODEL),
+                ),
             ],
-            options={
-                'abstract': False,
-            },
-        ),
+            options={"abstract": False},
+        )
     ]

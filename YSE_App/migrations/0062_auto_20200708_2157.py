@@ -5,29 +5,27 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0061_auto_20200604_2036'),
-    ]
+    dependencies = [("YSE_App", "0061_auto_20200604_2036")]
 
     operations = [
         migrations.AddField(
-            model_name='host',
-            name='photo_z_PSCNN',
+            model_name="host",
+            name="photo_z_PSCNN",
             field=models.FloatField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='host',
-            name='photo_z_err_PSCNN',
+            model_name="host",
+            name="photo_z_err_PSCNN",
             field=models.FloatField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='hostphotometry',
-            name='reference',
+            model_name="hostphotometry",
+            name="reference",
             field=models.CharField(blank=True, max_length=512, null=True),
         ),
         migrations.AddField(
-            model_name='transientphotometry',
-            name='reference',
+            model_name="transientphotometry",
+            name="reference",
             field=models.CharField(blank=True, max_length=512, null=True),
         ),
     ]

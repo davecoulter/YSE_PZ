@@ -5,14 +5,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0029_gwcandidateimage_obs_date'),
-    ]
+    dependencies = [("YSE_App", "0029_gwcandidateimage_obs_date")]
 
     operations = [
         migrations.AddField(
-            model_name='transient',
-            name='point_source_probability',
+            model_name="transient",
+            name="point_source_probability",
             field=models.FloatField(blank=True, null=True),
-        ),
+        )
     ]

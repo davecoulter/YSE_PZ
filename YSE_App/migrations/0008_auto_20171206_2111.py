@@ -7,29 +7,27 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0007_auto_20171206_1957'),
-    ]
+    dependencies = [("YSE_App", "0007_auto_20171206_1957")]
 
     operations = [
         migrations.AlterField(
-            model_name='profile',
-            name='phone_area',
+            model_name="profile",
+            name="phone_area",
             field=models.CharField(max_length=3),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='phone_first_three',
+            model_name="profile",
+            name="phone_first_three",
             field=models.CharField(max_length=3),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='phone_last_four',
+            model_name="profile",
+            name="phone_last_four",
             field=models.CharField(max_length=4),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='phone_provider_str',
+            model_name="profile",
+            name="phone_provider_str",
             field=models.CharField(max_length=16),
         ),
     ]

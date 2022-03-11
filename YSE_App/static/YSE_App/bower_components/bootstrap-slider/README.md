@@ -3,7 +3,7 @@ Bootstrap Slider
 
 Fork of eyecon's [bootstrap-slider](http://www.eyecon.ro/bootstrap-slider/).
 
-Specially remastered for iLIME Project @ UNIR Research. More info: 
+Specially remastered for iLIME Project @ UNIR Research. More info:
 [http://blogs.unir.net/elearning/telsock-research-group/](http://)
 
 ![ScreenShot](https://raw.github.com/pammacdotnet/bootstrap-slider/master/locks.png)
@@ -17,10 +17,7 @@ Current changes include:
 + Minor layout tweaks
 + Removed built-in handle types
 + Bower install
-+ Limits and locks 
-
-
-	
++ Limits and locks
 
 
 

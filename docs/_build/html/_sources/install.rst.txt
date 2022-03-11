@@ -42,7 +42,7 @@ Start up MySQL and run a few commands to get the database
 permissions set properly::
 
   mysql -u root -p
-  
+
 Inside MySQL::
 
   CREATE DATABASE YSE;
@@ -73,7 +73,7 @@ Should be straightforward::
 Put the :code:`settings.ini` file in the :code:`YSE_PZ/`
 directory (**not** the main repository directory, the directory
 with the same name one level down).
-   
+
 Starting the Web Server
 =======================
 

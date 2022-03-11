@@ -45,7 +45,7 @@ in :code:`YSE_App/api_views.py`::
   - name
   ClassicalResource
   - instrument_name
-  
+
 Queries through a Web Browser
 =============================
 
@@ -61,7 +61,7 @@ Say you'd like to find every transient with a right ascension between 0 and 1
 degrees, and with a status of :code:`Following`.  The link would be::
 
   http://127.0.0.1:8000/api/transients/?ra_gte=0&ra_lte=1&status_in=Following
-  
+
 Queries using the Python Requests Module
 ----------------------------------------
 
@@ -77,7 +77,7 @@ Let's get the list of fields from the Young Supernova Experiment that are curren
   data = requests.get('http://127.0.0.1:8000/api/surveyfieldmsbs/?active=1',
                       auth=HTTPBasicAuth(login,password)).json()
   field_list = [data['results'][i]['name'] for i in range(len(data['results']))]
-  
+
 A Simple POST Script
 --------------------
 
@@ -86,7 +86,7 @@ Let's add a classical observing date::
   import requests
   from requests.auth import HTTPBasicAuth
   import json
-  
+
   # first, we need to locate a classical resource
   # let's just grab a recent Shane night
   data = requests.get('http://127.0.0.1:8000/api/classicalresources/?telescope_name=Shane',
@@ -101,5 +101,5 @@ Let's add a classical observing date::
                  "obs_date": "2022-02-15T00:00:00"}
   r = requests.post('http://127.0.0.1:8000/api/classicalobservingdates/',
                     json=ObsDateInfo,auth=HTTPBasicAuth(login,password))
-  
-  
+
+

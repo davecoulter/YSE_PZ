@@ -480,4 +480,3 @@ test('Toggle hide/show (escape); navigation while hidden is suppressed', functio
 
     ok(this.picker.is(':visible'), 'Picker is visible');
 });
-

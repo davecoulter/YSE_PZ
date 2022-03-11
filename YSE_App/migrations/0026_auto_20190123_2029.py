@@ -6,14 +6,17 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0025_remove_userquery_name'),
-    ]
+    dependencies = [("YSE_App", "0025_remove_userquery_name")]
 
     operations = [
         migrations.AlterField(
-            model_name='userquery',
-            name='query',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='explorer.Query'),
-        ),
+            model_name="userquery",
+            name="query",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="explorer.Query",
+            ),
+        )
     ]

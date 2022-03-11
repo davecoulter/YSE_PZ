@@ -128,7 +128,7 @@
 
 					}
 					var api_url = base_url + "{% url 'get_transient_tags' %}?" + queryString
-					
+
 					$.ajax({
 						type: "GET",
 						url: api_url,
@@ -144,7 +144,7 @@
 
 								$("#transient_tag_tbl > tbody").html("");
 
-								$.each(data, function(index, value){ 
+								$.each(data, function(index, value){
 									name = value["name"]
 									slug = value["slug"]
 									ra = value["ra"]

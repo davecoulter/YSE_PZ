@@ -5,14 +5,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0042_remove_surveyobservation_instrument'),
-    ]
+    dependencies = [("YSE_App", "0042_remove_surveyobservation_instrument")]
 
     operations = [
         migrations.AlterField(
-            model_name='surveyobservation',
-            name='pos_angle_deg',
+            model_name="surveyobservation",
+            name="pos_angle_deg",
             field=models.FloatField(blank=True, null=True),
-        ),
+        )
     ]

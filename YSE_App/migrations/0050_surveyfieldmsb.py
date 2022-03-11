@@ -9,24 +9,53 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('YSE_App', '0049_userquery_python_query'),
+        ("YSE_App", "0049_userquery_python_query"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SurveyFieldMSB',
+            name="SurveyFieldMSB",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_date', models.DateTimeField(auto_now_add=True)),
-                ('modified_date', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(max_length=64)),
-                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='surveyfieldmsb_created_by', to=settings.AUTH_USER_MODEL)),
-                ('modified_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='surveyfieldmsb_modified_by', to=settings.AUTH_USER_MODEL)),
-                ('obs_group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='YSE_App.ObservationGroup')),
-                ('survey_field', models.ManyToManyField(blank=True, to='YSE_App.SurveyField')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_date", models.DateTimeField(auto_now_add=True)),
+                ("modified_date", models.DateTimeField(auto_now=True)),
+                ("name", models.CharField(max_length=64)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="surveyfieldmsb_created_by",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "modified_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="surveyfieldmsb_modified_by",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "obs_group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="YSE_App.ObservationGroup",
+                    ),
+                ),
+                (
+                    "survey_field",
+                    models.ManyToManyField(blank=True, to="YSE_App.SurveyField"),
+                ),
             ],
-            options={
-                'abstract': False,
-            },
-        ),
+            options={"abstract": False},
+        )
     ]

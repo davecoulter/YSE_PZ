@@ -21,9 +21,9 @@ We intend for this icon pack to be used with [Ionic](http://ionicframework.com/)
 Or install with [component](https://github.com/component/component):
 
     $ component install driftyco/ionicons
-    
+
 Or perhaps you're known to use [bower](http://bower.io/)?
-   
+
     $ bower install ionicons
 
 

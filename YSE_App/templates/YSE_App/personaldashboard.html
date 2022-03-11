@@ -138,7 +138,7 @@
         </form>
       </h3>
   </div>
-      {% endfor %}  
+      {% endfor %}
 
     <div class="row">
     <div class="col-xs-12">
@@ -210,7 +210,7 @@ $(document).ready(function(){
               var status_name = tokens[tokens.length-2]
               var button_id = "#"+transient_id+"_status_name"
               $(button_id).text(status_name)
-              
+
               {#alert(textStatus)#}
             } else {
               transientStatusChangeErr()
@@ -234,7 +234,7 @@ $(document).ready(function(){
             var status_id = $(this).attr('data-status_id')
             var query_id = $(this).attr('data-query_id')
             var url_target = "{% url 'change_status_for_query' -1 -2 %}".replace('-1', query_id).replace('-2', status_id);
-          
+
             var base_url = window.location.protocol + "//" + window.location.hostname
             var port = window.location.port
             var api_url = base_url + url_target
@@ -364,7 +364,7 @@ $(document).ready(function(){
         });
       };
 
-      
+
       {% for transient_cat in transient_categories %}
       $('#remove_dashboard_query_{{ transient_cat.4 }}').on('submit', function(event){
         event.preventDefault();

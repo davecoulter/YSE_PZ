@@ -22,4 +22,3 @@ be assigned to a transient in YSE_PZ.
   template observations are required.
 * :code:`Ignore` - All objects where no follow-up observations have been
   obtained and none will be obtained.
-

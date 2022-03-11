@@ -22,7 +22,7 @@ class Morris.Donut extends Morris.EventEmitter
       '#052C48'
       '#042135'
     ],
-    backgroundColor: '#FFFFFF', 
+    backgroundColor: '#FFFFFF',
     labelColor: '#000000',
     formatter: Morris.commas
     resize: false
@@ -183,9 +183,9 @@ class Morris.DonutSegment extends Morris.EventEmitter
   render: ->
     @arc = @drawDonutArc(@hilight, @color)
     @seg = @drawDonutSegment(
-      @path, 
-      @color, 
-      @backgroundColor, 
+      @path,
+      @color,
+      @backgroundColor,
       => @fire('hover', @index),
       => @fire('click', @index)
     )

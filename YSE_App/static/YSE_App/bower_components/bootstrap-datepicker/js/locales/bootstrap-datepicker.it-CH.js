@@ -1,7 +1,7 @@
 /**
  * Italian (Switzerland) translation for bootstrap-datepicker
  * Christoph Jossi <c.jossi@ascami.ch>
- * Based on 
+ * Based on
  * Italian translation for bootstrap-datepicker
  * Enrico Rubboli <rubboli@gmail.com>
  */

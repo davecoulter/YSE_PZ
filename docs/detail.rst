@@ -30,7 +30,7 @@ currently functional.
 .. image:: _static/yse_pz_summary.png
 
 .. _detailview:
-	   
+
 Transient Detail View
 =====================
 

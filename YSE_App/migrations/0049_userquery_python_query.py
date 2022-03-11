@@ -5,14 +5,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0048_transient_context_class'),
-    ]
+    dependencies = [("YSE_App", "0048_transient_context_class")]
 
     operations = [
         migrations.AddField(
-            model_name='userquery',
-            name='python_query',
+            model_name="userquery",
+            name="python_query",
             field=models.CharField(blank=True, max_length=64, null=True),
-        ),
+        )
     ]

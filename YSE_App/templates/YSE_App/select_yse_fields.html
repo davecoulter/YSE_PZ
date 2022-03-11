@@ -173,7 +173,7 @@ $(function() {
 
 					var tag_urls = []
 					for (i=0; i< tag_ids.length; i++) {
-					
+
 
 						var msb_target = "{% url 'surveyfieldmsb-detail' -1 %}".replace(-1,tag_ids[i])
 						var api_url = base_url + msb_target
@@ -220,7 +220,7 @@ $(function() {
 
 					var tag_urls = []
 					for (i=0; i< tag_ids.length; i++) {
-					
+
 
 						var msb_target = "{% url 'surveyfieldmsb-detail' -1 %}".replace(-1,tag_ids[i])
 						var api_url = base_url + msb_target
@@ -272,7 +272,7 @@ $(function() {
 						// Required fields
 						var email = json.data["email_text"]
 						var warnings = json.data["warning"]
-						
+
 						// Construct HTML to append container
 						if (warnings){
 							var warningtext = "<p>Warnings: "+warnings+"</p><p>If you wish to schedule this field, please email something like the following to Angie</p>"

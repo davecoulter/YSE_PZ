@@ -50,7 +50,7 @@ test('templateSelection can addClass', function (assert) {
   );
 
   var $container = selection.selectionContainer();
-  
+
   var out = selection.display({
     text: 'test'
   }, $container);
@@ -58,7 +58,7 @@ test('templateSelection can addClass', function (assert) {
   assert.ok(called);
 
   assert.equal(out, 'test');
-  
+
   assert.ok($container.hasClass('testclass'));
 });
 

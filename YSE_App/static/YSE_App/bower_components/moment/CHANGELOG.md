@@ -763,4 +763,3 @@ Changed date format from php date format to custom format.
 - Release
 
 Initial release
-

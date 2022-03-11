@@ -42,7 +42,7 @@ Every spectroscopically classified SN Ia in the last 30 days::
   SELECT t.name
   FROM YSE_App_transient t
   WHERE t.TNS_spec_class = 'SN Ia' AND DATEDIFF(CURDATE(),t.disc_date) < 30
-  
+
 Every SN that has been tagged as :code:`Young`::
 
   SELECT t.name
@@ -50,7 +50,7 @@ Every SN that has been tagged as :code:`Young`::
   INNER JOIN YSE_App_transient_tags tt ON tt.transient_id = t.id
   INNER JOIN YSE_App_transienttag tg ON tg.id = tt.transienttag_id
   WHERE tg.name = 'Young'
-  
+
 Every SN where the most recent magnitude is brighter than 18::
 
   SELECT t.name, pd.mag
@@ -62,7 +62,7 @@ Every SN where the most recent magnitude is brighter than 18::
          ORDER BY pd2.obs_date DESC
          LIMIT 1
      )
-  
+
 Every SN within 40 kpc of a z < 0.01 host galaxy::
 
   SELECT t.name,
@@ -108,7 +108,7 @@ Every spectroscopically classified SN Ia in the last 30 days::
 Every SN that was brighter than 18th mag in the last week::
 
   from django.db.models import Count, Value, Max, Min, F # useful aggregation methods
-  
+
   @python_query_reg
   def recent_bright_mag():
 

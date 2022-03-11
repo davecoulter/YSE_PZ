@@ -5,18 +5,11 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0053_canvasfov'),
-    ]
+    dependencies = [("YSE_App", "0053_canvasfov")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='canvasfov',
-            name='author',
-        ),
+        migrations.RemoveField(model_name="canvasfov", name="author"),
         migrations.AddField(
-            model_name='surveyfield',
-            name='active',
-            field=models.NullBooleanField(),
+            model_name="surveyfield", name="active", field=models.NullBooleanField()
         ),
     ]

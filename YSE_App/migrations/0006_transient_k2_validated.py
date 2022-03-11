@@ -7,14 +7,10 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0005_profile'),
-    ]
+    dependencies = [("YSE_App", "0005_profile")]
 
     operations = [
         migrations.AddField(
-            model_name='transient',
-            name='k2_validated',
-            field=models.NullBooleanField(),
-        ),
+            model_name="transient", name="k2_validated", field=models.NullBooleanField()
+        )
     ]

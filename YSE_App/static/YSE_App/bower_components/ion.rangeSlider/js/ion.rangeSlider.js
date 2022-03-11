@@ -803,7 +803,7 @@
             if ($.contains(this.$cache.cont[0], e.target) || this.dragging) {
                 this.callOnFinish();
             }
-            
+
             this.dragging = false;
         },
 

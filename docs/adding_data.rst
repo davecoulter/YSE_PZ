@@ -38,7 +38,7 @@ Each YSE-PZ cron will be written inside a CronJobBase class structure, for examp
 	  except Exception as e:
 	      print("Error: %s"%e)
 
-	      
+
 The code URL links to our test script (`PhotometryUploadExample.py`), located in the
 directory :code:`YSE_App/data_ingest` (not in the Git repository, but the full code is at
 the bottom of this page).  This is currently set to run every two hours
@@ -74,7 +74,7 @@ stays on all the time) to create the cron and pipe the output to a log file::
 
   */30 * * * * /home/djones/photometry.bash >> /home/djones/cron_run_photometry.log 2>&1
 
-  
+
 
 Adding Photometry to YSE-PZ
 ===========================
@@ -131,12 +131,12 @@ playground and run a quick query on the PhotometricBand model.::
   FROM YSE_App_photometricband p
   INNER JOIN YSE_App_instrument i on p.instrument_id = i.id
   WHERE i.name != 'Unknown'
-  
+
 Scrolling through this list (neglecting the "Unknown" instruments, which should be avoided when possible),
 you can see that the filters g-ZTF and r-ZTF associated with instrument ZTF-Cam are the ones that should
 be used.  Once we know this information, we're ready to build the dictionary from the top down.
 
-   
+
 Building the Transient Upload Dictionary
 ----------------------------------------
 
@@ -203,7 +203,7 @@ photometric observation (as each is a separate SQL database entry)::
 
 
 Finally, combine the dictionaries and send everything to the API::
-  
+
   def UploadTransients(self,TransientUploadDict):
 
       url = '%s'%self.options.dburl.replace('/api','/add_transient')
@@ -219,7 +219,7 @@ Finally, combine the dictionaries and send everything to the API::
       except Exception as e:
           print("Error: %s"%e)
 
-  
+
   TransientUploadDict['2019np']['transientphotometry'] = PhotUploadAll
 
   UploadTransients(TransientUploadDict)
@@ -227,13 +227,13 @@ Finally, combine the dictionaries and send everything to the API::
 Your YSE-PZ login and password can be used for the :code:`mylogin` and
 :code:`mypassword` fields.
 
-      
+
 The Final Code
 --------------
 
 Putting all these pieces together, we've now built a cron job that will regularly upload
 ZTF photometry for SN 2019np!  The full code is below::
-  
+
   from django_cron import CronJobBase, Schedule
   import coreapi
   from astropy.time import Time
@@ -281,7 +281,7 @@ ZTF photometry for SN 2019np!  The full code is below::
 
       def do_phot_upload(self):
 
-	  # write out the transient dictionary   
+	  # write out the transient dictionary
 	  # initial key telling it not to override the existing status of this transient
 	  # assuming it exists
 	  TransientUploadDict = {'noupdatestatus':True}

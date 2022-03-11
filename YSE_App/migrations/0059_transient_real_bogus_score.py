@@ -5,14 +5,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0058_transientdiffimage_valid_pixels'),
-    ]
+    dependencies = [("YSE_App", "0058_transientdiffimage_valid_pixels")]
 
     operations = [
         migrations.AddField(
-            model_name='transient',
-            name='real_bogus_score',
+            model_name="transient",
+            name="real_bogus_score",
             field=models.FloatField(blank=True, null=True),
-        ),
+        )
     ]

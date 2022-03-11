@@ -6,24 +6,27 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0063_surveyfieldmsb_active'),
-    ]
+    dependencies = [("YSE_App", "0063_surveyfieldmsb_active")]
 
     operations = [
         migrations.AddField(
-            model_name='surveyfield',
-            name='targeted_galaxies',
+            model_name="surveyfield",
+            name="targeted_galaxies",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='surveyfield',
-            name='targeted_transients',
-            field=models.ManyToManyField(blank=True, to='YSE_App.Transient'),
+            model_name="surveyfield",
+            name="targeted_transients",
+            field=models.ManyToManyField(blank=True, to="YSE_App.Transient"),
         ),
         migrations.AddField(
-            model_name='surveyobservation',
-            name='msb',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='YSE_App.SurveyFieldMSB'),
+            model_name="surveyobservation",
+            name="msb",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="YSE_App.SurveyFieldMSB",
+            ),
         ),
     ]

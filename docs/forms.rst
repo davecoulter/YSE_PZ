@@ -22,7 +22,7 @@ Starting with the minimum::
 
   from django.forms import ModelForm
   from django import forms
-  
+
   class LCOGTSpectrumRequest(ModelForm):
       class Meta:
           model = TransientFollowup
@@ -43,7 +43,7 @@ automatically rendered in the form::
 	exp_time = forms.IntegerField(initial=1800) # 1800s seems like a reasonable default
 	spectrum_valid_start = forms.DateTimeField()
 	spectrum_valid_stop = forms.DateTimeField()
-	
+
 	class Meta:
 		model = TransientFollowup
 		fields =('transient',)
@@ -52,7 +52,7 @@ automatically rendered in the form::
 and :code:`valid_stop` fields in in the TransientFollowup model, and :code:`transient` is already part of
 the TransientFollowup model, so we can add a few necessary fields
 and then use this form to build a TransientFollowup entry.
-	  
+
 Starting a YSE-PZ Form View
 ===========================
 
@@ -63,7 +63,7 @@ perform actions on the YSE-PZ backend.  First, the basics::
 	form_class = AutomatedSpectrumRequest
 	template_name = 'YSE_App/form_snippets/spectrum_request_form.html'
 	success_url = '/form-success/'
-	
+
 	def form_invalid(self, form):
 	    response = super(AddAutomatedSpectrumRequestFormView, self).form_invalid(form)
 	    if self.request.is_ajax():
@@ -75,7 +75,7 @@ perform actions on the YSE-PZ backend.  First, the basics::
 	    response = super(AddTransientFollowupFormView, self).form_valid(form)
 	    if self.request.is_ajax():
 	        pass
-		    
+
 This sets up the basic form defaults, including the form class object, the name
 of the template form we're about to create, and the error function for if the
 form is invalid.  If the form is valid, and verifying that the request is passed
@@ -110,7 +110,7 @@ gets rendered in the view.::
 
 Writing the Django HTML
 -----------------------
-  
+
 Now, to edit the HTML itself.  You can see in the :code:`transient_detail`
 function that the template being rendered is :code:`YSE_App/transient_detail.html`.
 These paths are relative to the :code:`YSE_App/templates` directory.  As we are
@@ -222,13 +222,13 @@ will reload the page and our new followup request will be added::
 
       // handle a successful response
       success : function(json) {
-	var errors = json.data["errors"]		
+	var errors = json.data["errors"]
 	// Construct HTML to append container
 	if (errors){
 	  alert(errors)
 	} else {
 	  location.reload();
-	} 
+	}
       },
 
       // handle a non-successful response
@@ -242,15 +242,15 @@ will reload the page and our new followup request will be added::
 Then, between the scripts tags we need to render the calendars so that
 the user can select the dates in which the request is valid.::
 
-  
-  $('#automated_spectrum_date_range').daterangepicker({ 
+
+  $('#automated_spectrum_date_range').daterangepicker({
 	  timePicker24Hour: true,
-	  timePicker: true, 
-	  timePickerIncrement: 1, 
-	  format: 'MM/DD/YYYY HH:mm', 
+	  timePicker: true,
+	  timePickerIncrement: 1,
+	  format: 'MM/DD/YYYY HH:mm',
 	  locale: {
 		  format: 'MM/DD/YYYY HH:mm'
-	  } 
+	  }
   });
 
   fdr_spec_picker = $('#automated_spectrum_date_range').data('daterangepicker')
@@ -302,7 +302,7 @@ Last but not least, we need to make sure the form has a valid CSRF token::
 
 Finishing the YSE-PZ Form View
 ==============================
-  
+
 Okay!  We're almost there.  Now we need to use the data returned by the
 user to create a TransientFollowup object, and then use Charlie's code to
 ping the LCOGT or SOAR API.
@@ -313,7 +313,7 @@ Here's the full view::
 	form_class = AutomatedSpectrumRequest
 	template_name = 'YSE_App/form_snippets/spectrum_request_form.html'
 	success_url = '/form-success/'
-	
+
 	def form_invalid(self, form):
 		response = super(AddAutomatedSpectrumRequestFormView, self).form_invalid(form)
 		if self.request.is_ajax():
@@ -325,7 +325,7 @@ Here's the full view::
 		response = super(AddAutomatedSpectrumRequestFormView, self).form_valid(form)
 		if self.request.is_ajax():
 			tfdict = {}
-			
+
 			# some hard-coded logic
 			if 'goodman' in form.cleaned_data['instrument'].name.lower():
 				resource = ClassicalResource.objects.filter(telescope__name=form.cleaned_data['instrument'].telescope).\
@@ -333,7 +333,7 @@ Here's the full view::
 			else:
 				resource = ToOResource.objects.filter(telescope__name=form.cleaned_data['instrument'].telescope) #.\
 					#filter(principal_investigator__name='Kilpatrick')
-				
+
 			# make sure the dates line up, with a +/-1 day window to make life easier
 			resource = resource.filter(Q(begin_date_valid__lt=form.cleaned_data['spectrum_valid_start']+datetime.timedelta(1)) &
 									   Q(end_date_valid__gt=form.cleaned_data['spectrum_valid_stop']-datetime.timedelta(1)))
@@ -348,7 +348,7 @@ Here's the full view::
 				return JsonResponse(data)
 			else:
 				resource = resource[0]
-			
+
 			status = FollowupStatus.objects.get(name='Requested')
 
 			if 'goodman' in form.cleaned_data['instrument'].name.lower():

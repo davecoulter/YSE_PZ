@@ -71,7 +71,7 @@ function paper_draw_field(verts,rowID,rowState,telescope) {
        path.fillColor = telColor;
        path.opacity = obsOpacity
 
-    } else { 
+    } else {
        path.fillColor = null;
        path.opacity = 1.;
        path.strokeColor = telColor;
@@ -90,7 +90,7 @@ function paper_update_field(rowID,rowState,telescope) {
     if (observed) {
         path.fillColor = telColor;
         path.opacity = obsOpacity
-     } else { 
+     } else {
         path.fillColor = null;
         path.opacity = 1.;
         path.strokeColor = telColor;
@@ -109,7 +109,7 @@ function paper_draw_background() {
 
 function paper_draw_contours(verts) {
 
-    for (i = 0; i < verts[0].length; i++) { 
+    for (i = 0; i < verts[0].length; i++) {
 
         var point_ul = new Point(verts[0][i],verts[1][i]);
         var point_lr = new Point(verts[2][i],verts[3][i]);

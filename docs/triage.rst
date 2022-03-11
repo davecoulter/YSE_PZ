@@ -73,4 +73,3 @@ usually moved to "Watch".  For members of a certain group, sorting by
 interest.
 
 .. image:: _static/yse_pz_dashboardstatus.png
-

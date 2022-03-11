@@ -5,13 +5,8 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0041_auto_20191114_0406'),
-    ]
+    dependencies = [("YSE_App", "0041_auto_20191114_0406")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='surveyobservation',
-            name='instrument',
-        ),
+        migrations.RemoveField(model_name="surveyobservation", name="instrument")
     ]

@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 # Python 2/3 compatibility
 from __future__ import print_function
 import re,sys,string,math,os,types,exceptions,glob
@@ -39,7 +39,7 @@ filtdict = {"THACHER z":'Thacher - Imager - z',
 def mjd_to_date(mjd):
 	t = Time(mjd, format='mjd')
 	return t.fits.replace('(UTC)','').replace('T',' ')
-	
+
 def hex2int(val):
 	if type(val) is str:   #types.StringType:
 		val = int(eval(val))
@@ -66,7 +66,7 @@ class GW2YSE:
 		parser.add_option('-o','--outlist', default=None, type="string",
 						  help='output list')
 
-		
+
 		if config:
 			parser.add_option('--login', default=config.get('main','login'), type="string",
 							  help='gmail login (default=%default)')
@@ -96,7 +96,7 @@ class GW2YSE:
 							  help='URL to POST transients to a database (default=%default)')
 
 		return parser
-			
+
 	def getdata(self,listfilename,outfile):
 		# put the tools directory into the path
 		pyscripts = os.environ['PIPE_PYTHONSCRIPTS']
@@ -107,7 +107,7 @@ class GW2YSE:
 
 		if not listfilename or not outfile:
 			raise RuntimeError('input and output filenames must be set with the -i and -o args!')
-		
+
 		import pipeclasses
 
 		if	os.environ['PIPE_INSTRUMENT']=='SWOPEDIRECT':
@@ -245,14 +245,14 @@ class GW2YSE:
 			datadict['status'] = 'New'
 			datadict['obs_group'] = 'SSS'
 			datadict['gwcandidate'] = {}
-			
+
 			datadict['gwcandidate']['field_name'] = field
 			datadict['gwcandidate']['candidate_id'] = candID
 			datadict['gwcandidate']['name'] = field+'C'+str(candID).zfill(4)
 			datadict['gwcandidate']['websniff_url'] = linebkp.replace('\n','')
 			datadict['gwcandidate']['gwcandidateimage'] = {}
 			datadict['gwcandidate']['transient'] = field+'C'+str(candID).zfill(4)
-			
+
 			for triplet,filt,dpclass in zip(triplets.split(','),filts,types):
 				triplet_webaddress = triplet.replace('/web/','/')
 				triplet = triplet_webaddress.split('/')
@@ -265,7 +265,7 @@ class GW2YSE:
 				imgdict['gw_candidate'] = field+'C'+str(candID).zfill(4)
 				datadict['gwcandidate']['gwcandidateimage'][triplet] = imgdict
 			datadictlist[field+'C'+str(candID).zfill(4)] = datadict
-			
+
 			outlist.append(outfmt.format(field=field,
 										 candID=candID,
 										 intname=field+'C'+str(candID).zfill(4),
@@ -278,7 +278,7 @@ class GW2YSE:
 			objs += [field+'C'+str(candID).zfill(4)]
 			ras += [sc.ra.deg]
 			decs +=[sc.dec.deg]
-			
+
 		with open(outfile,'w') as f:
 			for line in outlist:
 				f.write(line)
@@ -294,10 +294,10 @@ class GW2YSE:
 			ras = ['40.9135208333']
 			decs = ['-0.113786111111']
 			self.UploadTransients(datadictlist)
-		
+
 			return
 
-		
+
 		assert len(ras) == len(decs)
 
 		if type(ras[0]) == float:
@@ -326,12 +326,12 @@ class GW2YSE:
 			iobj = np.where(obj == np.array(objs))[0]
 			if len(iobj) > 1: iobj = int(iobj[0])
 			else: iobj = int(iobj)
-			
+
 			if doNED: sc,ebv,nedtable = scall[iobj],ebvall[iobj],nedtables[iobj]
 			else: sc = scall[iobj]; ebv = None; nedtable = None
-			
+
 			print("Object: %s\nRA: %s\nDEC: %s" % (obj,ras[iobj],decs[iobj]))
-			
+
 			########################################################
 			# For Item in Email, Get NED
 			########################################################
@@ -343,7 +343,7 @@ class GW2YSE:
 					datadictlist[obj]['host'] = hostdict
 					datadictlist[obj]['candidate_hosts'] = hostcoords
 			except: pass
-			
+
 			try:
 				photdict = self.getZTFPhotometry(sc)
 				datadictlist[obj]['transientphotometry'] = photdict
@@ -353,17 +353,17 @@ class GW2YSE:
 		datadictlist['noupdatestatus'] = True
 		with open('tmp.json', 'w') as fp:
 			json.dump(datadictlist, fp)
-		
+
 		self.UploadTransients(datadictlist)
-		
+
 		return
 
-				
+
 	def getNEDData(self,jd,sc,ned_table):
 
 		gal_candidates = 0
 		radius = 5
-		while (radius < 11 and gal_candidates < 21): 
+		while (radius < 11 and gal_candidates < 21):
 			try:
 				print("Radius: %s" % radius)
 				gal_candidates = len(ned_table)
@@ -399,13 +399,13 @@ class GW2YSE:
 					galaxy_ras.append(galaxies[l]["RA"])
 					galaxy_decs.append(galaxies[l]["DEC"])
 					galaxy_mags.append(galaxies[l]["Magnitude and Filter"])
-								
+
 			print("Galaxies with z: %s" % len(galaxies_with_z))
 			# Get Dust in LoS for each galaxy with z
 			if len(galaxies_with_z) > 0:
 				for l in range(len(galaxies_with_z)):
-					co_l = coordinates.SkyCoord(ra=galaxies_with_z[l]["RA"], 
-												dec=galaxies_with_z[l]["DEC"], 
+					co_l = coordinates.SkyCoord(ra=galaxies_with_z[l]["RA"],
+												dec=galaxies_with_z[l]["DEC"],
 												unit=(u.deg, u.deg), frame='fk4', equinox='J2000.0')
 
 			else:
@@ -420,21 +420,21 @@ class GW2YSE:
 											 galaxy_z_times_seps):
 			if gzs == np.min(galaxy_z_times_seps):
 				hostdict = {'name':name,'ra':ra,'dec':dec,'redshift':z}
-				
+
 			hostcoords += 'ra=%.7f, dec=%.7f\n'%(ra,dec)
 
 		return hostdict,hostcoords
-	
+
 	def UploadTransients(self,UploadDict):
 
 		url = '%s'%self.options.dburl.replace('/api','/add_gw_candidate')
 		r = requests.post(url = url, data = json.dumps(UploadDict),
 						  auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
-		
-		print('YSE_PZ says: %s'%json.loads(r.text)['message'])				
+
+		print('YSE_PZ says: %s'%json.loads(r.text)['message'])
 		print("Process done.")
 
-				
+
 
 def parsehtml4cluster(htmlfilename, params):
 	message = 'Parsing html address: {html}'
@@ -479,10 +479,10 @@ if __name__=='__main__':
 	import optparse
 	import configparser
 	import sys
-	
+
 	usagestring = """getevents.py <options>
 
-examples: 
+examples:
 
 python getevents.py -s settings.ini -i tmp.txt -o out.txt
 python getevents.py -s ../../YSE_PZ/settings.ini -i tmp.txt -o out.txt
@@ -503,7 +503,7 @@ python getevents.py -s ../../YSE_PZ/settings.ini -i tmp.txt -o out.txt
 	options,  args = parser.parse_args()
 	gw.options = options
 	gw.debug = options.debug
-	
+
 	listfilename = options.inlist
 	outfile = options.outlist
 

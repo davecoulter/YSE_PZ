@@ -5,24 +5,16 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0051_auto_20200120_0131'),
-    ]
+    dependencies = [("YSE_App", "0051_auto_20200120_0131")]
 
     operations = [
         migrations.AddField(
-            model_name='transient',
-            name='has_chandra',
-            field=models.NullBooleanField(),
+            model_name="transient", name="has_chandra", field=models.NullBooleanField()
         ),
         migrations.AddField(
-            model_name='transient',
-            name='has_hst',
-            field=models.NullBooleanField(),
+            model_name="transient", name="has_hst", field=models.NullBooleanField()
         ),
         migrations.AddField(
-            model_name='transient',
-            name='has_spitzer',
-            field=models.NullBooleanField(),
+            model_name="transient", name="has_spitzer", field=models.NullBooleanField()
         ),
     ]

@@ -1,4 +1,4 @@
-# DataTables for jQuery 
+# DataTables for jQuery
 
 This package contains distribution files for the [DataTables library](https://datatables.net) for [jQuery](http://jquery.com/). Only the core software for this library is contained in this package - to be correctly styled, a styling package for DataTables must also be included. Styling options include DataTable's native styling, [Bootstrap](http://getbootstrap.com) and [Foundation](http://foundation.zurb.com/).
 

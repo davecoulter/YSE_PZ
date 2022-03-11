@@ -9,42 +9,72 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('YSE_App', '0059_transient_real_bogus_score'),
+        ("YSE_App", "0059_transient_real_bogus_score"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='MagSystem',
+            name="MagSystem",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_date', models.DateTimeField(auto_now_add=True)),
-                ('modified_date', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(max_length=64)),
-                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='magsystem_created_by', to=settings.AUTH_USER_MODEL)),
-                ('modified_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='magsystem_modified_by', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_date", models.DateTimeField(auto_now_add=True)),
+                ("modified_date", models.DateTimeField(auto_now=True)),
+                ("name", models.CharField(max_length=64)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="magsystem_created_by",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "modified_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="magsystem_modified_by",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
-            options={
-                'abstract': False,
-            },
+            options={"abstract": False},
         ),
         migrations.AddField(
-            model_name='hostphotdata',
-            name='zp_off',
+            model_name="hostphotdata",
+            name="zp_off",
             field=models.FloatField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='transientphotdata',
-            name='zp_off',
+            model_name="transientphotdata",
+            name="zp_off",
             field=models.FloatField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='hostphotdata',
-            name='mag_sys',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='YSE_App.MagSystem'),
+            model_name="hostphotdata",
+            name="mag_sys",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="YSE_App.MagSystem",
+            ),
         ),
         migrations.AddField(
-            model_name='transientphotdata',
-            name='mag_sys',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='YSE_App.MagSystem'),
+            model_name="transientphotdata",
+            name="mag_sys",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="YSE_App.MagSystem",
+            ),
         ),
     ]

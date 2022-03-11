@@ -5,14 +5,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0057_transientdiffimage'),
-    ]
+    dependencies = [("YSE_App", "0057_transientdiffimage")]
 
     operations = [
         migrations.AddField(
-            model_name='transientdiffimage',
-            name='valid_pixels',
+            model_name="transientdiffimage",
+            name="valid_pixels",
             field=models.NullBooleanField(),
-        ),
+        )
     ]

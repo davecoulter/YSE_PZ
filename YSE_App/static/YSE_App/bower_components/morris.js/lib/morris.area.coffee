@@ -1,7 +1,7 @@
 class Morris.Area extends Morris.Line
   # Initialise
   #
-  areaDefaults = 
+  areaDefaults =
     fillOpacity: 'auto'
     behaveLikeLine: false
 

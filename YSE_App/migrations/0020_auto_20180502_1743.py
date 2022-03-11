@@ -9,42 +9,82 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('YSE_App', '0019_auto_20180425_1649'),
+        ("YSE_App", "0019_auto_20180425_1649"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Unit',
+            name="Unit",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_date', models.DateTimeField(auto_now_add=True)),
-                ('modified_date', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(max_length=128)),
-                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='unit_created_by', to=settings.AUTH_USER_MODEL)),
-                ('modified_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='unit_modified_by', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_date", models.DateTimeField(auto_now_add=True)),
+                ("modified_date", models.DateTimeField(auto_now=True)),
+                ("name", models.CharField(max_length=128)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="unit_created_by",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "modified_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="unit_modified_by",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
-            options={
-                'abstract': False,
-            },
+            options={"abstract": False},
         ),
         migrations.AddField(
-            model_name='hostphotdata',
-            name='unit',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='YSE_App.Unit'),
+            model_name="hostphotdata",
+            name="unit",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="YSE_App.Unit",
+            ),
         ),
         migrations.AddField(
-            model_name='hostspectrum',
-            name='unit',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='YSE_App.Unit'),
+            model_name="hostspectrum",
+            name="unit",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="YSE_App.Unit",
+            ),
         ),
         migrations.AddField(
-            model_name='transientphotdata',
-            name='unit',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='YSE_App.Unit'),
+            model_name="transientphotdata",
+            name="unit",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="YSE_App.Unit",
+            ),
         ),
         migrations.AddField(
-            model_name='transientspectrum',
-            name='unit',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='YSE_App.Unit'),
+            model_name="transientspectrum",
+            name="unit",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="YSE_App.Unit",
+            ),
         ),
     ]

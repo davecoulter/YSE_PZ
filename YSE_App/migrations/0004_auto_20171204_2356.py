@@ -7,24 +7,11 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0003_auto_20171204_2354'),
-    ]
+    dependencies = [("YSE_App", "0003_auto_20171204_2354")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='profile',
-            name='created_by',
-        ),
-        migrations.RemoveField(
-            model_name='profile',
-            name='modified_by',
-        ),
-        migrations.RemoveField(
-            model_name='profile',
-            name='user',
-        ),
-        migrations.DeleteModel(
-            name='Profile',
-        ),
+        migrations.RemoveField(model_name="profile", name="created_by"),
+        migrations.RemoveField(model_name="profile", name="modified_by"),
+        migrations.RemoveField(model_name="profile", name="user"),
+        migrations.DeleteModel(name="Profile"),
     ]

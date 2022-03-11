@@ -5,14 +5,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0043_auto_20191114_0424'),
-    ]
+    dependencies = [("YSE_App", "0043_auto_20191114_0424")]
 
     operations = [
         migrations.AlterField(
-            model_name='surveyobservation',
-            name='image_id',
+            model_name="surveyobservation",
+            name="image_id",
             field=models.BigIntegerField(blank=True, null=True),
-        ),
+        )
     ]

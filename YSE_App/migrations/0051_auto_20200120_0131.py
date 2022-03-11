@@ -5,14 +5,12 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0050_surveyfieldmsb'),
-    ]
+    dependencies = [("YSE_App", "0050_surveyfieldmsb")]
 
     operations = [
         migrations.RenameField(
-            model_name='surveyfieldmsb',
-            old_name='survey_field',
-            new_name='survey_fields',
-        ),
+            model_name="surveyfieldmsb",
+            old_name="survey_field",
+            new_name="survey_fields",
+        )
     ]

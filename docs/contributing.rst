@@ -153,7 +153,3 @@ preview of the documentation automatically for you. You can see this preview
 here.
 
 .. image:: _static/contributing_docs_ci.png
-
-
-
-

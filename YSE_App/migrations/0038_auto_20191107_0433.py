@@ -5,18 +5,15 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0037_auto_20191107_0059'),
-    ]
+    dependencies = [("YSE_App", "0037_auto_20191107_0059")]
 
     operations = [
         migrations.RemoveField(
-            model_name='surveyobservationtask',
-            name='requested_mjd',
+            model_name="surveyobservationtask", name="requested_mjd"
         ),
         migrations.AddField(
-            model_name='surveyobservationtask',
-            name='date_requested',
+            model_name="surveyobservationtask",
+            name="date_requested",
             field=models.DateTimeField(default=None),
             preserve_default=False,
         ),

@@ -52,10 +52,10 @@ of the chart (issue 5)
 + Allow target and performance values to be set to null for bullet charts,
 omitting them from the chart (issue 3)
 
-+ Fix clipping of highlight marker spots if min/max/final spots are disabled 
++ Fix clipping of highlight marker spots if min/max/final spots are disabled
 in line charts (issue 31)
 
-+ Line charts with normalRangeMin=0 will now render the normal range 
++ Line charts with normalRangeMin=0 will now render the normal range
 correctly (issue 7)
 Thanks Tim Mathewso
 
@@ -80,8 +80,8 @@ for controlling mouseover highligiting
 
 + All charts display tooltips and highlight values when moused-over by default
 Adds options: tooltipContainer, tooltipOffsetX, tooltipOffsetY, tooltipFormatter,
-tooltipChartTitle, tooltipFormat, tooltipPrefix, tooltipSuffix, 
-tooltipSkipNull, tooltipValueLookups, highlightLighten, numberFormatter, 
+tooltipChartTitle, tooltipFormat, tooltipPrefix, tooltipSuffix,
+tooltipSkipNull, tooltipValueLookups, highlightLighten, numberFormatter,
 numberDigitGroupSep, numberDecimalMark, numberDigitGroupCount
 
 + Fix error when all null values are fed to a line chart
@@ -93,7 +93,7 @@ be unlevel - Thanks Sylvain Vieujot for the bug report
 + Pie charts with a single value now render correctly
 Thanks Juan Manuel
 
-+ Charts that have their dimensions specified exactly in pixels may see 
++ Charts that have their dimensions specified exactly in pixels may see
 improved performance
 Thanks Sean Carpenter
 
@@ -120,7 +120,7 @@ or by passing a comma and colon delimited series of values (eg. "1:2:3,2:3:1")
 + Fix a bug where some spots would be drawn in the wrong position on line
 charts if the x values were supplied as well as the y
 
-+ Fix a bug causing hidden composite sparklines to fail to render 
++ Fix a bug causing hidden composite sparklines to fail to render
 once $.sparkline_display_visible() is called.
 
 + If there are multiple calls to sparkline() on a hidden element, the plugin
@@ -194,7 +194,7 @@ bar to be specified individually, rather than mapping by value
 + Updated default pie chart colours - Thanks Liel Dulev
 
 + Null values can now be supplied to line and bar charts
-(use 'null' as the value) - Thanks to Ed Blachman for 
+(use 'null' as the value) - Thanks to Ed Blachman for
 testing/debugging help
 
 + Added colorMap option for bar charts
@@ -231,7 +231,7 @@ fuzzy lines
 
 1.3 25/January/2009
 
-+ Sparklines can't be automatically displayed into hidden elements (ie. 
++ Sparklines can't be automatically displayed into hidden elements (ie.
 with display:none) - Added a $.sparkline_display_visible() function
 to render any sparklines that were generated while a tag was
 hidden
@@ -262,13 +262,13 @@ Thanks to Hubert Mandeville for a patch fixing both issues
 
 + Fixed rendering of bar charts with negative values
 
-+ All values in a bar chart have a height now (min values used to 
++ All values in a bar chart have a height now (min values used to
 have height = 0)
 
 + Added zeroColor option for bar charts which allows assignment of
 a different color for values that are equal to zero
 
-+ Line charts can now specify both x and y values if required in one of 
++ Line charts can now specify both x and y values if required in one of
 three ways:
 a) Inline with HTML with values interleaved:
 x1:y1,x2:y2,x3:y3
@@ -297,11 +297,11 @@ markers are placed at the cordinates of the minimum and maximum values.
 + Added normalRangeMin and normalRangeMax to line charts - If set then
 a normalRangeColor band will be drawn on the graph
 
-+ Added chart compositing - Applying another chart to a DOM element with 
-an option of composite: true will cause the second (or more) chart to be 
-overlayed on the first rather than replacing it.  
++ Added chart compositing - Applying another chart to a DOM element with
+an option of composite: true will cause the second (or more) chart to be
+overlayed on the first rather than replacing it.
 
-+ Added optional colorMap option to tristate chart - This allows specific 
++ Added optional colorMap option to tristate chart - This allows specific
 colors to be supplied for specific values
 
 + Added discrete chart type - Uses fixed size discrete vertical lines to mark

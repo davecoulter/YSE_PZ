@@ -1,27 +1,28 @@
 from casjobs import CasJobs
 
-#Partially from https://github.com/rlwastro/mastcasjobs. Adapted to Python 3.6 by T. Hung 05/15/2019
+# Partially from https://github.com/rlwastro/mastcasjobs. Adapted to Python 3.6 by T. Hung 05/15/2019
 
 
 __all__ = ["MastCasJobs", "contexts"]
 
 # some common MAST database contexts
 contexts = [
-            "GAIA_DR1",
-            "GALEX_Catalogs",
-            "GALEX_GR6Plus7",
-            "GALEX_UV_BKGD",
-            "HLSP_47Tuc",
-            "HSLP_GSWLC",
-            "HSCv3",
-            "HSCv2",
-            "HSCv1",
-            "Kepler",
-            "PanSTARRS_DR1",
-            "PanSTARRS_DR2",
-            "PHATv2",
-            "SDSS_DR12",
-            ]
+    "GAIA_DR1",
+    "GALEX_Catalogs",
+    "GALEX_GR6Plus7",
+    "GALEX_UV_BKGD",
+    "HLSP_47Tuc",
+    "HSLP_GSWLC",
+    "HSCv3",
+    "HSCv2",
+    "HSCv1",
+    "Kepler",
+    "PanSTARRS_DR1",
+    "PanSTARRS_DR2",
+    "PHATv2",
+    "SDSS_DR12",
+]
+
 
 class MastCasJobs(CasJobs):
     """
@@ -49,18 +50,27 @@ class MastCasJobs(CasJobs):
       CasJobs tables.  Note that this is a non-standard method that only works
       for MAST databases!
     """
-    def __init__(self, username=None, password=None, userid=None,
-                 request_type="GET", context="PanSTARRS_DR1",
-                 base_url="http://mastweb.stsci.edu/ps1casjobs/services/jobs.asmx",
-                 wsid_url=None, fast_url=None):
+
+    def __init__(
+        self,
+        username=None,
+        password=None,
+        userid=None,
+        request_type="GET",
+        context="PanSTARRS_DR1",
+        base_url="http://mastweb.stsci.edu/ps1casjobs/services/jobs.asmx",
+        wsid_url=None,
+        fast_url=None,
+    ):
 
         if base_url.lower().find("//mastweb.stsci.edu/") >= 0:
             # set defaults for MAST CasJobs
             if wsid_url is None:
-                wsid_url="https://mastweb.stsci.edu/ps1casjobs/casusers.asmx/GetWebServiceId"
+                wsid_url = (
+                    "https://mastweb.stsci.edu/ps1casjobs/casusers.asmx/GetWebServiceId"
+                )
             if fast_url is None:
-                fast_url="https://ps1images.stsci.edu/cgi-bin/quick_casjobs.cgi"
-
+                fast_url = "https://ps1images.stsci.edu/cgi-bin/quick_casjobs.cgi"
 
         super().__init__()
         self.wsid_url = wsid_url
@@ -88,4 +98,3 @@ class MastCasJobs(CasJobs):
         results = super().quick(q, context=context, task_name=task_name)
 
         return results
-

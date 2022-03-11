@@ -5,24 +5,22 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0035_auto_20191106_0133'),
-    ]
+    dependencies = [("YSE_App", "0035_auto_20191106_0133")]
 
     operations = [
         migrations.AddField(
-            model_name='transient',
-            name='postage_stamp_diff_fits',
+            model_name="transient",
+            name="postage_stamp_diff_fits",
             field=models.CharField(blank=True, max_length=512, null=True),
         ),
         migrations.AddField(
-            model_name='transient',
-            name='postage_stamp_file_fits',
+            model_name="transient",
+            name="postage_stamp_file_fits",
             field=models.CharField(blank=True, max_length=512, null=True),
         ),
         migrations.AddField(
-            model_name='transient',
-            name='postage_stamp_ref_fits',
+            model_name="transient",
+            name="postage_stamp_ref_fits",
             field=models.CharField(blank=True, max_length=512, null=True),
         ),
     ]

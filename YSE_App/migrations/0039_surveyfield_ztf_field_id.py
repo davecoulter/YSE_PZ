@@ -5,14 +5,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('YSE_App', '0038_auto_20191107_0433'),
-    ]
+    dependencies = [("YSE_App", "0038_auto_20191107_0433")]
 
     operations = [
         migrations.AddField(
-            model_name='surveyfield',
-            name='ztf_field_id',
+            model_name="surveyfield",
+            name="ztf_field_id",
             field=models.CharField(blank=True, max_length=64, null=True),
-        ),
+        )
     ]

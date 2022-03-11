@@ -221,4 +221,3 @@
             tag[(typeof document.body.style.WebkitAppearance == 'string') /* webkit only */ ? 'innerText' : 'innerHTML'] = css;
         }
     };
-
