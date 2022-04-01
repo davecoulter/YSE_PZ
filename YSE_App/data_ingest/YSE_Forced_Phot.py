@@ -192,7 +192,7 @@ class ForcedPhot(CronJobBase):
             parser = self.add_options(usage='',config=config)
             options,  args = parser.parse_known_args()
             self.options = options
-
+            #nsn = self.doall_main()
             nsn = self.main()
         except Exception as e:
             print(e)
@@ -265,13 +265,21 @@ class ForcedPhot(CronJobBase):
 
 
         return(parser)
-        
+
+    def doall_main(self):
+        min_date = datetime.datetime.utcnow() - datetime.timedelta(days=30) #minutes=self.options.max_time_minutes)
+        transients = Transient.objects.filter(
+            created_date__gte=min_date).filter(~Q(tags__name='YSE') & ~Q(tags__name='YSE Stack')).order_by('-created_date')
+        for t in transients:
+            print(t.name)
+            self.main(transient_name=t.name)
+            
     def main(self,transient_name=None,update_forced=False):
 
         # candidate transients
         min_date = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.options.max_time_minutes)
         nowmjd = date_to_mjd(datetime.datetime.utcnow())
-        #transient_name='2020sck'
+        #transient_name='2022ann'; self.options.max_days_yseimage = 60
         if transient_name is None and not update_forced:
             transients = Transient.objects.filter(
                 created_date__gte=min_date).filter(~Q(tags__name='YSE') & ~Q(tags__name='YSE Stack')).order_by('-created_date')
@@ -288,9 +296,9 @@ class ForcedPhot(CronJobBase):
         # candidate survey images
         survey_images = SurveyObservation.objects.filter(status__name='Successful').\
             filter(obs_mjd__gt=nowmjd-self.options.max_days_yseimage).filter(diff_id__isnull=False)
-
         transient_list,ra_list,dec_list,diff_id_list,warp_id_list,mjd_list,filt_list = \
             [],[],[],[],[],[],[]
+
         for t in transients:
 
             sit = survey_images.filter(Q(survey_field__ra_cen__gt=t.ra-1.55) | Q(survey_field__ra_cen__lt=t.ra+1.55) |
@@ -369,7 +377,10 @@ class ForcedPhot(CronJobBase):
             done_stamp,success_stamp = self.get_status(stack_request_name)
             if done_stamp: jobs_done = True
         if not success_stamp:
-            raise RuntimeError('jobs failed!')
+            pass
+            #import pdb; pdb.set_trace()
+
+            #raise RuntimeError('jobs failed!')
         if not jobs_done:
             raise RuntimeError('job timeout!')
         
@@ -433,7 +444,7 @@ class ForcedPhot(CronJobBase):
 
             PhotUploadAll = {"mjdmatchmin":0.0001,
                              "clobber":True}
-            photometrydict = {'instrument':'GPC1',
+            photometrydict = {'instrument':'GPC2',
                               'obs_group':'YSE',
                               'photdata':{}}
 
@@ -612,7 +623,7 @@ class ForcedPhot(CronJobBase):
                         phot_dict[tn]['dec'] += [dec]
                         phot_dict[tn]['exptime'] += [exptime]
                         phot_dict[tn]['zpt'] += [ff[0].header['FPA.ZP']]
-                    
+
         return phot_dict
 
     def get_stamps(self,request_name,transient_list):
@@ -747,7 +758,7 @@ class ForcedPhot(CronJobBase):
             zip(transient_list,ra_list,dec_list,diff_id_list):
             if diff_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc1','null','null','stamp',2049,'byid','diff',diff_id,'RINGS.V3',
+            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','diff',diff_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'diff.for.%s'%snid) )
             count += 1
         
@@ -755,7 +766,7 @@ class ForcedPhot(CronJobBase):
             zip(transient_list,ra_list,dec_list,warp_id_list):
             if warp_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc1','null','null','stamp',2049,'byid','warp',warp_id,'RINGS.V3',
+            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','warp',warp_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'warp.for.%s'%snid) )
             count += 1
             
@@ -763,7 +774,7 @@ class ForcedPhot(CronJobBase):
             zip(transient_list,ra_list,dec_list,stack_id_list):
             if stack_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc1','null','null','stamp',2049,'byid','stack',stack_id,'RINGS.V3',
+            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','stack',stack_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'stack.for.%s'%snid) )
             count += 1
 
@@ -790,14 +801,13 @@ class ForcedPhot(CronJobBase):
         request_names = []
         count = 0
         for snid_unq in np.unique(transient_list):
-            data = at.Table(names=('ROWNUM','RA1_DEG','DEC1_DEG','RA2_DEG','DEC2_DEG','FILTER','MJD-OBS','FPA_ID','COMPONENT_ID'),
-                            dtype=('S20','>f8','>f8','>f8','>f8','S20','>f8','>i4','S64'))
+            data = at.Table(names=('ROWNUM','PROJECT','RA1_DEG','DEC1_DEG','RA2_DEG','DEC2_DEG','FILTER','MJD-OBS','FPA_ID','COMPONENT_ID'),
+                            dtype=('S20','S16','>f8','>f8','>f8','>f8','S20','>f8','>i4','S64'))
             for snid,ra,dec,mjd,filt,diff_id in \
                 zip(transient_list[transient_list == snid_unq],ra_list[transient_list == snid_unq],dec_list[transient_list == snid_unq],
                     mjd_list[transient_list == snid_unq],filt_list[transient_list == snid_unq],diff_id_list[transient_list == snid_unq]):
                 if diff_id is None or diff_id == 'NULL': continue
-                try: data.add_row(('forcedphot_ysebot_{}'.format(count),ra,dec,ra,dec,filt,mjd,diff_id,skycelldict[snid_unq]) )
-                except: import pdb; pdb.set_trace()
+                data.add_row(('forcedphot_ysebot_{}'.format(count),'gpc2',ra,dec,ra,dec,filt,mjd,diff_id,skycelldict[snid_unq]) )
                 count += 1
 
             if len(data) > 0:
