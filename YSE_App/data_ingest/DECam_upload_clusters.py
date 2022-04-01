@@ -148,6 +148,7 @@ def download_and_parse_cluster_file(clusterfile, date):
                 if line.split():
                     table.add_row(line.split())
 
+
         output['photometry']=table
 
         return(output)
@@ -322,6 +323,7 @@ class DECam_clusters(CronJobBase):
                 continue
 
             for clusterfile in clusters:
+                if not clusterfile: continue
                 clustersdata=download_and_parse_cluster_file(clusterfile,mydate.isoformat())
                 if not clustersdata: continue
 
