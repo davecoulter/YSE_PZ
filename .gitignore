@@ -8,6 +8,6 @@ __pycache__/
 YSE_App/static/YSE_App/images/stamps/*
 node_modules/*
 *snana.dat
+docs/_build/*
 
-docs/_build/
 
