@@ -887,7 +887,10 @@
 								<ul>
 								  <li><a target="_blank" href="{% url 'finderchart' transient.id %}">Generate Finder Chart</a></li>
 								</ul>
-								
+								<ul>
+								  <li><button type="button" class="showObsDetails">Show Observing Details</button></li>
+								</ul>
+
 								{% static "" as baseUrl %}
 								{% with "YSE_App/images/findercharts/"|add:transient.name|add:"/"|add:transient.name|add:".finder.png" as finderfile %}
 								<img src="{% static finderfile %}" style='width:240px' alt="" />
@@ -1953,6 +1956,49 @@
 	  			$(rows).html(urltext);
 			});
 
+			$('.showObsDetails').on('click', function(event){
+	 			{% for obsnight in observing_nights %}
+			        $.get("{% url 'rise_time' transient.id obsnight.id %}").done(function(json){
+			        var rows = $("#rise_time_{{obsnight.id}}")
+			        $(rows).append(json["rise_time"])
+			        });
+			        $.get("{% url 'set_time' transient.id obsnight.id %}").done(function(json){
+			        var rows = $("#set_time_{{obsnight.id}}")
+			        $(rows).append(json["set_time"])
+			        });
+			        $.get("{% url 'moon_angle' transient.id obsnight.id %}").done(function(json){
+			        var rows = $("#moon_angle_{{obsnight.id}}")
+			        $(rows).append(json["moon_angle"])
+			        });
+				{% endfor %}
+
+			  {% for too_resource in too_resource_list %}
+        		  {% if too_resource.used_too_hours < too_resource.awarded_too_hours %}
+
+		              $.get("{% url 'tonight_rise_time' transient.id too_resource.id %}").done(function(json){
+		                  var rows = $("#tonight_rise_time_{{too_resource.id}}")
+		                  $(rows).append(json["rise_time"])
+		              });
+
+		              $.get("{% url 'tonight_set_time' transient.id too_resource.id %}").done(function(json){
+		                  var rows = $("#tonight_set_time_{{too_resource.id}}")
+		                  $(rows).append(json["set_time"])
+		              });
+
+		              $.get("{% url 'tonight_moon_angle' transient.id too_resource.id %}").done(function(json){
+		                  var rows = $("#tonight_moon_angle_{{too_resource.id}}")
+		                  $(rows).append(json["moon_angle"])
+		              });
+
+		              $.get("{% url 'delta_too_hours' too_resource.id %}").done(function(json){
+		                  var rows = $("#delta_too_hours_{{too_resource.id}}")
+		                  $(rows).append(json["delta_too_hours"])
+		              });
+		          {% endif %}
+			  {% endfor %}
+
+			});
+
 			function ToggleObservationTaskForm(followup_id,expand)
 			{
 				if (expand) {
@@ -2427,45 +2473,7 @@
 	  	//	$("#biglcplot").html(htmlresponse.replace("width: 500px; height: 400px;","width: 1000px; height: 800px;"));
 	  	//});
 
-	  {% for obsnight in observing_nights %}
-          $.get("{% url 'rise_time' transient.id obsnight.id %}").done(function(json){
-          var rows = $("#rise_time_{{obsnight.id}}")
-          $(rows).append(json["rise_time"])
-          });
-          $.get("{% url 'set_time' transient.id obsnight.id %}").done(function(json){
-          var rows = $("#set_time_{{obsnight.id}}")
-          $(rows).append(json["set_time"])
-          });
-          $.get("{% url 'moon_angle' transient.id obsnight.id %}").done(function(json){
-          var rows = $("#moon_angle_{{obsnight.id}}")
-          $(rows).append(json["moon_angle"])
-          });
-	  {% endfor %}
 
-	  {% for too_resource in too_resource_list %}
-          {% if too_resource.used_too_hours < too_resource.awarded_too_hours %}
-
-              $.get("{% url 'tonight_rise_time' transient.id too_resource.id %}").done(function(json){
-                  var rows = $("#tonight_rise_time_{{too_resource.id}}")
-                  $(rows).append(json["rise_time"])
-              });
-
-              $.get("{% url 'tonight_set_time' transient.id too_resource.id %}").done(function(json){
-                  var rows = $("#tonight_set_time_{{too_resource.id}}")
-                  $(rows).append(json["set_time"])
-              });
-
-              $.get("{% url 'tonight_moon_angle' transient.id too_resource.id %}").done(function(json){
-                  var rows = $("#tonight_moon_angle_{{too_resource.id}}")
-                  $(rows).append(json["moon_angle"])
-              });
-
-              $.get("{% url 'delta_too_hours' too_resource.id %}").done(function(json){
-                  var rows = $("#delta_too_hours_{{too_resource.id}}")
-                  $(rows).append(json["delta_too_hours"])
-              });
-          {% endif %}
-	  {% endfor %}
 	  });
 //});
 				
