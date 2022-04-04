@@ -1,0 +1,23 @@
+name: Deploy
+  push:
+    branches: [ master ]
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - name: Deploy to Ziggy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{secrets.SSH_HOST}} # IP address of the server
+          key: ${{secrets.SSH_KEY}} #private key of the server
+          username: ${{secrets.SSH_USERNAME}} # user of the server
+          
+          script: |
+            cd #where yse_pz lives
+            git pull
+	    #do other stuff
+            echo 'Deployment successful to Ziggy'
