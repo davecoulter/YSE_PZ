@@ -13,9 +13,9 @@ jobs:
       - name: commands before deploy
         uses: appleboy/ssh-action@master
         with:
-          host: ${{secrets.SSH_HOST}} # IP address of the server
-          key: ${{secrets.SSH_KEY}} #private key of the server
-          username: ${{secrets.SSH_USERNAME}} # user of the server
+          host: ${{secrets.ZIGGY_HOST}} # IP address of the server
+          key: ${{secrets.ZIGGY_SSH_KEY}} #private key of the server
+          username: ${{secrets.ZIGGY_BOT_USER}} # user of the server
           
           script: |
             #some commands here 
@@ -33,11 +33,10 @@ jobs:
     - name: Deploy to Server
       uses: easingthemes/ssh-deploy@main
       env:
-          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.ZIGGY_SSH_KEY }}
           ARGS: "-rltgoDzvO --delete"
-          SOURCE: "dist/"
-          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-          REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: ${{ secrets.REMOTE_TARGET }}
-          EXCLUDE: "/dist/, /node_modules/"
+          SOURCE: "."
+          REMOTE_HOST: ${{ secrets.ZIGGY_HOST }}
+          REMOTE_USER: ${{ secrets.ZIGGY_BOT_USER }}
+          TARGET: ${{ secrets.ZIGGY_TARGET }}
 
