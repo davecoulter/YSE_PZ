@@ -10,7 +10,7 @@ pip install --upgrade pip
 
 WORKDIR /app
 
-COPY requirements.web.txt /app/requirements.web.txt
+COPY requirements.web.dev /app/requirements.web.txt
 RUN pip install -r /app/requirements.web.txt
 
 RUN apt-get clean && \
