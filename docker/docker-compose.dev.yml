@@ -2,7 +2,10 @@ version: '2'
 services:
     web:
         container_name: ysepz_web_container
-        image: "davecoulter/yse_pz_web:latest"
+        build:
+          context: ""
+          dockerfile: Dockerfile.web.dev
+        image: "local/yse_pz_web:dev"
         volumes:
             - ${VOL}:/app
             - ./entrypoints:/app/Entrypoints

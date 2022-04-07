@@ -1,1 +1,0 @@
-This is a directory where you can map your local database volume in your docker-compose.

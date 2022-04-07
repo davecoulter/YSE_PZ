@@ -1,0 +1,42 @@
+FROM ubuntu:focal-20210723
+LABEL description="Base Ubuntu image for YSEPZ"
+LABEL maintainer="Dave Coulter (dcoulter@ucsc.edu)"
+
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update --fix-missing && \
+apt-get install -y tzdata && \
+apt-get install -y build-essential checkinstall && \
+apt-get install -y libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev  && \
+apt-get install -y python3.8 && \
+apt-get install -y python3-pip && \
+pip install --upgrade pip
+
+RUN apt-get install -y libmysqlclient-dev
+
+WORKDIR /app
+
+# HACK: pip installs are broken into layers to get conflicting installs working
+#       Requirements directory allows for a dynamic list of requirements files installed with `pip_installer`
+COPY requirements/ /app/requirements/
+COPY ./pip_installer.sh /app/pip_installer.sh
+
+RUN chmod +x pip_installer.sh
+RUN ./pip_installer.sh
+
+RUN rm -rfv /app/requirements/ && rm -fv ./pip_installer.sh
+
+# HACK: Code that was changed on production. Not ideal, but trying to recreate.
+COPY ./temp_code/el_pagination/models.py /usr/local/lib/python3.8/dist-packages/el_pagination/models.py
+COPY ./temp_code/el_pagination/templatetags/el_pagination_tags.py /usr/local/lib/python3.8/dist-packages/el_pagination/templatetags/el_pagination_tags.py
+COPY ./temp_code/auditlog/registry.py /usr/local/lib/python3.8/dist-packages/auditlog/registry.py
+COPY ./temp_code/auditlog/models.py /usr/local/lib/python3.8/dist-packages/auditlog/models.py
+COPY ./temp_code/auditlog/middleware.py /usr/local/lib/python3.8/dist-packages/auditlog/middleware.py
+COPY ./temp_code/auditlog/diff.py /usr/local/lib/python3.8/dist-packages/auditlog/diff.py
+COPY ./temp_code/django_cron/admin.py /usr/local/lib/python3.8/dist-packages/django_cron/admin.py
+COPY ./temp_code/django_cron/helpers.py /usr/local/lib/python3.8/dist-packages/django_cron/helpers.py
+COPY ./temp_code/jsonfield/fields.py /usr/local/lib/python3.8/dist-packages/jsonfield/fields.py
+
+RUN apt-get clean && \
+rm -rf /var/lib/apt/lists/*
+
