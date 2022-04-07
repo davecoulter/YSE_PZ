@@ -12,7 +12,8 @@ Welcome to the YSE_PZ documentation!
    install
    queries
    dashboards
-   observing 
+   observing
+   status_tags
    detail
    triage
    adding_data
