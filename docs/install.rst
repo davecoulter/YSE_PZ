@@ -8,9 +8,9 @@ Docker
 ******
 
 This pages walks you through running :code:`YSE_PZ` locally. You might want to
-do this if you want to develop on :code:`YSE_PZ. The strongly recommended way
-to run :code:`YSE_PZ locally is to use docker. You could attempt to install
-:code:`YSE_PZ natively (instructions at the bottom of this page for archival 
+do this if you want to develop on :code:`YSE_PZ`. The strongly recommended way
+to run :code:`YSE_PZ` locally is to use docker. You could attempt to install
+:code:`YSE_PZ` natively (instructions at the bottom of this page for archival 
 reasons) but this will likely be an order of magnitude harder than using docker.
 
 
@@ -21,18 +21,23 @@ Install the Docker desktop app
 The first step is to install the docker desktop application, which can be found
 `here <https://docs.docker.com/get-docker/>`_ for your system. Docker allows you
 to run and develop :code:`YSE_PZ` without having to nativaly install :code:`YSE_PZ`
-on your computer.  
-
-Depending on the type of changes you make to :code:`YSE_PZ` you need to follow
-slightly different workflows. 
+on your computer. Depending on the type of changes you make to :code:`YSE_PZ` you 
+need to follow slightly different workflows. 
 
 
 
 
 
+Native
+******
 
+.. warning::
+	The following native install instructions are here for achival purposes
+	only. We strongly recommend you do not use these instructions and use
+	Docker instead.
 
 This is a easy guide to performing a local installation
+
 of :code:`YSE_PZ`.
 
 Prerequisites
