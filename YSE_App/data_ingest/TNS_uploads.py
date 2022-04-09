@@ -846,7 +846,7 @@ class processTNS:
 
                 ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False)
                 if is_photoz:
-                    ghost_hosts = calc_photoz(ghost_hosts)
+                    ghost_hosts = calc_photoz(ghost_hosts)[1]
                 os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
             except:
                 print('GHOST timeout!')
@@ -1523,7 +1523,7 @@ class UpdateGHOST(CronJobBase):
 
         ghost_hosts = getTransientHosts(names, scall, verbose=True, starcut='gentle', ascentMatch=False)
         if is_photoz:
-            ghost_hosts = calc_photoz(ghost_hosts)
+            ghost_hosts = calc_photoz(ghost_hosts)[1]
         os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
 
         for i in ghost_hosts.index:
