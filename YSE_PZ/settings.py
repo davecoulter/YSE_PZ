@@ -140,7 +140,7 @@ WSGI_APPLICATION = 'YSE_PZ.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-import pymysql
+#import pymysql
 DATABASES = {
     'explorer': {
         'ENGINE': 'django.db.backends.mysql',
@@ -160,8 +160,8 @@ DATABASES = {
 		'OPTIONS': {'ssl': {'ssl_disabled': True}}
     }
 }
-pymysql.version_info = (1, 4, 2, "final", 0)
-pymysql.install_as_MySQLdb()
+#pymysql.version_info = (1, 4, 2, "final", 0)
+#pymysql.install_as_MySQLdb()
 
 EXPLORER_CONNECTIONS = { 'Explorer': 'explorer' }
 EXPLORER_DEFAULT_CONNECTION = 'explorer'
@@ -240,3 +240,8 @@ STATIC_URL = config.get('site_settings', 'STATIC')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+ZTFTMPDIR = config.get('yse_forcedphot','ztfforcedtmpdir')
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
