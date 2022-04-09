@@ -1485,8 +1485,7 @@ class TNS_recent_realtime(CronJobBase):
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
         tnsproc.ndays = float(options.tns_recent_ndays)
-        print('HACK!!!')
-        tnsproc.tns_fastupdates_nminutes = 120 #float(options.tns_fastupdates_nminutes)
+        tnsproc.tns_fastupdates_nminutes = float(options.tns_fastupdates_nminutes)
         try:
             tnsproc.noupdatestatus = True
             nsn = tnsproc.GetRecentEvents(ndays=tnsproc.tns_fastupdates_nminutes/60./24.)
