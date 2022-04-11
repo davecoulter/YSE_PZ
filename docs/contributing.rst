@@ -168,16 +168,16 @@ version 1.22.3. the contents of code::`docker/requirements.web.dev` would be
 
 	numpy==1.22.3
 
-To test if this dependency works with all the other previously install packages you
-need to spin up a docker container which will attempt to install your proposed
-dependency and then run YSE_PZ. To do this, run the command
+To test if your proposed dependency will work, need to spin up a dev docker 
+container which will attempt to install your proposed dependency and then 
+run YSE_PZ. To do this, run the command
 
 .. code:: none
 
 	docker-compose -f docker-compose.dev.yaml up --build
 
 If this throws no errors, and YSE_PZ runs without issue, then the dependecy update
-was sucsessful. At this point you can check your code::`docker/requirements.web.dev`
+was sucsessful. At this point you can check your code:: `docker/requirements.web.dev`
 into a pull request into develop. Eventually when your code gets pull into master and
 deployed your dependency will be absorbed into the YSE_PZ docker image. 
 
