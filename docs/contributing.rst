@@ -155,5 +155,33 @@ here.
 .. image:: _static/contributing_docs_ci.png
 
 
+Updating dependencies
+---------------------
+
+If you need to add a new package to YSE_PZ or update an existing one you have to
+check whether the dependency update will work with all of YSE_PZ's currently 
+installed packages. The way you do this is to add your proposed dependency to the
+code::`docker/requirements.web.dev` file. For example if you wanted to have numpy
+version 1.22.3. the contents of code::`docker/requirements.web.dev` would be
+
+.. code:: none
+
+	numpy==1.22.3
+
+To test if this dependency works with all the other previously install packages you
+need to spin up a docker container which will attempt to install your proposed
+dependency and then run YSE_PZ. To do this, run the command
+
+.. code:: none
+
+	docker-compose -f docker-compose.dev.yaml up --build
+
+If this throws no errors, and YSE_PZ runs without issue, then the dependecy update
+was sucsessful. At this point you can check your code::`docker/requirements.web.dev`
+into a pull request into develop. Eventually when your code gets pull into master and
+deployed your dependency will be absorbed into the YSE_PZ docker image. 
 
 
+
+
+ 
