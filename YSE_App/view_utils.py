@@ -848,7 +848,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
     transient = Transient.objects.get(pk=transient_id)
     photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
-        'created_by', 'modified_by', 'band', 'unit', 'data_quality', 'photometry',
+        'created_by', 'modified_by', 'band', 'unit', 'photometry',
         'band__instrument','band__instrument__telescope').order_by('-modified_date')
     if not photdata:
         return django.http.HttpResponse('')
@@ -1794,7 +1794,8 @@ def get_ps1_image(request,transient_id):
     ps1url = ("http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f+%.7f&filter=color" % (t.ra,t.dec))
     try:
         response = requests.get(url=ps1url,timeout=5)
-    except: return("")
+    except:
+        return(JsonResponse({"jpegurl":"","msg":"timeout"}))
     response_text = response.content.decode('utf-8')
     if "<td><img src=" in response.content.decode('utf-8'):
         jpegurl = response.content.decode('utf-8').split('<td><img src="')[1].split('" width="240" height="240" /></td>')[0]
@@ -1802,7 +1803,7 @@ def get_ps1_image(request,transient_id):
     else:
         jpegurl=""
 
-    jpegurldict = {"jpegurl":jpegurl}
+    jpegurldict = {"jpegurl":jpegurl,"msg":"success"}
     return(JsonResponse(jpegurldict))
 
 def get_hst_image(request,transient_id):
