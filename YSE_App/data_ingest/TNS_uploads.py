@@ -538,7 +538,8 @@ class processTNS:
 
     def getGHOSTData(self,jd,sc,ghost_host):
         hostdict = {}; hostcoords = ''
-        hostdict = {'name':ghost_host['objName'].to_numpy()[0],'ra':ghost_host['raMean'].to_numpy()[0],
+        hostdict = {'name':str(ghost_host['objName'].to_numpy()[0]),
+                    'ra':ghost_host['raMean'].to_numpy()[0],
                     'dec':ghost_host['decMean'].to_numpy()[0]}
 
         hostcoords = f"ra={hostdict['ra']:.7f}, dec={hostdict['dec']:.7f}\n"
