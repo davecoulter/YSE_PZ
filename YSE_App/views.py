@@ -1169,8 +1169,8 @@ def download_photometry(request, slug):
             content += "# %s: %s\n"%(k.upper(),data[transient[0].name]['transient'][0]['fields'][k])
             
     content += "\n"
-    content += "VARLIST:  MJD        FLT  FLUXCAL   FLUXCALERR    MAG     MAGERR     MAGSYS   TELESCOPE    INSTRUMENT\n"
-    linefmt =  "OBS:      %.3f  %s  %.3f  %.3f  %.3f  %.3f  %s  %s  %s\n"
+    content += "VARLIST:  MJD        FLT  FLUXCAL   FLUXCALERR    MAG     MAGERR     MAGSYS   TELESCOPE    INSTRUMENT   DQ\n"
+    linefmt =  "OBS:      %.3f  %s  %.3f  %.3f  %.3f  %.3f  %s  %s  %s  %s\n"
 
     
     # Get photometry by user & transient
@@ -1188,9 +1188,12 @@ def download_photometry(request, slug):
             
             photdata = PhotometryService.GetAuthorizedTransientPhotData_ByPhotometry(user, p.id, includeBadData=True).order_by('obs_date')
             data[transient[0].name]['photometry'][pd]['data'] = json.loads(serializers.serialize("json", photdata, use_natural_foreign_keys=True))
-
             for d in data[transient[0].name]['photometry'][pd]['data']:
                 mjd = date_to_mjd(d['fields']['obs_date'])
+                if not len(d['fields']['data_quality']):
+                    data_quality = None
+                else:
+                    data_quality = ','.join(d['fields']['data_quality'])
                 if d['fields']['flux'] and d['fields']['flux_zero_point'] and not d['fields']['mag']:
                     if d['fields']['flux_err']: flux_err = d['fields']['flux_err']
                     else: flux_err = 0
@@ -1199,9 +1202,9 @@ def download_photometry(request, slug):
                     flux_err = flux_err*10**(0.4*(d['fields']['flux_zero_point']-27.5))
                     mag = -2.5*np.log10(flux)+27.5
                     mag_err = 2.5/np.log(10)*flux_err/flux
-                    
+
                     content += linefmt%(
-                        mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,mag,mag_err,d['fields']['mag_sys'],telescope,instrument)
+                        mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,mag,mag_err,d['fields']['mag_sys'],telescope,instrument,data_quality)
                     
                 elif not d['fields']['flux'] and d['fields']['mag']:
                     if d['fields']['mag_err']: mag_err = d['fields']['mag_err']
@@ -1211,7 +1214,7 @@ def download_photometry(request, slug):
                     flux_err = 0.4*np.log(10)*flux*mag_err
                     
                     content += linefmt%(
-                        mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,d['fields']['mag_sys'],telescope,instrument)
+                        mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,d['fields']['mag_sys'],telescope,instrument,data_quality)
                     
                 elif d['fields']['flux'] and d['fields']['flux_zero_point'] and d['fields']['mag']:
                     if d['fields']['flux_err']: flux_err = d['fields']['flux_err']
@@ -1223,7 +1226,7 @@ def download_photometry(request, slug):
                     flux_err = flux_err*10**(0.4*(d['fields']['flux_zero_point']-27.5))
 
                     content += linefmt%(
-                        mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,d['fields']['mag_sys'],telescope,instrument)
+                        mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,d['fields']['mag_sys'],telescope,instrument,data_quality)
                     
                 else:
                     continue
