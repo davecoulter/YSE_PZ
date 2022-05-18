@@ -1177,7 +1177,7 @@ def download_photometry(request, slug):
     authorized_phot = PhotometryService.GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient[0].id)
     if len(authorized_phot):
         data[transient[0].name]['photometry'] = json.loads(serializers.serialize("json", authorized_phot,use_natural_foreign_keys=True))
-        
+
         # Get data points
         for p,pd in zip(authorized_phot,range(len(data[transient[0].name]['photometry']))):
 
@@ -1188,6 +1188,7 @@ def download_photometry(request, slug):
             
             photdata = PhotometryService.GetAuthorizedTransientPhotData_ByPhotometry(user, p.id, includeBadData=True).order_by('obs_date')
             data[transient[0].name]['photometry'][pd]['data'] = json.loads(serializers.serialize("json", photdata, use_natural_foreign_keys=True))
+
             for d in data[transient[0].name]['photometry'][pd]['data']:
                 mjd = date_to_mjd(d['fields']['obs_date'])
                 if not len(d['fields']['data_quality']):
@@ -1225,6 +1226,17 @@ def download_photometry(request, slug):
                     flux = d['fields']['flux']*10**(0.4*(d['fields']['flux_zero_point']-27.5))
                     flux_err = flux_err*10**(0.4*(d['fields']['flux_zero_point']-27.5))
 
+                    content += linefmt%(
+                        mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,d['fields']['mag_sys'],telescope,instrument,data_quality)
+
+                elif d['fields']['flux'] and d['fields']['mag']:
+                    # if somebody didn't provide a ZPT, we can still work with this
+                    if d['fields']['mag_err']: mag_err = d['fields']['mag_err']
+                    else: mag_err = 0
+                    
+                    flux = 10**(-0.4*(d['fields']['mag']-27.5))
+                    flux_err = 0.4*np.log(10)*flux*mag_err
+                    
                     content += linefmt%(
                         mjd,d['fields']['band'].split(' - ')[1],flux,flux_err,d['fields']['mag'],mag_err,d['fields']['mag_sys'],telescope,instrument,data_quality)
                     
