@@ -1420,11 +1420,12 @@ def upload_spectrum(request):
             
             if form.data['spec_phase']:
                 specdict['spec_phase'] = form.data['spec_phase']
-            if form.data['data_quality']:
-                specdict['data_quality'] = DataQuality.objects.get(pk=form.data['data_quality'])
-            
+            #if form.data['data_quality']:
+            #    specdict['data_quality'] = DataQuality.objects.get(pk=form.data['data_quality'])
             if not len(tspec):
                 tspec = TransientSpectrum.objects.create(**specdict)
+                if form.data['data_quality']:
+                    tspec.data_quality.add(DataQuality.objects.get(pk=form.data['data_quality']))
             else:
                 tspec.update(**specdict)
                 tspec = tspec[0]

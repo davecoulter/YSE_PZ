@@ -815,10 +815,13 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
 						obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
 						mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
 						diffim=p['diffim'],
-						data_quality=dq,photometry=transientphot,
+						photometry=transientphot,
 						flux_zero_point=p['flux_zero_point'],
 						discovery_point=p['discovery_point'],band=band,
 						created_by_id=user.id,modified_by_id=user.id)
+					if dq is not None:
+						e.data_quality.set(dq)
+						e.save()
 					if 'diffimg' in p.keys():
 						p['diffimg']['created_by_id'] = user.id
 						p['diffimg']['modified_by_id'] = user.id
@@ -1027,7 +1030,8 @@ def add_transient_phot(request):
 							e.mag_err = p['mag_err']
 							e.forced = p['forced']
 							e.diffim = p['diffim']
-							e.data_quality = dq
+							if dq is not None:
+								e.data_quality.set(dq)
 							e.photometry = transientphot
 							e.discovery_point = p['discovery_point']
 							e.band = band
@@ -1041,14 +1045,17 @@ def add_transient_phot(request):
 					dq = DataQuality.objects.filter(name='Bad')
 				dq = dq[0]
 			else: dq = None
-			TransientPhotData.objects.create(obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
-											 mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
-											 diffim=p['diffim'],
-											 data_quality=dq,photometry=transientphot,
-											 flux_zero_point=p['flux_zero_point'],
-											 discovery_point=p['discovery_point'],band=band,
-											 created_by_id=user.id,modified_by_id=user.id)
-
+			tpd = TransientPhotData.objects.create(obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
+												   mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
+												   diffim=p['diffim'],
+												   photometry=transientphot,
+												   flux_zero_point=p['flux_zero_point'],
+												   discovery_point=p['discovery_point'],band=band,
+												   created_by_id=user.id,modified_by_id=user.id)
+			if dq is not None:
+				tpd.data_quality.set(dq)
+				tpd.save()
+			
 	return_dict = {"message":"success"}
 
 	return JsonResponse(return_dict)
@@ -1114,12 +1121,16 @@ def add_transient_spec(request):
 				ra=hd['ra'],dec=hd['dec'],instrument=instrument,obs_group=obs_group,transient=transient,
 				rlap=hd['rlap'],redshift=hd['redshift'],redshift_err=hd['redshift_err'],
 				redshift_quality=hd['redshift_quality'],spectrum_notes=hd['spectrum_notes'],
-				spec_phase=hd['spec_phase'],obs_date=hd['obs_date'],data_quality=dq,
+				spec_phase=hd['spec_phase'],obs_date=hd['obs_date'],
 				created_by_id=user.id,modified_by_id=user.id)
+			if dq is not None:
+				transientspec.data_quality.set(dq)
+				transientspec.save()
 		else:
 			transientspec = transientspec[0]
 			if hd['clobber']:
-				transientspec.data_quality = dq
+				if dq is not None:
+					transientspec.data_quality.set(dq)
 				transientspec.ra = hd['ra']
 				transientspec.dec = hd['dec']
 				transientspec.rlap = hd['rlap']
