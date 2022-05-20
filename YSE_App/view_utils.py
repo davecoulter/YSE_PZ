@@ -604,12 +604,8 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
     limmjd = None
     
     for p in photdata:
-        #dbflux,dbfluxerr,dbobsdate,dbmag,dbmagerr,dbdata_quality,dbdiscovery_point = \
-        #   p.flux,p.flux_err,p.obs_date,p.mag,p.mag_err,p.data_quality,p.discovery_point
         dbmjd = date_to_mjd(p.obs_date)
         if p.flux and np.abs(p.flux) > 1e10: continue
-        #if p.data_quality:
-        #   continue            
         
         if (p.flux and p.mag and p.flux_err and p.flux/p.flux_err > 3) or (not p.flux and p.mag):
             if p.discovery_point:
@@ -620,8 +616,6 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
             mag = np.append(mag,[p.mag])
             if p.mag_sys is None: magsys = np.append(mag,['None'])
             else: magsys = np.append(mag,[p.mag_sys])
-            #if p.data_quality is None: data_quality = np.append(data_quality,['Good'])
-            #else: data_quality = np.append(data_quality,[p.data_quality.name])
             dqs = p.data_quality.all()
             if not len(dqs):
                 data_quality = np.append(data_quality,['Good'])
@@ -881,15 +875,11 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
     obs_dates = np.array(photdata.values_list('obs_date',flat=True))
     obs_dates_str = np.array([p.strftime('%m/%d/%Y') for p in photdata.values_list('obs_date',flat=True)])
     mjds = date_to_mjd(obs_dates)
-    #data_quality = np.array(['Good' if p is None else p for p in photdata.values_list('data_quality__name',flat=True)])
     data_quality = np.array(['Good' if p is None else ','.join(p.data_quality.values_list('name',flat=True)) for p in photdata])
-    #import pdb; pdb.set_trace()
     mag_sys = np.array(['None' if p is None else p for p in photdata.values_list('mag_sys__name',flat=True)])
     band = np.array(photdata.values_list('band',flat=True))
     band_name = np.array([PhotometricBand.objects.get(pk=b).name for b in band])
     instrument_name = np.array([PhotometricBand.objects.get(pk=b).instrument.name for b in band])
-    #band_name = np.array(photdata.values_list('band__name',flat=True))
-    #instrument_name = np.array(photdata.values_list('band__instrument__name',flat=True))
     disp_symbol = np.array([PhotometricBand.objects.get(pk=b).disp_symbol for b in band])
     disp_color = np.array([PhotometricBand.objects.get(pk=b).disp_color for b in band])
     mag_errs_tmp = mag_errs
@@ -1145,8 +1135,6 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
     for p in photdata:
         dbmjd = date_to_mjd(p.obs_date)
         if p.flux and np.abs(p.flux) > 1e10: continue
-        #if p.data_quality:
-        #   continue            
 
         if p.flux or (not p.flux and p.mag):
             if p.discovery_point:
@@ -1157,9 +1145,6 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
             mag = np.append(mag,[p.mag])
             if p.mag_sys is None: magsys = np.append(magsys,['None'])
             else: magsys = np.append(magsys,[p.mag_sys])
-            #if p.data_quality is None: data_quality = np.append(data_quality,['Good'])
-            #else: data_quality = np.append(data_quality,[p.data_quality.name])
-
 
             dqs = p.data_quality.all()
             if not len(dqs):
