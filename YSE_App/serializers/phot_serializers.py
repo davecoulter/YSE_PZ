@@ -197,8 +197,8 @@ class TransientPhotDataSerializer(serializers.HyperlinkedModelSerializer):
 	band = serializers.HyperlinkedRelatedField(queryset=PhotometricBand.objects.all(), view_name='photometricband-detail', lookup_field="id")
 
 	unit = serializers.HyperlinkedRelatedField(queryset=Unit.objects.all(), allow_null=True, required=False, view_name='unit-detail')
-	data_quality = serializers.HyperlinkedRelatedField(queryset=DataQuality.objects.all(), allow_null=True, required=False, view_name='dataquality-detail')
-
+	data_quality = serializers.HyperlinkedRelatedField(queryset=DataQuality.objects.all(), many=True, view_name='dataquality-detail')
+    
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 	modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
 

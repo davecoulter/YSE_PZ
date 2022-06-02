@@ -10,7 +10,7 @@ class TransientSpectrumSerializer(serializers.HyperlinkedModelSerializer):
 	obs_group = serializers.HyperlinkedRelatedField(queryset=ObservationGroup.objects.all(), view_name='observationgroup-detail')
 	followup = serializers.HyperlinkedRelatedField(queryset=TransientFollowup.objects.all(), allow_null=True, required=False, view_name='transientfollowup-detail')
 	unit = serializers.HyperlinkedRelatedField(queryset=Unit.objects.all(), allow_null=True, required=False, view_name='unit-detail')
-	data_quality = serializers.HyperlinkedRelatedField(queryset=DataQuality.objects.all(), allow_null=True, required=False, view_name='dataquality-detail')
+	data_quality = serializers.HyperlinkedRelatedField(queryset=DataQuality.objects.all(), many=True, view_name='dataquality-detail')
 
 	groups = serializers.HyperlinkedRelatedField(queryset=Group.objects.all(), many=True, view_name='group-detail')
 	created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
