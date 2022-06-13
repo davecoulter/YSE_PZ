@@ -36,7 +36,7 @@ def main(transients=None):
         sc = [SkyCoord(t.ra,t.dec,unit=u.deg)]
         ghost_hosts = getTransientHosts([t.name], sc, verbose=True, starcut='gentle', ascentMatch=False)
         if not ghost_hosts.empty:
-            ghost_hosts = calc_photoz(ghost_hosts)
+            ghost_hosts = calc_photoz(ghost_hosts)[1]
             ghost_host = ghost_hosts[ghost_hosts['TransientName'] == t.name]
             if not len(ghost_host): ghost_host = None
             else:

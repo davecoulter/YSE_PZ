@@ -2394,6 +2394,8 @@
 	  	var rows = $("#ps1_image")
 	  	if (json["jpegurl"]) {
 	  	htmltext = "<a href=\"http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color\" class=\"ps1-thumb\" title=\"Link to PanSTARRS-1\" target=\"_blank\"><img src=\"" + json["jpegurl"] + "\" style='width:240px' alt=\"\" /></a>"
+		  } else if (json["msg"] = 'timeout') {
+		  	var htmltext = "<p class=\"text-muted\">Cutout server timed out</p>"
 		  } else {
 		  var htmltext = "<p class=\"text-muted\">Coordinates are outside the PS1 footprint</p>"
 	  	}

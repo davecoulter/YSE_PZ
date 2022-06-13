@@ -18,7 +18,7 @@ class Spectrum(BaseModel):
 
 	# Optional
 	unit = models.ForeignKey(Unit, null=True, blank=True, on_delete=models.CASCADE)
-	data_quality = models.ForeignKey(DataQuality, null=True, blank=True, on_delete=models.CASCADE)
+	data_quality = models.ManyToManyField(DataQuality, blank=True)
 	
 	### Properties ###
 	# Required
@@ -34,7 +34,8 @@ class Spectrum(BaseModel):
 	spectrum_notes = models.TextField(null=True, blank=True)
 
 	groups = models.ManyToManyField(Group, blank=True)
-
+	reference = models.CharField(max_length=512, null=True, blank=True)
+    
 class TransientSpectrum(Spectrum):
 	### Entity relationships ###
 	# Required

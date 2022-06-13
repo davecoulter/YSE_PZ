@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-
 import os
 from configparser import RawConfigParser
 
@@ -73,6 +72,7 @@ CRON_CLASSES = [
 	'YSE_App.data_ingest.QUB_data.YSE_Weekly',
 	'YSE_App.data_ingest.QUB_data.QUB',
 	'YSE_App.data_ingest.QUB_data.YSE_Stack',
+    'YSE_App.data_ingest.DECam_upload.DECam',
     'YSE_App.rapid.rapid_classify.rapid_classify_cron',
 	'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhot',
 	'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhotUpdate',
@@ -82,7 +82,8 @@ CRON_CLASSES = [
 	'YSE_App.data_ingest.TNS_uploads.TNS_recent_realtime',
     'YSE_App.data_ingest.QUB_data.CheckDuplicates',
     'YSE_App.data_ingest.PhotometryUploadExample.PhotometryUploads'
-    'YSE_App.data_ingest.ZTF_Forced_Phot_Cron.ForcedPhot'
+    'YSE_App.data_ingest.ZTF_Forced_Phot_Cron.ForcedPhot',
+    'YSE_App.data_ingest.TNS_uploads.UpdateGHOST'
 ]
 
 MIDDLEWARE = [
@@ -139,7 +140,7 @@ WSGI_APPLICATION = 'YSE_PZ.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-
+#import pymysql
 DATABASES = {
     'explorer': {
         'ENGINE': 'django.db.backends.mysql',
@@ -159,6 +160,8 @@ DATABASES = {
 		'OPTIONS': {'ssl': {'ssl_disabled': True}}
     }
 }
+#pymysql.version_info = (1, 4, 2, "final", 0)
+#pymysql.install_as_MySQLdb()
 
 EXPLORER_CONNECTIONS = { 'Explorer': 'explorer' }
 EXPLORER_DEFAULT_CONNECTION = 'explorer'

@@ -587,7 +587,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 
     transient = Transient.objects.get(pk=transient_id)
     photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
-        'created_by', 'modified_by', 'band', 'unit', 'data_quality',
+        'created_by', 'modified_by', 'band', 'unit',
         'photometry','band__instrument','band__instrument__telescope')
 
     if not photdata:
@@ -604,24 +604,24 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
     limmjd = None
     
     for p in photdata:
-        #dbflux,dbfluxerr,dbobsdate,dbmag,dbmagerr,dbdata_quality,dbdiscovery_point = \
-        #   p.flux,p.flux_err,p.obs_date,p.mag,p.mag_err,p.data_quality,p.discovery_point
         dbmjd = date_to_mjd(p.obs_date)
         if p.flux and np.abs(p.flux) > 1e10: continue
-        #if p.data_quality:
-        #   continue            
         
         if (p.flux and p.mag and p.flux_err and p.flux/p.flux_err > 3) or (not p.flux and p.mag):
             if p.discovery_point:
                 limmjd = dbmjd-30
-                
+
             mjd = np.append(mjd,[dbmjd])
             date = np.append(date,[p.obs_date.strftime('%m/%d/%Y')])
             mag = np.append(mag,[p.mag])
             if p.mag_sys is None: magsys = np.append(mag,['None'])
             else: magsys = np.append(mag,[p.mag_sys])
-            if p.data_quality is None: data_quality = np.append(data_quality,['Good'])
-            else: data_quality = np.append(data_quality,[p.data_quality.name])
+            dqs = p.data_quality.all()
+            if not len(dqs):
+                data_quality = np.append(data_quality,['Good'])
+            else:
+                data_quality = np.append(data_quality,[','.join(np.array([pdq.name for pdq in p.data_quality.all()]))])
+
             if p.mag_err: magerr = np.append(magerr,p.mag_err)
             else: magerr = np.append(magerr,0)
             bandstr = np.append(bandstr,str(p.band))
@@ -848,7 +848,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
     transient = Transient.objects.get(pk=transient_id)
     photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
-        'created_by', 'modified_by', 'band', 'unit', 'data_quality', 'photometry',
+        'created_by', 'modified_by', 'band', 'unit', 'photometry',
         'band__instrument','band__instrument__telescope').order_by('-modified_date')
     if not photdata:
         return django.http.HttpResponse('')
@@ -875,13 +875,11 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
     obs_dates = np.array(photdata.values_list('obs_date',flat=True))
     obs_dates_str = np.array([p.strftime('%m/%d/%Y') for p in photdata.values_list('obs_date',flat=True)])
     mjds = date_to_mjd(obs_dates)
-    data_quality = np.array(['Good' if p is None else p for p in photdata.values_list('data_quality__name',flat=True)])
+    data_quality = np.array(['Good' if p is None else ','.join(p.data_quality.values_list('name',flat=True)) for p in photdata])
     mag_sys = np.array(['None' if p is None else p for p in photdata.values_list('mag_sys__name',flat=True)])
     band = np.array(photdata.values_list('band',flat=True))
     band_name = np.array([PhotometricBand.objects.get(pk=b).name for b in band])
     instrument_name = np.array([PhotometricBand.objects.get(pk=b).instrument.name for b in band])
-    #band_name = np.array(photdata.values_list('band__name',flat=True))
-    #instrument_name = np.array(photdata.values_list('band__instrument__name',flat=True))
     disp_symbol = np.array([PhotometricBand.objects.get(pk=b).disp_symbol for b in band])
     disp_color = np.array([PhotometricBand.objects.get(pk=b).disp_color for b in band])
     mag_errs_tmp = mag_errs
@@ -1118,7 +1116,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 
     transient = Transient.objects.get(pk=transient_id)
     photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
-        'created_by', 'modified_by', 'band', 'unit', 'data_quality', 'photometry',
+        'created_by', 'modified_by', 'band', 'unit', 'photometry',
         'band__instrument','band__instrument__telescope')
     if not photdata:
         return django.http.HttpResponse('')
@@ -1137,8 +1135,6 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
     for p in photdata:
         dbmjd = date_to_mjd(p.obs_date)
         if p.flux and np.abs(p.flux) > 1e10: continue
-        #if p.data_quality:
-        #   continue            
 
         if p.flux or (not p.flux and p.mag):
             if p.discovery_point:
@@ -1149,8 +1145,13 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
             mag = np.append(mag,[p.mag])
             if p.mag_sys is None: magsys = np.append(magsys,['None'])
             else: magsys = np.append(magsys,[p.mag_sys])
-            if p.data_quality is None: data_quality = np.append(data_quality,['Good'])
-            else: data_quality = np.append(data_quality,[p.data_quality.name])
+
+            dqs = p.data_quality.all()
+            if not len(dqs):
+                data_quality = np.append(data_quality,['Good'])
+            else:
+                data_quality = np.append(data_quality,[','.join(np.array([pdq.name for pdq in p.data_quality.all()]))])
+
             if not p.flux or not p.flux_err:
                 flux_single = 10**(-0.4*(p.mag-27.5))
                 flux = np.append(flux,flux_single)
@@ -1612,7 +1613,7 @@ def spectrumplotsingle(request, transient_id, spec_id):
               y_range=(bottom, top))
     ax.line(np.sort(wave),np.array(flux)[np.argsort(wave)],color='black')
         
-    ax.title.text = "%s, %s, %s, Phase: %s, DQ: %s"%(transient.name,spectrum.obs_date.strftime('%m/%d/%Y'),spectrum.instrument,spectrum.spec_phase,spectrum.data_quality)
+    ax.title.text = "%s, %s, %s, Phase: %s, DQ: %s"%(transient.name,spectrum.obs_date.strftime('%m/%d/%Y'),spectrum.instrument,spectrum.spec_phase,','.join([d.name for d in spectrum.data_quality.all()]))
     ax.xaxis.axis_label = r'Wavelength (Angstrom)'
     ax.yaxis.axis_label = 'Flux'
     g = file_html(ax,CDN,"my plot")
@@ -1794,7 +1795,8 @@ def get_ps1_image(request,transient_id):
     ps1url = ("http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f+%.7f&filter=color" % (t.ra,t.dec))
     try:
         response = requests.get(url=ps1url,timeout=5)
-    except: return("")
+    except:
+        return(JsonResponse({"jpegurl":"","msg":"timeout"}))
     response_text = response.content.decode('utf-8')
     if "<td><img src=" in response.content.decode('utf-8'):
         jpegurl = response.content.decode('utf-8').split('<td><img src="')[1].split('" width="240" height="240" /></td>')[0]
@@ -1802,7 +1804,7 @@ def get_ps1_image(request,transient_id):
     else:
         jpegurl=""
 
-    jpegurldict = {"jpegurl":jpegurl}
+    jpegurldict = {"jpegurl":jpegurl,"msg":"success"}
     return(JsonResponse(jpegurldict))
 
 def get_hst_image(request,transient_id):

@@ -61,7 +61,7 @@ class PhotData(BaseModel):
 
 	# Optional
 	unit = models.ForeignKey(Unit, null=True, blank=True, on_delete=models.CASCADE)
-	data_quality = models.ForeignKey(DataQuality, null=True, blank=True, on_delete=models.CASCADE)
+	data_quality = models.ManyToManyField(DataQuality, blank=True)
 	mag_sys = models.ForeignKey(MagSystem, null=True, blank=True, on_delete=models.CASCADE)
 	zp_off = models.FloatField(null=True, blank=True)
 
