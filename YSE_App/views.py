@@ -235,7 +235,7 @@ SELECT pd.mag
    YSE_App_transient.id = t.id AND
    pd.id = (
          SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id
          ORDER BY pd2.obs_date DESC
          LIMIT 1
      )
