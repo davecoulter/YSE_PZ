@@ -107,7 +107,6 @@ def add_yse_survey_fields(request):
     return_dict = {"message":"success"}
     return JsonResponse(return_dict)
 
-
 @csrf_exempt
 @login_or_basic_auth_required
 def add_yse_survey_obs(request):
@@ -605,7 +604,6 @@ def add_gw_candidate(request):
 
     return JsonResponse(return_dict)
 
-
 def add_gw_candidate_util(gwdict,transient,user):
 
     if 'name' not in gwdict.keys():
@@ -683,7 +681,6 @@ def add_gw_candidate_util(gwdict,transient,user):
     return_dict = {"message":"GW success"}
     return JsonResponse(return_dict)
 
-
 def add_transient_host_util(hostdict,transient,user):
 
     if 'name' not in hostdict.keys():
@@ -737,7 +734,6 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
             instrument = Instrument.objects.filter(name='Unknown')
         instrument = instrument[0]
 
-
         obs_group = ObservationGroup.objects.filter(name=photometry['obs_group'])
         if not len(obs_group):
             obs_group = ObservationGroup.objects.filter(name='Unknown')
@@ -746,8 +742,8 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
         transientphot = TransientPhotometry.objects.filter(transient=transient).filter(instrument=instrument).filter(obs_group=obs_group)
         if not len(transientphot):
             transientphot = TransientPhotometry( #.objects.create
-                instrument=instrument,obs_group=obs_group,transient=transient,
-                created_by_id=user.id,modified_by_id=user.id)
+                instrument=instrument, obs_group=obs_group, transient=transient,
+                created_by_id=user.id, modified_by_id=user.id)
             transientphot_entries += [transientphot]
         else: transientphot = transientphot[0]
         existingphot = TransientPhotData.objects.filter(photometry=transientphot)
@@ -771,13 +767,15 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
                                 mjd = Time(e.obs_date,format='isot').mjd
                             if np.abs(mjd - pmjd) < photdict['mjdmatchmin']:
                                 obsExists = True
+
                                 if photdict['clobber']:
+
+                                    dq = None
                                     if p['data_quality']:
                                         dq = DataQuality.objects.filter(name=p['data_quality'])
                                         if not dq:
                                             dq = DataQuality.objects.filter(name='Bad')
                                         dq = dq[0]
-                                    else: dq = None
 
                                     e.obs_date = p['obs_date']
                                     e.flux = p['flux']
@@ -787,7 +785,13 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
                                     e.mag_err = p['mag_err']
                                     e.forced = p['forced']
                                     e.diffim = p['diffim']
-                                    e.data_quality = dq
+
+                                    # Because we're in CLOBBER mode, remove existing dq flags and add the one passed here.
+                                    data_quality_flags = e.data_quality.all()
+                                    for _dq in data_quality_flags:
+                                        e.data_quality.remove(_dq)
+                                    e.data_quality.add(dq)
+
                                     e.photometry = transientphot
                                     e.discovery_point = p['discovery_point']
                                     e.band = band
@@ -805,12 +809,13 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
 
 
                 if not obsExists:
+                    dq = None
                     if p['data_quality']:
                         dq = DataQuality.objects.filter(name=p['data_quality'])
                         if not dq:
                             dq = DataQuality.objects.filter(name='Bad')
                         dq = dq[0]
-                    else: dq = None
+
                     e = TransientPhotData.objects.create(
                         obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
                         mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
@@ -819,8 +824,10 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
                         flux_zero_point=p['flux_zero_point'],
                         discovery_point=p['discovery_point'],band=band,
                         created_by_id=user.id,modified_by_id=user.id)
+
                     if dq is not None:
-                        e.data_quality.set(dq)
+                        # Set operator needs a list...
+                        e.data_quality.set([dq])
                         e.save()
                     if 'diffimg' in p.keys():
                         p['diffimg']['created_by_id'] = user.id
@@ -830,7 +837,6 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
 
     return_dict = {"message":"successfully added phot data"}
     return JsonResponse(return_dict),transientphot_entries
-
 
 def add_transient_spec_util(specdict,transient,user):
 
@@ -858,13 +864,13 @@ def add_transient_spec_util(specdict,transient,user):
                 group = group[0]
                 allgroups += [group]
 
+        dq = None
         if 'data_quality' in spectrum.keys() and spectrum['data_quality']:
             dq = DataQuality.objects.filter(name=spectrum['data_quality'])
+
             if not dq:
                 dq = DataQuality.objects.filter(name='Bad')
-                dq = dq[0]
-            else: dq = None
-            spectrum['data_quality'] = dq
+            dq = dq[0]
 
         spectrum['instrument'] = instrument
         spectrum['obs_group'] = obs_group
@@ -880,8 +886,18 @@ def add_transient_spec_util(specdict,transient,user):
 
         if not len(transientspec):
             transientspec = TransientSpectrum.objects.create(**spectrum_copy)
+            # Need to use a set operation to associate many-to-many, also set takes an enumerable...
+            transientspec.data_quality.set([dq])
+            transientspec.save()
         else:
             if specdict['clobber']:
+
+                # Prior to updating the existing spectrum, we need to clear out dq flags to add the new dq flags
+                data_quality_flags = transientspec.data_quality.all()
+                for _dq in data_quality_flags:
+                    transientspec.data_quality.remove(_dq)
+                transientspec.data_quality.add(dq)
+
                 transientspec.update(**spectrum_copy)
                 #transientspec.save()
             transientspec = transientspec[0]
@@ -989,11 +1005,6 @@ def add_transient_phot(request):
                 transientphot.save()
 
     existingphot = TransientPhotData.objects.filter(photometry=transientphot)
-    #if hd['delete']:
-    #	for e in existingphot:
-    #		if e.photometry.id == transientphot.id:
-    #			e.delete()
-    #existingphot = TransientPhotData.objects.filter(photometry=transientphot)
 
     # loop through new, comp against existing
     for k in phot_data.keys():
@@ -1016,12 +1027,12 @@ def add_transient_phot(request):
                         obsExists = True
                         if hd['clobber']:
 
+                            dq = None
                             if p['data_quality']:
                                 dq = DataQuality.objects.filter(name=p['data_quality'])
                                 if not dq:
                                     dq = DataQuality.objects.filter(name='Bad')
                                 dq = dq[0]
-                            else: dq = None
 
                             e.obs_date = p['obs_date']
                             e.flux = p['flux']
@@ -1031,9 +1042,6 @@ def add_transient_phot(request):
                             e.mag_err = p['mag_err']
                             e.forced = p['forced']
                             e.diffim = p['diffim']
-
-                            # if dq is not None:
-                            #     e.data_quality.set(dq)
 
                             # Because we're in CLOBBER mode, remove existing dq flags and add the one passed here.
                             data_quality_flags = e.data_quality.all()
@@ -1048,12 +1056,12 @@ def add_transient_phot(request):
                             e.save()
 
         if not obsExists:
+            dq = None
             if p['data_quality']:
                 dq = DataQuality.objects.filter(name=p['data_quality'])
                 if not dq:
                     dq = DataQuality.objects.filter(name='Bad')
                 dq = dq[0]
-            else: dq = None
             tpd = TransientPhotData.objects.create(obs_date=p['obs_date'],flux=p['flux'],flux_err=p['flux_err'],
                                                    mag=p['mag'],mag_err=p['mag_err'],forced=p['forced'],
                                                    diffim=p['diffim'],
@@ -1116,13 +1124,12 @@ def add_transient_spec(request):
             return JsonResponse(return_dict)
         else: transient = transient[0]
 
+        dq = None
         if hd['data_quality']:
             dq = DataQuality.objects.filter(name=hd['data_quality'])
             if not dq:
                 dq = DataQuality.objects.filter(name='Bad')
-                dq = dq[0]
-        else: dq = None
-
+            dq = dq[0]
 
         # get the spectrum
         transientspec = TransientSpectrum.objects.filter(transient=transient).filter(instrument=instrument).filter(obs_group=obs_group).filter(obs_date=hd['obs_date'])
@@ -1134,13 +1141,19 @@ def add_transient_spec(request):
                 spec_phase=hd['spec_phase'],obs_date=hd['obs_date'],
                 created_by_id=user.id,modified_by_id=user.id)
             if dq is not None:
-                transientspec.data_quality.set(dq)
+                # set takes an enumerable
+                transientspec.data_quality.set([dq])
                 transientspec.save()
         else:
             transientspec = transientspec[0]
             if hd['clobber']:
                 if dq is not None:
-                    transientspec.data_quality.set(dq)
+                    # If dq flag exists and this is an existing spectrum, we need to remove the old DQ and add the new DQ
+                    data_quality_flags = transientspec.data_quality.all()
+                    for _dq in data_quality_flags:
+                        transientspec.data_quality.remove(_dq)
+                    transientspec.data_quality.add(dq)
+
                 transientspec.ra = hd['ra']
                 transientspec.dec = hd['dec']
                 transientspec.rlap = hd['rlap']
