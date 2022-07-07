@@ -254,5 +254,5 @@ if __name__ == "__main__":
         html_msg += "Error : %s"
         sendemail(from_addr, ys.options.dbemail, subject,
                   html_msg%(e),
-                  ys.options.SMTP_LOGIN, ys.options.dbpassword, smtpserver)
+                  ys.options.SMTP_LOGIN, ys.options.SMTP_PASSWORD, smtpserver)
     
