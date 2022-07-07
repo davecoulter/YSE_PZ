@@ -433,7 +433,7 @@ class DECam_clusters(CronJobBase):
                                                 'mag_err':mag_err,
                                                 'flux':lc['flux_c']*10**(0.4*(27.5-lc['ZPTMAG_c'])),
                                                 'flux_err':lc['dflux_c']*10**(0.4*(27.5-lc['ZPTMAG_c'])),
-                                                'data_quality':0,
+                                                'data_quality': 0,
                                                 'forced':1,
                                                 'discovery_point':0,
                                                 'flux_zero_point':27.5,
