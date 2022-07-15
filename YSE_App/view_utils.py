@@ -122,7 +122,8 @@ def get_recent_phot_for_transient(user, transient_id=None):
         return(None)
 
 def get_disc_mag_for_transient(user, transient_id=None):
-    photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id)
+    photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id,
+                                                                                   includeBadData=False)
 
     if photdata:
         photdata = photdata.order_by('-obs_date')
