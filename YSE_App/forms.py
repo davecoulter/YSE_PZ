@@ -199,12 +199,11 @@ class AddDashboardQueryForm(ModelForm):
 			'query','python_query']
 
 class RemoveDashboardQueryForm(ModelForm):
-	query = QueryModelChoiceField(Query.objects.all())
+	#query = QueryModelChoiceField(Query.objects.all())
 
 	class Meta:
 		model = UserQuery
-		fields = [
-			'id']
+		fields = ['id']
 
 class AddFollowupNoticeForm(ModelForm):
 	telescope = QueryModelChoiceField(Telescope.objects.all())

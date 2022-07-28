@@ -124,6 +124,7 @@ default_forcedphot_header['STAGE']    = 'WSdiff  '
 default_forcedphot_header['EMAIL']    = 'yse@qub.ac.uk'
 
 from astropy.visualization import PercentileInterval, AsinhStretch
+from tendo import singleton
 
 def fits_to_png(ff,outfile,log=False):
     plt.clf()
@@ -179,36 +180,52 @@ class ForcedPhot(CronJobBase):
             print('debug mode enabled')
     
     def do(self):
-        self.debug = False
+        code = 'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhot'
         
+        self.debug = False
+
+        # options
+        parser = self.add_options(usage='')
+        options,  args = parser.parse_known_args()
+        config = configparser.ConfigParser()
+        config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+        parser = self.add_options(usage='',config=config)
+        options,  args = parser.parse_known_args()
+        self.options = options
+
+        # in case of code failures
+        smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+        from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+        subject = "YSE_PZ Forced Photometry Upload Failure"
+        html_msg = "Alert : YSE_PZ Forced Photometry Failed to upload transients in YSE_Forced_Phot.py\n"
+        html_msg += "Error : %s"
+
+        # check for instance of code already running
+        try:
+            me = singleton.SingleInstance(flavor_id="10")
+        except singleton.SingleInstanceException:
+            print("Sending error email")
+            sendemail(from_addr, options.dbemail, subject,
+                      f"multiple instances of {code} are running",
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+            sys.exit(1)        
+
         try:
             tstart = time.time()
-        
-            parser = self.add_options(usage='')
-            options,  args = parser.parse_known_args()
 
-            config = configparser.ConfigParser()
-            config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
-            parser = self.add_options(usage='',config=config)
-            options,  args = parser.parse_known_args()
-            self.options = options
             #nsn = self.doall_main()
             nsn = self.main()
+            print('success')
         except Exception as e:
             print(e)
             exc_type, exc_obj, exc_tb = sys.exc_info()
             print("""Forced phot cron failed with error %s at line number %s"""%(
                 e,exc_tb.tb_lineno))
             nsn = 0
-            smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
-            from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-            subject = "YSE_PZ Forced Photometry Upload Failure"
             print("Sending error email")
-            html_msg = "Alert : YSE_PZ Forced Photometry Failed to upload transients in YSE_Forced_Phot.py\n"
-            html_msg += "Error : %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e),
-                      options.SMTP_LOGIN, options.dbpassword, smtpserver)
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
         print('YSE_PZ Forced Photometry took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
@@ -250,6 +267,8 @@ class ForcedPhot(CronJobBase):
                               help='database login, if post=True (default=%default)')
             parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
                               help='database password, if post=True (default=%default)')
+            parser.add_argument('--dbemailpassword', default=config.get('main','dbemailpassword'), type=str,
+                                help='database password, if post=True (default=%default)')
             parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
                               help='URL to POST transients to a database (default=%default)')
 
@@ -316,6 +335,7 @@ class ForcedPhot(CronJobBase):
                     warp_id_list += [s.warp_id]
                     mjd_list += [s.obs_mjd]
                     filt_list += [s.photometric_band.name]
+
         nt = len(np.unique(transient_list))
         print('{} transients to upload!'.format(nt))
         if nt == 0: return 0
@@ -378,7 +398,6 @@ class ForcedPhot(CronJobBase):
             if done_stamp: jobs_done = True
         if not success_stamp:
             pass
-            #import pdb; pdb.set_trace()
 
             #raise RuntimeError('jobs failed!')
         if not jobs_done:
@@ -856,7 +875,7 @@ class ForcedPhotUpdate(CronJobBase):
     RUN_EVERY_MINS = 30
 
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
-    code = 'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhot'
+    code = 'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhotUpdate'
 
     def __init__(self):
         
@@ -865,20 +884,41 @@ class ForcedPhotUpdate(CronJobBase):
             print('debug mode enabled')
     
     def do(self):
+        code = 'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhotUpdate'
+        
         self.debug = False
+
+        # code options
+        fp = ForcedPhot()
+        parser = fp.add_options(usage='')
+        options,  args = parser.parse_known_args()
+
+        config = configparser.ConfigParser()
+        config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+        parser = fp.add_options(usage='',config=config)
+        options,  args = parser.parse_known_args()
+        fp.options = options
+
+        # in case of code failures
+        smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+        from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+        subject = "YSE_PZ Forced Photometry Upload Failure"
+        html_msg = "Alert : YSE_PZ Forced Photometry Failed to upload transients in YSE_Forced_Phot.py\n"
+        html_msg += "Error : %s"
+        
+        # check for instance of code already running
+        try:
+            me = singleton.SingleInstance(flavor_id="11")
+        except singleton.SingleInstanceException:
+            print("Sending error email")
+            sendemail(from_addr, options.dbemail, subject,
+                      f"multiple instances of {code} are running",
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+            sys.exit(1)        
+
         
         try:
             tstart = time.time()
-
-            fp = ForcedPhot()
-            parser = fp.add_options(usage='')
-            options,  args = parser.parse_known_args()
-
-            config = configparser.ConfigParser()
-            config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
-            parser = fp.add_options(usage='',config=config)
-            options,  args = parser.parse_known_args()
-            fp.options = options
 
             nsn = fp.main(update_forced=True)
         except Exception as e:
@@ -887,15 +927,10 @@ class ForcedPhotUpdate(CronJobBase):
             print("""Forced phot cron failed with error %s at line number %s"""%(
                 e,exc_tb.tb_lineno))
             nsn = 0
-            smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
-            from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-            subject = "YSE_PZ Forced Photometry Upload Failure"
             print("Sending error email")
-            html_msg = "Alert : YSE_PZ Forced Photometry Failed to upload transients in YSE_Forced_Phot.py\n"
-            html_msg += "Error : %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e),
-                      options.SMTP_LOGIN, options.dbpassword, smtpserver)
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
         print('YSE_PZ Forced Photometry took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
