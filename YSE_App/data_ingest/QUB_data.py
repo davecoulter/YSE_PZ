@@ -25,6 +25,7 @@ import dateutil
 from django.db.models import Q
 from YSE_App.models import Transient, TransientTag
 import sys
+from tendo import singleton
 
 from string import ascii_lowercase
 import itertools
@@ -122,6 +123,8 @@ class QUB(CronJobBase):
 
     def do(self):
 
+        code = 'YSE_App.data_ingest.QUB_data.QUB'
+        
         usagestring = "TNS_Synopsis.py <options>"
 
         tstart = time.time()
@@ -139,17 +142,29 @@ class QUB(CronJobBase):
         self.options = options
         #tnsproc.hostmatchrad = options.hostmatchrad
 
+        # in case of code failures
+        smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+        from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+        subject = "QUB Transient Upload Failure"
+        html_msg = "Alert : YSE_PZ Failed to upload transients from PSST in QUB_data.py\n"
+        html_msg += "Error : %s"
+        
+        # check for instance of code already running
+        try:
+            me = singleton.SingleInstance(flavor_id="7")
+        except singleton.SingleInstanceException:
+            print("Sending error email")
+            sendemail(from_addr, options.dbemail, subject,
+                      f"multiple instances of {code} are running",
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+            sys.exit(1)
+        
         try:
             nsn = self.main()
         except Exception as e:
             print(e)
             nsn = 0
-            smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
-            from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-            subject = "QUB Transient Upload Failure"
             print("Sending error email")
-            html_msg = "Alert : YSE_PZ Failed to upload transients from PSST in QUB_data.py\n"
-            html_msg += "Error : %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e),
                       options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
@@ -449,33 +464,50 @@ class YSE(CronJobBase):
 
     def do(self):
 
+        code = 'YSE_App.data_ingest.QUB_data.YSE'
+        
         print("starting YSE ingest at {}".format(datetime.datetime.now().isoformat()))
         usagestring = "TNS_Synopsis.py <options>"
 
         tstart = time.time()
 
+        # code options
+        parser = self.add_options(usage=usagestring)
+        options,  args = parser.parse_known_args()
+
+        config = configparser.ConfigParser()
+        config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+        parser = self.add_options(usage=usagestring,config=config)
+        options,  args = parser.parse_known_args()
+        self.options = options
+
+        
+        # in case of code errors
+        smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+        from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+        subject = "QUB Transient Upload Failure"
+        html_msg = "Alert : YSE_PZ Failed to upload transients from YSE in QUB_data.py\n"
+        html_msg += "Error : %s"
+
+        # check for instance of code already running
+        try:
+            me = singleton.SingleInstance(flavor_id="8")
+        except singleton.SingleInstanceException:
+            print("Sending error email")
+            sendemail(from_addr, options.dbemail, subject,
+                      f"multiple instances of {code} are running",
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+            sys.exit(1)
+        
+        
         # read in the options from the param file and the command line
         # some convoluted syntax here, making it so param file is not required
         try:
-            parser = self.add_options(usage=usagestring)
-            options,  args = parser.parse_known_args()
-
-            config = configparser.ConfigParser()
-            config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
-            parser = self.add_options(usage=usagestring,config=config)
-            options,  args = parser.parse_known_args()
-            self.options = options
-
             nsn = self.main()
         except Exception as e:
             print(e)
             nsn = 0
-            smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
-            from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-            subject = "QUB Transient Upload Failure"
             print("Sending error email")
-            html_msg = "Alert : YSE_PZ Failed to upload transients from YSE in QUB_data.py\n"
-            html_msg += "Error : %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e),
                       options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
