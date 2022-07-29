@@ -139,7 +139,7 @@ typeguard==2.12.1
 typing-extensions==3.7.4.3
 unicodecsv==0.14.1
 uritemplate==3.0.0
-urllib3==1.22
+urllib3==1.26.5
 wcwidth==0.2.5
 webencodings==0.5.1
 Werkzeug==2.0.1
