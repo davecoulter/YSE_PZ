@@ -1,5 +1,6 @@
+from django.db.models.query import EmptyQuerySet
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse, HttpResponseNotFound
 from django.conf import settings as djangoSettings
 from django.template import loader
 from django.views import generic
@@ -130,33 +131,40 @@ def personaldashboard(request):
 
     queries = UserQuery.objects.filter(user = request.user)
     tables = []
+
     for q in queries:
+        transients = []
         if q.query:
-            if 'yse_app_transient' not in q.query.sql.lower(): continue
-            if 'name' not in q.query.sql.lower(): continue
-            if not q.query.sql.lower().startswith('select'): continue
-            cursor = connections['explorer'].cursor()
-            cursor.execute(q.query.sql.replace('%','%%'), ())
-            transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
-            cursor.close()
+            try:
+                if 'yse_app_transient' not in q.query.sql.lower(): continue
+                if 'name' not in q.query.sql.lower(): continue
+                if not q.query.sql.lower().startswith('select'): continue
 
-            transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.query.title.replace(' ',''))
-            table = TransientTable(transientfilter.qs,prefix=q.query.title.replace(' ',''))
-            RequestConfig(request, paginate={'per_page': 10}).configure(table)
-            tables += [(table,q.query.title,q.query.title.replace(' ',''),transientfilter,q.id,len(transients))]
+                cursor = connections['explorer'].cursor()
+                cursor.execute(q.query.sql.replace('%','%%'), ())
+                transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+                cursor.close()
 
+                transientfilter = TransientFilter(request.GET, queryset=transients, prefix=q.query.title.replace(' ',''))
+                table = TransientTable(transientfilter.qs, prefix=q.query.title.replace(' ',''))
+                RequestConfig(request, paginate={'per_page': 10}).configure(table)
+                tables += [(table, q.query.title, q.query.title.replace(' ', ''), transientfilter, q.id, len(transients))]
+            except:
+                # Query bombed
+                tables += [(Transient.objects.none(), q.query.title + ' [QUERY ID %s IS BROKEN]' % q.query_id, q.query.title.replace(' ', ''), Transient.objects.none(), q.id, len(transients))]
+                pass
         elif q.python_query:
-            transients = getattr(yse_python_queries,q.python_query)()
+            transients = getattr(yse_python_queries, q.python_query)()
 
             transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.python_query)
             table = TransientTable(transientfilter.qs,prefix=q.python_query)
             RequestConfig(request, paginate={'per_page': 10}).configure(table)
-            tables += [(table,q.python_query,q.python_query,transientfilter,q.id,len(transients))]
-
+            tables += [(table,q.python_query, q.python_query, transientfilter, q.id, len(transients))]
             
     if request.META['QUERY_STRING']:
         anchor = request.META['QUERY_STRING'].split('-')[0]
-    else: anchor = ''
+    else:
+        anchor = ''
 
     context = {
         'user':request.user,
@@ -177,6 +185,8 @@ def transient_summary(request,status_or_query_name,
                       page_template='YSE_App/transient_summary_individual.html'):
 
     # Status update properties
+    transients = []
+
     all_transient_statuses = TransientStatus.objects.all()
     transient_status_follow = TransientStatus.objects.get(name="Following")
     transient_status_followrequest = TransientStatus.objects.get(name="FollowupRequested")
@@ -200,24 +210,32 @@ def transient_summary(request,status_or_query_name,
     else:
         query = Query.objects.filter(title=unquote(status_or_query_name))
         if len(query):
-            query = query[0]
-            if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
-            if 'name' not in query.sql.lower(): return Http404('Invalid Query')
-            if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
-            cursor = connections['explorer'].cursor()
-            cursor.execute(query.sql.replace('%','%%'), ())
-            transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
-            cursor.close()
+
+            try:
+                query = query[0]
+                if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
+                if 'name' not in query.sql.lower(): return Http404('Invalid Query')
+                if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
+                cursor = connections['explorer'].cursor()
+                cursor.execute(query.sql.replace('%','%%'), ())
+                transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+                cursor.close()
+            except:
+                # Query bombed
+                pass
         else:
             query = UserQuery.objects.filter(python_query = unquote(status_or_query_name))
-            if not len(query): return Http404('Invalid Query')
+            if not len(query):
+                return HttpResponseNotFound("Invalid Query")
             query = query[0]
             transients = getattr(yse_python_queries,query.python_query)()
 
     if 'sort' in request.GET.keys():
         if request.GET['sort'] == 'last_obs_date' or request.GET['sort'] == '-last_obs_date':
-            if request.GET['sort'] == '-last_obs_date': is_descending = True
-            else: is_descending = False
+            if request.GET['sort'] == '-last_obs_date':
+                is_descending = True
+            else:
+                is_descending = False
             
             all_phot = TransientPhotometry.objects.values('transient').filter(transient__in = transients)
             phot_ids = all_phot.values('id')
@@ -1485,12 +1503,18 @@ def upload_spectrum(request):
 @login_or_basic_auth_required
 def change_status_for_query(request, query_id, status_id):
 
+    transients = []
     q = UserQuery.objects.get(pk=query_id)
     if q.query:
-        cursor = connections['explorer'].cursor()
-        cursor.execute(q.query.sql.replace('%','%%'), ())
-        transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
-        cursor.close()
+        try:
+            cursor = connections['explorer'].cursor()
+            cursor.execute(q.query.sql.replace('%', '%%'), ())
+            transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+            cursor.close()
+        except:
+            # Query bombed
+            pass
+
 
     elif q.python_query:
         transients = getattr(yse_python_queries,q.python_query)()

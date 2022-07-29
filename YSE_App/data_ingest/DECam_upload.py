@@ -132,7 +132,7 @@ class DECam(CronJobBase):
             from_addr = "%s@gmail.com" % options.SMTP_LOGIN
             subject = "QUB Transient Upload Failure"
             print("Sending error email")
-            html_msg = "Alert : YSE_PZ Failed to upload transients from PSST in QUB_data.py\n"
+            html_msg = "Alert : YSE_PZ Failed to upload transients from DECam in DECam_upload.py\n"
             html_msg += "Error : %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e),
@@ -244,143 +244,143 @@ class DECam(CronJobBase):
             tables = soup.find_all("table", attrs={"cols":"6","border":"1"})
             #table = soup.find("table", attrs={"cols":"6","border":"1"}) #,"CELLSPACING":"0","CELLPADDING":"2"})  #, attrs={"class":"details"})
             #headings = [th.get_text() for th in table.find("tr").find_all("th")]
-            
+            if not len(tables): continue
             for table in tables:
                 data = at.Table.read(str(table).\
                                      replace('<table align="center" border="1" cellpadding="2" cellspacing="0" cols="6" width="100%">',
                                              '<table align="center" border="1" cellpadding="2" cellspacing="0" cols="6" width="100%"><tr>'),
                                      format='html',names=('rowname','rowval'))
 
-            # get RA/Dec
-            ra = data['rowval'][data['rowname'] == 'RA'][0]
-            dec = data['rowval'][data['rowname'] == 'Dec'][0]
-            candid = data['rowval'][data['rowname'] == 'ID'][0]
-            if candid != candid_toupload: continue
+                # get RA/Dec
+                ra = data['rowval'][data['rowname'] == 'RA'][0]
+                dec = data['rowval'][data['rowname'] == 'Dec'][0]
+                candid = data['rowval'][data['rowname'] == 'ID'][0]
+                if candid != candid_toupload: continue
 
-            field = url_single.split('/')[-2]
-            tname = f"{field.replace('.','_')}_cand{candid}"  #
-            print(f'trying to upload data for transient {tname}')
-            
-            transient_exists = False
-            sc = None
-            if tname in etdict.keys():
-                transient_exists = True
-                dict_name = tname[:]
-            else:
-                sc = SkyCoord([ra],[dec],unit=(u.hour,u.deg))
-                sep_arcsec = scexisting.separation(sc).arcsec
-                if np.min(sep_arcsec) < 2:
+                field = url_single.split('/')[-2]
+                tname = f"{field.replace('.','_')}_cand{candid}"  #
+                print(f'trying to upload data for transient {tname}')
+
+                transient_exists = False
+                sc = None
+                if tname in etdict.keys():
                     transient_exists = True
-                    dict_name = dict_names[sep_arcsec == np.min(sep_arcsec)][0]
-                    print(f'transient {tname} is called {dict_name} on YSE-PZ!')
-            if transient_exists:
-                print(f'transient {tname} is already on YSE-PZ!  I will ignore metadata queries')
-
-            lcurlbase = '/'.join(url_single.split('/')[:-1])
-            lcurldatebase = '/'.join(url_single.split('/')[:-2])
-            rdatetext = requests.get(lcurldatebase).text
-            rdate = rdatetext.split('Last updated :')[-1].split('\n')[0]
-            date_updated = dateutil.parser.parse(rdate)
-            if (nowdate-date_updated).days > self.options.max_decam_days: continue
-
-            
-            # get the lightcurve file
-            lcr = requests.get(f"{lcurlbase}/{field}_cand{candid}.difflc.txt")
-            if lcr.status_code != 200:
-                lcr = requests.get(f"{lcurlbase}/{field}_cand{candid}.forced.difflc.txt")
-            lcdata = at.Table.read(lcr.text,format='ascii')
-
-            # is the most recent photometry greater than what exists on YSE-PZ?
-            if transient_exists:
-                tdate = dateutil.parser.parse(mjd_to_date(np.max(lcdata['MJD'])))
-                ysedate = dateutil.parser.parse(etdict[dict_name]['obs_date'])
-                if ysedate < tdate + datetime.timedelta(0.1):
-                    print(f'the latest data for transient {tname} already exists on YSE-PZ!  skipping...')
-                    continue
-                
-            # some metadata
-            if not transient_exists:
-                # only do this if YSE-PZ doesn't already have the transient!
-                if sc is None:
-                    sc = SkyCoord([ra],[dec],unit=(u.hour,u.deg))
-                mw_ebv = float('%.3f'%(sfd(sc[0])*0.86))
-                try:
-                    ps_prob = get_ps_score(sc[0].ra.deg,sc[0].dec.deg)
-                except:
-                    ps_prob = None
-
-                # run GHOST
-                try:
-                    ghost_hosts = getTransientHosts(
-                        ['tmp'+candid],[SkyCoord(ra,dec,unit=(u.hour,u.deg))], verbose=True, starcut='gentle', ascentMatch=False)
-                    ghost_hosts = calc_photoz(ghost_hosts)
-                except:
-                    ghost_hosts = None
-
-                if ghost_hosts is not None:
-                    ghost_host = ghost_hosts[ghost_hosts['TransientName'] == candid]
-                    if not len(ghost_host): ghost_host = None
+                    dict_name = tname[:]
                 else:
-                    ghost_host = None
-            else: ghost_host = None
+                    sc = SkyCoord([ra],[dec],unit=(u.hour,u.deg))
+                    sep_arcsec = scexisting.separation(sc).arcsec
+                    if np.min(sep_arcsec) < 2:
+                        transient_exists = True
+                        dict_name = dict_names[sep_arcsec == np.min(sep_arcsec)][0]
+                        print(f'transient {tname} is called {dict_name} on YSE-PZ!')
+                if transient_exists:
+                    print(f'transient {tname} is already on YSE-PZ!  I will ignore metadata queries')
 
-            # get photometry
-            tdict = {'name':tname,
-                     'ra':sc[0].ra.deg,
-                     'dec':sc[0].dec.deg,
-                     'obs_group':'YSE',
-                     'status':self.options.status,
-                     #'disc_date':None,
-                     'tags':['DECAT']}
-            if not transient_exists:
-                tdict['point_source_probability'] = ps_prob
-                tdict['mw_ebv'] = mw_ebv
-                
-            if ghost_host is not None:
-                hostdict,hostcoords = self.getGHOSTData(sc,ghost_host)
-                tdict['host'] = hostdict
-                tdict['candidate_hosts'] = hostcoords
+                lcurlbase = '/'.join(url_single.split('/')[:-1])
+                lcurldatebase = '/'.join(url_single.split('/')[:-2])
+                rdatetext = requests.get(lcurldatebase).text
+                rdate = rdatetext.split('Last updated :')[-1].split('\n')[0]
+                date_updated = dateutil.parser.parse(rdate)
+                if (nowdate-date_updated).days > self.options.max_decam_days: continue
 
 
-            PhotUploadAll = {"mjdmatchmin":0.01,
-                             "clobber":self.options.clobber}
-            photometrydict = {'instrument':'DECam',
-                              'obs_group':'YSE',
-                              'photdata':{}}
+                # get the lightcurve file
+                lcr = requests.get(f"{lcurlbase}/{field}_cand{candid}.difflc.txt")
+                if lcr.status_code != 200:
+                    lcr = requests.get(f"{lcurlbase}/{field}_cand{candid}.forced.difflc.txt")
+                lcdata = at.Table.read(lcr.text,format='ascii')
 
-            for j,lc in enumerate(lcdata):
+                # is the most recent photometry greater than what exists on YSE-PZ?
+                if transient_exists:
+                    tdate = dateutil.parser.parse(mjd_to_date(np.max(lcdata['MJD'])))
+                    ysedate = dateutil.parser.parse(etdict[dict_name]['obs_date'])
+                    if ysedate < tdate + datetime.timedelta(0.1):
+                        print(f'the latest data for transient {tname} already exists on YSE-PZ!  skipping...')
+                        continue
 
-                try:
-                    mag = float(lc['m'])
-                    mag_err = float(lc['dm'])
-                except:
-                    mag = None
-                    mag_err = None
-                
-                phot_upload_dict = {'obs_date':mjd_to_date(lc['MJD']),
-                                    'band':lc['filt'],
-                                    'groups':['YSE'],
-                                    'mag':mag,
-                                    'mag_err':mag_err,
-                                    'flux':lc['flux_c']*10**(0.4*(27.5-lc['ZPTMAG_c'])),
-                                    'flux_err':lc['dflux_c']*10**(0.4*(27.5-lc['ZPTMAG_c'])),
-                                    'data_quality':0,
-                                    'forced':1,
-                                    'discovery_point':0,
-                                    'flux_zero_point':27.5,
-                                    'diffim':1}
+                # some metadata
+                if not transient_exists:
+                    # only do this if YSE-PZ doesn't already have the transient!
+                    if sc is None:
+                        sc = SkyCoord([ra],[dec],unit=(u.hour,u.deg))
+                    mw_ebv = float('%.3f'%(sfd(sc[0])*0.86))
+                    try:
+                        ps_prob = get_ps_score(sc[0].ra.deg,sc[0].dec.deg)
+                    except:
+                        ps_prob = None
 
-                photometrydict['photdata']['%s_%i'%(mjd_to_date(lc['MJD']),j)] = phot_upload_dict
+                    # run GHOST
+                    try:
+                        ghost_hosts = getTransientHosts(
+                            ['tmp'+candid],[SkyCoord(ra,dec,unit=(u.hour,u.deg))], verbose=True, starcut='gentle', ascentMatch=False)
+                        ghost_hosts = calc_photoz(ghost_hosts)
+                    except:
+                        ghost_hosts = None
 
-            PhotUploadAll['DECam'] = photometrydict
-            transientdict[tname] = tdict
-            transientdict[tname]['transientphotometry'] = PhotUploadAll
-            count += 1
+                    if ghost_hosts is not None:
+                        ghost_host = ghost_hosts[ghost_hosts['TransientName'] == candid]
+                        if not len(ghost_host): ghost_host = None
+                    else:
+                        ghost_host = None
+                else: ghost_host = None
 
-            if not count % 10:
-                # do the uploads
-                self.send_data(transientdict)
-                transientdict = {}
+                # get photometry
+                tdict = {'name':tname,
+                         'ra':sc[0].ra.deg,
+                         'dec':sc[0].dec.deg,
+                         'obs_group':'YSE',
+                         'status':self.options.status,
+                         #'disc_date':None,
+                         'tags':['DECAT']}
+                if not transient_exists:
+                    tdict['point_source_probability'] = ps_prob
+                    tdict['mw_ebv'] = mw_ebv
+
+                if ghost_host is not None:
+                    hostdict,hostcoords = self.getGHOSTData(sc,ghost_host)
+                    tdict['host'] = hostdict
+                    tdict['candidate_hosts'] = hostcoords
+
+
+                PhotUploadAll = {"mjdmatchmin":0.01,
+                                 "clobber":self.options.clobber}
+                photometrydict = {'instrument':'DECam',
+                                  'obs_group':'YSE',
+                                  'photdata':{}}
+
+                for j,lc in enumerate(lcdata):
+
+                    try:
+                        mag = float(lc['m'])
+                        mag_err = float(lc['dm'])
+                    except:
+                        mag = None
+                        mag_err = None
+
+                    phot_upload_dict = {'obs_date':mjd_to_date(lc['MJD']),
+                                        'band':lc['filt'],
+                                        'groups':['YSE'],
+                                        'mag':mag,
+                                        'mag_err':mag_err,
+                                        'flux':lc['flux_c']*10**(0.4*(27.5-lc['ZPTMAG_c'])),
+                                        'flux_err':lc['dflux_c']*10**(0.4*(27.5-lc['ZPTMAG_c'])),
+                                        'data_quality':0,
+                                        'forced':1,
+                                        'discovery_point':0,
+                                        'flux_zero_point':27.5,
+                                        'diffim':1}
+
+                    photometrydict['photdata']['%s_%i'%(mjd_to_date(lc['MJD']),j)] = phot_upload_dict
+
+                PhotUploadAll['DECam'] = photometrydict
+                transientdict[tname] = tdict
+                transientdict[tname]['transientphotometry'] = PhotUploadAll
+                count += 1
+
+                if not count % 10:
+                    # do the uploads
+                    self.send_data(transientdict)
+                    transientdict = {}
 
         self.send_data(transientdict)
                     

@@ -1,0 +1,16 @@
+FROM davecoulter/yse_pz_web:0.2.0
+LABEL description="Ubuntu image for YSEPZ v0.2.0"
+LABEL maintainer="Dave Coulter (dcoulter@ucsc.edu)"
+
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update --fix-missing && \
+pip install --upgrade pip
+
+WORKDIR /app
+
+COPY requirements.txt /app/requirements.txt
+RUN pip install -r /app/requirements.txt
+
+RUN apt-get clean && \
+rm -rf /var/lib/apt/lists/*
