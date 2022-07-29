@@ -15,7 +15,7 @@ from urllib.parse import unquote
 from django.utils import timezone
 from astropy.time import Time
 from django.core import serializers
-from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse, HttpResponseNotFound
 
 @login_required
 def select_yse_fields(request):
@@ -108,6 +108,7 @@ def return_serialized_transients(request):
 @login_required
 def yse_sky(request):
 
+    transients = []
     viewContent = {}
 
     # set up the table
@@ -184,9 +185,9 @@ def yse_sky(request):
 
     # posts have been dealt with, now do the usual processing
     # sets the default form values (this should be done always)
-    coordForm = yse_forms.CoordForm(initial={'raCenter':fov.raCenter,
-                                             'decCenter':fov.decCenter,
-                                             'fovWidth':fov.fovWidth})
+    coordForm = yse_forms.CoordForm(initial={'raCenter': fov.raCenter,
+                                             'decCenter': fov.decCenter,
+                                             'fovWidth': fov.fovWidth})
     viewContent['coordForm'] = coordForm
 
     # set up a transient query
@@ -195,19 +196,24 @@ def yse_sky(request):
         query = Query.objects.filter(title=unquote(query_name))
         title = unquote(query_name)
         if len(query):
-            query = query[0]
-            if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
-            if 'name' not in query.sql.lower(): return Http404('Invalid Query')
-            if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
-            cursor = connections['explorer'].cursor()
-            cursor.execute(query.sql.replace('%','%%'), ())
-            transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
-            cursor.close()
+            try:
+                query = query[0]
+                if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
+                if 'name' not in query.sql.lower(): return Http404('Invalid Query')
+                if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
+                cursor = connections['explorer'].cursor()
+                cursor.execute(query.sql.replace('%','%%'), ())
+                transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+                cursor.close()
+            except:
+                # Query bombed
+                pass
         else:
             query = UserQuery.objects.filter(python_query = unquote(query_name))
-            if not len(query): return Http404('Invalid Query')
+            if not len(query):
+                return HttpResponseNotFound("Invalid Query")
             query = query[0]
-            transients = getattr(yse_python_queries,query.python_query)()
+            transients = getattr(yse_python_queries, query.python_query)()
     else:
         transients = Transient.objects.filter(~Q(status__name = 'Ignore'))
         title = 'Transients with Any Status Except Ignore'
@@ -226,11 +232,14 @@ SELECT pd.mag
      )
 """
 
-    transients = transients.annotate(recent_mag=RawSQL(recent_mag_raw_query,()))
+    if len(transients) > 0:
+        transients = transients.annotate(recent_mag=RawSQL(recent_mag_raw_query,()))
 
     days_from_disc_query = """SELECT DATEDIFF(curdate(), t.disc_date) as days_since_disc
 FROM YSE_App_transient t WHERE YSE_App_transient.id = t.id"""
-    transients = transients.annotate(days_since_disc=RawSQL(days_from_disc_query,())).order_by('-days_since_disc')
+
+    if len(transients) > 0:
+        transients = transients.annotate(days_since_disc=RawSQL(days_from_disc_query,())).order_by('-days_since_disc')
 
     #	nearbytransientfilter = RisingTransientFilter(request.GET, queryset=nearby_transients,prefix='ysenearby')
     transientfilter = RisingTransientFilter(request.GET, queryset=transients,prefix='default')
