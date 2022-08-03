@@ -2,7 +2,7 @@ version: '2'
 services:
     web:
         container_name: ysepz_web_container
-        image: "davecoulter/yse_pz_web:latest"
+        image: "ghcr.io/davecoulter/yse_pz:latest"
         volumes:
             - ${VOL}:/app
             - ./entrypoints:/app/Entrypoints
