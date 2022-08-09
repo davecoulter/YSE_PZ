@@ -4,20 +4,21 @@ In this directory you will add a .env settings file:
 
 The contents should be structured like:
 
-    VOL=<local path to the root of this repo -- will be mapped to /app in the docker web img>
-    VOL_DB=<local path to the mysql files, e.g.: "local proj path/docker_mysql/8.0">
-    VOL_DB_CONFIG=<local path to the db config file, e.g.: "local proj path/db_configuration">
-    DB_PWD=<root db pwd>
-    REL_DB_CONFIG=/opt/project/db_configuration
-    STATIC_VOL=<path YSE_PZ app's static directory>
-    DB_INIT=<path to "DatabaseInitialization" directory>
+    VOL=<this should point to the fully qualified local root of the repo>
+    VOL_DB=<you can define this path wherever you want, but within that path needs to be [wherever]/docker_mysql/8.0>8.0
+    DB_PWD=<a root DB pwd that you choose>
+    STATIC_VOL=<this is the fully qualified path to the /static folder in the app. Ex: [your local root pro path]/YSE_PZ/static >
+    LOCAL_DB_PORT=<whatever local port you want to use to serve MySQL Server. Default is 3306>
+    LOCAL_HTTP_PORT=<whatever local HTTP port you want to use to serve the web app via nginx. Default is 80>
 
 
 TO UPDATE PACKAGES AND/OR GENERATE A NEW WEB DOCKER IMAGE:
-Add you requirements file to build a new web image at ./Requirements/. Naming conventions should be:
+Add your pip package to the `requirements.web.dev` like:
 
-    ./Requirements/requirements_1.txt
-    ./Requirements/requirements_2.txt
-...
+    <package name>==<package version>
 
-However, you should only need 1 file unless you have conflicting dependencies.
+Next, use docker-compose to bring up `docker-compose.dev.yml` instead of the default docker-compose.yml like:
+
+   Docker-compose -f docker-compose.dev.yml up
+
+This should build the Dockerfile.web.dev file using the docker-compose.dev.yml, creating a local image called, `local/yse_pz_web:dev`. If you want to run with a PyCharm debugger attached, you can temporarily point the `image` property of the `web` service to this new image name.
