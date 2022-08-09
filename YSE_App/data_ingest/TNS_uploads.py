@@ -152,7 +152,7 @@ class processTNS:
                                 help='time interval for grabbing very recent TNS events (default=%default)')
             parser.add_argument('--hostmatchrad', default=config.get('main','hostmatchrad'), type=float,
                                 help='matching radius for hosts (arcmin) (default=%default)')
-            parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
+            parser.add_argument('--ztfurl', default=config.get('ztf','ztfurl'), type=str,
                                 help='ZTF URL (default=%default)')
 
             parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
