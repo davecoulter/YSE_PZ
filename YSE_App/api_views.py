@@ -112,11 +112,21 @@ class InternalSurveyViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = InternalSurveySerializer
     permission_classes = (permissions.IsAuthenticated,)
 
+### `ObservationGroup` Filter Set ###
+class ObservationGroupFilter(django_filters.FilterSet):
+    name = django_filters.Filter(field_name="name")
+
+    class Meta:
+        model = ObservationGroup
+        fields = ()
+    
 class ObservationGroupViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ObservationGroup.objects.all()
     serializer_class = ObservationGroupSerializer
     permission_classes = (permissions.IsAuthenticated,)
-
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = ObservationGroupFilter
+    
 class SEDTypeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = SEDType.objects.all()
     serializer_class = SEDTypeSerializer
