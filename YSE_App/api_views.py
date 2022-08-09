@@ -201,13 +201,23 @@ class HostSEDViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     serializer_class = HostSEDSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
+### `Instrument` Filter Set ###
+class InstrumentFilter(django_filters.FilterSet):
+    name = django_filters.Filter(field_name="name")
+    class Meta:
+        model = Instrument
+        fields = ()
+    
 ### `Instrument` ViewSets ###
 class InstrumentViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = Instrument.objects.all()
     serializer_class = InstrumentSerializer
     lookup_field = "id"
     permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = InstrumentFilter
 
+    
 class InstrumentConfigViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = InstrumentConfig.objects.all()
     serializer_class = InstrumentConfigSerializer
