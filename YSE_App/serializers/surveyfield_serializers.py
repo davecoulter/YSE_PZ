@@ -22,7 +22,6 @@ class SurveyFieldSerializer(serializers.HyperlinkedModelSerializer):
 		instance.cadence = validated_data.get('cadence', instance.cadence)
 		instance.instrument = validated_data.get('instrument', instance.instrument)
 		instance.ztf_field_id = validated_data.get('ztf_field_id', instance.ztf_field_id)
-		instance.active = validated_data.get('active',instance.active)
 		instance.targeted_galaxies = validated_data.get('targeted_galaxies',instance.targeted_galaxies)
 		
 		instance.ra_cen = validated_data.get('ra_cen', instance.ra_cen)
