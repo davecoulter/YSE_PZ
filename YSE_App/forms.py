@@ -199,12 +199,11 @@ class AddDashboardQueryForm(ModelForm):
 			'query','python_query']
 
 class RemoveDashboardQueryForm(ModelForm):
-	query = QueryModelChoiceField(Query.objects.all())
+	#query = QueryModelChoiceField(Query.objects.all())
 
 	class Meta:
 		model = UserQuery
-		fields = [
-			'id']
+		fields = ['id']
 
 class AddFollowupNoticeForm(ModelForm):
 	telescope = QueryModelChoiceField(Telescope.objects.all())
@@ -252,7 +251,7 @@ class SpectrumUploadForm(ModelForm):
 		'OSIRIS','FLOYDS-N','FLOYDS-S','NIRC2',
 		'NIRSPEC','NIRES','KCWI','ESI',
 		'DEIMOS','OSIRIS','MOSFIRE','LRIS','LRS2',
-		'HIRES','GMOS','Goodman','KAST','WiFeS','WFCCD','DIS','MMT Binospec','SpeX']
+		'HIRES','GMOS','Goodman','KAST','WiFeS','WFCCD','DIS','MMT Binospec','SpeX','UVES']
 	instrument = forms.ModelChoiceField(Instrument.objects.filter(Q(name__in=spec_instruments)))
 	#import pdb; pdb.set_trace()
 	class Meta:

@@ -146,6 +146,8 @@ class YSE_Scheduler:
                                 help='gmail login (default=%default)')
             parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
                                 help='gmail password (default=%default)')
+            parser.add_argument('--dbemailpassword', default=config.get('main','dbemailpassword'), type=str,
+                                help='gmail password (default=%default)')
             parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
                                 help='base URL to POST/GET,PUT to/from a database (default=%default)')
             parser.add_argument('--dbemail', default=config.get('main','dbemail'), type=str,
@@ -558,7 +560,6 @@ if __name__ == "__main__":
     ys.options = args
 
     try:
-        
         obs_date = datetime.datetime.utcnow()+datetime.timedelta(1) #hours=9) #datetime.timedelta(1)
         ys.main(dateutil.parser.parse(obs_date.isoformat().split()[0]))
         
@@ -573,4 +574,4 @@ if __name__ == "__main__":
         html_msg += "Error : %s"
         sendemail(from_addr, ys.options.dbemail, subject,
                   html_msg%(e),
-                  ys.options.SMTP_LOGIN, ys.options.dbpassword, smtpserver)
+                  ys.options.SMTP_LOGIN, ys.options.dbemailpassword, smtpserver)

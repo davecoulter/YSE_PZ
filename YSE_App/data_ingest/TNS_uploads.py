@@ -47,11 +47,13 @@ import signal
 from astro_ghost.ghostHelperFunctions import *
 try:
     from astro_ghost.photoz_helper import calc_photoz
+    is_photoz = True
 except:
     print('warning: can\'t import tensorflow')
+    is_photoz = False
     pass
 import os
-
+from tendo import singleton
 
 reg_obj = "https://www.wis-tns.org/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -93,7 +95,7 @@ class processTNS:
     
     def __init__(self):
         self.verbose = None
-
+        
     def add_options(self, parser=None, usage=None, config=None):
 
         if parser == None:
@@ -536,7 +538,8 @@ class processTNS:
 
     def getGHOSTData(self,jd,sc,ghost_host):
         hostdict = {}; hostcoords = ''
-        hostdict = {'name':ghost_host['objName'].to_numpy()[0],'ra':ghost_host['raMean'].to_numpy()[0],
+        hostdict = {'name':str(ghost_host['objName'].to_numpy()[0]),
+                    'ra':ghost_host['raMean'].to_numpy()[0],
                     'dec':ghost_host['decMean'].to_numpy()[0]}
 
         hostcoords = f"ra={hostdict['ra']:.7f}, dec={hostdict['dec']:.7f}\n"
@@ -679,10 +682,12 @@ class processTNS:
                     ("objname",""), ("internal_name",""),("public_timestamp",datemin)]
         
         response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
-        if response.status_code == 429:
+        count = 0
+        while response.status_code == 429 and count < 5:
             print('TNS request failed.  Waiting 60 seconds to try again...')
             time.sleep(60)
             response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            count += 1
         json_data = format_to_json(response.text)
 
         objs,ras,decs = [],[],[]
@@ -696,6 +701,7 @@ class processTNS:
                 print('TNS request failed.  Waiting 60 seconds to try again...')
                 time.sleep(60)
                 response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+
             json_data_single = format_to_json(response_single.text)
 
             objs.append(json_data_single['data']['reply']['objname'])
@@ -819,7 +825,6 @@ class processTNS:
         ebvall,nedtables = [],[]
         ebvtstart = time.time()
         ebv_timeout,ned_timeout = False,False
-
         if doGHOST:
 
             if not os.path.exists('database/GHOST.csv'):
@@ -832,6 +837,7 @@ class processTNS:
                 raise Exception("timeout!")
                 
             signal.signal(signal.SIGALRM, handler)
+            ghost_hosts = None
             try:
                 signal.alarm(600)
                 if type(ras[0]) == float:
@@ -840,12 +846,12 @@ class processTNS:
                     scall = [SkyCoord(r,d,unit=(u.hourangle,u.deg)) for r,d in zip(ras,decs)]
 
                 ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False)
-                ghost_hosts = calc_photoz(ghost_hosts)
+                if is_photoz:
+                    ghost_hosts = calc_photoz(ghost_hosts)[1]
                 os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
             except:
                 print('GHOST timeout!')
                 ned_timeout = True
-                ghost_hosts = None
 
             if type(ras[0]) == float:
                 scall = SkyCoord(ras,decs,frame="fk5",unit=u.deg)
@@ -1007,7 +1013,6 @@ class processTNS:
                 hostdict,hostcoords = self.getGHOSTData(jd,sc,ghost_host)
                 transientdict['host'] = hostdict
                 transientdict['candidate_hosts'] = hostcoords
-
             
             #try:
             #   phot_ps1dr2 = self.get_PS_DR2_data(sc)
@@ -1176,9 +1181,11 @@ class TNS_emails(CronJobBase):
 
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
     code = 'YSE_App.data_ingest.TNS_uploads.TNS_emails'
-
+    
     def do(self):
 
+        code = 'YSE_App.data_ingest.TNS_uploads.TNS_emails'
+        
         # execute only if run as a script
         print("running TNS emails at {}".format(datetime.now().isoformat()))
         usagestring = "TNS_Synopsis.py <options>"
@@ -1217,6 +1224,24 @@ class TNS_emails(CronJobBase):
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
 
+        # in case of code failures
+        smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+        from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+        subject = "TNS Transient Upload Failure"
+        html_msg = f"Alert : YSE_PZ Failed to upload transients in {code} \n"
+        html_msg += "Error : %s at line number %s"
+
+        
+        # check for instance of code already running
+        try:
+            me = singleton.SingleInstance(flavor_id="1")
+        except singleton.SingleInstanceException:
+            print("Sending error email")
+            sendemail(from_addr, options.dbemail, subject,
+                      f"multiple instances of {code} are running",
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+            sys.exit(1)
+            
         try:
             if options.update:
                 tnsproc.noupdatestatus = True
@@ -1226,12 +1251,7 @@ class TNS_emails(CronJobBase):
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             nsn = 0
-            smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
-            from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-            subject = "TNS Transient Upload Failure"
             print("Sending error email")
-            html_msg = "Alert : YSE_PZ Failed to upload transients in TNS_uploads.TNS_emails() \n"
-            html_msg += "Error : %s at line number %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e,exc_tb.tb_lineno),
                       options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
@@ -1245,9 +1265,11 @@ class TNS_updates(CronJobBase):
 
     schedule = Schedule(run_at_times=RUN_AT_TIMES)
     code = 'YSE_App.data_ingest.TNS_uploads.TNS_updates'
-
+    
     def do(self):
 
+        code = 'YSE_App.data_ingest.TNS_uploads.TNS_updates'
+        
         # execute only if run as a script
         print("running TNS updates at {}".format(datetime.now().isoformat()))
         usagestring = "TNS_Synopsis.py <options>"
@@ -1285,18 +1307,32 @@ class TNS_updates(CronJobBase):
         tnsproc.tns_bot_id = options.tns_bot_id
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
+
+        # in case of code failures
+        smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+        from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+        subject = "TNS Transient Upload Failure"
+        html_msg = f"Alert : YSE_PZ Failed to upload transients in {code}\n"
+        html_msg += "Error : %s at line number %s"
+
+        
+        # check for instance of code already running
+        try:
+            me = singleton.SingleInstance(flavor_id="2")
+        except singleton.SingleInstanceException:
+            print("Sending error email")
+            sendemail(from_addr, options.dbemail, subject,
+                      f"multiple instances of {code} are running",
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+            sys.exit(1)
+        
         try:
             tnsproc.noupdatestatus = True
             nsn = tnsproc.UpdateFromTNS(ndays=options.ndays,doTNS=False)
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             nsn = 0
-            smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
-            from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-            subject = "TNS Transient Upload Failure"
             print("Sending error email")
-            html_msg = "Alert : YSE_PZ Failed to upload transients in TNS_uploads.TNS_updates()\n"
-            html_msg += "Error : %s at line number %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e,exc_tb.tb_lineno),
                       options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
@@ -1310,9 +1346,11 @@ class TNS_Ignore_updates(CronJobBase):
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS,run_at_times=RUN_AT_TIMES)
 
     code = 'YSE_App.data_ingest.TNS_uploads.TNS_Ignore_updates'
-
+    
     def do(self):
 
+        code = 'YSE_App.data_ingest.TNS_uploads.TNS_Ignore_updates'
+        
         # execute only if run as a script
         print("running TNS updates for Ignore transients at {}".format(datetime.now().isoformat()))
         usagestring = "TNS_Synopsis.py <options>"
@@ -1350,18 +1388,32 @@ class TNS_Ignore_updates(CronJobBase):
         tnsproc.tns_bot_id = options.tns_bot_id
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
+
+        # in case of code failures
+        smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+        from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+        subject = "TNS Transient Upload Failure"
+        html_msg = f"Alert : YSE_PZ Failed to upload transients in {code}\n"
+        html_msg += "Error : %s at line number %s"
+
+        
+        # check for instance of code already running
+        try:
+            me = singleton.SingleInstance(flavor_id="3")
+        except singleton.SingleInstanceException:
+            print("Sending error email")
+            sendemail(from_addr, options.dbemail, subject,
+                      f"multiple instances of {code} are running",
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+            sys.exit(1)
+        
         try:
             tnsproc.noupdatestatus = True
             nsn = tnsproc.UpdateFromTNS(ndays=30,allowed_statuses=['Ignore'],doTNS=False)
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             nsn = 0
-            smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
-            from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-            subject = "TNS Transient Upload Failure"
             print("Sending error email")
-            html_msg = "Alert : YSE_PZ Failed to upload transients in TNS_uploads.TNS_Ignore_Updates()\n"
-            html_msg += "Error : %s at line number %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e,exc_tb.tb_lineno),
                       options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
@@ -1373,10 +1425,12 @@ class TNS_recent(CronJobBase):
     RUN_AT_TIMES = ['00:00', '08:00']
 
     schedule = Schedule(run_at_times=RUN_AT_TIMES)
-    code = 'YSE_App.data_ingest.TNS_uploads.TNS_updates'
-
+    code = 'YSE_App.data_ingest.TNS_uploads.TNS_recent'
+    
     def do(self):
 
+        code = 'YSE_App.data_ingest.TNS_uploads.TNS_recent'
+        
         # execute only if run as a script
         print("checking for recent TNS events at {}".format(datetime.now().isoformat()))
         usagestring = "TNS_Synopsis.py <options>"
@@ -1416,18 +1470,32 @@ class TNS_recent(CronJobBase):
         tnsproc.ztfurl = options.ztfurl
         tnsproc.ndays = float(options.tns_recent_ndays)
         tnsproc.tns_fastupdates_nminutes = float(options.tns_fastupdates_nminutes)
+
+        # in case of errors
+        smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+        from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+        subject = "TNS Transient Upload Failure in GetRecentEvents"
+        html_msg = f"Alert : YSE_PZ Failed to upload transients in {code}\n"
+        html_msg += "Error : %s at line number %s"
+
+        
+        # check for instance of code already running
+        try:
+            me = singleton.SingleInstance(flavor_id="4")
+        except singleton.SingleInstanceException:
+            print("Sending error email")
+            sendemail(from_addr, options.dbemail, subject,
+                      f"multiple instances of {code} are running",
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+            sys.exit(1)
+            
         try:
             tnsproc.noupdatestatus = True
             nsn = tnsproc.GetRecentMissingEvents(ndays=tnsproc.ndays)
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             nsn = 0
-            smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
-            from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-            subject = "TNS Transient Upload Failure in GetRecentEvents"
             print("Sending error email")
-            html_msg = "Alert : YSE_PZ Failed to upload transients in TNS_uploads.TNS_recent()\n"
-            html_msg += "Error : %s at line number %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e,exc_tb.tb_lineno),
                       options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
@@ -1439,10 +1507,12 @@ class TNS_recent_realtime(CronJobBase):
     RUN_AT_TIMES = ['00:00', '08:00']
 
     schedule = Schedule(run_at_times=RUN_AT_TIMES)
-    code = 'YSE_App.data_ingest.TNS_uploads.TNS_updates'
-
+    code = 'YSE_App.data_ingest.TNS_uploads.TNS_recent_realtime'
+        
     def do(self):
 
+        code = 'YSE_App.data_ingest.TNS_uploads.TNS_recent_realtime'
+        
         # execute only if run as a script
         print("checking for recent TNS events at {}".format(datetime.now().isoformat()))
         usagestring = "TNS_Synopsis.py <options>"
@@ -1482,20 +1552,77 @@ class TNS_recent_realtime(CronJobBase):
         tnsproc.ztfurl = options.ztfurl
         tnsproc.ndays = float(options.tns_recent_ndays)
         tnsproc.tns_fastupdates_nminutes = float(options.tns_fastupdates_nminutes)
+
+        # in case of code failures
+        smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+        from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+        subject = "TNS Transient Upload Failure in GetRecentEvents"
+        html_msg = f"Alert : YSE_PZ Failed to upload transients in {code}\n"
+        html_msg += "Error : %s at line number %s"
+
+        # check for instance of code already running
+        try:
+            me = singleton.SingleInstance(flavor_id="5")
+        except singleton.SingleInstanceException:
+            print("Sending error email")
+            sendemail(from_addr, options.dbemail, subject,
+                      f"multiple instances of {code} are running",
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+            sys.exit(1)
+        
         try:
             tnsproc.noupdatestatus = True
             nsn = tnsproc.GetRecentEvents(ndays=tnsproc.tns_fastupdates_nminutes/60./24.)
         except Exception as e:
+            print("Sending error email")
             exc_type, exc_obj, exc_tb = sys.exc_info()
             nsn = 0
-            smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
-            from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-            subject = "TNS Transient Upload Failure in GetRecentEvents"
-            print("Sending error email")
-            html_msg = "Alert : YSE_PZ Failed to upload transients in TNS_uploads.TNS_recent()\n"
-            html_msg += "Error : %s at line number %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e,exc_tb.tb_lineno),
                       options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
         print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
+
+
+class UpdateGHOST(CronJobBase):
+
+    RUN_AT_TIMES = ['00:00', '08:00']
+
+    schedule = Schedule(run_at_times=RUN_AT_TIMES)
+    code = 'YSE_App.data_ingest.TNS_uploads.UpdateGHOST'
+    
+    def do(self):
+        
+        # check for instance of code already running
+        # no email hook on this one for now
+        me = singleton.SingleInstance(flavor_id="6")
+
+        
+        from YSE_App.models import Transient,User,Host
+        transients = Transient.objects.filter(
+            modified_date__gt=datetime.now()-timedelta(days=5),
+            host__isnull=True)
+
+        scall = [SkyCoord(t.ra,t.dec,unit=u.deg) for t in transients]
+        names = [t.name for t in transients]
+
+        ghost_hosts = getTransientHosts(names, scall, verbose=True, starcut='gentle', ascentMatch=False)
+        if is_photoz:
+            ghost_hosts = calc_photoz(ghost_hosts)[1]
+        os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
+
+        for i in ghost_hosts.index:
+            t = Transient.objects.get(name=ghost_hosts['TransientName'][i])
+            print(f'Adding host for {t.name}')
+            t.host = Host.objects.create(name=ghost_hosts['objName'][i],ra=ghost_hosts['raMean'][i],dec=ghost_hosts['decMean'][i],
+                                         modified_by=User.objects.get(username='admin'),created_by=User.objects.get(username='admin'))
+
+            if ghost_hosts['NED_redshift'][i] == ghost_hosts['NED_redshift'][i]:
+                t.host.redshift = ghost_hosts['NED_redshift'][i]
+
+            if 'photo_z' in ghost_hosts.keys() and ghost_hosts['photo_z'][i] == ghost_hosts['photo_z'][i]:
+                t.host.photo_z_internal = ghost_hosts['photo_z'][i]
+            
+            t.host.save()
+            t.save()
+        print('success')

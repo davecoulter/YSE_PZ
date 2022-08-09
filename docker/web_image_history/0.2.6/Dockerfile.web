@@ -1,5 +1,5 @@
-FROM davecoulter/yse_pz_web:latest
-LABEL description="Ubuntu image for YSEPZ"
+FROM davecoulter/yse_pz_web:0.2.0
+LABEL description="Ubuntu image for YSEPZ v0.2.0"
 LABEL maintainer="Dave Coulter (dcoulter@ucsc.edu)"
 
 SHELL ["/bin/bash", "-c"]
@@ -9,8 +9,8 @@ pip install --upgrade pip
 
 WORKDIR /app
 
-COPY requirements.web.dev /app/requirements.web.txt
-RUN pip install -r /app/requirements.web.txt
+COPY requirements.txt /app/requirements.txt
+RUN pip install -r /app/requirements.txt
 
 RUN apt-get clean && \
 rm -rf /var/lib/apt/lists/*
