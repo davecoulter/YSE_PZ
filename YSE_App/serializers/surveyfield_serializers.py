@@ -19,17 +19,30 @@ class SurveyFieldSerializer(serializers.HyperlinkedModelSerializer):
 	def update(self, instance, validated_data):
 		instance.obs_group = validated_data.get('obs_group', instance.obs_group)
 		instance.field_id = validated_data.get('field_id', instance.field_id)
-		instance.first_mjd = validated_data.get('first_mjd', instance.first_mjd)
-		instance.last_mjd = validated_data.get('last_mjd', instance.last_mjd)
 		instance.cadence = validated_data.get('cadence', instance.cadence)
 		instance.instrument = validated_data.get('instrument', instance.instrument)
 		instance.ztf_field_id = validated_data.get('ztf_field_id', instance.ztf_field_id)
-
+		instance.active = validated_data.get('active',instance.active)
+		instance.targeted_galaxies = validated_data.get('targeted_galaxies',instance.targeted_galaxies)
+		
 		instance.ra_cen = validated_data.get('ra_cen', instance.ra_cen)
 		instance.dec_cen = validated_data.get('dec_cen', instance.dec_cen)
 		instance.width_deg = validated_data.get('width_deg', instance.width_deg)
 		instance.height_deg = validated_data.get('height_deg', instance.height_deg)
-		
+
+        if 'targeted_transients' in validated_data.keys():
+            # Disassociate existing `Transient Tags`
+            targeted_transients = instance.targeted_transients.all()
+            for targeted_transient in targeted_transients:
+                instance.targeted_transients.remove(targeted_transients)
+
+            targeted_transients = validated_data.pop('targeted_transients')
+            for targeted_transient in targeted_transients:
+                transient_result = Transient.objects.filter(pk=targeted_tansient.id)
+                if transient_result.exists():
+                    t = transient_result.first()
+                    instance.targeted_transients.add(t)
+        
 		instance.save()
 
 		return instance
@@ -56,7 +69,7 @@ class SurveyFieldMSBSerializer(serializers.ModelSerializer):
 		surveyfieldmsb = SurveyFieldMSB.objects.create(**validated_data)
 		surveyfieldmsb.save()
 		instance.active = validated_data.get('active', instance.active)
-        
+		
 		if survey_fields_exist:
 			for field in survey_fields:
 				survey_field_result = SurveyField.objects.filter(pk=tag.id)
