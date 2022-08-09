@@ -31,7 +31,7 @@ class SurveyFieldSerializer(serializers.HyperlinkedModelSerializer):
 		instance.height_deg = validated_data.get('height_deg', instance.height_deg)
 
 		if 'targeted_transients' in validated_data.keys():
-			# Disassociate existing `Transient Tags`
+			# Disassociate existing `Targeted Transients`
 			targeted_transients = instance.targeted_transients.all()
 			for targeted_transient in targeted_transients:
 				instance.targeted_transients.remove(targeted_transients)
@@ -85,19 +85,19 @@ class SurveyFieldMSBSerializer(serializers.ModelSerializer):
 		instance.obs_group = validated_data.get('obs_group', instance.obs_group)
 		instance.name = validated_data.get('name', instance.name)
 		instance.active = validated_data.get('active', instance.active)
-		
-		if 'survey_fields' in validated_data.keys():
-			# Disassociate existing `Transient Tags`
-			survey_fields = instance.survey_fields.all()
-			for field in survey_fields:
-				instance.survey_fields.remove(field)
 
-			survey_fields = validated_data.pop('tags')
-			for field in survey_fields:
-				survey_field_result = SurveyField.objects.filter(pk=tag.id)
+
+		if len(self.context['request'].data['survey_fields']):
+			survey_fields = instance.survey_fields.all()
+			for survey_field in survey_fields:
+				instance.survey_fields.remove(survey_field)
+		
+			for survey_field in self.context['request'].data['survey_fields']:
+			
+				survey_field_result = SurveyField.objects.filter(pk=survey_field['id'])
 				if survey_field_result.exists():
 					s = survey_field_result.first()
-					instance.tags.add(s)
+					instance.survey_fields.add(s)
 		
 		instance.save()
 
