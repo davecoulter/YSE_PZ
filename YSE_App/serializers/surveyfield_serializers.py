@@ -30,19 +30,19 @@ class SurveyFieldSerializer(serializers.HyperlinkedModelSerializer):
 		instance.width_deg = validated_data.get('width_deg', instance.width_deg)
 		instance.height_deg = validated_data.get('height_deg', instance.height_deg)
 
-        if 'targeted_transients' in validated_data.keys():
-            # Disassociate existing `Transient Tags`
-            targeted_transients = instance.targeted_transients.all()
-            for targeted_transient in targeted_transients:
-                instance.targeted_transients.remove(targeted_transients)
+		if 'targeted_transients' in validated_data.keys():
+			# Disassociate existing `Transient Tags`
+			targeted_transients = instance.targeted_transients.all()
+			for targeted_transient in targeted_transients:
+				instance.targeted_transients.remove(targeted_transients)
 
-            targeted_transients = validated_data.pop('targeted_transients')
-            for targeted_transient in targeted_transients:
-                transient_result = Transient.objects.filter(pk=targeted_tansient.id)
-                if transient_result.exists():
-                    t = transient_result.first()
-                    instance.targeted_transients.add(t)
-        
+			targeted_transients = validated_data.pop('targeted_transients')
+			for targeted_transient in targeted_transients:
+				transient_result = Transient.objects.filter(pk=targeted_tansient.id)
+				if transient_result.exists():
+					t = transient_result.first()
+					instance.targeted_transients.add(t)
+		
 		instance.save()
 
 		return instance
