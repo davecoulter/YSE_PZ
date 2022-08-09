@@ -29,6 +29,11 @@ from django.views.decorators.csrf import csrf_exempt
 from .basicauth import *
 
 from YSE_App.util import lcogt
+# for getting YSE filter selection
+from django.conf import settings as djangoSettings
+
+# reddest filter for YSE is from settings.py
+_reddest_yse_filter = djangoSettings.REDYSEFILTER
 
 def is_ajax(request):
     return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
@@ -396,17 +401,18 @@ class AddSurveyObsFormView(FormView):
 							if len(filt) == 2: return filt
 						return None
 
+                    # hard-coded YSE "mini-survey" filter choice
 					if s.field_id.lower().startswith('virgo'):
 						if illum < 0.66:
 							filt = previous_obs_func(0,0.66)
 							if filt is None: band1name,band2name = 'g','r'
 							elif 'r' in filt: band1name,band2name = 'g','i'
-							elif 'i' in filt: band1name,band2name = 'g','z'
+							elif 'i' in filt: band1name,band2name = 'g',_reddest_yse_filter
 							else: band1name,band2name = 'g','r'
 						else:
 							filt = previous_obs_func(0.66,1)
-							if filt is None or 'z' in filt: band1name,band2name = 'r','i'
-							else: band1name,band2name = 'r','z'
+							if filt is None or 'z' in filt or 'y' in filt: band1name,band2name = 'r','i'
+							else: band1name,band2name = 'r',_reddest_yse_filter
 					else:
 						if illum < 0.33:
 							filt = previous_obs_func(0,0.33)
@@ -414,12 +420,12 @@ class AddSurveyObsFormView(FormView):
 							else: band1name,band2name = 'g','i'
 						elif illum < 0.66:
 							filt = previous_obs_func(0.33,0.66)
-							if filt is None or 'z' in filt: band1name,band2name = 'g','i'
-							else: band1name,band2name = 'g','z'
+							if filt is None or 'z' in filt or 'y' in filt: band1name,band2name = 'g','i'
+							else: band1name,band2name = 'g',_reddest_yse_filter
 						else:
 							filt = previous_obs_func(0.66,1)
-							if filt is None or 'z' in filt: band1name,band2name = 'r','i'
-							else: band1name,band2name = 'r','z'
+							if filt is None or 'z' in filt or 'y' in filt: band1name,band2name = 'r','i'
+							else: band1name,band2name = 'r',_reddest_yse_filter
 
 					band1 = PhotometricBand.objects.filter(
 						name=band1name,instrument__name=s.instrument.name)[0]
