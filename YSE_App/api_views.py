@@ -49,6 +49,7 @@ class SurveyFieldFilter(django_filters.FilterSet):
 class SurveyFieldMSBFilter(django_filters.FilterSet):
     name = django_filters.Filter(field_name="name")
     active = django_filters.Filter(field_name="active")
+    instrument = django_filters.Filter(field_name='survey_fields__instrument__name')
     class Meta:
         model = SurveyFieldMSB
         fields = ('name','active')
