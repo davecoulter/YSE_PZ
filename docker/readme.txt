@@ -19,6 +19,8 @@ Add your pip package to the `requirements.web.dev` like:
 
 Next, use docker-compose to bring up `docker-compose.dev.yml` instead of the default docker-compose.yml like:
 
-   Docker-compose -f docker-compose.dev.yml up
+   docker-compose -f docker-compose.dev.yml up
 
 This should build the Dockerfile.web.dev file using the docker-compose.dev.yml, creating a local image called, `local/yse_pz_web:dev`. If you want to run with a PyCharm debugger attached, you can temporarily point the `image` property of the `web` service to this new image name.
+
+Finally, to commit this package dependency and have it incorporated into the main YSE Web image, ONLY CHECK-IN the `requirements.web.dev`. DO NOT CHECK-IN changes to the docker-compose files. Thanks!
