@@ -61,7 +61,8 @@ class add_yse_fields:
             auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
         if not rmsb.status_code == 200:
                 raise RuntimeError('MSB query failed')
-
+        rmsb = rmsb.json()['results']
+            
         # which group is the YSE group?  There must be a better way to do this....
         ryse = requests.get(
             url=f'{self.options.dburl}observationgroups/?name=YSE',
@@ -74,7 +75,7 @@ class add_yse_fields:
         instrument = rinst['results'][0]['url']
 
         
-        if not len(rmsb.json()['results']):
+        if not len(rmsb):
         
             msb_dict = {'obs_group':yse_group,
                         'name':self.options.name.split('.')[0],
@@ -82,20 +83,27 @@ class add_yse_fields:
             rmsb = requests.post(
                 url='%ssurveyfieldmsbs/'%self.options.dburl,json=msb_dict,
                 auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
-            if not rmsb.status_code == 200:
+            if not rmsb.status_code == 200 and not rmsb.status_code == 201:
                 raise RuntimeError('MSB was not added successfully')
-
+            rmsb = rmsb.json()
+        else:
+            rmsb = rmsb[0]    
+            
         # we'll use this URL to patch the MSB with new filters
-        msb_id = rmsb.json()['results'][0]['id']
-
+        msb_id = rmsb['id']
+            
         # see if the survey field exists in the database already
-        rfield = requests.get(
-            url=f'%ssurveyfields/?field_id={self.options.name}'%self.options.dburl,
-            auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword)).json()
+        try:
+            rfield = requests.get(
+                url=f'%ssurveyfields/?field_id={self.options.name}'%self.options.dburl,
+                auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword)).json()
+        except:
+            import pdb; pdb.set_trace()
+        
         if len(rfield['results']):
             # if it exists, make sure it's associated with the MSB
             field_in_msb = False
-            for field in rmsb.json()['results'][0]['survey_fields']:
+            for field in rmsb['survey_fields']:
                 if field['field_id'] == self.options.name:
                     field_in_msb = True
             if field_in_msb:
@@ -106,8 +114,9 @@ class add_yse_fields:
             print(f'field {self.options.name} exists but is not associated with MSB {msb_name}')
             print('adding it now...')
             survey_field_list = [{'id':rfield['results'][0]['url'].split('/')[-2]}]
-            if len(rmsb.json()['results'][0]['survey_fields']):
-                survey_field_list = [{'id':sf['id']} for sf in rmsb.json()['results'][0]['survey_fields']]
+            if len(rmsb['survey_fields']):
+                survey_field_list += [{'id':sf['id']} for sf in rmsb['survey_fields'] \
+                                      if sf['id'] != rfield['results'][0]['url'].split('/')[-2]]
             rmsb_add = requests.put(url=f'{self.options.dburl}surveyfieldmsbs/{msb_id}/',
                                     json={'obs_group':yse_group,'name':msb_name,
                                           'survey_fields':survey_field_list},
@@ -144,8 +153,9 @@ class add_yse_fields:
 
         # add to the MSB
         survey_field_list = [{'id':rfield['url'].split('/')[-2]}]
-        if len(rmsb.json()['results'][0]['survey_fields']):
-            survey_field_list = [{'id':sf['id']} for sf in rmsb.json()['results'][0]['survey_fields']]
+        if len(rmsb['survey_fields']):
+            survey_field_list += [{'id':sf['id']} for sf in rmsb['survey_fields'] \
+                if sf['id'] != rfield['url'].split('/')[-2]]
             #survey_field_list = [{'id':sf['url'].split('/')[-2]} for sf in rmsb.json()['results'][0]['survey_fields']]
             
         rmsb_add = requests.put(url=f'{self.options.dburl}surveyfieldmsbs/{msb_id}/',
