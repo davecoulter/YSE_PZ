@@ -28,7 +28,8 @@ docker resources required to run :code:`YSE_PZ` are:
 * Docker Swap >= 1 GB
 * Docker Disk Image Size >= 20 GB
 
-These requirements can be set in the docker desktop app.
+These requirements can be set in the docker desktop app
+(Preferences > Resources).
 
 Settings file
 -------------
@@ -90,6 +91,27 @@ An example of a minimum working .env file would be
     LOCAL_DB_PORT=53306
     LOCAL_HTTP_PORT=80
 
+
+Static files
+------------
+
+To get YSE_PZ to see all the statics file run the following:
+
+.. code::
+    docker exec -it ysepz_web_container bash
+
+Then in the docker container
+
+.. code::
+
+    python3 manage.py collectstatic
+
+and type :code:'yes' if asked about overwriting existing static files. To exit the
+docker container, run
+
+.. code::
+
+    exit
 
 
 
