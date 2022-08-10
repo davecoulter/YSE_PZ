@@ -170,7 +170,8 @@ version 1.22.3. the contents of :code:`docker/requirements.web.dev` would be
 
 To test if your proposed dependency will work, you need to spin up a dev docker
 container which will attempt to install your proposed dependency and then 
-run YSE_PZ. To do this, run the command
+run YSE_PZ. To do this run the command, whilst in the :code:`YSE_PZ/docker/`
+directory,
 
 .. code:: none
 
