@@ -180,7 +180,7 @@ class DECam(CronJobBase):
             parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
                               help='SMTP port (default=%default)')
 
-            parser.add_argument('--max_decam_days', default=config.get('main','max_days_decam'), type=float,
+            parser.add_argument('--max_decam_days', default=config.get('yse','max_days_decam'), type=float,
                                 help='grab photometry/objects from the last x days')
 
         else:

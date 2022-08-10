@@ -20,15 +20,21 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonRespons
 @login_required
 def select_yse_fields(request):
 
-    all_yse_fields = SurveyFieldMSB.objects.filter(survey_fields__obs_group__name='YSE').distinct().order_by('name')
-    active_yse_fields = SurveyFieldMSB.objects.filter(survey_fields__obs_group__name='YSE').filter(active=True).distinct().order_by('name')
-    active_names = active_yse_fields.values_list('name',flat=True)
+    all_yse_gpc1_fields = SurveyFieldMSB.objects.filter(survey_fields__obs_group__name='YSE').filter(survey_fields__instrument__name='GPC1').distinct().order_by('name')
+    active_yse_gpc1_fields = SurveyFieldMSB.objects.filter(survey_fields__obs_group__name='YSE').filter(survey_fields__instrument__name='GPC1').filter(active=True).distinct().order_by('name')
+    all_yse_gpc2_fields = SurveyFieldMSB.objects.filter(survey_fields__obs_group__name='YSE').filter(survey_fields__instrument__name='GPC2').distinct().order_by('name')
+    active_yse_gpc2_fields = SurveyFieldMSB.objects.filter(survey_fields__obs_group__name='YSE').filter(survey_fields__instrument__name='GPC2').filter(active=True).distinct().order_by('name')
 
+    active_gpc1_names = active_yse_gpc1_fields.values_list('name',flat=True)
+    active_gpc2_names = active_yse_gpc2_fields.values_list('name',flat=True)
+    
     current_mjd = Time.now().mjd
-    yse_field_data = ()
+
+    # GPC1 fields
+    yse_gpc1_field_data = ()
     last_obs_list = []
-    for a in all_yse_fields:
-        if a.name in active_names: continue
+    for a in all_yse_gpc1_fields:
+        if a.name in active_gpc1_names: continue
         obs = SurveyObservation.objects.filter(survey_field=a.survey_fields.all()[0]).filter(obs_mjd__isnull=False).order_by('-obs_mjd')
         if len(obs):
             last_obs_date = obs[0].obs_mjd
@@ -38,17 +44,38 @@ def select_yse_fields(request):
             days_since_obs = None
         airmass = 0
         last_obs_list += [days_since_obs if days_since_obs is not None else 1000]
-        yse_field_data += ((a,last_obs_date,days_since_obs,airmass),)
+        yse_gpc1_field_data += ((a,last_obs_date,days_since_obs,airmass),)
     idx = np.argsort(last_obs_list)
     yse_field_data_new = ()
     for i in idx:
-        yse_field_data_new += (yse_field_data[i],)
-    yse_field_data = yse_field_data_new
+        yse_field_data_new += (yse_gpc1_field_data[i],)
+    yse_gpc1_field_data = yse_field_data_new
 
-    
-    active_yse_field_data = ()
+    # GPC2 fields
+    yse_gpc2_field_data = ()
+    last_obs_list = []
+    for a in all_yse_gpc2_fields:
+        if a.name in active_gpc2_names: continue
+        obs = SurveyObservation.objects.filter(survey_field=a.survey_fields.all()[0]).filter(obs_mjd__isnull=False).order_by('-obs_mjd')
+        if len(obs):
+            last_obs_date = obs[0].obs_mjd
+            days_since_obs = current_mjd - last_obs_date
+        else:
+            last_obs_date = None
+            days_since_obs = None
+        airmass = 0
+        last_obs_list += [days_since_obs if days_since_obs is not None else 1000]
+        yse_gpc2_field_data += ((a,last_obs_date,days_since_obs,airmass),)
+    idx = np.argsort(last_obs_list)
+    yse_field_data_new = ()
+    for i in idx:
+        yse_field_data_new += (yse_gpc2_field_data[i],)
+    yse_gpc2_field_data = yse_field_data_new
+
+    # active GPC1 fields
+    active_yse_gpc1_field_data = ()
     first_obs_list = []
-    for a in active_yse_fields:
+    for a in active_yse_gpc1_fields:
         obs = SurveyObservation.objects.filter(survey_field=a.survey_fields.all()[0]).filter(obs_mjd__isnull=False).order_by('-obs_mjd')
         obs_mjd = np.sort(np.array([om for om in obs.values_list('obs_mjd',flat=True)]))
         if len(obs_mjd):
@@ -70,26 +97,59 @@ def select_yse_fields(request):
             days_since_obs = None
         airmass = 0
         first_obs_list += [days_since_obs if days_since_obs is not None else 10000]
-        active_yse_field_data += ((a,first_obs,days_since_obs,airmass),)
+        active_yse_gpc1_field_data += ((a,first_obs,days_since_obs,airmass),)
     idx = np.argsort(first_obs_list)[::-1]
     active_yse_field_data_new = ()
     for i in idx:
-        active_yse_field_data_new += (active_yse_field_data[i],)
-    active_yse_field_data = active_yse_field_data_new
+        active_yse_field_data_new += (active_yse_gpc1_field_data[i],)
+    active_yse_gpc1_field_data = active_yse_field_data_new
 
-        
+    # active GPC2 fields
+    active_yse_gpc2_field_data = ()
+    first_obs_list = []
+    for a in active_yse_gpc2_fields:
+        obs = SurveyObservation.objects.filter(survey_field=a.survey_fields.all()[0]).filter(obs_mjd__isnull=False).order_by('-obs_mjd')
+        obs_mjd = np.sort(np.array([om for om in obs.values_list('obs_mjd',flat=True)]))
+        if len(obs_mjd):
+
+            if len(obs_mjd[:-1][obs_mjd[1:]-obs_mjd[:-1] > 60]):
+                first_obs = obs_mjd[1:][obs_mjd[1:]-obs_mjd[:-1] > 60][0]
+            else:
+                first_obs = obs_mjd[0]
+        else:
+            first_obs = None
+
+        obs_mjd = obs.values_list('obs_mjd',flat=True)
+        if len(obs):
+
+            last_obs_date = obs[0].obs_mjd
+            days_since_obs = current_mjd - first_obs
+        else:
+            last_obs_date = None
+            days_since_obs = None
+        airmass = 0
+        first_obs_list += [days_since_obs if days_since_obs is not None else 10000]
+        active_yse_gpc2_field_data += ((a,first_obs,days_since_obs,airmass),)
+    idx = np.argsort(first_obs_list)[::-1]
+    active_yse_field_data_new = ()
+    for i in idx:
+        active_yse_field_data_new += (active_yse_gpc2_field_data[i],)
+    active_yse_gpc2_field_data = active_yse_field_data_new
+
+    
     # moving fields form
     yse_move_field_form = yse_forms.YSEMoveFieldsForm()
     yse_group = ObservationGroup.objects.get(name='YSE')
     GPC1 = Instrument.objects.get(name='GPC1')
     all_yse_fields = SurveyField.objects.filter(obs_group__name='YSE').order_by('field_id')
     
-#    import pdb; pdb.set_trace()
-    context = {'yse_field_data':yse_field_data,
-               'active_yse_field_data':active_yse_field_data,
+    #import pdb; pdb.set_trace()
+    context = {'yse_gpc1_field_data':yse_gpc1_field_data,
+               'active_yse_gpc1_field_data':active_yse_gpc1_field_data,
+               'yse_gpc2_field_data':yse_gpc2_field_data,
+               'active_yse_gpc2_field_data':active_yse_gpc2_field_data,
                'yse_move_field_form':yse_move_field_form,
                'yse_group':yse_group,
-               'GPC1':GPC1,
                'all_yse_fields':all_yse_fields}
     return render(request, 'YSE_App/select_yse_fields.html', context)
 

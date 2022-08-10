@@ -41,6 +41,7 @@ class FollowupStatusViewSet(viewsets.ReadOnlyModelViewSet):
 class SurveyFieldFilter(django_filters.FilterSet):
     field_id = django_filters.Filter(field_name="field_id")
     obs_group = django_filters.Filter(field_name="obs_group__name")
+    instrument = django_filters.Filter(field_name="instrument__name")
     class Meta:
         model = SurveyField
         fields = ()
@@ -49,6 +50,7 @@ class SurveyFieldFilter(django_filters.FilterSet):
 class SurveyFieldMSBFilter(django_filters.FilterSet):
     name = django_filters.Filter(field_name="name")
     active = django_filters.Filter(field_name="active")
+    instrument = django_filters.Filter(field_name='survey_fields__instrument__name')
     class Meta:
         model = SurveyFieldMSB
         fields = ('name','active')
@@ -83,7 +85,8 @@ class SurveyObsFilter(django_filters.FilterSet):
     ra_lt = django_filters.Filter(field_name="survey_field__ra_cen", lookup_expr='lt')
     dec_gt = django_filters.Filter(field_name="survey_field__dec_cen", lookup_expr='gt')
     dec_lt = django_filters.Filter(field_name="survey_field__dec_cen", lookup_expr='lt')
-
+    instrument = django_filters.Filter(field_name="survey_field__instrument__name")
+    
     class Meta:
         model = SurveyObservation
         fields = ()
@@ -111,11 +114,21 @@ class InternalSurveyViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = InternalSurveySerializer
     permission_classes = (permissions.IsAuthenticated,)
 
+### `ObservationGroup` Filter Set ###
+class ObservationGroupFilter(django_filters.FilterSet):
+    name = django_filters.Filter(field_name="name")
+
+    class Meta:
+        model = ObservationGroup
+        fields = ()
+    
 class ObservationGroupViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ObservationGroup.objects.all()
     serializer_class = ObservationGroupSerializer
     permission_classes = (permissions.IsAuthenticated,)
-
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = ObservationGroupFilter
+    
 class SEDTypeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = SEDType.objects.all()
     serializer_class = SEDTypeSerializer
@@ -190,13 +203,23 @@ class HostSEDViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     serializer_class = HostSEDSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
+### `Instrument` Filter Set ###
+class InstrumentFilter(django_filters.FilterSet):
+    name = django_filters.Filter(field_name="name")
+    class Meta:
+        model = Instrument
+        fields = ()
+    
 ### `Instrument` ViewSets ###
 class InstrumentViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = Instrument.objects.all()
     serializer_class = InstrumentSerializer
     lookup_field = "id"
     permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = InstrumentFilter
 
+    
 class InstrumentConfigViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = InstrumentConfig.objects.all()
     serializer_class = InstrumentConfigSerializer
