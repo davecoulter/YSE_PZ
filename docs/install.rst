@@ -98,6 +98,7 @@ Static files
 To get YSE_PZ to see all the statics file run the following:
 
 .. code::
+
     docker exec -it ysepz_web_container bash
 
 Then in the docker container
@@ -106,7 +107,7 @@ Then in the docker container
 
     python3 manage.py collectstatic
 
-and type :code:'yes' if asked about overwriting existing static files. To exit the
+and type :code:`yes` if asked about overwriting existing static files. To exit the
 docker container, run
 
 .. code::
