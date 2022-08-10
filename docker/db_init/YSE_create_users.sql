@@ -1,13 +1,13 @@
-CREATE USER 'django'@'%' IDENTIFIED WITH mysql_native_password BY '4Django!';
-GRANT ALL PRIVILEGES ON YSE.* TO 'django'@'%' WITH GRANT OPTION;
+CREATE USER 'dev'@'%' IDENTIFIED WITH mysql_native_password BY 'devpass';
+GRANT ALL PRIVILEGES ON YSE.* TO 'dev'@'%' WITH GRANT OPTION;
 
-CREATE USER 'django'@'localhost' IDENTIFIED WITH mysql_native_password BY '4Django!';
-GRANT ALL PRIVILEGES ON YSE.* TO 'django'@'localhost' WITH GRANT OPTION;
+CREATE USER 'dev'@'localhost' IDENTIFIED WITH mysql_native_password BY 'devpass';
+GRANT ALL PRIVILEGES ON YSE.* TO 'dev'@'localhost' WITH GRANT OPTION;
 
-CREATE USER 'explorer'@'%' IDENTIFIED WITH mysql_native_password BY '4Explor3R!';
-GRANT SELECT ON YSE.* TO 'explorer'@'%';
+CREATE USER 'dev_explorer'@'%' IDENTIFIED WITH mysql_native_password BY 'dev_explorerpass';
+GRANT SELECT ON YSE.* TO 'dev_explorer'@'%';
 
-CREATE USER 'explorer'@'localhost' IDENTIFIED WITH mysql_native_password BY '4Explor3R!';
-GRANT SELECT ON YSE.* TO 'explorer'@'localhost';
+CREATE USER 'dev_explorer'@'localhost' IDENTIFIED WITH mysql_native_password BY 'dev_explorerpass';
+GRANT SELECT ON YSE.* TO 'dev_explorer'@'localhost';
 
 FLUSH PRIVILEGES;
