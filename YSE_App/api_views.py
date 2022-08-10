@@ -41,6 +41,7 @@ class FollowupStatusViewSet(viewsets.ReadOnlyModelViewSet):
 class SurveyFieldFilter(django_filters.FilterSet):
     field_id = django_filters.Filter(field_name="field_id")
     obs_group = django_filters.Filter(field_name="obs_group__name")
+    instrument = django_filters.Filter(field_name="instrument__name")
     class Meta:
         model = SurveyField
         fields = ()

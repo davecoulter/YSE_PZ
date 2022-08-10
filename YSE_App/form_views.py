@@ -36,7 +36,7 @@ from django.conf import settings as djangoSettings
 _reddest_yse_filter = djangoSettings.REDYSEFILTER
 
 def is_ajax(request):
-    return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+	return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
 
 class AddTransientFollowupFormView(FormView):
 	form_class = TransientFollowupForm
@@ -388,6 +388,11 @@ class AddSurveyObsFormView(FormView):
 							filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').\
 							order_by('-mjd_requested').select_related()
 
+					# reddest_yse_filter gives hard-coded YSE "mini-survey" filter choice
+					if s.instrument.name == 'GPC1':
+						reddest_yse_filter = _reddest_yse_filter[:]
+					else:
+						reddest_yse_filter = 'z'
 					
 					def previous_obs_func(illum_min,illum_max):
 						filt = []
@@ -401,18 +406,17 @@ class AddSurveyObsFormView(FormView):
 							if len(filt) == 2: return filt
 						return None
 
-                    # hard-coded YSE "mini-survey" filter choice
 					if s.field_id.lower().startswith('virgo'):
 						if illum < 0.66:
 							filt = previous_obs_func(0,0.66)
 							if filt is None: band1name,band2name = 'g','r'
 							elif 'r' in filt: band1name,band2name = 'g','i'
-							elif 'i' in filt: band1name,band2name = 'g',_reddest_yse_filter
+							elif 'i' in filt: band1name,band2name = 'g',reddest_yse_filter
 							else: band1name,band2name = 'g','r'
 						else:
 							filt = previous_obs_func(0.66,1)
 							if filt is None or 'z' in filt or 'y' in filt: band1name,band2name = 'r','i'
-							else: band1name,band2name = 'r',_reddest_yse_filter
+							else: band1name,band2name = 'r',reddest_yse_filter
 					else:
 						if illum < 0.33:
 							filt = previous_obs_func(0,0.33)
@@ -421,11 +425,11 @@ class AddSurveyObsFormView(FormView):
 						elif illum < 0.66:
 							filt = previous_obs_func(0.33,0.66)
 							if filt is None or 'z' in filt or 'y' in filt: band1name,band2name = 'g','i'
-							else: band1name,band2name = 'g',_reddest_yse_filter
+							else: band1name,band2name = 'g',reddest_yse_filter
 						else:
 							filt = previous_obs_func(0.66,1)
 							if filt is None or 'z' in filt or 'y' in filt: band1name,band2name = 'r','i'
-							else: band1name,band2name = 'r',_reddest_yse_filter
+							else: band1name,band2name = 'r',reddest_yse_filter
 
 					band1 = PhotometricBand.objects.filter(
 						name=band1name,instrument__name=s.instrument.name)[0]

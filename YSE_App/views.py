@@ -652,38 +652,63 @@ def yse_observing_calendar(request):
     colors = ['#dd4b39', 
               '#f39c12', 
               '#00c0ef']
+
     for i,date in enumerate(date_list):
 
         time = Time(date_to_mjd(date.strftime('%Y-%m-%d 00:00:00')),format='mjd')
         
         sunset_forobs = tel.sun_set_time(time,which="next")
         sunrise_forobs = tel.sun_rise_time(time,which="next")
-        survey_obs = SurveyObservation.objects.filter(
+        survey_obs_ps1 = SurveyObservation.objects.filter(
             Q(mjd_requested__gte = date_to_mjd(sunset_forobs)-0.1) | Q(obs_mjd__gte = date_to_mjd(sunset_forobs)-0.1)).\
-            filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1))
-        if not len(survey_obs): continue
-        ztf_obs_ids = survey_obs.filter(obs_mjd__isnull=False).values_list('survey_field__ztf_field_id',flat=True).distinct()
-        ztf_sched_ids = survey_obs.filter(obs_mjd__isnull=True).values_list('survey_field__ztf_field_id',flat=True).distinct()
+            filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
+            filter(survey_field__instrument__name='GPC1')
+        survey_obs_ps2 = SurveyObservation.objects.filter(
+            Q(mjd_requested__gte = date_to_mjd(sunset_forobs)-0.1) | Q(obs_mjd__gte = date_to_mjd(sunset_forobs)-0.1)).\
+            filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
+            filter(survey_field__instrument__name='GPC2')
+
+        if not len(survey_obs_ps1) and not len(survey_obs_ps2): continue
+        ztf_obs_ps1_ids = survey_obs_ps1.filter(obs_mjd__isnull=False).values_list('survey_field__ztf_field_id',flat=True).distinct()
+        ztf_sched_ps1_ids = survey_obs_ps1.filter(obs_mjd__isnull=True).values_list('survey_field__ztf_field_id',flat=True).distinct()
+        ztf_obs_ps2_ids = survey_obs_ps2.filter(obs_mjd__isnull=False).values_list('survey_field__ztf_field_id',flat=True).distinct()
+        ztf_sched_ps2_ids = survey_obs_ps2.filter(obs_mjd__isnull=True).values_list('survey_field__ztf_field_id',flat=True).distinct()
         
-        ztf_obs_str = ''
-        for z in ztf_obs_ids:
-            filters = survey_obs.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
-            ztf_obs_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
-        ztf_sched_str = ''
-        for z in ztf_sched_ids:
-            if z in ztf_obs_ids: continue
-            filters = survey_obs.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
-            ztf_sched_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
+        ztf_obs_ps1_str = ''
+        for z in ztf_obs_ps1_ids:
+            filters = survey_obs_ps1.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
+            ztf_obs_ps1_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
+        ztf_sched_ps1_str = ''
+        for z in ztf_sched_ps1_ids:
+            if z in ztf_obs_ps1_ids: continue
+            filters = survey_obs_ps1.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
+            ztf_sched_ps1_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
+        ztf_obs_ps2_str = ''
+        for z in ztf_obs_ps2_ids:
+            filters = survey_obs_ps2.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
+            ztf_obs_ps2_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
+        ztf_sched_ps2_str = ''
+        for z in ztf_sched_ps2_ids:
+            if z in ztf_obs_ps2_ids: continue
+            filters = survey_obs_ps2.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
+            ztf_sched_ps2_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
 
             
-        if len(survey_obs):
-            obstuple += ((ztf_obs_str[:-2],date,
-                          '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)],ztf_sched_str[:-2]),)
+        if len(survey_obs_ps1) and len(survey_obs_ps2):
+            obstuple += ((ztf_obs_ps1_str[:-2],date,
+                          '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)],ztf_sched_ps1_str[:-2],ztf_obs_ps2_str[:-2],ztf_sched_ps2_str[:-2]),)
+        elif len(survey_obs_ps1) and not len(survey_obs_ps2):
+            obstuple += ((ztf_obs_ps1_str[:-2],date,
+                          '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)],ztf_sched_ps1_str[:-2],'None','None'),)
+        elif len(survey_obs_ps2) and not len(survey_obs_ps1):
+            obstuple += (('None',date,
+                          '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)],'None',ztf_obs_ps2_str[:-2],ztf_sched_ps2_str[:-2]),)
 
     context = {
         'all_obs': obstuple,
         'utc_time': datetime.datetime.utcnow().isoformat().replace(' ','T'),
     }
+
     return render(request, 'YSE_App/yse_observing_calendar.html', context)
 
 @login_required
