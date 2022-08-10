@@ -154,7 +154,7 @@ To do this, run the following command,
 
 .. code:: none
 
-    docker exec -it ysepz_web_container bash -c 'python3 manage.py createsuperuser'
+    docker exec -it ysepz_web_container bash -c 'python3 manage.py createsuperuser --noinput'
 
 This command will create a superuser with username and password as defined in
 you :code:`.env` file.
