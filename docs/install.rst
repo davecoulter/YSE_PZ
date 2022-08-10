@@ -14,15 +14,39 @@ to run :code:`YSE_PZ` locally is to use docker. You could attempt to install
 reasons) but this will likely be an order of magnitude harder than using docker.
 
 
-
 Install the Docker desktop app
 -------------------------------
 
 The first step is to install the docker desktop application, which can be found
-`here <https://docs.docker.com/get-docker/>`_ for your system. Docker allows you
-to run and develop :code:`YSE_PZ` without having to nativaly install :code:`YSE_PZ`
-on your computer. Depending on the type of changes you make to :code:`YSE_PZ` you 
-need to follow slightly different workflows. 
+`here <https://docs.docker.com/get-docker/>`_ for your system. The recommended
+docker resources required to run :code:`YSE_PZ` are:
+
+* System memory: >= 8 GB
+* Docker memory: >= 4 GB
+* Docker CPU >= 1
+* Docker Swap >= 1 GB
+* Docker Disk Image Size >= 20 GB
+
+These requirements can be set in the docker desktop app.
+
+Settings file
+-------------
+
+In order for :code:`YSE_PZ` to work, a :code:`settings.ini` needs to be created
+in the :code:`YSE/YSE_PZ/` directory. This file contains all the YSE_PZ
+configuration sends and can also contain secrets need to access external services.
+To create a minimum working settings file, you can just copy and rename the
+:code:`public_settings.ini` file. From the base :code:`YSE_PZ` directory run,
+
+.. code:: none
+
+    cp YSE_PZ/public_settings.ini YSE_PZ/settings.ini
+
+
+
+
+
+
 
 
 
@@ -32,7 +56,7 @@ Native
 ******
 
 .. warning::
-	The following native install instructions are here for achival purposes
+	The following native install instructions are here for archival purposes
 	only. We strongly recommend you do not use these instructions and use
 	Docker instead.
 
