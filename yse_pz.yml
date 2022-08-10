@@ -1,6 +1,0 @@
-name: yse_pz
-dependencies:
-- python=3.7
-- numpy
-- iminuit
-- mysqlclient
