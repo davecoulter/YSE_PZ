@@ -58,12 +58,6 @@ INSTALLED_APPS = [
 	#'silk'
 ]
 
-# DJ - 7/15/22
-# for date/time form attempt.  hopefully doesn't break anything.
-BOOTSTRAP3 = {
-  'javascript_in_head': True,
-}
-
 CRON_CLASSES = [
 	'YSE_App.data_ingest.TNS_uploads.TNS_emails',
 	'YSE_App.data_ingest.Photo_Z.YSE',
@@ -147,7 +141,7 @@ WSGI_APPLICATION = 'YSE_PZ.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-import pymysql
+# import pymysql
 DATABASES = {
     'explorer': {
         'ENGINE': 'django.db.backends.mysql',
@@ -167,8 +161,8 @@ DATABASES = {
 		'OPTIONS': {'ssl': {'ssl_disabled': True}}
     }
 }
-pymysql.version_info = (1, 4, 2, "final", 0)
-pymysql.install_as_MySQLdb()
+# pymysql.version_info = (1, 4, 2, "final", 0)
+# pymysql.install_as_MySQLdb()
 
 EXPLORER_CONNECTIONS = { 'Explorer': 'explorer' }
 EXPLORER_DEFAULT_CONNECTION = 'explorer'
