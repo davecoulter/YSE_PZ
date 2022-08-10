@@ -33,7 +33,7 @@ Settings file
 -------------
 
 In order for :code:`YSE_PZ` to work, a :code:`settings.ini` needs to be created
-in the :code:`YSE/YSE_PZ/` directory. This file contains all the YSE_PZ
+in the :code:`YSE_PZ/YSE_PZ/` directory. This file contains all the YSE_PZ
 configuration sends and can also contain secrets need to access external services.
 To create a minimum working settings file, you can just copy and rename the
 :code:`public_settings.ini` file. From the base :code:`YSE_PZ` directory run,
@@ -42,6 +42,42 @@ To create a minimum working settings file, you can just copy and rename the
 
     cp YSE_PZ/public_settings.ini YSE_PZ/settings.ini
 
+Environment file
+----------------
+
+For docker compose to run :code:`YSE_PZ` and its associated services environment
+variables like systems ports and volumes need to be set. This is done by
+creating a :code:`.env` file in the :code:`YSE_PZ/docker` directory.
+
+The :code:`.env` should have the following variables set:
+
+* :code:`VOL`
+
+The local path to the root of this repo -- will be mapped to /app in the docker web img
+
+* :code:`VOL_DB`
+
+The local path to the mysql files, e.g.: "local proj path/docker_mysql/8.0"
+
+* :code:`VOL_DB_CONFIG`
+
+The local path to the database config file, e.g.: "local proj path/db_configuration"
+
+* :code:`DB_PWD`
+
+The root database password
+
+* :code:`REL_DB_CONFIG`
+
+This should be set to :code:`/opt/project/db_configuration`
+
+* :code:`STATIC_VOL`
+
+The path YSE_PZ app's static directory>
+
+* :code:`DB_INIT`
+
+The path to the "DatabaseInitialization" directory
 
 
 
