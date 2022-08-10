@@ -91,13 +91,28 @@ An example of a minimum working .env file would be
     LOCAL_DB_PORT=53306
     LOCAL_HTTP_PORT=80
 
+Running the docker containers
+-----------------------------
+
+To run the docker containers, whilst in the :code:`YSE_PZ/docker/` directory run
+
+.. code:: none
+
+    docker compose up
+
+To bring the docker container stack down, whilst in the :code:`YSE_PZ/docker/`
+directory run
+
+.. code:: none
+
+    docker compose down
 
 Static files
 ------------
 
 To get YSE_PZ to see all the statics file run the following:
 
-.. code::
+.. code:: none
 
     docker exec -it ysepz_web_container bash
 
@@ -114,6 +129,10 @@ docker container, run
 
     exit
 
+Viewing webpages
+----------------
+
+Whilst the docker container stack is running
 
 
 Native
