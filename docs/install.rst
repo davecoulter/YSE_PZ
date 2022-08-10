@@ -79,6 +79,19 @@ it’s database container port 3306 on.
 Configurable - this should be set to whatever port you want Docker forwarding
 it’s nginx container port 80 on.
 
+* :code:`DJANGO_SUPERUSER_USERNAME`
+
+This is the django and yse_pz superuser username that will be created on startup.
+You use this to log into the YSE_PZ site and the django admin dashboard.
+
+* :code:`DJANGO_SUPERUSER_PASSWORD`
+
+This is the django and yse_pz superuser password that will be created on startup.
+You use this to log into the YSE_PZ site and the django admin dashboard.
+
+* :code:`DJANGO_SUPERUSER_EMAIL`
+
+This is the django and yse_pz superuser email that will be created on startup.
 
 An example of a minimum working .env file would be
 
@@ -90,6 +103,10 @@ An example of a minimum working .env file would be
     STATIC_VOL=../YSE_PZ/static/
     LOCAL_DB_PORT=53306
     LOCAL_HTTP_PORT=80
+    DJANGO_SUPERUSER_PASSWORD = password123
+    DJANGO_SUPERUSER_USERNAME = admin123
+    DJANGO_SUPERUSER_EMAIL = test@gamil.com
+
 
 Running the docker containers
 -----------------------------
@@ -129,6 +146,19 @@ To exit the docker container, run
 
     exit
 
+Adding a superuser
+------------------
+
+In order to be able to log into :code:`YSE_PZ` you need to create a superuser.
+To do this, run the following command,
+
+.. code:: none
+
+    docker exec -it ysepz_web_container bash -c 'python3 manage.py createsuperuser'
+
+This command will create a superuser with username and password as defined in
+you :code:`.env` file.
+
 Viewing webpages
 ----------------
 
@@ -144,9 +174,7 @@ Native
 	only. We strongly recommend you do not use these instructions and use
 	Docker instead.
 
-This is a easy guide to performing a local installation
-
-of :code:`YSE_PZ`.
+This is a easy guide to performing a local installation of :code:`YSE_PZ`.
 
 Prerequisites
 =============
