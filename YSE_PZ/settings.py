@@ -53,7 +53,7 @@ INSTALLED_APPS = [
 	'django_filters',
 	'django_cron',
 	'el_pagination',
-    'auditlog',
+    'auditlog'
     #'django_bootstrap3_multidatepicker.django_bootstrap3_multidatepicker'
 	#'silk'
 ]
