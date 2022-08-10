@@ -8,10 +8,11 @@ Docker
 ******
 
 This pages walks you through running :code:`YSE_PZ` locally. You might want to
-do this if you want to develop on :code:`YSE_PZ`. The strongly recommended way
-to run :code:`YSE_PZ` locally is to use docker. You could attempt to install
-:code:`YSE_PZ` natively (instructions at the bottom of this page for archival 
-reasons) but this will likely be an order of magnitude harder than using docker.
+do this if you want to develop on :code:`YSE_PZ`. The strongly recommended
+(and only supported) way to run :code:`YSE_PZ` locally is to use docker.
+You could attempt to install :code:`YSE_PZ` natively (instructions at the bottom
+of this page for archival reasons) but this will likely be an order of magnitude
+harder than using docker.
 
 
 Install the Docker desktop app
@@ -79,11 +80,9 @@ The path YSE_PZ app's static directory>
 
 The path to the "DatabaseInitialization" directory
 
+An example of a minimum working .env file would be
 
-
-
-
-
+.. code:: none
 
 
 
