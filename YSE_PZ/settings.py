@@ -53,7 +53,8 @@ INSTALLED_APPS = [
 	'django_filters',
 	'django_cron',
 	'el_pagination',
-    'auditlog',
+    'auditlog'
+    #'django_bootstrap3_multidatepicker.django_bootstrap3_multidatepicker'
 	#'silk'
 ]
 
@@ -140,7 +141,7 @@ WSGI_APPLICATION = 'YSE_PZ.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-#import pymysql
+# import pymysql
 DATABASES = {
     'explorer': {
         'ENGINE': 'django.db.backends.mysql',
@@ -160,8 +161,8 @@ DATABASES = {
 		'OPTIONS': {'ssl': {'ssl_disabled': True}}
     }
 }
-#pymysql.version_info = (1, 4, 2, "final", 0)
-#pymysql.install_as_MySQLdb()
+# pymysql.version_info = (1, 4, 2, "final", 0)
+# pymysql.install_as_MySQLdb()
 
 EXPLORER_CONNECTIONS = { 'Explorer': 'explorer' }
 EXPLORER_DEFAULT_CONNECTION = 'explorer'
@@ -209,7 +210,7 @@ SMTP_HOST = config.get('SMTP_provider', 'SMTP_HOST')
 SMTP_PORT = config.get('SMTP_provider', 'SMTP_PORT')
 LCOGTUSER = config.get('main', 'lcogtuser')
 LCOGTPASS = config.get('main', 'lcogtpass')
-ZTFPASS = config.get('yse_forcedphot','ztfforcedphotpass')
+ZTFPASS = config.get('ztf','ztfforcedphotpass')
 KEPLER_API_ENDPOINT = "http://api.keplerscience.org/is-k2-observing"
 TNSUSER = config.get('main','tns_bot_name')
 TNSID = config.get('main','tns_bot_id')
@@ -217,6 +218,7 @@ TNSAPIKEY = config.get('main','tnsapikey')
 TNSDECAMUSER = config.get('main','tns_decam_bot_name')
 TNSDECAMID = config.get('main','tns_decam_bot_id')
 TNSDECAMAPIKEY = config.get('main','tnsdecamapikey')
+REDYSEFILTER = config.get('yse','red_yse_filter')
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
@@ -240,7 +242,7 @@ STATIC_URL = config.get('site_settings', 'STATIC')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
-ZTFTMPDIR = config.get('yse_forcedphot','ztfforcedtmpdir')
+ZTFTMPDIR = config.get('ztf','ztfforcedtmpdir')
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True

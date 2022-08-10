@@ -216,7 +216,7 @@ class DECam_clusters(CronJobBase):
             from_addr = "%s@gmail.com" % options.SMTP_LOGIN
             subject = "QUB Transient Upload Failure"
             print("Sending error email")
-            html_msg = "Alert : YSE_PZ Failed to upload transients from PSST in QUB_data.py\n"
+            html_msg = "Alert : YSE_PZ Failed to upload transients from DECam in DECam_upload_clusters.py\n"
             html_msg += "Error : %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e),
@@ -264,7 +264,7 @@ class DECam_clusters(CronJobBase):
             parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
                               help='SMTP port (default=%default)')
 
-            parser.add_argument('--max_decam_days', default=config.get('main','max_days_decam'), type=float,
+            parser.add_argument('--max_decam_days', default=config.get('yse','max_days_decam'), type=float,
                                 help='grab photometry/objects from the last x days')
 
         else:
@@ -433,7 +433,7 @@ class DECam_clusters(CronJobBase):
                                                 'mag_err':mag_err,
                                                 'flux':lc['flux_c']*10**(0.4*(27.5-lc['ZPTMAG_c'])),
                                                 'flux_err':lc['dflux_c']*10**(0.4*(27.5-lc['ZPTMAG_c'])),
-                                                'data_quality':0,
+                                                'data_quality': 0,
                                                 'forced':1,
                                                 'discovery_point':0,
                                                 'flux_zero_point':27.5,

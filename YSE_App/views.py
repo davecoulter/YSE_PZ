@@ -1,5 +1,6 @@
+from django.db.models.query import EmptyQuerySet
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse, HttpResponseNotFound
 from django.conf import settings as djangoSettings
 from django.template import loader
 from django.views import generic
@@ -130,33 +131,40 @@ def personaldashboard(request):
 
     queries = UserQuery.objects.filter(user = request.user)
     tables = []
+
     for q in queries:
+        transients = []
         if q.query:
-            if 'yse_app_transient' not in q.query.sql.lower(): continue
-            if 'name' not in q.query.sql.lower(): continue
-            if not q.query.sql.lower().startswith('select'): continue
-            cursor = connections['explorer'].cursor()
-            cursor.execute(q.query.sql.replace('%','%%'), ())
-            transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
-            cursor.close()
+            try:
+                if 'yse_app_transient' not in q.query.sql.lower(): continue
+                if 'name' not in q.query.sql.lower(): continue
+                if not q.query.sql.lower().startswith('select'): continue
 
-            transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.query.title.replace(' ',''))
-            table = TransientTable(transientfilter.qs,prefix=q.query.title.replace(' ',''))
-            RequestConfig(request, paginate={'per_page': 10}).configure(table)
-            tables += [(table,q.query.title,q.query.title.replace(' ',''),transientfilter,q.id,len(transients))]
+                cursor = connections['explorer'].cursor()
+                cursor.execute(q.query.sql.replace('%','%%'), ())
+                transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+                cursor.close()
 
+                transientfilter = TransientFilter(request.GET, queryset=transients, prefix=q.query.title.replace(' ',''))
+                table = TransientTable(transientfilter.qs, prefix=q.query.title.replace(' ',''))
+                RequestConfig(request, paginate={'per_page': 10}).configure(table)
+                tables += [(table, q.query.title, q.query.title.replace(' ', ''), transientfilter, q.id, len(transients))]
+            except:
+                # Query bombed
+                tables += [(Transient.objects.none(), q.query.title + ' [QUERY ID %s IS BROKEN]' % q.query_id, q.query.title.replace(' ', ''), Transient.objects.none(), q.id, len(transients))]
+                pass
         elif q.python_query:
-            transients = getattr(yse_python_queries,q.python_query)()
+            transients = getattr(yse_python_queries, q.python_query)()
 
             transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.python_query)
             table = TransientTable(transientfilter.qs,prefix=q.python_query)
             RequestConfig(request, paginate={'per_page': 10}).configure(table)
-            tables += [(table,q.python_query,q.python_query,transientfilter,q.id,len(transients))]
-
+            tables += [(table,q.python_query, q.python_query, transientfilter, q.id, len(transients))]
             
     if request.META['QUERY_STRING']:
         anchor = request.META['QUERY_STRING'].split('-')[0]
-    else: anchor = ''
+    else:
+        anchor = ''
 
     context = {
         'user':request.user,
@@ -177,6 +185,8 @@ def transient_summary(request,status_or_query_name,
                       page_template='YSE_App/transient_summary_individual.html'):
 
     # Status update properties
+    transients = []
+
     all_transient_statuses = TransientStatus.objects.all()
     transient_status_follow = TransientStatus.objects.get(name="Following")
     transient_status_followrequest = TransientStatus.objects.get(name="FollowupRequested")
@@ -200,24 +210,32 @@ def transient_summary(request,status_or_query_name,
     else:
         query = Query.objects.filter(title=unquote(status_or_query_name))
         if len(query):
-            query = query[0]
-            if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
-            if 'name' not in query.sql.lower(): return Http404('Invalid Query')
-            if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
-            cursor = connections['explorer'].cursor()
-            cursor.execute(query.sql.replace('%','%%'), ())
-            transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
-            cursor.close()
+
+            try:
+                query = query[0]
+                if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
+                if 'name' not in query.sql.lower(): return Http404('Invalid Query')
+                if not query.sql.lower().startswith('select'): return Http404('Invalid Query')
+                cursor = connections['explorer'].cursor()
+                cursor.execute(query.sql.replace('%','%%'), ())
+                transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+                cursor.close()
+            except:
+                # Query bombed
+                pass
         else:
             query = UserQuery.objects.filter(python_query = unquote(status_or_query_name))
-            if not len(query): return Http404('Invalid Query')
+            if not len(query):
+                return HttpResponseNotFound("Invalid Query")
             query = query[0]
             transients = getattr(yse_python_queries,query.python_query)()
 
     if 'sort' in request.GET.keys():
         if request.GET['sort'] == 'last_obs_date' or request.GET['sort'] == '-last_obs_date':
-            if request.GET['sort'] == '-last_obs_date': is_descending = True
-            else: is_descending = False
+            if request.GET['sort'] == '-last_obs_date':
+                is_descending = True
+            else:
+                is_descending = False
             
             all_phot = TransientPhotometry.objects.values('transient').filter(transient__in = transients)
             phot_ids = all_phot.values('id')
@@ -235,7 +253,7 @@ SELECT pd.mag
    YSE_App_transient.id = t.id AND
    pd.id = (
          SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
+         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id
          ORDER BY pd2.obs_date DESC
          LIMIT 1
      )
@@ -634,38 +652,63 @@ def yse_observing_calendar(request):
     colors = ['#dd4b39', 
               '#f39c12', 
               '#00c0ef']
+
     for i,date in enumerate(date_list):
 
         time = Time(date_to_mjd(date.strftime('%Y-%m-%d 00:00:00')),format='mjd')
         
         sunset_forobs = tel.sun_set_time(time,which="next")
         sunrise_forobs = tel.sun_rise_time(time,which="next")
-        survey_obs = SurveyObservation.objects.filter(
+        survey_obs_ps1 = SurveyObservation.objects.filter(
             Q(mjd_requested__gte = date_to_mjd(sunset_forobs)-0.1) | Q(obs_mjd__gte = date_to_mjd(sunset_forobs)-0.1)).\
-            filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1))
-        if not len(survey_obs): continue
-        ztf_obs_ids = survey_obs.filter(obs_mjd__isnull=False).values_list('survey_field__ztf_field_id',flat=True).distinct()
-        ztf_sched_ids = survey_obs.filter(obs_mjd__isnull=True).values_list('survey_field__ztf_field_id',flat=True).distinct()
+            filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
+            filter(survey_field__instrument__name='GPC1')
+        survey_obs_ps2 = SurveyObservation.objects.filter(
+            Q(mjd_requested__gte = date_to_mjd(sunset_forobs)-0.1) | Q(obs_mjd__gte = date_to_mjd(sunset_forobs)-0.1)).\
+            filter(Q(mjd_requested__lte = date_to_mjd(sunrise_forobs)+0.1) | Q(obs_mjd__lte = date_to_mjd(sunrise_forobs)+0.1)).\
+            filter(survey_field__instrument__name='GPC2')
+
+        if not len(survey_obs_ps1) and not len(survey_obs_ps2): continue
+        ztf_obs_ps1_ids = survey_obs_ps1.filter(obs_mjd__isnull=False).values_list('survey_field__ztf_field_id',flat=True).distinct()
+        ztf_sched_ps1_ids = survey_obs_ps1.filter(obs_mjd__isnull=True).values_list('survey_field__ztf_field_id',flat=True).distinct()
+        ztf_obs_ps2_ids = survey_obs_ps2.filter(obs_mjd__isnull=False).values_list('survey_field__ztf_field_id',flat=True).distinct()
+        ztf_sched_ps2_ids = survey_obs_ps2.filter(obs_mjd__isnull=True).values_list('survey_field__ztf_field_id',flat=True).distinct()
         
-        ztf_obs_str = ''
-        for z in ztf_obs_ids:
-            filters = survey_obs.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
-            ztf_obs_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
-        ztf_sched_str = ''
-        for z in ztf_sched_ids:
-            if z in ztf_obs_ids: continue
-            filters = survey_obs.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
-            ztf_sched_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
+        ztf_obs_ps1_str = ''
+        for z in ztf_obs_ps1_ids:
+            filters = survey_obs_ps1.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
+            ztf_obs_ps1_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
+        ztf_sched_ps1_str = ''
+        for z in ztf_sched_ps1_ids:
+            if z in ztf_obs_ps1_ids: continue
+            filters = survey_obs_ps1.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
+            ztf_sched_ps1_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
+        ztf_obs_ps2_str = ''
+        for z in ztf_obs_ps2_ids:
+            filters = survey_obs_ps2.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
+            ztf_obs_ps2_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
+        ztf_sched_ps2_str = ''
+        for z in ztf_sched_ps2_ids:
+            if z in ztf_obs_ps2_ids: continue
+            filters = survey_obs_ps2.filter(survey_field__ztf_field_id=z).values_list('photometric_band__name',flat=True).distinct()
+            ztf_sched_ps2_str += '%s: %s; '%(z.__str__(),','.join([f.__str__() for f in filters]))
 
             
-        if len(survey_obs):
-            obstuple += ((ztf_obs_str[:-2],date,
-                          '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)],ztf_sched_str[:-2]),)
+        if len(survey_obs_ps1) and len(survey_obs_ps2):
+            obstuple += ((ztf_obs_ps1_str[:-2],date,
+                          '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)],ztf_sched_ps1_str[:-2],ztf_obs_ps2_str[:-2],ztf_sched_ps2_str[:-2]),)
+        elif len(survey_obs_ps1) and not len(survey_obs_ps2):
+            obstuple += ((ztf_obs_ps1_str[:-2],date,
+                          '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)],ztf_sched_ps1_str[:-2],'None','None'),)
+        elif len(survey_obs_ps2) and not len(survey_obs_ps1):
+            obstuple += (('None',date,
+                          '%i%%'%(moon_illumination(time)*100),colors[i%len(colors)],'None',ztf_obs_ps2_str[:-2],ztf_sched_ps2_str[:-2]),)
 
     context = {
         'all_obs': obstuple,
         'utc_time': datetime.datetime.utcnow().isoformat().replace(' ','T'),
     }
+
     return render(request, 'YSE_App/yse_observing_calendar.html', context)
 
 @login_required
@@ -1485,12 +1528,18 @@ def upload_spectrum(request):
 @login_or_basic_auth_required
 def change_status_for_query(request, query_id, status_id):
 
+    transients = []
     q = UserQuery.objects.get(pk=query_id)
     if q.query:
-        cursor = connections['explorer'].cursor()
-        cursor.execute(q.query.sql.replace('%','%%'), ())
-        transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
-        cursor.close()
+        try:
+            cursor = connections['explorer'].cursor()
+            cursor.execute(q.query.sql.replace('%', '%%'), ())
+            transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
+            cursor.close()
+        except:
+            # Query bombed
+            pass
+
 
     elif q.python_query:
         transients = getattr(yse_python_queries,q.python_query)()

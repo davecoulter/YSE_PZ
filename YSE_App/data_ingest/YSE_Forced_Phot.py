@@ -124,6 +124,7 @@ default_forcedphot_header['STAGE']    = 'WSdiff  '
 default_forcedphot_header['EMAIL']    = 'yse@qub.ac.uk'
 
 from astropy.visualization import PercentileInterval, AsinhStretch
+from tendo import singleton
 
 def fits_to_png(ff,outfile,log=False):
     plt.clf()
@@ -179,36 +180,52 @@ class ForcedPhot(CronJobBase):
             print('debug mode enabled')
     
     def do(self):
-        self.debug = False
+        code = 'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhot'
         
+        self.debug = False
+
+        # options
+        parser = self.add_options(usage='')
+        options,  args = parser.parse_known_args()
+        config = configparser.ConfigParser()
+        config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+        parser = self.add_options(usage='',config=config)
+        options,  args = parser.parse_known_args()
+        self.options = options
+
+        # in case of code failures
+        smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+        from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+        subject = "YSE_PZ Forced Photometry Upload Failure"
+        html_msg = "Alert : YSE_PZ Forced Photometry Failed to upload transients in YSE_Forced_Phot.py\n"
+        html_msg += "Error : %s"
+
+        # check for instance of code already running
+        try:
+            me = singleton.SingleInstance(flavor_id="10")
+        except singleton.SingleInstanceException:
+            print("Sending error email")
+            sendemail(from_addr, options.dbemail, subject,
+                      f"multiple instances of {code} are running",
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+            sys.exit(1)        
+
         try:
             tstart = time.time()
-        
-            parser = self.add_options(usage='')
-            options,  args = parser.parse_known_args()
 
-            config = configparser.ConfigParser()
-            config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
-            parser = self.add_options(usage='',config=config)
-            options,  args = parser.parse_known_args()
-            self.options = options
             #nsn = self.doall_main()
             nsn = self.main()
+            print('success')
         except Exception as e:
             print(e)
             exc_type, exc_obj, exc_tb = sys.exc_info()
             print("""Forced phot cron failed with error %s at line number %s"""%(
                 e,exc_tb.tb_lineno))
             nsn = 0
-            smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
-            from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-            subject = "YSE_PZ Forced Photometry Upload Failure"
             print("Sending error email")
-            html_msg = "Alert : YSE_PZ Forced Photometry Failed to upload transients in YSE_Forced_Phot.py\n"
-            html_msg += "Error : %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e),
-                      options.SMTP_LOGIN, options.dbpassword, smtpserver)
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
         print('YSE_PZ Forced Photometry took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
@@ -231,17 +248,17 @@ class ForcedPhot(CronJobBase):
         if config:
             parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
                                 help='static directory (default=%default)')
-            parser.add_argument('--upload', default=config.get('yse_forcedphot','upload'), type=str,
+            parser.add_argument('--upload', default=config.get('yse','upload'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--stamp', default=config.get('yse_forcedphot','stamp'), type=str,
+            parser.add_argument('--stamp', default=config.get('yse','stamp'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--detectability', default=config.get('yse_forcedphot','detectability'), type=str,
+            parser.add_argument('--detectability', default=config.get('yse','detectability'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--skycell', default=config.get('yse_forcedphot','skycell'), type=str,
+            parser.add_argument('--skycell', default=config.get('yse','skycell'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--ifauser', default=config.get('yse_forcedphot','user'), type=str,
+            parser.add_argument('--ifauser', default=config.get('yse','user'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--ifapass', default=config.get('yse_forcedphot','pass'), type=str,
+            parser.add_argument('--ifapass', default=config.get('yse','pass'), type=str,
                               help='stamp upload server (default=%default)')
 
             parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
@@ -250,6 +267,8 @@ class ForcedPhot(CronJobBase):
                               help='database login, if post=True (default=%default)')
             parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
                               help='database password, if post=True (default=%default)')
+            parser.add_argument('--dbemailpassword', default=config.get('main','dbemailpassword'), type=str,
+                                help='database password, if post=True (default=%default)')
             parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
                               help='URL to POST transients to a database (default=%default)')
 
@@ -316,6 +335,8 @@ class ForcedPhot(CronJobBase):
                     warp_id_list += [s.warp_id]
                     mjd_list += [s.obs_mjd]
                     filt_list += [s.photometric_band.name]
+                    camera_list += [s.survey_field.instrument.name.lower()]
+                    
         nt = len(np.unique(transient_list))
         print('{} transients to upload!'.format(nt))
         if nt == 0: return 0
@@ -328,7 +349,7 @@ class ForcedPhot(CronJobBase):
         print('submitted stamp request {}'.format(stamp_request_name))
 
         phot_request_names = self.forcedphot_request(
-            transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list,skycelldict)
+            transient_list,ra_list,dec_list,mjd_list,filt_list,camera_list,diff_id_list,skycelldict)
         print('submitted phot requests:')
         for prn in phot_request_names: print(prn)
 
@@ -378,7 +399,6 @@ class ForcedPhot(CronJobBase):
             if done_stamp: jobs_done = True
         if not success_stamp:
             pass
-            #import pdb; pdb.set_trace()
 
             #raise RuntimeError('jobs failed!')
         if not jobs_done:
@@ -444,9 +464,12 @@ class ForcedPhot(CronJobBase):
 
             PhotUploadAll = {"mjdmatchmin":0.0001,
                              "clobber":True}
-            photometrydict = {'instrument':'GPC2',
-                              'obs_group':'YSE',
-                              'photdata':{}}
+            photometrydict_ps1 = {'instrument':'GPC1',
+                                  'obs_group':'YSE',
+                                  'photdata':{}}
+            photometrydict_ps2 = {'instrument':'GPC2',
+                                  'obs_group':'YSE',
+                                  'photdata':{}}
 
             tdict[k] = {'name':k,
                         #'obs_group':'YSE',
@@ -517,10 +540,15 @@ class ForcedPhot(CronJobBase):
                                         'discovery_point':0,
                                         'diffim':1,
                                         'diffimg':diffimgdict}
-                
-                photometrydict['photdata']['%s_%i'%(mjd_to_date(img_dict[k]['diff_image_mjd'][i]),i)] = phot_upload_dict
-
-            PhotUploadAll['PS1'] = photometrydict
+                if 'GPC1' in phot_upload_dict['band']:
+                    photometrydict_ps1['photdata']['%s_%i'%(mjd_to_date(img_dict[k]['diff_image_mjd'][i]),i)] = phot_upload_dict
+                elif 'GPC2' in phot_upload_dict['band']:
+                    photometrydict_ps2['photdata']['%s_%i'%(mjd_to_date(img_dict[k]['diff_image_mjd'][i]),i)] = phot_upload_dict
+                else:
+                    raise RuntimeError("couldn't figure out the instrument")
+                    
+            PhotUploadAll['PS1'] = photometrydict_ps1
+            PhotUploadAll['PS2'] = photometrydict_ps2
             tdict[k]['transientphotometry'] = PhotUploadAll
         self.send_data(tdict)
         
@@ -725,7 +753,7 @@ class ForcedPhot(CronJobBase):
         return done,success
         
     def stamp_request(
-            self,transient_list,ra_list,dec_list,diff_id_list,
+            self,transient_list,ra_list,dec_list,camera_list,diff_id_list,
             warp_id_list,stack_id_list,width=300,height=300,skycelldict=None):
 
         assert len(transient_list) == len(warp_id_list) or \
@@ -754,27 +782,27 @@ class ForcedPhot(CronJobBase):
                 skycelldict[snid] = skycells[-1]
         
         count = 1
-        for snid,ra,dec,diff_id in \
-            zip(transient_list,ra_list,dec_list,diff_id_list):
+        for snid,ra,dec,camera,diff_id in \
+            zip(transient_list,ra_list,dec_list,camera_list,diff_id_list):
             if diff_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','diff',diff_id,'RINGS.V3',
+            data.add_row((count,camera,'null','null','stamp',2049,'byid','diff',diff_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'diff.for.%s'%snid) )
             count += 1
         
-        for snid,ra,dec,warp_id in \
-            zip(transient_list,ra_list,dec_list,warp_id_list):
+        for snid,ra,dec,camera,warp_id in \
+            zip(transient_list,ra_list,dec_list,camera_list,warp_id_list):
             if warp_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','warp',warp_id,'RINGS.V3',
+            data.add_row((count,camera,'null','null','stamp',2049,'byid','warp',warp_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'warp.for.%s'%snid) )
             count += 1
             
-        for snid,ra,dec,stack_id in \
-            zip(transient_list,ra_list,dec_list,stack_id_list):
+        for snid,ra,dec,camera,stack_id in \
+            zip(transient_list,ra_list,dec_list,camera_list,stack_id_list):
             if stack_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','stack',stack_id,'RINGS.V3',
+            data.add_row((count,camera,'null','null','stamp',2049,'byid','stack',stack_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'stack.for.%s'%snid) )
             count += 1
 
@@ -791,7 +819,7 @@ class ForcedPhot(CronJobBase):
         self.submit_to_ipp(s)
         return request_name,skycelldict
 
-    def forcedphot_request(self,transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list,skycelldict):
+    def forcedphot_request(self,transient_list,ra_list,dec_list,mjd_list,filt_list,camera_list,diff_id_list,skycelldict):
 
         transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list = \
             np.atleast_1d(np.asarray(transient_list)),np.atleast_1d(np.asarray(ra_list)),\
@@ -803,11 +831,11 @@ class ForcedPhot(CronJobBase):
         for snid_unq in np.unique(transient_list):
             data = at.Table(names=('ROWNUM','PROJECT','RA1_DEG','DEC1_DEG','RA2_DEG','DEC2_DEG','FILTER','MJD-OBS','FPA_ID','COMPONENT_ID'),
                             dtype=('S20','S16','>f8','>f8','>f8','>f8','S20','>f8','>i4','S64'))
-            for snid,ra,dec,mjd,filt,diff_id in \
+            for snid,ra,dec,mjd,filt,camera,diff_id in \
                 zip(transient_list[transient_list == snid_unq],ra_list[transient_list == snid_unq],dec_list[transient_list == snid_unq],
-                    mjd_list[transient_list == snid_unq],filt_list[transient_list == snid_unq],diff_id_list[transient_list == snid_unq]):
+                    mjd_list[transient_list == snid_unq],filt_list[transient_list == snid_unq],camera_list[transient_list == snid_unq],diff_id_list[transient_list == snid_unq]):
                 if diff_id is None or diff_id == 'NULL': continue
-                data.add_row(('forcedphot_ysebot_{}'.format(count),'gpc2',ra,dec,ra,dec,filt,mjd,diff_id,skycelldict[snid_unq]) )
+                data.add_row(('forcedphot_ysebot_{}'.format(count),camera,ra,dec,ra,dec,filt,mjd,diff_id,skycelldict[snid_unq]) )
                 count += 1
 
             if len(data) > 0:
@@ -856,7 +884,7 @@ class ForcedPhotUpdate(CronJobBase):
     RUN_EVERY_MINS = 30
 
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
-    code = 'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhot'
+    code = 'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhotUpdate'
 
     def __init__(self):
         
@@ -865,20 +893,41 @@ class ForcedPhotUpdate(CronJobBase):
             print('debug mode enabled')
     
     def do(self):
+        code = 'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhotUpdate'
+        
         self.debug = False
+
+        # code options
+        fp = ForcedPhot()
+        parser = fp.add_options(usage='')
+        options,  args = parser.parse_known_args()
+
+        config = configparser.ConfigParser()
+        config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+        parser = fp.add_options(usage='',config=config)
+        options,  args = parser.parse_known_args()
+        fp.options = options
+
+        # in case of code failures
+        smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
+        from_addr = "%s@gmail.com" % options.SMTP_LOGIN
+        subject = "YSE_PZ Forced Photometry Upload Failure"
+        html_msg = "Alert : YSE_PZ Forced Photometry Failed to upload transients in YSE_Forced_Phot.py\n"
+        html_msg += "Error : %s"
+        
+        # check for instance of code already running
+        try:
+            me = singleton.SingleInstance(flavor_id="11")
+        except singleton.SingleInstanceException:
+            print("Sending error email")
+            sendemail(from_addr, options.dbemail, subject,
+                      f"multiple instances of {code} are running",
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+            sys.exit(1)        
+
         
         try:
             tstart = time.time()
-
-            fp = ForcedPhot()
-            parser = fp.add_options(usage='')
-            options,  args = parser.parse_known_args()
-
-            config = configparser.ConfigParser()
-            config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
-            parser = fp.add_options(usage='',config=config)
-            options,  args = parser.parse_known_args()
-            fp.options = options
 
             nsn = fp.main(update_forced=True)
         except Exception as e:
@@ -887,15 +936,10 @@ class ForcedPhotUpdate(CronJobBase):
             print("""Forced phot cron failed with error %s at line number %s"""%(
                 e,exc_tb.tb_lineno))
             nsn = 0
-            smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
-            from_addr = "%s@gmail.com" % options.SMTP_LOGIN
-            subject = "YSE_PZ Forced Photometry Upload Failure"
             print("Sending error email")
-            html_msg = "Alert : YSE_PZ Forced Photometry Failed to upload transients in YSE_Forced_Phot.py\n"
-            html_msg += "Error : %s"
             sendemail(from_addr, options.dbemail, subject,
                       html_msg%(e),
-                      options.SMTP_LOGIN, options.dbpassword, smtpserver)
+                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
         print('YSE_PZ Forced Photometry took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
