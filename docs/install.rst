@@ -122,8 +122,8 @@ Then in the docker container
 
     python3 manage.py collectstatic
 
-and type :code:`yes` if asked about overwriting existing static files. To exit the
-docker container, run
+and type :code:`yes` if asked about overwriting existing static files.
+To exit the docker container, run
 
 .. code::
 
@@ -132,8 +132,9 @@ docker container, run
 Viewing webpages
 ----------------
 
-Whilst the docker container stack is running
-
+Whilst the docker container stack is running go to
+`http://0.0.0.0/ <http://0.0.0.0/>`_ in your web browser and :code:`YSE_PZ`
+should be running.
 
 Native
 ******
