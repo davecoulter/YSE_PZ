@@ -85,7 +85,8 @@ class SurveyObsFilter(django_filters.FilterSet):
     ra_lt = django_filters.Filter(field_name="survey_field__ra_cen", lookup_expr='lt')
     dec_gt = django_filters.Filter(field_name="survey_field__dec_cen", lookup_expr='gt')
     dec_lt = django_filters.Filter(field_name="survey_field__dec_cen", lookup_expr='lt')
-
+    instrument = django_filters.Filter(field_name="survey_field__instrument__name")
+    
     class Meta:
         model = SurveyObservation
         fields = ()
