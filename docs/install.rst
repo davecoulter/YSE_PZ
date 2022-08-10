@@ -60,29 +60,35 @@ The local path to the root of this repo -- will be mapped to /app in the docker 
 
 The local path to the mysql files, e.g.: "local proj path/docker_mysql/8.0"
 
-* :code:`VOL_DB_CONFIG`
-
-The local path to the database config file, e.g.: "local proj path/db_configuration"
-
 * :code:`DB_PWD`
 
 The root database password
 
-* :code:`REL_DB_CONFIG`
-
-This should be set to :code:`/opt/project/db_configuration`
-
 * :code:`STATIC_VOL`
 
-The path YSE_PZ app's static directory>
+The path YSE_PZ app's static directory
 
-* :code:`DB_INIT`
+* :code:`LOCAL_DB_HOST`
 
-The path to the "DatabaseInitialization" directory
+Configurable - this should be set to whatever port you want Docker forwarding
+it’s database container port 3306 on.
+
+* :code:`LOCAL_HTTP_PORT`
+
+Configurable - this should be set to whatever port you want Docker forwarding
+it’s nginx container port 80 on.
+
 
 An example of a minimum working .env file would be
 
 .. code:: none
+
+    VOL= ../
+    VOL_DB=../database/
+    DB_PWD=password
+    STATIC_VOL=../YSE_PZ/static/
+    LOCAL_DB_PORT=53306
+    LOCAL_HTTP_PORT=80
 
 
 
