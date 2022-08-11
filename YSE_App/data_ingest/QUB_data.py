@@ -1511,7 +1511,7 @@ class CheckDuplicates(CronJobBase):
         from YSE_App.models import Transient
         # 10HYSEkcp
         
-        transients = Transient.objects.filter(created_date__gt=datetime.datetime.now()-datetime.timedelta(50)).filter(name__startswith='1')
+        transients = Transient.objects.filter(created_date__gt=datetime.datetime.now()-datetime.timedelta(1)).filter(name__startswith='1')
         for t in transients:
             if t.disc_date is None: continue
             ramin,ramax,decmin,decmax = getRADecBox(t.ra,t.dec,size=0.00042)
