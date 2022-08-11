@@ -343,6 +343,7 @@ class ForcedPhot(CronJobBase):
                     warp_id_list += [s.warp_id]
                     mjd_list += [s.obs_mjd]
                     filt_list += [s.photometric_band.name]
+                    import pdb; pdb.set_trace()
                     camera_list += [get_camera(s.warp_id).lower()] #s.survey_field.instrument.name.lower()]
 
         nt = len(np.unique(transient_list))
