@@ -23,6 +23,7 @@ import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
+import re
 
 #bad_flags = ['0x00001000','0x20000000','0x40000000','0x80000000']
 
