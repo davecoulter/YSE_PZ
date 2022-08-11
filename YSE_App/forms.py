@@ -6,7 +6,6 @@ from YSE_App import view_utils
 from django.utils import timezone
 from datetime import timedelta
 from YSE_App.queries.yse_python_queries import python_query_reg
-from django_bootstrap3_multidatepicker.django_bootstrap3_multidatepicker import widgets, fields
 
 class TransientForm(ModelForm):
 	class Meta:
