@@ -306,7 +306,7 @@ class ForcedPhot(CronJobBase):
         # candidate transients
         min_date = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.options.max_time_minutes)
         nowmjd = date_to_mjd(datetime.datetime.utcnow())
-        transient_name='2021vrt'; self.options.max_days_yseimage = 10
+        transient_name='2021vrt'; self.options.max_days_yseimage = 12
         if transient_name is None and not update_forced:
             transients = Transient.objects.filter(
                 created_date__gte=min_date).filter(~Q(tags__name='YSE') & ~Q(tags__name='YSE Stack')).order_by('-created_date')
@@ -328,8 +328,8 @@ class ForcedPhot(CronJobBase):
 
         for t in transients:
 
-            sit = survey_images.filter(Q(survey_field__ra_cen__gt=t.ra-1.55) | Q(survey_field__ra_cen__lt=t.ra+1.55) |
-                                       Q(survey_field__dec_cen__gt=t.dec-1.55) | Q(survey_field__dec_cen__lt=t.dec+1.55))
+            sit = survey_images.filter(Q(survey_field__ra_cen__gt=t.ra-1.55) & Q(survey_field__ra_cen__lt=t.ra+1.55) &
+                                       Q(survey_field__dec_cen__gt=t.dec-1.55) & Q(survey_field__dec_cen__lt=t.dec+1.55))
 
             if len(sit):
                 sct = SkyCoord(t.ra,t.dec,unit=u.deg)
