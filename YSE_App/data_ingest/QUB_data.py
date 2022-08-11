@@ -247,7 +247,7 @@ class QUB(CronJobBase):
 
 
         nowmjd = Time.now().mjd
-        summary_upload = summary[nowmjd - summary['mjd_obs'] < 50] #self.options.max_days]
+        summary_upload = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
 
         while nsn_single == 25:
             transientdict,nsn_single = self.parse_data(summary_upload,lc,transient_idx=nsn,max_transients=25)
