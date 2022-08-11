@@ -87,6 +87,7 @@ class check_obs:
         results = {}
         n_active = 0
         active_fields = []
+        import pdb; pdb.set_trace()
         for d in data['results']:
             active_fields += [d['name']]
             n_active += 1
