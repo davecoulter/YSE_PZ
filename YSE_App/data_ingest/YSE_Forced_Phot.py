@@ -126,6 +126,13 @@ default_forcedphot_header['EMAIL']    = 'yse@qub.ac.uk'
 from astropy.visualization import PercentileInterval, AsinhStretch
 from tendo import singleton
 
+def get_camera(exp_name):
+    if re.match('o[0-9][0-9][0-9][0-9]g[0-9][0-9][0-9][0-9]o',exp_name):
+        return 'GPC1'
+    elif re.match('o[0-9][0-9][0-9][0-9]h[0-9][0-9][0-9][0-9]o',exp_name):
+        return 'GPC2'
+    else: raise RuntimeError('couldn\'t parse exp name')
+
 def fits_to_png(ff,outfile,log=False):
     plt.clf()
     ax = plt.axes()
@@ -335,8 +342,8 @@ class ForcedPhot(CronJobBase):
                     warp_id_list += [s.warp_id]
                     mjd_list += [s.obs_mjd]
                     filt_list += [s.photometric_band.name]
-                    camera_list += [s.survey_field.instrument.name.lower()]
-                    import pdb; pdb.set_trace()
+                    camera_list += [get_camera(s.warp_id).lower()] #s.survey_field.instrument.name.lower()]
+
         nt = len(np.unique(transient_list))
         print('{} transients to upload!'.format(nt))
         if nt == 0: return 0
