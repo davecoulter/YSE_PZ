@@ -387,13 +387,12 @@ class ForcedPhot(CronJobBase):
         #write the stack jobs
         transient_list,ra_list,dec_list,stack_id_list = [],[],[],[]
         for t in phot_dict.keys():
-            for s,r,d in zip(phot_dict[t]['stack_id'],phot_dict[t]['ra'],phot_dict[t]['dec']):
+            for s,r,d,c in zip(phot_dict[t]['stack_id'],phot_dict[t]['ra'],phot_dict[t]['dec'],phot_dict[t]['camera']):
                 stack_id_list += [s]
                 ra_list += [r]
                 dec_list += [d]
                 transient_list += [t]
-                import pdb; pdb.set_trace()
-                camera_list += ['gpc1']
+                camera_list += [c]
                 
         stack_request_name,skycelldict = self.stamp_request(
             transient_list,ra_list,dec_list,camera_list,[],[],stack_id_list,skycelldict=skycelldict)
@@ -662,7 +661,8 @@ class ForcedPhot(CronJobBase):
                         phot_dict[tn]['dec'] += [dec]
                         phot_dict[tn]['exptime'] += [exptime]
                         phot_dict[tn]['zpt'] += [ff[0].header['FPA.ZP']]
-                        import pdb; pdb.set_trace()
+                        phot_dict[tn]['camera'] += [ff[0].header['FPA.INSTRUMENT']]
+
         return phot_dict
 
     def get_stamps(self,request_name,transient_list):
