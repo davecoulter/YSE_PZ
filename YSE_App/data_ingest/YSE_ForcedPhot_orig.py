@@ -183,7 +183,7 @@ class ForcedPhot(CronJobBase):
         code = 'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhot'
         
         self.debug = False
-
+        import pdb; pdb.set_trace()
         # options
         parser = self.add_options(usage='')
         options,  args = parser.parse_known_args()
@@ -199,7 +199,7 @@ class ForcedPhot(CronJobBase):
         subject = "YSE_PZ Forced Photometry Upload Failure"
         html_msg = "Alert : YSE_PZ Forced Photometry Failed to upload transients in YSE_Forced_Phot.py\n"
         html_msg += "Error : %s"
-        import pdb; pdb.set_trace()
+
         # check for instance of code already running
         try:
             me = singleton.SingleInstance(flavor_id="10")
