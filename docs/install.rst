@@ -36,9 +36,10 @@ Settings file
 
 In order for :code:`YSE_PZ` to work, a :code:`settings.ini` needs to be created
 in the :code:`YSE_PZ/YSE_PZ/` directory. This file contains all the YSE_PZ
-configuration sends and can also contain secrets need to access external services.
-To create a minimum working settings file, you can just copy and rename the
-:code:`public_settings.ini` file. From the base :code:`YSE_PZ` directory run,
+configuration settings and can also contain secrets needed to access external
+services. To create a minimum working settings file, you can just copy and
+rename the :code:`public_settings.ini` file. From the base :code:`YSE_PZ`
+directory run,
 
 .. code:: none
 
@@ -47,7 +48,7 @@ To create a minimum working settings file, you can just copy and rename the
 Environment file
 ----------------
 
-For docker compose to run :code:`YSE_PZ` and its associated services environment
+For docker compose to run :code:`YSE_PZ` environment
 variables like systems ports and volumes need to be set. This is done by
 creating a :code:`.env` file in the :code:`YSE_PZ/docker` directory.
 
@@ -55,7 +56,8 @@ The :code:`.env` should have the following variables set:
 
 * :code:`VOL`
 
-The local path to the root of this repo -- will be mapped to /app in the docker web img
+The local path to the root of this repository -- will be mapped to /app in the
+docker web image
 
 * :code:`VOL_DB`
 
@@ -71,23 +73,23 @@ The path YSE_PZ app's static directory
 
 * :code:`LOCAL_DB_HOST`
 
-Configurable - this should be set to whatever port you want Docker forwarding
+Configurable - this should be set to whatever port you want docker forwarding
 it’s database container port 3306 on.
 
 * :code:`LOCAL_HTTP_PORT`
 
-Configurable - this should be set to whatever port you want Docker forwarding
+Configurable - this should be set to whatever port you want docker forwarding
 it’s nginx container port 80 on.
 
 * :code:`DJANGO_SUPERUSER_USERNAME`
 
 This is the django and yse_pz superuser username that will be created on startup.
-You use this to log into the YSE_PZ site and the django admin dashboard.
+You use this to log into the YSE_PZ website and the django admin dashboard.
 
 * :code:`DJANGO_SUPERUSER_PASSWORD`
 
 This is the django and yse_pz superuser password that will be created on startup.
-You use this to log into the YSE_PZ site and the django admin dashboard.
+You use this to log into the YSE_PZ website and the django admin dashboard.
 
 * :code:`DJANGO_SUPERUSER_EMAIL`
 
@@ -111,13 +113,13 @@ An example of a minimum working .env file would be
 Running the docker containers
 -----------------------------
 
-To run the docker containers, whilst in the :code:`YSE_PZ/docker/` directory run
+To run the docker containers, in the :code:`YSE_PZ/docker/` directory run
 
 .. code:: none
 
     docker compose up
 
-To bring the docker container stack down, whilst in the :code:`YSE_PZ/docker/`
+To bring the docker container stack down, in the :code:`YSE_PZ/docker/`
 directory run
 
 .. code:: none
@@ -133,7 +135,7 @@ To get YSE_PZ to see all the statics file run the following:
 
     docker exec -it ysepz_web_container bash
 
-Then in the docker container
+Then in the docker container run,
 
 .. code::
 
@@ -156,8 +158,8 @@ To do this, run the following command,
 
     docker exec -it ysepz_web_container bash -c 'python3 manage.py createsuperuser --noinput'
 
-This command will create a superuser with username and password as defined in
-you :code:`.env` file.
+This command will create a superuser with the username and password defined in
+the :code:`.env` file.
 
 Viewing webpages
 ----------------
