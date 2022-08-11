@@ -61,7 +61,7 @@ class check_obs:
         if config:
             parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
                         help='gmail login (default=%default)')
-            parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
+            parser.add_argument('--dbepassword', default=config.get('main','dbemailpassword'), type=str,
                             help='gmail password (default=%default)')
             #parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
             #    help='base URL to POST/GET,PUT to/from a database (default=%default)')
