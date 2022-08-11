@@ -199,7 +199,7 @@ class ForcedPhot(CronJobBase):
         subject = "YSE_PZ Forced Photometry Upload Failure"
         html_msg = "Alert : YSE_PZ Forced Photometry Failed to upload transients in YSE_Forced_Phot.py\n"
         html_msg += "Error : %s"
-
+        import pdb; pdb.set_trace()
         # check for instance of code already running
         try:
             me = singleton.SingleInstance(flavor_id="10")
@@ -299,7 +299,6 @@ class ForcedPhot(CronJobBase):
         min_date = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.options.max_time_minutes)
         nowmjd = date_to_mjd(datetime.datetime.utcnow())
         transient_name='2022ann'; self.options.max_days_yseimage = 120
-        import pdb; pdb.set_trace()
         if transient_name is None and not update_forced:
             transients = Transient.objects.filter(
                 created_date__gte=min_date).filter(~Q(tags__name='YSE') & ~Q(tags__name='YSE Stack')).order_by('-created_date')
