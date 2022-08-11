@@ -554,6 +554,7 @@ class ForcedPhot(CronJobBase):
                 elif 'GPC2' in phot_upload_dict['band']:
                     photometrydict_ps2['photdata']['%s_%i'%(mjd_to_date(img_dict[k]['diff_image_mjd'][i]),i)] = phot_upload_dict
                 else:
+                    import pdb; pdb.set_trace()
                     raise RuntimeError("couldn't figure out the instrument")
                     
             PhotUploadAll['PS1'] = photometrydict_ps1
