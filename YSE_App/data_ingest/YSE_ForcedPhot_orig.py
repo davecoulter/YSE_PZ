@@ -183,7 +183,7 @@ class ForcedPhot(CronJobBase):
         code = 'YSE_App.data_ingest.YSE_Forced_Phot.ForcedPhot'
         
         self.debug = False
-        import pdb; pdb.set_trace()
+
         # options
         parser = self.add_options(usage='')
         options,  args = parser.parse_known_args()
@@ -248,17 +248,17 @@ class ForcedPhot(CronJobBase):
         if config:
             parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
                                 help='static directory (default=%default)')
-            parser.add_argument('--upload', default=config.get('yse_forcedphot','upload'), type=str,
+            parser.add_argument('--upload', default=config.get('yse','upload'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--stamp', default=config.get('yse_forcedphot','stamp'), type=str,
+            parser.add_argument('--stamp', default=config.get('yse','stamp'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--detectability', default=config.get('yse_forcedphot','detectability'), type=str,
+            parser.add_argument('--detectability', default=config.get('yse','detectability'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--skycell', default=config.get('yse_forcedphot','skycell'), type=str,
+            parser.add_argument('--skycell', default=config.get('yse','skycell'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--ifauser', default=config.get('yse_forcedphot','user'), type=str,
+            parser.add_argument('--ifauser', default=config.get('yse','user'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--ifapass', default=config.get('yse_forcedphot','pass'), type=str,
+            parser.add_argument('--ifapass', default=config.get('yse','pass'), type=str,
                               help='stamp upload server (default=%default)')
 
             parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
