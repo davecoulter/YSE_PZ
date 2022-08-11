@@ -848,7 +848,7 @@ class ForcedPhot(CronJobBase):
                 if diff_id is None or diff_id == 'NULL': continue
                 data.add_row(('forcedphot_ysebot_{}'.format(count),camera,ra,dec,ra,dec,filt,mjd,diff_id,skycelldict[snid_unq]) )
                 count += 1
-                import pdb; pdb.set_trace()
+
             if len(data) > 0:
                 hdr = default_forcedphot_header.copy()
                 request_name = 'YSE-phot.%s.%s.%i'%(snid,diff_id,time.time())
