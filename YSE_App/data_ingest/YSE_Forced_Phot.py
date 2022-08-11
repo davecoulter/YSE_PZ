@@ -823,10 +823,11 @@ class ForcedPhot(CronJobBase):
 
     def forcedphot_request(self,transient_list,ra_list,dec_list,mjd_list,filt_list,camera_list,diff_id_list,skycelldict):
 
-        transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list = \
+        transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list,camera_list = \
             np.atleast_1d(np.asarray(transient_list)),np.atleast_1d(np.asarray(ra_list)),\
             np.atleast_1d(np.asarray(dec_list)),np.atleast_1d(np.asarray(mjd_list)),\
-            np.atleast_1d(np.asarray(filt_list)),np.atleast_1d(np.asarray(diff_id_list))
+            np.atleast_1d(np.asarray(filt_list)),np.atleast_1d(np.asarray(diff_id_list)),\
+            np.atleast_1d(np.asarray(camera_list))
         
         request_names = []
         count = 0
