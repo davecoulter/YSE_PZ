@@ -315,8 +315,8 @@ class ForcedPhot(CronJobBase):
         # candidate survey images
         survey_images = SurveyObservation.objects.filter(status__name='Successful').\
             filter(obs_mjd__gt=nowmjd-self.options.max_days_yseimage).filter(diff_id__isnull=False)
-        transient_list,ra_list,dec_list,diff_id_list,warp_id_list,mjd_list,filt_list = \
-            [],[],[],[],[],[],[]
+        transient_list,ra_list,dec_list,diff_id_list,warp_id_list,mjd_list,filt_list,camera_list = \
+            [],[],[],[],[],[],[],[]
 
         for t in transients:
 
@@ -384,9 +384,10 @@ class ForcedPhot(CronJobBase):
                 ra_list += [r]
                 dec_list += [d]
                 transient_list += [t]
-
+                camera_list += ['gpc1']
+                
         stack_request_name,skycelldict = self.stamp_request(
-            transient_list,ra_list,dec_list,[],[],stack_id_list,skycelldict=skycelldict)
+            transient_list,ra_list,dec_list,camera_list,[],[],stack_id_list,skycelldict=skycelldict)
         print('submitted stack request {}'.format(stack_request_name))
         
         # submit the stack jobs
