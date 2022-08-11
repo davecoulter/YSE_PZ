@@ -168,7 +168,7 @@ class DECam(CronJobBase):
                               help='email password, if post=True (default=%default)')
             parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
                               help='URL to POST transients to a database (default=%default)')
-            parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
+            parser.add_argument('--ztfurl', default=config.get('ztf','ztfurl'), type=str,
                               help='ZTF URL (default=%default)')
             parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
                               help='static directory (default=%default)')

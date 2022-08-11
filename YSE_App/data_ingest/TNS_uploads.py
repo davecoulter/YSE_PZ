@@ -844,7 +844,6 @@ class processTNS:
                     scall = [SkyCoord(r,d,unit=u.deg) for r,d in zip(ras,decs)]
                 else:
                     scall = [SkyCoord(r,d,unit=(u.hourangle,u.deg)) for r,d in zip(ras,decs)]
-
                 ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False)
                 if is_photoz:
                     ghost_hosts = calc_photoz(ghost_hosts)[1]
