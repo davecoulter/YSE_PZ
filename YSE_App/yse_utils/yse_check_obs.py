@@ -55,8 +55,6 @@ class check_obs:
                             help='observation date')
         parser.add_argument('--debug', default=False, action="store_true",
                         help='debug mode')
-        parser.add_argument('--dburl', default='https://ziggy.ucolick.org/yse/api/', type=str,
-                            help='base URL to POST/GET,PUT to/from a database (default=%default)')
 
         if config:
             parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
@@ -65,8 +63,8 @@ class check_obs:
                             help='gmail password (default=%default)')
             parser.add_argument('--dbemailpassword', default=config.get('main','dbemailpassword'), type=str,
                             help='gmail password (default=%default)')
-            #parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
-            #    help='base URL to POST/GET,PUT to/from a database (default=%default)')
+            parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
+                help='base URL to POST/GET,PUT to/from a database (default=%default)')
             parser.add_argument('--dbemail', default=config.get('main','dbemail'), type=str,
                                 help='database login, if post=True (default=%default)')
 
