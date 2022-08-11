@@ -366,7 +366,8 @@ class AddSurveyObsFormView(FormView):
 			m = date_to_mjd(form.cleaned_data['survey_obs_date'])
 			time = Time(m,format='mjd')
 			sunset_forobs = mjd_to_date(tel.sun_set_time(time,which="next"))
-			survey_field_blocks = SurveyFieldMSB.objects.filter(name__in=form.cleaned_data['ztf_field_id'])
+			survey_field_blocks = SurveyFieldMSB.objects.filter(Q(name=form.cleaned_data['ztf_field_id'][0]) |
+                                                                Q(name=form.cleaned_data['ztf_field_id'][0]+'P2'))
 			#survey_field = SurveyField.objects.filter(ztf_field_id__in=form.cleaned_data['ztf_field_id'])
 			for sb in survey_field_blocks:
 				for s in sb.survey_fields.all():
