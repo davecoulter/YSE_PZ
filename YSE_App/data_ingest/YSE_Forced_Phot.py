@@ -549,9 +549,9 @@ class ForcedPhot(CronJobBase):
                                         'discovery_point':0,
                                         'diffim':1,
                                         'diffimg':diffimgdict}
-                if 'GPC1' in phot_upload_dict['band']:
+                if img_dict[k]['diff_image_camera'][i] == 'gpc1':
                     photometrydict_ps1['photdata']['%s_%i'%(mjd_to_date(img_dict[k]['diff_image_mjd'][i]),i)] = phot_upload_dict
-                elif 'GPC2' in phot_upload_dict['band']:
+                elif img_dict[k]['diff_image_camera'][i] == 'gpc2':
                     photometrydict_ps2['photdata']['%s_%i'%(mjd_to_date(img_dict[k]['diff_image_mjd'][i]),i)] = phot_upload_dict
                 else:
                     import pdb; pdb.set_trace()
@@ -687,10 +687,11 @@ class ForcedPhot(CronJobBase):
             if 'SUCCESS' not in mdc_stamps[k]['ERROR_STR'] and 'NO_VALID_PIXELS' not in mdc_stamps[k]['ERROR_STR'] and\
                'PSTAMP_NO_IMAGE_MATCH' not in mdc_stamps[k]['ERROR_STR']:
                 raise RuntimeError('part of job {} failed!'.format(request_name))
-            img_name,img_type,transient,mjd,img_id,img_filter = \
+            img_name,img_type,transient,mjd,img_id,img_filter,img_camera = \
                 mdc_stamps[k]['IMG_NAME'],mdc_stamps[k]['IMG_TYPE'],mdc_stamps[k]['COMMENT'].split('.')[-1],\
-                float(mdc_stamps[k]['MJD_OBS']),mdc_stamps[k]['ID'],mdc_stamps[k]['FILTER'].split('.')[0]
-            import pdb; pdb.set_trace()
+                float(mdc_stamps[k]['MJD_OBS']),mdc_stamps[k]['ID'],mdc_stamps[k]['FILTER'].split('.')[0],\
+                mdc_stamps[k]['PROJECT']
+
             if transient not in image_dict.keys():
                 image_dict[transient] = {'warp_image_link':[],'diff_image_link':[],'stack_image_link':[],
                                          'warp_image_id':[],'diff_image_id':[],'stack_image_id':[],
