@@ -61,7 +61,9 @@ class check_obs:
         if config:
             parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
                         help='gmail login (default=%default)')
-            parser.add_argument('--dbpassword', default=config.get('main','dbemailpassword'), type=str,
+            parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
+                            help='gmail password (default=%default)')
+            parser.add_argument('--dbemailpassword', default=config.get('main','dbemailpassword'), type=str,
                             help='gmail password (default=%default)')
             #parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
             #    help='base URL to POST/GET,PUT to/from a database (default=%default)')
@@ -87,7 +89,6 @@ class check_obs:
         results = {}
         n_active = 0
         active_fields = []
-        import pdb; pdb.set_trace()
         for d in data['results']:
             active_fields += [d['name']]
             n_active += 1
@@ -118,7 +119,7 @@ class check_obs:
         sendemail(from_addr, self.options.dbemail, subject,
                   html_msg,
                   self.options.SMTP_LOGIN,
-                  self.options.dbpassword, smtpserver)
+                  self.options.dbemailpassword, smtpserver)
     
 if __name__ == "__main__":
     co = check_obs()
