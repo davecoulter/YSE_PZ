@@ -1,5 +1,5 @@
-FROM ghcr.io/davecoulter/yse_pz:0.2.0
-LABEL description="Ubuntu image for YSEPZ v0.2.6"
+FROM ghcr.io/davecoulter/yse_pz:0.2.6
+LABEL description="Ubuntu image for YSEPZ v0.2.7"
 LABEL maintainer="Dave Coulter (dcoulter@ucsc.edu)"
 
 SHELL ["/bin/bash", "-c"]
