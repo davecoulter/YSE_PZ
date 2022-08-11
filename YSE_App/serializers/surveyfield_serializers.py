@@ -67,7 +67,6 @@ class SurveyFieldMSBSerializer(serializers.ModelSerializer):
 
 		surveyfieldmsb = SurveyFieldMSB.objects.create(**validated_data)
 		surveyfieldmsb.save()
-		instance.active = validated_data.get('active', instance.active)
 		
 		if survey_fields_exist:
 			for field in survey_fields:
@@ -86,7 +85,7 @@ class SurveyFieldMSBSerializer(serializers.ModelSerializer):
 		instance.active = validated_data.get('active', instance.active)
 
 
-		if len(self.context['request'].data['survey_fields']):
+		if 'survey_fields' in self.context['request'].data.keys() and len(self.context['request'].data['survey_fields']):
 			survey_fields = instance.survey_fields.all()
 			for survey_field in survey_fields:
 				instance.survey_fields.remove(survey_field)
