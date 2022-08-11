@@ -345,7 +345,7 @@ class ForcedPhot(CronJobBase):
             print(t)
 
         stamp_request_name,skycelldict = self.stamp_request(
-            transient_list,ra_list,dec_list,diff_id_list,warp_id_list,[])
+            transient_list,ra_list,dec_list,camera_list,diff_id_list,warp_id_list,[])
         print('submitted stamp request {}'.format(stamp_request_name))
 
         phot_request_names = self.forcedphot_request(
@@ -384,6 +384,7 @@ class ForcedPhot(CronJobBase):
                 ra_list += [r]
                 dec_list += [d]
                 transient_list += [t]
+                import pdb; pdb.set_trace()
                 camera_list += ['gpc1']
                 
         stack_request_name,skycelldict = self.stamp_request(
