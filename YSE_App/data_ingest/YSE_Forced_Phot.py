@@ -647,7 +647,8 @@ class ForcedPhot(CronJobBase):
                                              'ra':[],
                                              'dec':[],
                                              'exptime':[],
-                                             'zpt':[]}
+                                             'zpt':[],
+                                             'camera':[]}
 
                         phot_dict[tn]['mjd'] += [mjd]
                         phot_dict[tn]['filt'] += [filt]
@@ -661,7 +662,7 @@ class ForcedPhot(CronJobBase):
                         phot_dict[tn]['dec'] += [dec]
                         phot_dict[tn]['exptime'] += [exptime]
                         phot_dict[tn]['zpt'] += [ff[0].header['FPA.ZP']]
-
+                        import pdb; pdb.set_trace()
         return phot_dict
 
     def get_stamps(self,request_name,transient_list):
