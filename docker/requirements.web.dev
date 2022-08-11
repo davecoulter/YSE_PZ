@@ -1,2 +1,2 @@
 astro-ghost==0.1.33
-cv2==4.5.5
+opencv-python==4.5.5.64
