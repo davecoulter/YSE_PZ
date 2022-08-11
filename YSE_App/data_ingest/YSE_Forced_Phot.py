@@ -336,7 +336,7 @@ class ForcedPhot(CronJobBase):
                     mjd_list += [s.obs_mjd]
                     filt_list += [s.photometric_band.name]
                     camera_list += [s.survey_field.instrument.name.lower()]
-                    
+                    import pdb; pdb.set_trace()
         nt = len(np.unique(transient_list))
         print('{} transients to upload!'.format(nt))
         if nt == 0: return 0
