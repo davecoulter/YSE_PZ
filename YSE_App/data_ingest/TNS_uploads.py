@@ -839,6 +839,7 @@ class processTNS:
             signal.signal(signal.SIGALRM, handler)
             ghost_hosts = None
             try:
+                import pdb; pdb.set_trace()
                 signal.alarm(600)
                 if type(ras[0]) == float:
                     scall = [SkyCoord(r,d,unit=u.deg) for r,d in zip(ras,decs)]
