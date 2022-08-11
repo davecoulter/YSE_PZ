@@ -839,12 +839,12 @@ class processTNS:
             signal.signal(signal.SIGALRM, handler)
             ghost_hosts = None
             try:
+                import pdb; pdb.set_trace()
                 signal.alarm(600)
                 if type(ras[0]) == float:
                     scall = [SkyCoord(r,d,unit=u.deg) for r,d in zip(ras,decs)]
                 else:
                     scall = [SkyCoord(r,d,unit=(u.hourangle,u.deg)) for r,d in zip(ras,decs)]
-                import pdb; pdb.set_trace()
                 ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False)
                 if is_photoz:
                     ghost_hosts = calc_photoz(ghost_hosts)[1]
