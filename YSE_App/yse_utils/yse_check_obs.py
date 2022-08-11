@@ -82,7 +82,7 @@ class check_obs:
         nowmjd = Time(datetime.datetime.now()).mjd
         
         # get all the active fields
-        data = requests.get('https://ziggy.ucolick.org/yse/api/surveyfieldmsbs/?active=1',
+        data = requests.get(f'{self.options.dburl}/surveyfieldmsbs/?active=1',
                             auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword)).json()
         results = {}
         n_active = 0
