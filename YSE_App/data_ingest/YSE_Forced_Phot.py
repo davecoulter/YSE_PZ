@@ -690,27 +690,32 @@ class ForcedPhot(CronJobBase):
             img_name,img_type,transient,mjd,img_id,img_filter = \
                 mdc_stamps[k]['IMG_NAME'],mdc_stamps[k]['IMG_TYPE'],mdc_stamps[k]['COMMENT'].split('.')[-1],\
                 float(mdc_stamps[k]['MJD_OBS']),mdc_stamps[k]['ID'],mdc_stamps[k]['FILTER'].split('.')[0]
+            import pdb; pdb.set_trace()
             if transient not in image_dict.keys():
                 image_dict[transient] = {'warp_image_link':[],'diff_image_link':[],'stack_image_link':[],
                                          'warp_image_id':[],'diff_image_id':[],'stack_image_id':[],
                                          'warp_image_mjd':[],'diff_image_mjd':[],'stack_image_mjd':[],
-                                         'warp_image_filter':[],'diff_image_filter':[],'stack_image_filter':[]}
+                                         'warp_image_filter':[],'diff_image_filter':[],'stack_image_filter':[],
+                                         'warp_image_camera':[],'diff_image_camera':[],'stack_image_camera':[]}
             if 'NO_VALID_PIXELS' not in mdc_stamps[k]['ERROR_STR'] and 'PSTAMP_NO_IMAGE_MATCH' not in mdc_stamps[k]['ERROR_STR']:
                 if img_type == 'warp':
                     image_dict[transient]['warp_image_link'] += ['{}/{}'.format(stamp_fitsfile_link,img_name)]
                     image_dict[transient]['warp_image_id'] += [img_id]
                     image_dict[transient]['warp_image_mjd'] += [mjd]
                     image_dict[transient]['warp_image_filter'] += [img_filter]
+                    image_dict[transient]['warp_image_camera'] += [img_camera]
                 elif img_type == 'diff':
                     image_dict[transient]['diff_image_link'] += ['{}/{}'.format(stamp_fitsfile_link,img_name)]
                     image_dict[transient]['diff_image_id'] += [img_id]
                     image_dict[transient]['diff_image_mjd'] += [mjd]
                     image_dict[transient]['diff_image_filter'] += [img_filter]
+                    image_dict[transient]['diff_image_camera'] += [img_camera]
                 elif img_type == 'stack':
                     image_dict[transient]['stack_image_link'] += ['{}/{}'.format(stamp_fitsfile_link,img_name)]
                     image_dict[transient]['stack_image_id'] += [img_id]
                     image_dict[transient]['stack_image_mjd'] += [mjd]
                     image_dict[transient]['stack_image_filter'] += [img_filter]
+                    image_dict[transient]['diff_image_camera'] += [img_camera]
                 else: raise RuntimeError('image type {} not found'.format(img_type))
             else:
                 if img_type == 'warp':
@@ -718,16 +723,19 @@ class ForcedPhot(CronJobBase):
                     image_dict[transient]['warp_image_id'] += [img_id]
                     image_dict[transient]['warp_image_mjd'] += [mjd]
                     image_dict[transient]['warp_image_filter'] += [img_filter]
+                    image_dict[transient]['warp_image_camera'] += [img_camera]
                 elif img_type == 'diff':
                     image_dict[transient]['diff_image_link'] += [None]
                     image_dict[transient]['diff_image_id'] += [img_id]
                     image_dict[transient]['diff_image_mjd'] += [mjd]
                     image_dict[transient]['diff_image_filter'] += [img_filter]
+                    image_dict[transient]['diff_image_camera'] += [img_camera]
                 elif img_type == 'stack':
                     image_dict[transient]['stack_image_link'] += [None]
                     image_dict[transient]['stack_image_id'] += [img_id]
                     image_dict[transient]['stack_image_mjd'] += [mjd]
                     image_dict[transient]['stack_image_filter'] += [img_filter]
+                    image_dict[transient]['stack_image_camera'] += [img_camera]
                 else: raise RuntimeError('image type {} not found'.format(img_type))
 
         return image_dict
