@@ -545,7 +545,7 @@ class MARS_ZTF(CronJobBase):
 			parser.add_option('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type="string",
 							  help='SMTP port (default=%default)')
 
-			parser.add_option('--ztfurl', default=config.get('main','ztfurl'), type="string",
+			parser.add_option('--ztfurl', default=config.get('ztf','ztfurl'), type="string",
 							  help='ZTF URL (default=%default)')
 			
 		else:

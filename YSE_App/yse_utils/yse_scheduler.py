@@ -138,6 +138,8 @@ class YSE_Scheduler:
                             help='settings file (login/password info)')
         parser.add_argument('-d','--obs_date', default=None, type=str,
                             help='observation date')
+        parser.add_argument('-i','--instrument', default='GPC1', type=str,
+                            help='observation date')
         parser.add_argument('--debug', default=False, action="store_true",
                             help='debug mode')
 
@@ -159,11 +161,17 @@ class YSE_Scheduler:
                                 help='SMTP host (default=%default)')
             parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
                                 help='SMTP port (default=%default)')
+
+            parser.add_argument('--daily_fields_ps1', default=config.get('yse','daily_fields_ps1'), type=str,
+                                help='daily field sets, each set should contain 3 comma-separated fields with semicolons to separate different sets (default=%default)')
+            parser.add_argument('--daily_fields_ps2', default=config.get('yse','daily_fields_ps2'), type=str,
+                                help='daily field sets, each set should contain 3 comma-separated fields with semicolons to separate different sets (default=%default)')
+
             
         return parser
 
     def get_field_list(self):
-        data = requests.get('https://ziggy.ucolick.org/yse/api/surveyfieldmsbs/?active=1',
+        data = requests.get(f'{self.options.dburl}surveyfieldmsbs/?active=1&instrument={self.options.instrument}',
                             auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword)).json()
         field_list = [data['results'][i]['name'] for i in range(len(data['results']))]
 
@@ -173,34 +181,31 @@ class YSE_Scheduler:
 
         nowmjd = date_to_mjd(date_to_schedule)
 
-        if self.options.debug:
-            dburl = 'http://127.0.0.1:8000/api/'
-        else:
-            dburl = 'https://ziggy.ucolick.org/yse/api/'
+        #if self.options.debug:
+        #    dburl = 'http://127.0.0.1:8000/api/'
+        #else:
+        #    dburl = 'https://ziggy.ucolick.org/yse/api/'
             
         offsetcount = 0
-        r = requests.get('%ssurveyobservations/?obs_mjd_gte=%i&obs_mjd_lte=%i&limit=1000&status_in=Successful&obs_group=YSE'%(
-            dburl,nowmjd-40,nowmjd),
+        r = requests.get(f'{self.options.dburl}surveyobservations/?obs_mjd_gte={nowmjd-40:.0f}&obs_mjd_lte={nowmjd:.0f}&limit=1000&status_in=Successful&obs_group=YSE',
                          auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
 
         data = json.loads(r.text)
         data_results = data['results']
         while len(data['results']) == 1000:
             offsetcount += 1000
-            r = requests.get('%ssurveyobservations/?obs_mjd_gte=%i&obs_mjd_lte=%i&limit=1000&offset=%i&status_in=Successful&obs_group=YSE'%(
-                dburl,nowmjd-40,nowmjd,offsetcount),
+            r = requests.get(f'{self.options.dburl}surveyobservations/?obs_mjd_gte={nowmjd-40:.0f}&obs_mjd_lte={nowmjd:.0f}&limit=1000&offset={offsetcount}&status_in=Successful&obs_group=YSE',
                              auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
             data = json.loads(r.text)
 
             data_results = np.append(data_results,data['results']) #r['results'])
         
-        r = requests.get('%ssurveyfields/?limit=1000&obs_group=YSE'%dburl,
+        r = requests.get(f'{self.options.dburl}surveyfields/?limit=1000&obs_group=YSE&instrument={self.options.instrument}',
                          auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
         surveyfielddata = json.loads(r.text)['results']
         while len(data['results']) == 1000:
             offsetcount += 1000
-            r = requests.get('%ssurveyfields/?limit=1000&offset=%i&obs_group=YSE'%(
-                self.options.dburl,nowmjd-40,nowmjd,offsetcount),
+            r = requests.get(f'{self.options.dburl}surveyfields/?limit=1000&offset={offsetcount}&obs_group=YSE&instrument={self.options.instrument}',
                              auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
             surveyfielddata_single = json.loads(r.text)['results']
             surveyfielddata = np.append(surveyfielddata,surveyfielddata_single)
@@ -209,7 +214,6 @@ class YSE_Scheduler:
         for d in data_results:
             survey_field_url = d['survey_field']
             obs_mjd = d['obs_mjd']
-            #if self.options.debug:
             if d['obs_mjd'] is None: obs_mjd = d['mjd_requested']
             obs_mjds = np.append(obs_mjds,obs_mjd)
             obs_dates = np.append(obs_dates,mjd_to_date(obs_mjd))
@@ -230,7 +234,7 @@ class YSE_Scheduler:
             for f in field_list:
                 if f not in unqfields:
                     for s in surveyfielddata:
-                        if s['ztf_field_id'] == f:
+                        if (s['ztf_field_id'] == f) | (s['ztf_field_id']+'P2' == f):
                             unqfields = np.append(unqfields,f)
                             ras = np.append(ras,s['ra_cen'])
                             decs = np.append(decs,s['dec_cen'])
@@ -360,7 +364,7 @@ class YSE_Scheduler:
 
     def moon_cut(self,fields,ras,decs,obstime,timedeltas=None):
 
-        data = requests.get('https://ziggy.ucolick.org/yse/api/surveyfieldmsbs/?active=1',
+        data = requests.get(f'{self.options.dburl}surveyfieldmsbs/?active=1&instrument={self.options.instrument}',
                             auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword)).json()
         results = {}
         for d in data['results']:
@@ -397,7 +401,7 @@ class YSE_Scheduler:
         scdecam = SkyCoord(ra,dec,unit=(u.hour,u.deg))
         
         # get the coords for active YSE fields(ok this is redundant but whatever)
-        data = requests.get('https://ziggy.ucolick.org/yse/api/surveyfieldmsbs/?active=1',
+        data = requests.get(f'{self.options.dburl}surveyfieldmsbs/?active=1&instrument={self.options.instrument}',
                             auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword)).json()
         name_list,ra_list,dec_list = [],[],[],[]
         for i in range(len(data['results'])):
@@ -423,14 +427,22 @@ class YSE_Scheduler:
     def add_obs_requests(self,date_requested,field_id):
         
         survey_obs_dict = {'survey_obs_date':date_requested.strftime('%m/%d/%y'),
-                           'ztf_field_id':'%s'%field_id}
+                           'ztf_field_id':'%s'%field_id.replace('P2','')}
         r = requests.post(url = '%sadd_survey_obs/'%(self.options.dburl.replace('api/','')),
                           data = survey_obs_dict,
                           auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
 
     def choose_fields(self,ps_fields,ztf_fields,decam_fields,ps_timedeltas):
-        daily_set_1 = ['523','525','577']
-        daily_set_2 = ['575','577','674']
+        if self.options.instrument == 'GPC1':
+            field_key = 'daily_fields_ps1'
+        else:
+            field_key = 'daily_fields_ps2'
+
+        daily_set_1 = self.options.__dict__[field_key].split(';')[0].split(',') #['523','525','577']
+        if len(self.options.__dict__[field_key].split(';')) > 1:
+            daily_set_2 = self.options.__dict__[field_key].split(';')[1].split(',')
+        else:
+            daily_set_2 = []
         do_set_1,do_set_2 = True,True
 
         # Virgo
@@ -509,7 +521,7 @@ class YSE_Scheduler:
         print('getting PS field list')
         field_list = self.get_field_list()
 
-        print('finding recent PS1 observations')
+        print(f'finding recent {self.options.instrument} observations')
         # get the YSE observing history, important to avoid long gaps
         ps_fields,ps_ras,ps_decs,ps_dates,ps_timedeltas = self.get_ps_obs(
             date_to_schedule,field_list=field_list)

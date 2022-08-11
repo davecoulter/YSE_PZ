@@ -197,7 +197,6 @@ class DECam_clusters(CronJobBase):
 
         # read in the options from the param file and the command line
         # some convoluted syntax here, making it so param file is not required
-
         parser = self.add_options(usage=usagestring)
         options,  args = parser.parse_known_args()
 
@@ -252,7 +251,7 @@ class DECam_clusters(CronJobBase):
                               help='email password, if post=True (default=%default)')
             parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
                               help='URL to POST transients to a database (default=%default)')
-            parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
+            parser.add_argument('--ztfurl', default=config.get('ztf','ztfurl'), type=str,
                               help='ZTF URL (default=%default)')
             parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
                               help='static directory (default=%default)')
@@ -264,7 +263,7 @@ class DECam_clusters(CronJobBase):
             parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
                               help='SMTP port (default=%default)')
 
-            parser.add_argument('--max_decam_days', default=config.get('main','max_days_decam'), type=float,
+            parser.add_argument('--max_decam_days', default=config.get('yse','max_days_decam'), type=float,
                                 help='grab photometry/objects from the last x days')
 
         else:

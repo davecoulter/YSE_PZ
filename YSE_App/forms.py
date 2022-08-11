@@ -75,7 +75,7 @@ class TransientFollowupForm(ModelForm):
 class ClassicalResourceForm(ModelForm):
 
 	observing_date = forms.DateTimeField()
-	
+    
 	class Meta:
 		model = ClassicalResource
 		fields = [

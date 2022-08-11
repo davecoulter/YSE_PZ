@@ -5,7 +5,7 @@
 
 <section class="content-header">
 	<h1>
-		Active YSE Fields
+		PS1 YSE Fields
 	</h1>
 	<ol class="breadcrumb">
 		<li><i class="fa fa-dashboard"></i> Home</li>
@@ -36,7 +36,7 @@
 					</tr>
 				</thead>
 				<tbody>
-				{% for a in yse_field_data %}
+				{% for a in yse_gpc1_field_data %}
 					<tr>
 						<td><div data-tag_id="{{ a.0.id }}" class="external-event">{{ a.0.name }}</div></td>
 						<td>{{a.0.CoordString.0}}</td>
@@ -67,7 +67,87 @@
 					</tr>
 				</thead>
 				<tbody>
-				{% for a in active_yse_field_data %}
+				{% for a in active_yse_gpc1_field_data %}
+					<tr>
+						<td><div data-tag_id="{{ a.0.id }}" class="external-event">{{ a.0.name }}</div></td>
+						<td>{{a.0.CoordString.0}}</td>
+						<td>{{a.0.CoordString.1}}</td>
+						<td>{{ a.2|floatformat:0 }}</td>
+						<td>{{a.3}}</td>
+					</tr>
+				{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+</div>
+
+<section class="content-header">
+	<h1>
+		PS2 YSE Fields
+	</h1>
+	<ol class="breadcrumb">
+		<li><i class="fa fa-dashboard"></i> Home</li>
+	</ol>
+</section>
+
+<section class="content">
+
+<div class="row">
+
+<div class="row">
+<div class="col-xs-6">
+	<div id="external-events2" class="box box-default box-solid">
+		<div class="box-header with-border">
+			<strong>Inactive YSE Fields</strong>
+		</div>
+
+
+		<div class="box-body" id="external-events2-list">
+			<table class="table table-bordered table-striped">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>RA</th>
+						<th>Dec</th>
+						<th>Days Since Last Obs</th>
+						<th>Airmass</th>
+					</tr>
+				</thead>
+				<tbody>
+				{% for a in yse_gpc2_field_data %}
+					<tr>
+						<td><div data-tag_id="{{ a.0.id }}" class="external-event">{{ a.0.name }}</div></td>
+						<td>{{a.0.CoordString.0}}</td>
+						<td>{{a.0.CoordString.1}}</td>
+						<td>{{ a.2|floatformat:0 }}</td>
+						<td>{{a.3}}</td>
+					</tr>
+				{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+<div class="col-xs-6">
+	<div id="associated-events2" class="box box-default box-solid">
+		<div class="box-header with-border">
+			<strong>Active YSE Fields</strong>
+		</div>
+		<div class="box-body" id="associated-events2-list">
+			<table class="table table-bordered table-striped">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>RA</th>
+						<th>Dec</th>
+						<th>Days Since First Obs</th>
+						<th>Airmass</th>
+					</tr>
+				</thead>
+				<tbody>
+				{% for a in active_yse_gpc2_field_data %}
 					<tr>
 						<td><div data-tag_id="{{ a.0.id }}" class="external-event">{{ a.0.name }}</div></td>
 						<td>{{a.0.CoordString.0}}</td>
@@ -90,7 +170,6 @@
 		</div>
 		<div class="box-body">
 			<input type="hidden" id="obs_group" value="{{ yse_group }}"/>
-			<input type="hidden" id="instrument" value="{{ GPC1 }}"/>
 			<input type="hidden" id="width_deg" value="3.1"/>
 			<input type="hidden" id="height_deg" value="3.1"/>
 			{% include "YSE_App/form_snippets/YSE_move_field_form.html" with form=yse_move_field_form %}
@@ -211,6 +290,104 @@ $(function() {
 					$("#external-events-list").append(source.draggable);
 					// Now, get all associated events and PATCH transient with them
 					var tag_ids = $("#external-events-list").children("div").map(function() {return $(this).attr("data-tag_id")})
+
+					var base_url = window.location.protocol + "//" + window.location.hostname
+					var port = window.location.port
+					if (port != "") {
+						base_url = base_url + ":" + port
+					}
+
+					var tag_urls = []
+					for (i=0; i< tag_ids.length; i++) {
+					
+
+						var msb_target = "{% url 'surveyfieldmsb-detail' -1 %}".replace(-1,tag_ids[i])
+						var api_url = base_url + msb_target
+						//alert(api_url)
+						var patchData = { "active": 0 }
+						var jsonData = JSON.stringify(patchData)
+
+						$.ajax({
+							type: "PATCH",
+							url: api_url,
+							csrfmiddlewaretoken: "{{ csrf_token }}",
+							data: jsonData,
+							contentType: "application/json; charset=utf-8",
+ 							dataType: "json",
+							success: function(data, textStatus, jqXHR) {
+								if (textStatus == "success") {
+
+								} else {
+									alert("YSE Field statuses may not have been changed -- please use YSE Admin and contact David J.")
+								}
+							},
+							error: function(XMLHttpRequest, textStatus, errorThrown) {
+								// alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+								alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));
+							}
+						});
+					}
+
+				}
+			});
+
+			init_events($('#external-events2 div.external-event'))
+			init_events($('#associated-events2 div.external-event'))
+
+			// Make target canvas draggable
+			$("#associated-events2").droppable({
+				drop:function(e,source){
+
+					$("#associated-events2-list").append(source.draggable);
+					// Now, get all associated events and PATCH transient with them
+					var tag_ids = $("#associated-events2-list").children("div").map(function() {return $(this).attr("data-tag_id")})
+
+					var base_url = window.location.protocol + "//" + window.location.hostname
+					var port = window.location.port
+					if (port != "") {
+						base_url = base_url + ":" + port
+					}
+
+					var tag_urls = []
+					for (i=0; i< tag_ids.length; i++) {
+					
+
+						var msb_target = "{% url 'surveyfieldmsb-detail' -1 %}".replace(-1,tag_ids[i])
+						var api_url = base_url + msb_target
+						//alert(api_url)
+						var patchData = { "active": 1 }
+						var jsonData = JSON.stringify(patchData)
+
+						$.ajax({
+							type: "PATCH",
+							url: api_url,
+							csrfmiddlewaretoken: "{{ csrf_token }}",
+							data: jsonData,
+							contentType: "application/json; charset=utf-8",
+ 							dataType: "json",
+							success: function(data, textStatus, jqXHR) {
+								if (textStatus == "success") {
+
+								} else {
+									alert("YSE Field statuses may not have been changed -- please use YSE Admin and contact David J.")
+								}
+							},
+							error: function(XMLHttpRequest, textStatus, errorThrown) {
+								// alert("Transient Tag may not have been created -- please use YSE Admin and contact Dave C or David J.")
+								alert("Error: " + String(errorThrown) + String(textStatus) + String(XMLHttpRequest.responseText));
+							}
+						});
+					}
+
+				}
+			});
+
+			$("#external-events2").droppable({
+				drop:function(e,source){
+
+					$("#external-events2-list").append(source.draggable);
+					// Now, get all associated events and PATCH transient with them
+					var tag_ids = $("#external-events2-list").children("div").map(function() {return $(this).attr("data-tag_id")})
 
 					var base_url = window.location.protocol + "//" + window.location.hostname
 					var port = window.location.port

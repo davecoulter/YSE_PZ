@@ -55,16 +55,16 @@ class check_obs:
                             help='observation date')
         parser.add_argument('--debug', default=False, action="store_true",
                         help='debug mode')
-        parser.add_argument('--dburl', default='https://ziggy.ucolick.org/yse/api/', type=str,
-                            help='base URL to POST/GET,PUT to/from a database (default=%default)')
 
         if config:
             parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
                         help='gmail login (default=%default)')
             parser.add_argument('--dbpassword', default=config.get('main','dbpassword'), type=str,
                             help='gmail password (default=%default)')
-            #parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
-            #    help='base URL to POST/GET,PUT to/from a database (default=%default)')
+            parser.add_argument('--dbemailpassword', default=config.get('main','dbemailpassword'), type=str,
+                            help='gmail password (default=%default)')
+            parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
+                help='base URL to POST/GET,PUT to/from a database (default=%default)')
             parser.add_argument('--dbemail', default=config.get('main','dbemail'), type=str,
                                 help='database login, if post=True (default=%default)')
 
@@ -82,7 +82,7 @@ class check_obs:
         nowmjd = Time(datetime.datetime.now()).mjd
         
         # get all the active fields
-        data = requests.get('https://ziggy.ucolick.org/yse/api/surveyfieldmsbs/?active=1',
+        data = requests.get(f'{self.options.dburl}/surveyfieldmsbs/?active=1',
                             auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword)).json()
         results = {}
         n_active = 0
@@ -117,7 +117,7 @@ class check_obs:
         sendemail(from_addr, self.options.dbemail, subject,
                   html_msg,
                   self.options.SMTP_LOGIN,
-                  self.options.dbpassword, smtpserver)
+                  self.options.dbemailpassword, smtpserver)
     
 if __name__ == "__main__":
     co = check_obs()
