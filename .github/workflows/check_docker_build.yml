@@ -6,7 +6,8 @@ on:
     paths:
       - "docker/Dockerfile.web.dev"
       - "docker/requirements.web.dev"
-
+      - "docker/docker-compose.dev.yml"
+      - "docker/docker-compose.yml"
 jobs:
   docker:
     runs-on: ubuntu-latest
