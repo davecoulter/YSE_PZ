@@ -347,9 +347,12 @@ class QUB(CronJobBase):
             transientdict[s['ps1_designation']] = tdict
             transientdict[s['ps1_designation']]['transientphotometry'] = PhotUploadAll
 
-            photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
-            if photometrydict_ztf is not None:
-                PhotUploadAll['ZTF'] = photometrydict_ztf
+            try:
+                photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+                if photometrydict_ztf is not None:
+                    PhotUploadAll['ZTF'] = photometrydict_ztf
+            except:
+                pass
             
             nsn += 1
 
@@ -807,10 +810,13 @@ class YSE(CronJobBase):
             transientdict[s['local_designation']] = tdict
             transientdict[s['local_designation']]['transientphotometry'] = PhotUploadAll
 
-            photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
-            if photometrydict_ztf is not None:
-                PhotUploadAll['ZTF'] = photometrydict_ztf
-
+            try:
+                photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+                if photometrydict_ztf is not None:
+                    PhotUploadAll['ZTF'] = photometrydict_ztf
+            except:
+                pass
+            
             nsn += 1
 
         return transientdict,nsn
@@ -1307,10 +1313,13 @@ class YSE_Stack(CronJobBase):
             transientdict[tdict['name']] = tdict
             transientdict[tdict['name']]['transientphotometry'] = PhotUploadAll
 
-            photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
-            if photometrydict_ztf is not None:
-                PhotUploadAll['ZTF'] = photometrydict_ztf
-
+            try:
+                photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+                if photometrydict_ztf is not None:
+                    PhotUploadAll['ZTF'] = photometrydict_ztf
+            except:
+                pass
+            
             nsn += 1
 
         return transientdict,nsn
