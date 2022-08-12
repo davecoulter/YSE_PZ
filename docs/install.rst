@@ -109,6 +109,13 @@ An example of a minimum working .env file would be
     DJANGO_SUPERUSER_USERNAME = admin123
     DJANGO_SUPERUSER_EMAIL = test@gamil.com
 
+To get a minimum working .env file simply copy and rename the :code:`docker/public.env`
+From the base YSE_PZ directory run
+
+.. code:: none
+
+    cp docker/public.env docker/.env
+
 
 Running the docker containers
 -----------------------------
