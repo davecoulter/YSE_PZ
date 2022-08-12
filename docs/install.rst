@@ -238,32 +238,6 @@ can copy this file over to :code:`YSE_PZ/settings.ini` and you're
 good to go!  Otherwise, *still* copy the file over and then see
 the :ref:`ysecrons` to finish the setup.
 
-Setting Up the YSE_PZ Database
-==============================
-Start up MySQL and run a few commands to get the database
-permissions set properly::
-
-  mysql -u root -p
-  
-Inside MySQL::
-
-  CREATE DATABASE YSE;
-  CREATE USER 'django'@'localhost' IDENTIFIED BY '4django!';
-  GRANT ALL PRIVILEGES ON *.* TO 'django'@'localhost' WITH GRANT OPTION;
-  CREATE USER 'django'@'%' IDENTIFIED BY '4django!';
-  GRANT ALL PRIVILEGES ON *.* TO 'django'@'%' WITH GRANT OPTION;
-  CREATE USER 'explorer'@'localhost' IDENTIFIED BY '4Explor3R!';
-  GRANT ALL PRIVILEGES ON *.* TO 'explorer'@'localhost' WITH GRANT OPTION;
-
-Finally, exit out of mysql and load the database using the existing YSE_PZ database
-file that someone hopefully sent you.  For the public DB taken on Oct. 18th, 2020,
-that command would be::
-
-  mysql -u root -p YSE < YSE_db_public_20201018.sql
-
-If this fails with a collation error, you might have to
-open up the file and replace :code:`utf8mb4_0900_ai_ci` 
-with :code:`utf8mb4_unicode_ci` or vice versa.
 
 Installing the YSE_PZ Code
 ==========================
