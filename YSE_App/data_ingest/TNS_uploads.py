@@ -152,7 +152,7 @@ class processTNS:
                                 help='time interval for grabbing very recent TNS events (default=%default)')
             parser.add_argument('--hostmatchrad', default=config.get('main','hostmatchrad'), type=float,
                                 help='matching radius for hosts (arcmin) (default=%default)')
-            parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
+            parser.add_argument('--ztfurl', default=config.get('ztf','ztfurl'), type=str,
                                 help='ZTF URL (default=%default)')
 
             parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
@@ -844,7 +844,6 @@ class processTNS:
                     scall = [SkyCoord(r,d,unit=u.deg) for r,d in zip(ras,decs)]
                 else:
                     scall = [SkyCoord(r,d,unit=(u.hourangle,u.deg)) for r,d in zip(ras,decs)]
-
                 ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False)
                 if is_photoz:
                     ghost_hosts = calc_photoz(ghost_hosts)[1]

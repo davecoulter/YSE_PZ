@@ -19,11 +19,12 @@ class YSEMoveFieldsForm(ModelForm):
     targeted_transients = forms.CharField(required=False,max_length=500)
     ra_str = forms.CharField(max_length=100)
     dec_str = forms.CharField(max_length=100)
+    instrument = forms.ModelChoiceField(Instrument.objects.filter(Q(name__in=['GPC1','GPC2'])))
     
     class Meta:
         model = SurveyField
         fields = ['field_id',
-            'targeted_galaxies']
+                  'targeted_galaxies']
 
 class MoveYSEFormView(FormView):
     form_class = YSEMoveFieldsForm
@@ -32,14 +33,16 @@ class MoveYSEFormView(FormView):
     
     def form_invalid(self, form):
         response = super(MoveYSEFormView, self).form_invalid(form)
-        if self.request.is_ajax():
+        # is_ajax() is removed in django v4.0
+        if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse(form.errors, status=400)
         else:
             return response
 
     def form_valid(self, form):
         response = super(MoveYSEFormView, self).form_valid(form)
-        if self.request.is_ajax():
+        # is_ajax() is removed in django v4.0
+        if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
 
             orig_id = form.cleaned_data['field_id']
             new_field_id = orig_id + '.' + str(int(Time.now().mjd))
@@ -68,7 +71,7 @@ class MoveYSEFormView(FormView):
             instance.obs_group = ObservationGroup.objects.get(name='YSE')
             instance.width_deg = 3.1
             instance.height_deg = 3.1
-            instance.instrument = Instrument.objects.get(name='GPC1')
+            instance.instrument = form.cleaned_data['instrument']
 
             # does field already exist?
             sfmatch = SurveyField.objects.filter(Q(ra_cen__gt=instance.ra_cen-0.003) & Q(ra_cen__lt=instance.ra_cen+0.003) &

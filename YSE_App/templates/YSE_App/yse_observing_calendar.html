@@ -145,11 +145,11 @@
         {% for obs in all_obs %}
             {
               {% if obs.0 and obs.4 %}
-              title          : 'Obs. ZTF Fields:\n{{obs.0}}\nSched. ZTF Fields:\n{{obs.4}}\nMoon: {{obs.2}}',
+              title          : 'Obs. PS1 Fields:\n{{obs.0}}\nObs. PS2 Fields:\n{{obs.5}}\nSched. PS1 Fields:\n{{obs.4}}\nSched. PS2 Fields:\n{{obs.6}}\nMoon: {{obs.2}}',
               {% elif obs.0 %}
-              title          : 'Obs. ZTF Fields:\n{{obs.0}}\nMoon: {{obs.2}}',
+              title          : 'Obs. PS1 Fields:\n{{obs.0}}\nObs. PS2 Fields:\n{{obs.5}}\nMoon: {{obs.2}}',
               {% else %}
-              title          : 'Sched. ZTF Fields:\n{{obs.4}}\nMoon: {{obs.2}}',
+              title          : 'Sched. PS1 Fields:\n{{obs.4}}\nSched. PS2 Fields:\n{{obs.6}}\nMoon: {{obs.2}}',
               {% endif %}
               start          : new Date({{ obs.1.year }}, {{ obs.1.month|add:"-1" }}, {{ obs.1.day }}),
               allDay         : true,

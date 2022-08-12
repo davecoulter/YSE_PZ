@@ -1,4 +1,4 @@
-FROM davecoulter/yse_pz_web:base
+FROM ghcr.io/davecoulter/yse_pz:base
 LABEL description="Ubuntu image for YSEPZ v0.2.0"
 LABEL maintainer="Dave Coulter (dcoulter@ucsc.edu)"
 
