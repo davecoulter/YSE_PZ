@@ -27,6 +27,7 @@ services:
           DB_CONFIG: /opt/project/db_configuration
         env_file:
           - ".env"
+        platform: linux/amd64
     yse_db:
       container_name: ysepz_db_container
       image: "mysql:8.0.25"
