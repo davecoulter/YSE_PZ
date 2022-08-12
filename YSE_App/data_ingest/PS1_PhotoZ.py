@@ -21,11 +21,11 @@ import pylab
 import json
 import requests
 
-from photoz_helper import serial_objID_search
-from photoz_helper import get_common_constraints_columns
-from photoz_helper import load_lupton_model
-from photoz_helper import preprocess
-from photoz_helper import evaluate
+from astro_ghost.photoz_helper import serial_objID_search
+from astro_ghost.photoz_helper import get_common_constraints_columns
+from astro_ghost.photoz_helper import load_lupton_model
+from astro_ghost.photoz_helper import preprocess
+from astro_ghost.photoz_helper import evaluate
 
 try: # Python 3.x
     from urllib.parse import quote as urlencode
