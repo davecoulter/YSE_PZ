@@ -89,9 +89,9 @@ class ForcedPhot(CronJobBase):
                             help='settings file (login/password info)')
 
         if config:
-            parser.add_argument('--ztfforcedphotpass', default=config.get('yse_forcedphot','ztfforcedphotpass'), type=str,
+            parser.add_argument('--ztfforcedphotpass', default=config.get('ztf','ztfforcedphotpass'), type=str,
                                 help='ZTF password (default=%default)')
-            parser.add_argument('--ztfforcedtmpdir', default=config.get('yse_forcedphot','ztfforcedtmpdir'), type=str,
+            parser.add_argument('--ztfforcedtmpdir', default=config.get('ztf','ztfforcedtmpdir'), type=str,
                                 help='directory for ZTF forced phot (default=%default)')
             parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
                                 help='YSE-PZ API URL (default=%default)')

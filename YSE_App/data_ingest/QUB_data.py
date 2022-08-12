@@ -199,20 +199,18 @@ class QUB(CronJobBase):
                               help='email password, if post=True (default=%default)')
             parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
                               help='URL to POST transients to a database (default=%default)')
-            parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
+            parser.add_argument('--ztfurl', default=config.get('ztf','ztfurl'), type=str,
                               help='ZTF URL (default=%default)')
             parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
                               help='static directory (default=%default)')
-            parser.add_argument('--qubuser', default=config.get('main','qubuser'), type=str,
+            parser.add_argument('--qubuser', default=config.get('yse','qubuser'), type=str,
                               help='QUB database username (default=%default)')
-            parser.add_argument('--qubpass', default=config.get('main','qubpass'), type=str,
+            parser.add_argument('--qubpass', default=config.get('yse','qubpass'), type=str,
                               help='QUB database password (default=%default)')
-            parser.add_argument('--psstlink_summary', default=config.get('main','psstlink_summary'), type=str,
+            parser.add_argument('--psstlink_summary', default=config.get('yse','psstlink_summary'), type=str,
                               help='PSST summary CSV (default=%default)')
-            parser.add_argument('--psstlink_lc', default=config.get('main','psstlink_lc'), type=str,
+            parser.add_argument('--psstlink_lc', default=config.get('yse','psstlink_lc'), type=str,
                               help='PSST lightcurve CSV (default=%default)')
-            parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
-                              help='ZTF URL (default=%default)')
 
             
             parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
@@ -222,7 +220,7 @@ class QUB(CronJobBase):
             parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
                               help='SMTP port (default=%default)')
 
-            parser.add_argument('--max_days', default=config.get('main','max_days_qub'), type=float,
+            parser.add_argument('--max_days', default=config.get('yse','max_days_qub'), type=float,
                                 help='grab photometry/objects from the last x days')
 
         else:
@@ -250,7 +248,6 @@ class QUB(CronJobBase):
 
         nowmjd = Time.now().mjd
         summary_upload = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
-
         while nsn_single == 25:
             transientdict,nsn_single = self.parse_data(summary_upload,lc,transient_idx=nsn,max_transients=25)
             print('uploading %i transients'%nsn_single)
@@ -305,9 +302,13 @@ class QUB(CronJobBase):
 
             PhotUploadAll = {"mjdmatchmin":0.01,
                              "clobber":self.options.clobber}
-            photometrydict = {'instrument':'GPC1',
-                              'obs_group':'PSST',
-                              'photdata':{}}
+            gpc1photometrydict = {'instrument':'GPC1',
+                                  'obs_group':'YSE',
+                                  'photdata':{}}
+            gpc2photometrydict = {'instrument':'GPC2',
+                                  'obs_group':'YSE',
+                                  'photdata':{}}
+
             for j,l in enumerate(lc[iLC][np.argsort(lc['mjd_obs'][iLC])]):
                 if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-l['mjd_obs']) < 1: disc_point = 1
                 else: disc_point = 0
@@ -332,9 +333,17 @@ class QUB(CronJobBase):
                                     'flux_zero_point':27.5,
                                     'discovery_point':disc_point,
                                     'diffim':1}
-                photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
+                if 'pscamera' in l.keys():
+                    if l['pscamera'] == 'GPC1': gpc1photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
+                    elif l['pscamera'] == 'GPC2': gpc2photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
+                    else: raise RuntimeError(f"unknown camera! {lf['pscamera']}")
+                else:
+                    gpc1photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
 
-            PhotUploadAll['PS1'] = photometrydict
+
+            PhotUploadAll['PS1'] = gpc1photometrydict
+            PhotUploadAll['PS2'] = gpc2photometrydict
+
             transientdict[s['ps1_designation']] = tdict
             transientdict[s['ps1_designation']]['transientphotometry'] = PhotUploadAll
 
@@ -540,24 +549,22 @@ class YSE(CronJobBase):
                               help='email password, if post=True (default=%default)')
             parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
                               help='URL to POST transients to a database (default=%default)')
-            parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
+            parser.add_argument('--ztfurl', default=config.get('ztf','ztfurl'), type=str,
                               help='ZTF URL (default=%default)')
             parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
                               help='static directory (default=%default)')
-            parser.add_argument('--qubuser', default=config.get('main','qubuser'), type=str,
+            parser.add_argument('--qubuser', default=config.get('yse','qubuser'), type=str,
                               help='QUB database username (default=%default)')
-            parser.add_argument('--qubpass', default=config.get('main','qubpass'), type=str,
+            parser.add_argument('--qubpass', default=config.get('yse','qubpass'), type=str,
                               help='QUB database password (default=%default)')
-            parser.add_argument('--yselink_summary', default=config.get('main','yselink_summary'), type=str,
+            parser.add_argument('--yselink_summary', default=config.get('yse','yselink_summary'), type=str,
                               help='YSE summary CSV (default=%default)')
-            parser.add_argument('--yselink_lc', default=config.get('main','yselink_lc'), type=str,
+            parser.add_argument('--yselink_lc', default=config.get('yse','yselink_lc'), type=str,
                               help='YSE lightcurve CSV (default=%default)')
-            parser.add_argument('--yselink_genericsummary', default=config.get('main','yselink_genericsummary'), type=str,
+            parser.add_argument('--yselink_genericsummary', default=config.get('yse','yselink_genericsummary'), type=str,
                               help='YSE summary CSV for possible candidates (default=%default)')
-            parser.add_argument('--yselink_genericlc', default=config.get('main','yselink_genericlc'), type=str,
+            parser.add_argument('--yselink_genericlc', default=config.get('yse','yselink_genericlc'), type=str,
                               help='YSE lightcurve CSV for possible candidates (default=%default)')
-            parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
-                              help='ZTF URL (default=%default)')
 
             
             parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
@@ -567,7 +574,7 @@ class YSE(CronJobBase):
             parser.add_argument('--SMTP_PORT', default=config.get('SMTP_provider','SMTP_PORT'), type=str,
                               help='SMTP port (default=%default)')
 
-            parser.add_argument('--max_days', default=config.get('main','max_days_yse'), type=float,
+            parser.add_argument('--max_days', default=config.get('yse','max_days_yse'), type=float,
                                 help='grab photometry/objects from the last x days')
 
         else:
@@ -1004,31 +1011,29 @@ class YSE_Stack(CronJobBase):
                                 help='email password, if post=True (default=%default)')
             parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
                               help='URL to POST transients to a database (default=%default)')
-            parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
+            parser.add_argument('--ztfurl', default=config.get('ztf','ztfurl'), type=str,
                               help='ZTF URL (default=%default)')
             parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
                               help='static directory (default=%default)')
-            parser.add_argument('--qubuser', default=config.get('main','qubuser'), type=str,
+            parser.add_argument('--qubuser', default=config.get('yse','qubuser'), type=str,
                               help='QUB database username (default=%default)')
-            parser.add_argument('--qubpass', default=config.get('main','qubpass'), type=str,
+            parser.add_argument('--qubpass', default=config.get('yse','qubpass'), type=str,
                               help='QUB database password (default=%default)')
-            parser.add_argument('--yselink_stacksummary', default=config.get('main','yselink_stacksummary'), type=str,
+            parser.add_argument('--yselink_stacksummary', default=config.get('yse','yselink_stacksummary'), type=str,
                               help='YSE summary CSV for possible candidates (default=%default)')
-            parser.add_argument('--yselink_stacklc', default=config.get('main','yselink_stacklc'), type=str,
+            parser.add_argument('--yselink_stacklc', default=config.get('yse','yselink_stacklc'), type=str,
                               help='YSE lightcurve CSV for possible candidates (default=%default)')
-            parser.add_argument('--yselink_agnsummary', default=config.get('main','yselink_agnsummary'), type=str,
+            parser.add_argument('--yselink_agnsummary', default=config.get('yse','yselink_agnsummary'), type=str,
                               help='YSE summary CSV for possible candidates (default=%default)')
-            parser.add_argument('--yselink_agnlc', default=config.get('main','yselink_agnlc'), type=str,
+            parser.add_argument('--yselink_agnlc', default=config.get('yse','yselink_agnlc'), type=str,
                               help='YSE lightcurve CSV for possible candidates (default=%default)')
-            parser.add_argument('--ztfurl', default=config.get('main','ztfurl'), type=str,
-                              help='ZTF URL (default=%default)')
-            parser.add_argument('--max_days_ysestacklc', default=config.get('main','max_days_ysestacklc'), type=float,
+            parser.add_argument('--max_days_ysestacklc', default=config.get('yse','max_days_ysestacklc'), type=float,
                               help='maximum days to look back for lightcurves (default=%default)')
-            parser.add_argument('--max_days_yseignore', default=config.get('main','max_days_ysestackignore'), type=float,
+            parser.add_argument('--max_days_yseignore', default=config.get('yse','max_days_ysestackignore'), type=float,
                               help='maximum days to look back for lightcurves (default=%default)')
-            parser.add_argument('--max_days_yseagnlc', default=config.get('main','max_days_yseagnlc'), type=float,
+            parser.add_argument('--max_days_yseagnlc', default=config.get('yse','max_days_yseagnlc'), type=float,
                               help='maximum days to look back for lightcurves (default=%default)')
-            parser.add_argument('--max_days_yseagnignore', default=config.get('main','max_days_yseagnignore'), type=float,
+            parser.add_argument('--max_days_yseagnignore', default=config.get('yse','max_days_yseagnignore'), type=float,
                               help='maximum days to look back for lightcurves (default=%default)')
             
             parser.add_argument('--SMTP_LOGIN', default=config.get('SMTP_provider','SMTP_LOGIN'), type=str,
@@ -1505,8 +1510,9 @@ class CheckDuplicates(CronJobBase):
         from YSE_App.models import Transient
         # 10HYSEkcp
         
-        transients = Transient.objects.filter(created_date__gt=datetime.datetime.now()-datetime.timedelta(1)).filter(name__startswith='10')
+        transients = Transient.objects.filter(created_date__gt=datetime.datetime.now()-datetime.timedelta(1)).filter(name__startswith='1')
         for t in transients:
+            if t.disc_date is None: continue
             ramin,ramax,decmin,decmax = getRADecBox(t.ra,t.dec,size=0.00042)
             dups = Transient.objects.filter(Q(ra__gt=ramin) & Q(ra__lt=ramax) &
                                             Q(dec__gt=decmin) & Q(dec__lt=decmax) &

@@ -23,6 +23,7 @@ import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
+import re
 
 #bad_flags = ['0x00001000','0x20000000','0x40000000','0x80000000']
 
@@ -125,6 +126,13 @@ default_forcedphot_header['EMAIL']    = 'yse@qub.ac.uk'
 
 from astropy.visualization import PercentileInterval, AsinhStretch
 from tendo import singleton
+
+def get_camera(exp_name):
+    if re.match('o[0-9][0-9][0-9][0-9]g[0-9][0-9][0-9][0-9]o',exp_name):
+        return 'GPC1'
+    elif re.match('o[0-9][0-9][0-9][0-9]h[0-9][0-9][0-9][0-9]o',exp_name):
+        return 'GPC2'
+    else: raise RuntimeError('couldn\'t parse exp name')
 
 def fits_to_png(ff,outfile,log=False):
     plt.clf()
@@ -248,17 +256,17 @@ class ForcedPhot(CronJobBase):
         if config:
             parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
                                 help='static directory (default=%default)')
-            parser.add_argument('--upload', default=config.get('yse_forcedphot','upload'), type=str,
+            parser.add_argument('--upload', default=config.get('yse','upload'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--stamp', default=config.get('yse_forcedphot','stamp'), type=str,
+            parser.add_argument('--stamp', default=config.get('yse','stamp'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--detectability', default=config.get('yse_forcedphot','detectability'), type=str,
+            parser.add_argument('--detectability', default=config.get('yse','detectability'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--skycell', default=config.get('yse_forcedphot','skycell'), type=str,
+            parser.add_argument('--skycell', default=config.get('yse','skycell'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--ifauser', default=config.get('yse_forcedphot','user'), type=str,
+            parser.add_argument('--ifauser', default=config.get('yse','user'), type=str,
                               help='stamp upload server (default=%default)')
-            parser.add_argument('--ifapass', default=config.get('yse_forcedphot','pass'), type=str,
+            parser.add_argument('--ifapass', default=config.get('yse','pass'), type=str,
                               help='stamp upload server (default=%default)')
 
             parser.add_argument('--dblogin', default=config.get('main','dblogin'), type=str,
@@ -298,7 +306,7 @@ class ForcedPhot(CronJobBase):
         # candidate transients
         min_date = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.options.max_time_minutes)
         nowmjd = date_to_mjd(datetime.datetime.utcnow())
-        #transient_name='2022ann'; self.options.max_days_yseimage = 60
+        #transient_name='2021vrt'; self.options.max_days_yseimage = 12
         if transient_name is None and not update_forced:
             transients = Transient.objects.filter(
                 created_date__gte=min_date).filter(~Q(tags__name='YSE') & ~Q(tags__name='YSE Stack')).order_by('-created_date')
@@ -315,13 +323,13 @@ class ForcedPhot(CronJobBase):
         # candidate survey images
         survey_images = SurveyObservation.objects.filter(status__name='Successful').\
             filter(obs_mjd__gt=nowmjd-self.options.max_days_yseimage).filter(diff_id__isnull=False)
-        transient_list,ra_list,dec_list,diff_id_list,warp_id_list,mjd_list,filt_list = \
-            [],[],[],[],[],[],[]
+        transient_list,ra_list,dec_list,diff_id_list,warp_id_list,mjd_list,filt_list,camera_list = \
+            [],[],[],[],[],[],[],[]
 
         for t in transients:
 
-            sit = survey_images.filter(Q(survey_field__ra_cen__gt=t.ra-1.55) | Q(survey_field__ra_cen__lt=t.ra+1.55) |
-                                       Q(survey_field__dec_cen__gt=t.dec-1.55) | Q(survey_field__dec_cen__lt=t.dec+1.55))
+            sit = survey_images.filter(Q(survey_field__ra_cen__gt=t.ra-1.55) & Q(survey_field__ra_cen__lt=t.ra+1.55) &
+                                       Q(survey_field__dec_cen__gt=t.dec-1.55) & Q(survey_field__dec_cen__lt=t.dec+1.55))
 
             if len(sit):
                 sct = SkyCoord(t.ra,t.dec,unit=u.deg)
@@ -335,6 +343,7 @@ class ForcedPhot(CronJobBase):
                     warp_id_list += [s.warp_id]
                     mjd_list += [s.obs_mjd]
                     filt_list += [s.photometric_band.name]
+                    camera_list += [get_camera(s.image_id).lower()] #s.survey_field.instrument.name.lower()]
 
         nt = len(np.unique(transient_list))
         print('{} transients to upload!'.format(nt))
@@ -344,11 +353,11 @@ class ForcedPhot(CronJobBase):
             print(t)
 
         stamp_request_name,skycelldict = self.stamp_request(
-            transient_list,ra_list,dec_list,diff_id_list,warp_id_list,[])
+            transient_list,ra_list,dec_list,camera_list,diff_id_list,warp_id_list,[])
         print('submitted stamp request {}'.format(stamp_request_name))
 
         phot_request_names = self.forcedphot_request(
-            transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list,skycelldict)
+            transient_list,ra_list,dec_list,mjd_list,filt_list,camera_list,diff_id_list,skycelldict)
         print('submitted phot requests:')
         for prn in phot_request_names: print(prn)
 
@@ -378,14 +387,15 @@ class ForcedPhot(CronJobBase):
         #write the stack jobs
         transient_list,ra_list,dec_list,stack_id_list = [],[],[],[]
         for t in phot_dict.keys():
-            for s,r,d in zip(phot_dict[t]['stack_id'],phot_dict[t]['ra'],phot_dict[t]['dec']):
+            for s,r,d,c in zip(phot_dict[t]['stack_id'],phot_dict[t]['ra'],phot_dict[t]['dec'],phot_dict[t]['camera']):
                 stack_id_list += [s]
                 ra_list += [r]
                 dec_list += [d]
                 transient_list += [t]
-
+                camera_list += [c]
+                
         stack_request_name,skycelldict = self.stamp_request(
-            transient_list,ra_list,dec_list,[],[],stack_id_list,skycelldict=skycelldict)
+            transient_list,ra_list,dec_list,camera_list,[],[],stack_id_list,skycelldict=skycelldict)
         print('submitted stack request {}'.format(stack_request_name))
         
         # submit the stack jobs
@@ -463,9 +473,12 @@ class ForcedPhot(CronJobBase):
 
             PhotUploadAll = {"mjdmatchmin":0.0001,
                              "clobber":True}
-            photometrydict = {'instrument':'GPC2',
-                              'obs_group':'YSE',
-                              'photdata':{}}
+            photometrydict_ps1 = {'instrument':'GPC1',
+                                  'obs_group':'YSE',
+                                  'photdata':{}}
+            photometrydict_ps2 = {'instrument':'GPC2',
+                                  'obs_group':'YSE',
+                                  'photdata':{}}
 
             tdict[k] = {'name':k,
                         #'obs_group':'YSE',
@@ -536,10 +549,16 @@ class ForcedPhot(CronJobBase):
                                         'discovery_point':0,
                                         'diffim':1,
                                         'diffimg':diffimgdict}
-                
-                photometrydict['photdata']['%s_%i'%(mjd_to_date(img_dict[k]['diff_image_mjd'][i]),i)] = phot_upload_dict
-
-            PhotUploadAll['PS1'] = photometrydict
+                if img_dict[k]['diff_image_camera'][i] == 'gpc1':
+                    photometrydict_ps1['photdata']['%s_%i'%(mjd_to_date(img_dict[k]['diff_image_mjd'][i]),i)] = phot_upload_dict
+                elif img_dict[k]['diff_image_camera'][i] == 'gpc2':
+                    photometrydict_ps2['photdata']['%s_%i'%(mjd_to_date(img_dict[k]['diff_image_mjd'][i]),i)] = phot_upload_dict
+                else:
+                    import pdb; pdb.set_trace()
+                    raise RuntimeError("couldn't figure out the instrument")
+                    
+            PhotUploadAll['PS1'] = photometrydict_ps1
+            PhotUploadAll['PS2'] = photometrydict_ps2
             tdict[k]['transientphotometry'] = PhotUploadAll
         self.send_data(tdict)
         
@@ -628,7 +647,8 @@ class ForcedPhot(CronJobBase):
                                              'ra':[],
                                              'dec':[],
                                              'exptime':[],
-                                             'zpt':[]}
+                                             'zpt':[],
+                                             'camera':[]}
 
                         phot_dict[tn]['mjd'] += [mjd]
                         phot_dict[tn]['filt'] += [filt]
@@ -642,6 +662,7 @@ class ForcedPhot(CronJobBase):
                         phot_dict[tn]['dec'] += [dec]
                         phot_dict[tn]['exptime'] += [exptime]
                         phot_dict[tn]['zpt'] += [ff[0].header['FPA.ZP']]
+                        phot_dict[tn]['camera'] += [ff[0].header['FPA.INSTRUMENT']]
 
         return phot_dict
 
@@ -666,30 +687,36 @@ class ForcedPhot(CronJobBase):
             if 'SUCCESS' not in mdc_stamps[k]['ERROR_STR'] and 'NO_VALID_PIXELS' not in mdc_stamps[k]['ERROR_STR'] and\
                'PSTAMP_NO_IMAGE_MATCH' not in mdc_stamps[k]['ERROR_STR']:
                 raise RuntimeError('part of job {} failed!'.format(request_name))
-            img_name,img_type,transient,mjd,img_id,img_filter = \
+            img_name,img_type,transient,mjd,img_id,img_filter,img_camera = \
                 mdc_stamps[k]['IMG_NAME'],mdc_stamps[k]['IMG_TYPE'],mdc_stamps[k]['COMMENT'].split('.')[-1],\
-                float(mdc_stamps[k]['MJD_OBS']),mdc_stamps[k]['ID'],mdc_stamps[k]['FILTER'].split('.')[0]
+                float(mdc_stamps[k]['MJD_OBS']),mdc_stamps[k]['ID'],mdc_stamps[k]['FILTER'].split('.')[0],\
+                mdc_stamps[k]['PROJECT']
+
             if transient not in image_dict.keys():
                 image_dict[transient] = {'warp_image_link':[],'diff_image_link':[],'stack_image_link':[],
                                          'warp_image_id':[],'diff_image_id':[],'stack_image_id':[],
                                          'warp_image_mjd':[],'diff_image_mjd':[],'stack_image_mjd':[],
-                                         'warp_image_filter':[],'diff_image_filter':[],'stack_image_filter':[]}
+                                         'warp_image_filter':[],'diff_image_filter':[],'stack_image_filter':[],
+                                         'warp_image_camera':[],'diff_image_camera':[],'stack_image_camera':[]}
             if 'NO_VALID_PIXELS' not in mdc_stamps[k]['ERROR_STR'] and 'PSTAMP_NO_IMAGE_MATCH' not in mdc_stamps[k]['ERROR_STR']:
                 if img_type == 'warp':
                     image_dict[transient]['warp_image_link'] += ['{}/{}'.format(stamp_fitsfile_link,img_name)]
                     image_dict[transient]['warp_image_id'] += [img_id]
                     image_dict[transient]['warp_image_mjd'] += [mjd]
                     image_dict[transient]['warp_image_filter'] += [img_filter]
+                    image_dict[transient]['warp_image_camera'] += [img_camera]
                 elif img_type == 'diff':
                     image_dict[transient]['diff_image_link'] += ['{}/{}'.format(stamp_fitsfile_link,img_name)]
                     image_dict[transient]['diff_image_id'] += [img_id]
                     image_dict[transient]['diff_image_mjd'] += [mjd]
                     image_dict[transient]['diff_image_filter'] += [img_filter]
+                    image_dict[transient]['diff_image_camera'] += [img_camera]
                 elif img_type == 'stack':
                     image_dict[transient]['stack_image_link'] += ['{}/{}'.format(stamp_fitsfile_link,img_name)]
                     image_dict[transient]['stack_image_id'] += [img_id]
                     image_dict[transient]['stack_image_mjd'] += [mjd]
                     image_dict[transient]['stack_image_filter'] += [img_filter]
+                    image_dict[transient]['diff_image_camera'] += [img_camera]
                 else: raise RuntimeError('image type {} not found'.format(img_type))
             else:
                 if img_type == 'warp':
@@ -697,16 +724,19 @@ class ForcedPhot(CronJobBase):
                     image_dict[transient]['warp_image_id'] += [img_id]
                     image_dict[transient]['warp_image_mjd'] += [mjd]
                     image_dict[transient]['warp_image_filter'] += [img_filter]
+                    image_dict[transient]['warp_image_camera'] += [img_camera]
                 elif img_type == 'diff':
                     image_dict[transient]['diff_image_link'] += [None]
                     image_dict[transient]['diff_image_id'] += [img_id]
                     image_dict[transient]['diff_image_mjd'] += [mjd]
                     image_dict[transient]['diff_image_filter'] += [img_filter]
+                    image_dict[transient]['diff_image_camera'] += [img_camera]
                 elif img_type == 'stack':
                     image_dict[transient]['stack_image_link'] += [None]
                     image_dict[transient]['stack_image_id'] += [img_id]
                     image_dict[transient]['stack_image_mjd'] += [mjd]
                     image_dict[transient]['stack_image_filter'] += [img_filter]
+                    image_dict[transient]['stack_image_camera'] += [img_camera]
                 else: raise RuntimeError('image type {} not found'.format(img_type))
 
         return image_dict
@@ -744,7 +774,7 @@ class ForcedPhot(CronJobBase):
         return done,success
         
     def stamp_request(
-            self,transient_list,ra_list,dec_list,diff_id_list,
+            self,transient_list,ra_list,dec_list,camera_list,diff_id_list,
             warp_id_list,stack_id_list,width=300,height=300,skycelldict=None):
 
         assert len(transient_list) == len(warp_id_list) or \
@@ -773,27 +803,27 @@ class ForcedPhot(CronJobBase):
                 skycelldict[snid] = skycells[-1]
         
         count = 1
-        for snid,ra,dec,diff_id in \
-            zip(transient_list,ra_list,dec_list,diff_id_list):
+        for snid,ra,dec,camera,diff_id in \
+            zip(transient_list,ra_list,dec_list,camera_list,diff_id_list):
             if diff_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','diff',diff_id,'RINGS.V3',
+            data.add_row((count,camera,'null','null','stamp',2049,'byid','diff',diff_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'diff.for.%s'%snid) )
             count += 1
         
-        for snid,ra,dec,warp_id in \
-            zip(transient_list,ra_list,dec_list,warp_id_list):
+        for snid,ra,dec,camera,warp_id in \
+            zip(transient_list,ra_list,dec_list,camera_list,warp_id_list):
             if warp_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','warp',warp_id,'RINGS.V3',
+            data.add_row((count,camera,'null','null','stamp',2049,'byid','warp',warp_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'warp.for.%s'%snid) )
             count += 1
             
-        for snid,ra,dec,stack_id in \
-            zip(transient_list,ra_list,dec_list,stack_id_list):
+        for snid,ra,dec,camera,stack_id in \
+            zip(transient_list,ra_list,dec_list,camera_list,stack_id_list):
             if stack_id is None: continue
             skycell_str = skycelldict[snid]
-            data.add_row((count,'gpc2','null','null','stamp',2049,'byid','stack',stack_id,'RINGS.V3',
+            data.add_row((count,camera,'null','null','stamp',2049,'byid','stack',stack_id,'RINGS.V3',
                           skycell_str,2,ra,dec,width,height,'null','null',0,0,'null',0,0,'stack.for.%s'%snid) )
             count += 1
 
@@ -810,23 +840,24 @@ class ForcedPhot(CronJobBase):
         self.submit_to_ipp(s)
         return request_name,skycelldict
 
-    def forcedphot_request(self,transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list,skycelldict):
+    def forcedphot_request(self,transient_list,ra_list,dec_list,mjd_list,filt_list,camera_list,diff_id_list,skycelldict):
 
-        transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list = \
+        transient_list,ra_list,dec_list,mjd_list,filt_list,diff_id_list,camera_list = \
             np.atleast_1d(np.asarray(transient_list)),np.atleast_1d(np.asarray(ra_list)),\
             np.atleast_1d(np.asarray(dec_list)),np.atleast_1d(np.asarray(mjd_list)),\
-            np.atleast_1d(np.asarray(filt_list)),np.atleast_1d(np.asarray(diff_id_list))
+            np.atleast_1d(np.asarray(filt_list)),np.atleast_1d(np.asarray(diff_id_list)),\
+            np.atleast_1d(np.asarray(camera_list))
         
         request_names = []
         count = 0
         for snid_unq in np.unique(transient_list):
             data = at.Table(names=('ROWNUM','PROJECT','RA1_DEG','DEC1_DEG','RA2_DEG','DEC2_DEG','FILTER','MJD-OBS','FPA_ID','COMPONENT_ID'),
                             dtype=('S20','S16','>f8','>f8','>f8','>f8','S20','>f8','>i4','S64'))
-            for snid,ra,dec,mjd,filt,diff_id in \
+            for snid,ra,dec,mjd,filt,camera,diff_id in \
                 zip(transient_list[transient_list == snid_unq],ra_list[transient_list == snid_unq],dec_list[transient_list == snid_unq],
-                    mjd_list[transient_list == snid_unq],filt_list[transient_list == snid_unq],diff_id_list[transient_list == snid_unq]):
+                    mjd_list[transient_list == snid_unq],filt_list[transient_list == snid_unq],camera_list[transient_list == snid_unq],diff_id_list[transient_list == snid_unq]):
                 if diff_id is None or diff_id == 'NULL': continue
-                data.add_row(('forcedphot_ysebot_{}'.format(count),'gpc2',ra,dec,ra,dec,filt,mjd,diff_id,skycelldict[snid_unq]) )
+                data.add_row(('forcedphot_ysebot_{}'.format(count),camera,ra,dec,ra,dec,filt,mjd,diff_id,skycelldict[snid_unq]) )
                 count += 1
 
             if len(data) > 0:
