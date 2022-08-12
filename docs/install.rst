@@ -172,16 +172,15 @@ Viewing webpages
 ----------------
 
 Whilst the docker container stack is running go to
-`http://0.0.0.0/ <http://0.0.0.0/>`_ in your web browser and :code:`YSE_PZ`
-should be running.
+`http://0.0.0.0/login/ <http://0.0.0.0/login/>`_ in your web browser
+and :code:`YSE_PZ` should be running.
 
 Native
 ******
 
 .. warning::
 	The following native install instructions are here for archival purposes
-	only. We strongly recommend you do not use these instructions and use
-	Docker instead.
+	only. We strongly discourage you from using these instructions.
 
 This is a easy guide to performing a local installation of :code:`YSE_PZ`.
 
