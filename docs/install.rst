@@ -4,8 +4,185 @@
 Installation
 ************
 
-This is a easy guide to performing a local installation
-of :code:`YSE_PZ`.
+Docker
+******
+
+This pages walks you through running :code:`YSE_PZ` locally. You might want to
+do this if you want to develop on :code:`YSE_PZ`. The strongly recommended
+(and only supported) way to run :code:`YSE_PZ` locally is to use docker.
+You could attempt to install :code:`YSE_PZ` natively (instructions at the bottom
+of this page for archival reasons) but this will likely be an order of magnitude
+harder than using docker.
+
+
+Install the Docker desktop app
+-------------------------------
+
+The first step is to install the docker desktop application, which can be found
+`here <https://docs.docker.com/get-docker/>`_ for your system. The recommended
+docker resources required to run :code:`YSE_PZ` are:
+
+* System memory: >= 8 GB
+* Docker memory: >= 4 GB
+* Docker CPU >= 1
+* Docker Swap >= 1 GB
+* Docker Disk Image Size >= 20 GB
+
+These requirements can be set in the docker desktop app
+(Preferences > Resources).
+
+Settings file
+-------------
+
+In order for :code:`YSE_PZ` to work, a :code:`settings.ini` needs to be created
+in the :code:`YSE_PZ/YSE_PZ/` directory. This file contains all the YSE_PZ
+configuration settings and can also contain secrets needed to access external
+services. To create a minimum working settings file, you can just copy and
+rename the :code:`public_settings.ini` file. From the base :code:`YSE_PZ`
+directory run,
+
+.. code:: none
+
+    cp YSE_PZ/public_settings.ini YSE_PZ/settings.ini
+
+Environment file
+----------------
+
+For docker compose to run :code:`YSE_PZ` environment
+variables like systems ports and volumes need to be set. This is done by
+creating a :code:`.env` file in the :code:`YSE_PZ/docker` directory.
+
+The :code:`.env` should have the following variables set:
+
+* :code:`VOL`
+
+The local path to the root of this repository -- will be mapped to /app in the
+docker web image
+
+* :code:`VOL_DB`
+
+The local path to the mysql files, e.g.: "local proj path/docker_mysql/8.0"
+
+* :code:`DB_PWD`
+
+The root database password
+
+* :code:`STATIC_VOL`
+
+The path YSE_PZ app's static directory
+
+* :code:`LOCAL_DB_HOST`
+
+Configurable - this should be set to whatever port you want docker forwarding
+it’s database container port 3306 on.
+
+* :code:`LOCAL_HTTP_PORT`
+
+Configurable - this should be set to whatever port you want docker forwarding
+it’s nginx container port 80 on.
+
+* :code:`DJANGO_SUPERUSER_USERNAME`
+
+This is the django and yse_pz superuser username that will be created on startup.
+You use this to log into the YSE_PZ website and the django admin dashboard.
+
+* :code:`DJANGO_SUPERUSER_PASSWORD`
+
+This is the django and yse_pz superuser password that will be created on startup.
+You use this to log into the YSE_PZ website and the django admin dashboard.
+
+* :code:`DJANGO_SUPERUSER_EMAIL`
+
+This is the django and yse_pz superuser email that will be created on startup.
+
+An example of a minimum working .env file would be
+
+.. code:: none
+
+    VOL= ../
+    VOL_DB=../database/
+    DB_PWD=password
+    STATIC_VOL=../YSE_PZ/static/
+    LOCAL_DB_PORT=53306
+    LOCAL_HTTP_PORT=80
+    DJANGO_SUPERUSER_PASSWORD = password123
+    DJANGO_SUPERUSER_USERNAME = admin123
+    DJANGO_SUPERUSER_EMAIL = test@gamil.com
+
+To get a minimum working .env file simply copy and rename the :code:`docker/public.env`
+From the base YSE_PZ directory run
+
+.. code:: none
+
+    cp docker/public.env docker/.env
+
+
+Running the docker containers
+-----------------------------
+
+To run the docker containers, in the :code:`YSE_PZ/docker/` directory run
+
+.. code:: none
+
+    docker compose up
+
+To bring the docker container stack down, in the :code:`YSE_PZ/docker/`
+directory run
+
+.. code:: none
+
+    docker compose down
+
+Static files
+------------
+
+To get YSE_PZ to see all the statics file run the following:
+
+.. code:: none
+
+    docker exec -it ysepz_web_container bash
+
+Then in the docker container run,
+
+.. code::
+
+    python3 manage.py collectstatic
+
+and type :code:`yes` if asked about overwriting existing static files.
+To exit the docker container, run
+
+.. code::
+
+    exit
+
+Adding a superuser
+------------------
+
+In order to be able to log into :code:`YSE_PZ` you need to create a superuser.
+To do this, run the following command,
+
+.. code:: none
+
+    docker exec -it ysepz_web_container bash -c 'python3 manage.py createsuperuser --noinput'
+
+This command will create a superuser with the username and password defined in
+the :code:`.env` file.
+
+Viewing webpages
+----------------
+
+Whilst the docker container stack is running go to
+`http://0.0.0.0/login/ <http://0.0.0.0/login/>`_ in your web browser
+and :code:`YSE_PZ` should be running.
+
+Native
+******
+
+.. warning::
+	The following native install instructions are here for archival purposes
+	only. We strongly discourage you from using these instructions.
+
+This is a easy guide to performing a local installation of :code:`YSE_PZ`.
 
 Prerequisites
 =============
@@ -61,32 +238,6 @@ can copy this file over to :code:`YSE_PZ/settings.ini` and you're
 good to go!  Otherwise, *still* copy the file over and then see
 the :ref:`ysecrons` to finish the setup.
 
-Setting Up the YSE_PZ Database
-==============================
-Start up MySQL and run a few commands to get the database
-permissions set properly::
-
-  mysql -u root -p
-  
-Inside MySQL::
-
-  CREATE DATABASE YSE;
-  CREATE USER 'django'@'localhost' IDENTIFIED BY '4django!';
-  GRANT ALL PRIVILEGES ON *.* TO 'django'@'localhost' WITH GRANT OPTION;
-  CREATE USER 'django'@'%' IDENTIFIED BY '4django!';
-  GRANT ALL PRIVILEGES ON *.* TO 'django'@'%' WITH GRANT OPTION;
-  CREATE USER 'explorer'@'localhost' IDENTIFIED BY '4Explor3R!';
-  GRANT ALL PRIVILEGES ON *.* TO 'explorer'@'localhost' WITH GRANT OPTION;
-
-Finally, exit out of mysql and load the database using the existing YSE_PZ database
-file that someone hopefully sent you.  For the public DB taken on Oct. 18th, 2020,
-that command would be::
-
-  mysql -u root -p YSE < YSE_db_public_20201018.sql
-
-If this fails with a collation error, you might have to
-open up the file and replace :code:`utf8mb4_0900_ai_ci` 
-with :code:`utf8mb4_unicode_ci` or vice versa.
 
 Installing the YSE_PZ Code
 ==========================
