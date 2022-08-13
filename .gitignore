@@ -16,6 +16,8 @@ db_configuration/*.ini
 docker/.env
 docker/old/*
 
-
+database/*
+*.bak
+*.DS_Store
 
 
