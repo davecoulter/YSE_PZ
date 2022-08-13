@@ -1,0 +1,17 @@
+name: Continuous integration
+
+on:
+  pull_request:
+    branches: [develop]
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: docker compose up
+        run: |
+          cp YSE_PZ/public_settings.ini YSE_PZ/settings.ini
+          cp docker/public_env docker/.env
+          cd docker
