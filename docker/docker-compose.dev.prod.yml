@@ -27,10 +27,9 @@ services:
           DB_CONFIG: /opt/project/db_configuration
         env_file:
           - ".env"
-        platform: linux/amd64
     yse_db:
       container_name: ysepz_db_container
-      image: "mysql:8.0.30-oracle"
+      image: "mysql:8.0.25"
       command: mysqld --default-authentication-plugin=mysql_native_password
       ports:
         - "${LOCAL_DB_PORT}:3306"
@@ -55,8 +54,3 @@ services:
         - ${STATIC_VOL}:/static
       depends_on:
         - web
-
-
-
-
-
