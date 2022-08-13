@@ -13,5 +13,5 @@ jobs:
       - name: docker compose up
         run: |
           cp YSE_PZ/public_settings.ini YSE_PZ/settings.ini
-          cp docker/public_env docker/.env
+          cp docker/public.env docker/.env
           cd docker
