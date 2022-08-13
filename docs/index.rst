@@ -14,6 +14,7 @@ Welcome to the YSE_PZ documentation!
    dashboards
    observing
    status_tags
+   data_quality
    detail
    triage
    adding_data
