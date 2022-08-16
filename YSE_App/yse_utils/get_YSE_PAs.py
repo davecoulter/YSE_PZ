@@ -348,7 +348,6 @@ class YSE_PA:
             survey_field_url = d['survey_field']
             obs_mjd = d['obs_mjd']
             pb_url = d['photometric_band']
-            priorities = np.append(priorities,d['priority'])
             if d['obs_mjd'] is None: obs_mjd = d['mjd_requested']
             obs_mjds = np.append(obs_mjds,obs_mjd)
             obs_dates = np.append(obs_dates,mjd_to_date(obs_mjd))
@@ -360,6 +359,7 @@ class YSE_PA:
                     field_msbs = np.append(field_msbs,s['field_id'].split('.')[0])
                     ras = np.append(ras,s['ra_cen'])
                     decs = np.append(decs,s['dec_cen'])
+                    priorities = np.append(priorities,d['priority'])
                     # create a dict associating filters with the 
                     # overall field names
                     thisfield = s['field_id'].split('.')[0]
@@ -369,11 +369,10 @@ class YSE_PA:
                     # I can't just np.append them as is done above
                     # the filters have twice as many list elements 
                     # as the fields
-            
 
         fielddict = {}
         fields_unique,idx = np.unique(fields,return_index=True)
-        fields,ras,decs,field_msbs = fields[idx],ras[idx],decs[idx],field_msbs[idx]
+        fields,ras,decs,field_msbs,priorities = fields[idx],ras[idx],decs[idx],field_msbs[idx],priorities[idx]
         for f in np.unique(field_msbs):
             fielddict[f] = ((fields[field_msbs == f]),(ras[field_msbs == f]),(decs[field_msbs == f]),(priorities[field_msbs == f]))
 
@@ -428,7 +427,7 @@ class YSE_PA:
             best_pa_list += [best_pa]
             trans_list += [list_good]
             final_transients[f] = list_good
-            priorities += [fielddict[f][3]]
+            priorities_list += [fielddict[f][3]]
             # DIAG
             # sys.stderr.write("field: %s  best_pa_list: %s  list_good: %s\n" % (f,best_pa_list,list_good))
 
@@ -471,9 +470,9 @@ class YSE_PA:
                     outtr = '['+','.join(np.concatenate(trlist))+']'
                 else:
                     outtr = ''
-                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} {outtr} priority={plist}"
+                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} {outtr} priority={plist[0]:.0f}"
             else:
-                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} priority={plist}"
+                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} priority={plist[0]:.0f}"
             # OK WE'RE OUTPUTTING AN EXTRA CARRIAGE RETURN GOTTA FIX THAT
 
         if len(output) == 0:
