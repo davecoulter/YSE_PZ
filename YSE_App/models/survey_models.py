@@ -62,6 +62,7 @@ class SurveyObservation(BaseModel):
 	obs_mjd = models.FloatField(null=True, blank=True)
 	survey_field = models.ForeignKey(SurveyField, on_delete=models.CASCADE)
 	status = models.ForeignKey(TaskStatus, models.SET(get_sentinel_taskstatus))
+	priority = models.IntegerField(null=True, blank=True)
 	#requested_exposure_time = models.FloatField()
 	#requested_photometric_band = models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
 	#status = models.ForeignKey(TaskStatus, models.SET(get_sentinel_taskstatus))
