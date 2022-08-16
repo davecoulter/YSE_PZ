@@ -19,6 +19,7 @@ Welcome to the YSE_PZ documentation!
    adding_data
    forms
    docker
+   howto
    contributing
    api
    
