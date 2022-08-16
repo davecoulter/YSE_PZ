@@ -268,6 +268,7 @@ class AddSurveyFieldFormView(FormView):
 			instance.last_mjd = date_to_mjd(form.cleaned_data['valid_stop'])
 			instance.ra_cen,instance.dec_cen = coordstr_to_decimal(
 				form.cleaned_data['coord'])
+			instance.priority = form.cleaned_data['priority']
 			
 			instance.save() #update_fields=['created_by','modified_by']
 

@@ -166,6 +166,10 @@ class YSE_Scheduler:
                                 help='daily field sets, each set should contain 3 comma-separated fields with semicolons to separate different sets (default=%default)')
             parser.add_argument('--daily_fields_ps2', default=config.get('yse','daily_fields_ps2'), type=str,
                                 help='daily field sets, each set should contain 3 comma-separated fields with semicolons to separate different sets (default=%default)')
+            parser.add_argument('--nfields_to_schedule_ps1', default=config.get('yse','nfields_to_schedule_ps1'), type=str,
+                                help='number of fields to schedule per day for PS1 (default=%default)')
+            parser.add_argument('--nfields_to_schedule_ps2', default=config.get('yse','nfields_to_schedule_ps2'), type=str,
+                                help='number of fields to schedule per day for PS2 (default=%default)')
 
             
         return parser
@@ -424,10 +428,11 @@ class YSE_Scheduler:
         return decam_list_to_schedule
 
 
-    def add_obs_requests(self,date_requested,field_id):
+    def add_obs_requests(self,date_requested,field_id,priority=1):
         
         survey_obs_dict = {'survey_obs_date':date_requested.strftime('%m/%d/%y'),
-                           'ztf_field_id':'%s'%field_id.replace('P2','')}
+                           'ztf_field_id':'%s'%field_id.replace('P2',''),
+                           'priority':priority}
         r = requests.post(url = '%sadd_survey_obs/'%(self.options.dburl.replace('api/','')),
                           data = survey_obs_dict,
                           auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
@@ -500,7 +505,7 @@ class YSE_Scheduler:
         print('scheduling fields %s'%(','.join(fields_to_observe)))
         print('fields were last observed %s days ago'%(','.join(np.array(timegaps).astype(int).astype(str))))
         
-        return fields_to_observe
+        return fields_to_observe[np.argsort(timegaps)]
         
     def main(self,date_to_schedule):
 
@@ -552,8 +557,8 @@ class YSE_Scheduler:
         # and availability of DECam
         fields_to_observe = self.choose_fields(ps_fields,likely_ztf_fields,decam_fields,ps_timedeltas)
 
-        for f in fields_to_observe:
-            self.add_obs_requests(date_to_schedule-datetime.timedelta(hours=9),f)
+        for i,f in enumerate(fields_to_observe):
+            self.add_obs_requests(date_to_schedule-datetime.timedelta(hours=9),f,priority=i+1)
         print('success!')
             
 if __name__ == "__main__":
