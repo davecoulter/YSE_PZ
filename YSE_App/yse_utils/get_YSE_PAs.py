@@ -342,7 +342,8 @@ class YSE_PA:
         for pb in pbdata:
            filtdict[pb['url']] = pb['name']
         
-        field_msbs,fields,obs_mjds,ras,decs,obs_dates = np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+        field_msbs,fields,obs_mjds,ras,decs,priorities,obs_dates =\
+            np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
         for d in data_results: # data_results is the requested fields
             survey_field_url = d['survey_field']
             obs_mjd = d['obs_mjd']
@@ -358,7 +359,10 @@ class YSE_PA:
                     field_msbs = np.append(field_msbs,s['field_id'].split('.')[0])
                     ras = np.append(ras,s['ra_cen'])
                     decs = np.append(decs,s['dec_cen'])
-
+                    try:
+                        priorities = np.append(priorities,int(d['priority']))
+                    except:
+                        priorities = np.append(priorities,[None])
                     # create a dict associating filters with the 
                     # overall field names
                     thisfield = s['field_id'].split('.')[0]
@@ -368,13 +372,12 @@ class YSE_PA:
                     # I can't just np.append them as is done above
                     # the filters have twice as many list elements 
                     # as the fields
-            
 
         fielddict = {}
         fields_unique,idx = np.unique(fields,return_index=True)
-        fields,ras,decs,field_msbs = fields[idx],ras[idx],decs[idx],field_msbs[idx]
+        fields,ras,decs,field_msbs,priorities = fields[idx],ras[idx],decs[idx],field_msbs[idx],priorities[idx]
         for f in np.unique(field_msbs):
-            fielddict[f] = ((fields[field_msbs == f]),(ras[field_msbs == f]),(decs[field_msbs == f]))
+            fielddict[f] = ((fields[field_msbs == f]),(ras[field_msbs == f]),(decs[field_msbs == f]),(priorities[field_msbs == f]))
 
         return fielddict,fieldfilts
                     
@@ -400,6 +403,7 @@ class YSE_PA:
         
         best_pa_list = []
         trans_list = []
+        priorities_list = []
         final_transients = {}
 
         origPAoffsets = list(range(10))
@@ -426,6 +430,7 @@ class YSE_PA:
             best_pa_list += [best_pa]
             trans_list += [list_good]
             final_transients[f] = list_good
+            priorities_list += [fielddict[f][3]]
             # DIAG
             # sys.stderr.write("field: %s  best_pa_list: %s  list_good: %s\n" % (f,best_pa_list,list_good))
 
@@ -444,7 +449,7 @@ class YSE_PA:
    
 
         #print('field  best_pa_m90 best_pa_merid best_pa_p90 filters')
-        for k,best_pa,tlist in zip(fielddict.keys(),best_pa_list,trans_list):
+        for k,best_pa,tlist,plist in zip(fielddict.keys(),best_pa_list,trans_list,priorities_list):
             # sys.stderr.write("k: %s, best_pa_list: %s, trans_list: %s\n" % (k, best_pa, tlist))
             if best_pa is None:
                outpa = "None"
@@ -468,9 +473,9 @@ class YSE_PA:
                     outtr = '['+','.join(np.concatenate(trlist))+']'
                 else:
                     outtr = ''
-                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} {outtr}"
+                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} {outtr} priority={plist[0]}"
             else:
-                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans}"
+                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} priority={plist[0]}"
             # OK WE'RE OUTPUTTING AN EXTRA CARRIAGE RETURN GOTTA FIX THAT
 
         if len(output) == 0:

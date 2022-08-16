@@ -478,6 +478,7 @@ class processTNS:
                 print('# ra %s'%sc.ra.deg,file=fout)
                 print('# dec %s'%sc.dec.deg,file=fout)
                 for line in dlfile.split('\n'):
+                    if ':' in line or '=' in line or line.isspace() or 'END' in line or 'GROUPS' in line or 'SNID ' in line: continue
                     print(line.replace('\n',''),file=fout)
 
             fin = open('spec_tns_upload.txt')
@@ -533,7 +534,7 @@ class processTNS:
             Spectrum['obs_date'] = so
             Spectrum['obs_group'] = re.sub(r'[^\x00-\x7f]',r'',sog)
             SpecDictAll[s] = Spectrum
-                      
+
         return SpecDictAll
 
     def getGHOSTData(self,jd,sc,ghost_host):
@@ -707,7 +708,6 @@ class processTNS:
             objs.append(json_data_single['data']['reply']['objname'])
             ras.append(json_data_single['data']['reply']['ra'])
             decs.append(json_data_single['data']['reply']['dec'])
-
         if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=self.redohost,doEBV=self.redohost,doTNS=doTNS)
         else: nsn = 0
         return nsn
@@ -981,9 +981,9 @@ class processTNS:
                     jd = None
 
             transientdict = self.getTNSData(jd,obj,sc,ebv)
-            #try:
-            photdict = self.getZTFPhotometry(sc)
-            #except: photdict = None
+            try:
+                photdict = self.getZTFPhotometry(sc)
+            except: photdict = None
             try:
                 if jd:
                     photdict,nondetectdate,nondetectmaglim,nondetectfilt,nondetectins = \
@@ -998,6 +998,7 @@ class processTNS:
                     if nondetectfilt: transientdict['non_detect_instrument'] =  nondetectins
                 elif photdict is not None: transientdict['transientphotometry'] = photdict
             except Exception as e: pass
+
             #exc_type, exc_obj, exc_tb = sys.exc_info()
             #raise RuntimeError('error %s at line number %s'%(e,exc_tb.tb_lineno))
 
@@ -1568,7 +1569,7 @@ class TNS_recent_realtime(CronJobBase):
                       f"multiple instances of {code} are running",
                       options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
             sys.exit(1)
-        
+
         try:
             tnsproc.noupdatestatus = True
             nsn = tnsproc.GetRecentEvents(ndays=tnsproc.tns_fastupdates_nminutes/60./24.)

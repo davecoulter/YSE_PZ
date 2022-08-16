@@ -139,7 +139,7 @@ class SurveyObsForm(ModelForm):
 
 	class Meta:
 		model = SurveyObservation
-		fields = ['survey_obs_date','ztf_field_id']
+		fields = ['survey_obs_date','ztf_field_id','priority']
 
 		
 class OncallForm(ModelForm):
