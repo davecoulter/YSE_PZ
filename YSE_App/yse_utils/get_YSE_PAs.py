@@ -360,7 +360,7 @@ class YSE_PA:
                     ras = np.append(ras,s['ra_cen'])
                     decs = np.append(decs,s['dec_cen'])
                     try:
-                        priorities = np.append(priorities,d['priority'])
+                        priorities = np.append(priorities,int(d['priority']))
                     except:
                         priorities = np.append(priorities,[None])
                     # create a dict associating filters with the 
@@ -473,9 +473,9 @@ class YSE_PA:
                     outtr = '['+','.join(np.concatenate(trlist))+']'
                 else:
                     outtr = ''
-                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} {outtr} priority={plist[0]:.0f}"
+                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} {outtr} priority={plist[0]}"
             else:
-                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} priority={plist[0]:.0f}"
+                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} priority={plist[0]}"
             # OK WE'RE OUTPUTTING AN EXTRA CARRIAGE RETURN GOTTA FIX THAT
 
         if len(output) == 0:
