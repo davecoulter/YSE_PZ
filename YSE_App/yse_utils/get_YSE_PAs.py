@@ -359,7 +359,10 @@ class YSE_PA:
                     field_msbs = np.append(field_msbs,s['field_id'].split('.')[0])
                     ras = np.append(ras,s['ra_cen'])
                     decs = np.append(decs,s['dec_cen'])
-                    priorities = np.append(priorities,d['priority'])
+                    try:
+                        priorities = np.append(priorities,d['priority'])
+                    except:
+                        priorities = np.append(priorities,[None])
                     # create a dict associating filters with the 
                     # overall field names
                     thisfield = s['field_id'].split('.')[0]
