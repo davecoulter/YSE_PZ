@@ -268,7 +268,7 @@ class AddSurveyFieldFormView(FormView):
 			instance.last_mjd = date_to_mjd(form.cleaned_data['valid_stop'])
 			instance.ra_cen,instance.dec_cen = coordstr_to_decimal(
 				form.cleaned_data['coord'])
-			
+
 			instance.save() #update_fields=['created_by','modified_by']
 
 			print(form.cleaned_data)
@@ -444,7 +444,8 @@ class AddSurveyObsFormView(FormView):
 						exposure_time=27,
 						photometric_band=band1,
 						created_by=self.request.user,
-						modified_by=self.request.user)
+						modified_by=self.request.user,
+                        priority=form.cleaned_data['priority'])
 					SurveyObservation.objects.create(
 						mjd_requested=date_to_mjd(sunset_forobs),
 						survey_field=s,
@@ -452,7 +453,8 @@ class AddSurveyObsFormView(FormView):
 						exposure_time=27,
 						photometric_band=band2,
 						created_by=self.request.user,
-						modified_by=self.request.user)
+						modified_by=self.request.user,
+                        priority=form.cleaned_data['priority'])
 
 			# for key,value in form.cleaned_data.items():
 			data = {

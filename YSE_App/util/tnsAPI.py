@@ -6,7 +6,8 @@ import time
 import logging
 
 # Hurl the log info into a default log file.  We'll use debug level by default.
-logging.basicConfig(filename='/tmp/tns.log', format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
+#logging.basicConfig(filename='/tmp/tns.log', format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 AT_REPORT_FORM = "bulk-report"

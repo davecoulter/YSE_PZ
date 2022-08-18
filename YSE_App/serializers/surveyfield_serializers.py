@@ -125,7 +125,8 @@ class SurveyObservationSerializer(serializers.HyperlinkedModelSerializer):
 		instance.status = validated_data.get('status', instance.status)
 		instance.exposure_time = validated_data.get('exposure_time', instance.exposure_time)
 		instance.photometric_band = validated_data.get('photometric_band', instance.photometric_band)
-
+		instance.priority = validated_data.get('priority', instance.priority)
+        
 		instance.status = validated_data.get('status', instance.status)
 		instance.pos_angle_deg = validated_data.get('pos_angle_deg', instance.pos_angle_deg)
 
