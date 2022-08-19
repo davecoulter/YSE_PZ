@@ -146,6 +146,8 @@ class SurveyObs(CronJobBase):
 									survey_dict[ingest_keys_map[h][0]] = ingest_keys_map[h][1](
 										l,np.array(lineparts)[np.array(header) == 'exp_name'][0])
 					survey_dict['status'] = 'Successful'
+					if 'GPC2-' in survey_dict['photometric_band']:
+						survey_dict['survey_field'] = survey_dict['survey_field'].split('.')[0] + 'P2.' + survey_dict['survey_field'].split('.')[1]
 					survey_fields[survey_dict['image_id']] = survey_dict
 
 			# Mark messages as "Seen"
