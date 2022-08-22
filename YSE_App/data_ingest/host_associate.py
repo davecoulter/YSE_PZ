@@ -89,7 +89,7 @@ class YSE(CronJobBase):
             snCoord = [SkyCoord(ra*u.deg, dec*u.deg, frame='icrs') for ra,dec in zip(RA,DEC)] 
             
             snName = ['SN'+T.name for i,T in enumerate(transients)]
-            hosts = getTransientHosts(snName, snCoord, verbose=True, starcut='normal', ascentMatch=False)
+            hosts = getTransientHosts(snName, snCoord, verbose=True, starcut='gentle', ascentMatch=False)
             
             #hosts is a df that may or may not have the hosts, so 
             #we can use the fact that the names are ordered to
