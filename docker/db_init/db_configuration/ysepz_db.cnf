@@ -1,2 +1,5 @@
 [mysqld]
 local_infile=1
+log_error=/var/log/mysql/mysql_error.log
+general_log_file=/var/log/mysql/mysql.log
+general_log=1
