@@ -64,7 +64,7 @@ itypes==1.1.0
 jedi==0.18.0
 jeepney==0.6.0
 Jinja2==2.10
-joblib==1.0.1
+joblib==1.2.0
 joypy==0.2.5
 Keras==2.4.3
 Keras-Applications==1.0.8
