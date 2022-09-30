@@ -390,7 +390,7 @@ class AddSurveyObsFormView(FormView):
 							order_by('-mjd_requested').select_related()
 
 					# reddest_yse_filter gives hard-coded YSE "mini-survey" filter choice
-					if s.instrument.name == 'GPC1':
+					if s.instrument.name == 'GPC2':
 						reddest_yse_filter = _reddest_yse_filter[:]
 					else:
 						reddest_yse_filter = 'z'
