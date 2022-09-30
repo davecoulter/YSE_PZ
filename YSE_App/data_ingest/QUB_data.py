@@ -644,7 +644,7 @@ class YSE(CronJobBase):
         # check that static dir exists
         lcforced_static_dir = f"{djangoSettings.STATIC_ROOT}/yseforcedphot"
         if not os.path.exists(lcforced_static_dir):
-            os.path.makedirs(lcforced_static_dir)
+            os.makedirs(lcforced_static_dir)
         
         transientdict = {}
         obj,ra,dec = [],[],[]
