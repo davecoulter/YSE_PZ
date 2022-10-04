@@ -382,15 +382,15 @@ class AddSurveyObsFormView(FormView):
 					if len(previous_msb):
 						previous_field = previous_msb[0].survey_fields.all()[0]
 						previous_obs = SurveyObservation.objects.filter(survey_field=previous_field).\
-							filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').\
+							filter(Q(obs_mjd__lt=m) & Q(obs_mjd__isnull=False)).order_by('-obs_mjd').\
 							order_by('-mjd_requested').select_related()
 					else:
 						previous_obs = SurveyObservation.objects.filter(survey_field=s).\
-							filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').\
+							filter(Q(obs_mjd__lt=m) | Q(obs_mjd__isnull=False)).order_by('-obs_mjd').\
 							order_by('-mjd_requested').select_related()
 
 					# reddest_yse_filter gives hard-coded YSE "mini-survey" filter choice
-					if s.instrument.name == 'GPC1':
+					if s.instrument.name == 'GPC2':
 						reddest_yse_filter = _reddest_yse_filter[:]
 					else:
 						reddest_yse_filter = 'z'
