@@ -168,6 +168,8 @@ class DECam(CronJobBase):
                               help='email password, if post=True (default=%default)')
             parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
                               help='URL to POST transients to a database (default=%default)')
+            parser.add_argument('--ghost_path', default=config.get('main','ghost_path'), type=str,
+                              help='GHOST data directory (default=%default)')
             parser.add_argument('--ztfurl', default=config.get('ztf','ztfurl'), type=str,
                               help='ZTF URL (default=%default)')
             parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
@@ -228,7 +230,7 @@ class DECam(CronJobBase):
         # prelims
         transientdict = {}
         if not os.path.exists('database/GHOST.csv'):
-            getGHOST(real=True, verbose=True)
+            getGHOST(real=True, verbose=True, install_path=self.options.ghost_path)
             
 
         count = 0

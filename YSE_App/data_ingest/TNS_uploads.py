@@ -152,6 +152,9 @@ class processTNS:
                                 help='time interval for grabbing very recent TNS events (default=%default)')
             parser.add_argument('--hostmatchrad', default=config.get('main','hostmatchrad'), type=float,
                                 help='matching radius for hosts (arcmin) (default=%default)')
+            parser.add_argument('--ghost_path', default=config.get('main','ghost_path'), type=str,
+                                help='GHOST data directory (default=%default)')
+
             parser.add_argument('--ztfurl', default=config.get('ztf','ztfurl'), type=str,
                                 help='ZTF URL (default=%default)')
 
@@ -185,7 +188,9 @@ class processTNS:
                                 help='TNS API key (default=%default)')
             parser.add_argument('--ztfurl', default="", type=str,
                                 help='ZTF URL (default=%default)')
-
+            parser.add_argument('--ghost_path', default="", type=str,
+                                help='GHOST data directory (default=%default)')
+            
             parser.add_argument('--SMTP_LOGIN', default='', type=str,
                                 help='SMTP login (default=%default)')
             parser.add_argument('--SMTP_HOST', default='', type=str,
@@ -829,7 +834,7 @@ class processTNS:
 
             if not os.path.exists('database/GHOST.csv'):
                 try:
-                    getGHOST(real=True, verbose=True)
+                    getGHOST(real=True, verbose=True, install_path=self.options.ghost_path)
                 except:
                     pass
             
