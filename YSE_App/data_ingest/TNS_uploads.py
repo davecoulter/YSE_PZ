@@ -1562,7 +1562,7 @@ class TNS_recent_realtime(CronJobBase):
         tnsproc.ztfurl = options.ztfurl
         tnsproc.ghost_path = options.ghost_path
         tnsproc.ndays = float(options.tns_recent_ndays)
-        tnsproc.tns_fastupdates_nminutes = 60 #float(options.tns_fastupdates_nminutes)
+        tnsproc.tns_fastupdates_nminutes = float(options.tns_fastupdates_nminutes)
 
         # in case of code failures
         smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
