@@ -229,9 +229,9 @@ class DECam(CronJobBase):
             
         # prelims
         transientdict = {}
-        if not os.path.exists('database/GHOST.csv'):
+        if not os.path.exists(f'{self.options.ghost_path}/database/GHOST.csv'):
             getGHOST(real=True, verbose=True, install_path=self.options.ghost_path)
-            
+
 
         count = 0
         nowdate = datetime.datetime.now()
@@ -314,7 +314,8 @@ class DECam(CronJobBase):
                     # run GHOST
                     try:
                         ghost_hosts = getTransientHosts(
-                            ['tmp'+candid],[SkyCoord(ra,dec,unit=(u.hour,u.deg))], verbose=True, starcut='gentle', ascentMatch=False)
+                            ['tmp'+candid],[SkyCoord(ra,dec,unit=(u.hour,u.deg))], verbose=True, starcut='gentle', ascentMatch=False,
+                            GHOSTpath=self.options.ghost_path)
                         ghost_hosts = calc_photoz(ghost_hosts)
                     except:
                         ghost_hosts = None

@@ -832,12 +832,12 @@ class processTNS:
         ebv_timeout,ned_timeout = False,False
         if doGHOST:
 
-            if not os.path.exists('database/GHOST.csv'):
+            if not os.path.exists(f'{self.ghost_path}/database/GHOST.csv'):
                 try:
-                    getGHOST(real=True, verbose=True, install_path=self.options.ghost_path)
+                    getGHOST(real=True, verbose=True, install_path=self.ghost_path)
                 except:
                     pass
-            
+                
             def handler(signum, frame):
                 raise Exception("timeout!")
                 
@@ -849,7 +849,8 @@ class processTNS:
                     scall = [SkyCoord(r,d,unit=u.deg) for r,d in zip(ras,decs)]
                 else:
                     scall = [SkyCoord(r,d,unit=(u.hourangle,u.deg)) for r,d in zip(ras,decs)]
-                ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False)
+
+                ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False, GHOSTpath=self.ghost_path)
                 if is_photoz:
                     ghost_hosts = calc_photoz(ghost_hosts)[1]
                 os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
@@ -1228,7 +1229,8 @@ class TNS_emails(CronJobBase):
         tnsproc.tns_bot_id = options.tns_bot_id
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
-
+        tnsproc.ghost_path = options.ghost_path
+        
         # in case of code failures
         smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
         from_addr = "%s@gmail.com" % options.SMTP_LOGIN
@@ -1312,7 +1314,8 @@ class TNS_updates(CronJobBase):
         tnsproc.tns_bot_id = options.tns_bot_id
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
-
+        tnsproc.ghost_path = options.ghost_path
+        
         # in case of code failures
         smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
         from_addr = "%s@gmail.com" % options.SMTP_LOGIN
@@ -1393,7 +1396,8 @@ class TNS_Ignore_updates(CronJobBase):
         tnsproc.tns_bot_id = options.tns_bot_id
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
-
+        tnsproc.ghost_path = options.ghost_path
+        
         # in case of code failures
         smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
         from_addr = "%s@gmail.com" % options.SMTP_LOGIN
@@ -1473,6 +1477,7 @@ class TNS_recent(CronJobBase):
         tnsproc.tns_bot_id = options.tns_bot_id
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
+        tnsproc.ghost_path = options.ghost_path
         tnsproc.ndays = float(options.tns_recent_ndays)
         tnsproc.tns_fastupdates_nminutes = float(options.tns_fastupdates_nminutes)
 
@@ -1555,8 +1560,9 @@ class TNS_recent_realtime(CronJobBase):
         tnsproc.tns_bot_id = options.tns_bot_id
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
+        tnsproc.ghost_path = options.ghost_path
         tnsproc.ndays = float(options.tns_recent_ndays)
-        tnsproc.tns_fastupdates_nminutes = float(options.tns_fastupdates_nminutes)
+        tnsproc.tns_fastupdates_nminutes = 60 #float(options.tns_fastupdates_nminutes)
 
         # in case of code failures
         smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
@@ -1611,7 +1617,7 @@ class UpdateGHOST(CronJobBase):
         scall = [SkyCoord(t.ra,t.dec,unit=u.deg) for t in transients]
         names = [t.name for t in transients]
 
-        ghost_hosts = getTransientHosts(names, scall, verbose=True, starcut='gentle', ascentMatch=False)
+        ghost_hosts = getTransientHosts(names, scall, verbose=True, starcut='gentle', ascentMatch=False, GHOSTpath=djangoSettings.ghost_path)
         if is_photoz:
             ghost_hosts = calc_photoz(ghost_hosts)[1]
         os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
