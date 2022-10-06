@@ -4,10 +4,13 @@ LABEL maintainer="Dave Coulter (dcoulter@ucsc.edu)"
 
 SHELL ["/bin/bash", "-c"]
 
+
+
 RUN apt-get update --fix-missing && \
 pip install --upgrade pip
 
 WORKDIR /app
+RUN mkdir -p /app/ghost_logs
 
 COPY requirements.txt /app/requirements.txt
 RUN pip install -r /app/requirements.txt
