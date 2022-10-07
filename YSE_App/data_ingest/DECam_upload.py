@@ -230,7 +230,7 @@ class DECam(CronJobBase):
         # prelims
         transientdict = {}
         if not os.path.exists(f'{self.options.ghost_path}/database/GHOST.csv'):
-            getGHOST(real=True, verbose=True, install_path=self.options.ghost_path)
+            getGHOST(real=True, verbose=True, installpath=self.options.ghost_path)
 
 
         count = 0
