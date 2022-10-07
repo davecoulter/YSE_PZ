@@ -43,6 +43,7 @@ services:
         - ./db_init/YSE_django_migrations_insert.sql:/docker-entrypoint-initdb.d/5.sql
         - ./db_init/YSE_create_users.sql:/docker-entrypoint-initdb.d/6.sql
         - ${VOL_DB_LOG}:/var/log/mysql
+        - ${VOL_GHOST}:/app/ghost_logs
       environment:
         MYSQL_ROOT_PASSWORD: ${DB_PWD}
       healthcheck:
