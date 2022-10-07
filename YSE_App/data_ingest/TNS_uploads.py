@@ -834,7 +834,7 @@ class processTNS:
 
             if not os.path.exists(f'{self.ghost_path}/database/GHOST.csv'):
                 try:
-                    getGHOST(real=True, verbose=True, install_path=self.ghost_path)
+                    getGHOST(real=True, verbose=True, installpath=self.ghost_path)
                 except:
                     pass
                 
