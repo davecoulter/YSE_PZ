@@ -994,7 +994,7 @@ class YSE(CronJobBase):
         try:
             r = requests.post(url = url, data = json.dumps(TransientUploadDict),
                               auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword),
-                              timeout=60)
+                              timeout=300)
             try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
             except: print(r.text)
             print("Process done.")
@@ -1497,7 +1497,7 @@ class YSE_Stack(CronJobBase):
         try:
             r = requests.post(url = url, data = json.dumps(TransientUploadDict),
                               auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword),
-                              timeout=60)
+                              timeout=300)
             try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
             except: print(r.text)
             print("Process done.")
