@@ -628,12 +628,11 @@ class YSE(CronJobBase):
             iSummary = np.append(iSummary,np.where((nowmjd - summary['mjd_obs'] < self.options.max_days) |
                                                    (nowmjd - summary['latest_mjd_forced'] < self.options.max_days))[0])
             summary_upload = summary[iSummary]
-            while nsn_single == 10:
+            for nsn in range(0,len(summary_upload),10):
                 transientdict,nsn_single = self.parse_data(summary_upload,lc,transient_idx=nsn,max_transients=10)
                 print('uploading %i transients'%nsn_single)
                 self.send_data(transientdict)
                 self.copy_stamps(transientdict)
-                nsn += 10
 
         return nsn
         
