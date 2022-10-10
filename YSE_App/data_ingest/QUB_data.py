@@ -628,12 +628,11 @@ class YSE(CronJobBase):
             iSummary = np.append(iSummary,np.where((nowmjd - summary['mjd_obs'] < self.options.max_days) |
                                                    (nowmjd - summary['latest_mjd_forced'] < self.options.max_days))[0])
             summary_upload = summary[iSummary]
-            while nsn_single == 10:
+            for nsn in range(0,len(summary_upload),10):
                 transientdict,nsn_single = self.parse_data(summary_upload,lc,transient_idx=nsn,max_transients=10)
                 print('uploading %i transients'%nsn_single)
                 self.send_data(transientdict)
                 self.copy_stamps(transientdict)
-                nsn += 10
 
         return nsn
         
@@ -666,13 +665,13 @@ class YSE(CronJobBase):
                 dbtransient = dbtransient[0]
             else:
                 transient_exists = False
-                
+
             #### get associated photometry
             if transient_exists:
                 photdata = TransientPhotData.objects.\
                     filter(Q(photometry__instrument__name='GPC1') | Q(photometry__instrument__name = 'GPC2')).\
                     filter(photometry__transient=dbtransient)
-            
+
             # see if we have forced phot on disk already
             lcfile = f"{lcforced_static_dir}/{s['id']}.forcedphot.dat"
             if os.path.exists(lcfile):
@@ -884,7 +883,7 @@ class YSE(CronJobBase):
                     PhotUploadAll['ZTF'] = photometrydict_ztf
             except:
                 pass
-            
+
             nsn += 1
 
         return transientdict,nsn
@@ -1586,13 +1585,14 @@ class CheckDuplicates(CronJobBase):
     def main(self):
         from YSE_App.models import Transient
         
-        transients = Transient.objects.filter(created_date__gt=datetime.datetime.now()-datetime.timedelta(1)).filter(name__startswith='1')
+        transients = Transient.objects.filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1)).filter(name__startswith='1')
         for t in transients:
             if t.disc_date is None: continue
             ramin,ramax,decmin,decmax = getRADecBox(t.ra,t.dec,size=0.00042)
             dups = Transient.objects.filter(Q(ra__gt=ramin) & Q(ra__lt=ramax) &
                                             Q(dec__gt=decmin) & Q(dec__lt=decmax) &
-                                            Q(disc_date__gte=t.disc_date-datetime.timedelta(365)))
+                                            (Q(disc_date__gte=t.disc_date-datetime.timedelta(365)) &
+                                             Q(disc_date__lte=t.disc_date+datetime.timedelta(365))))
             if len(dups) > 1:
                 print('deleting transient %s'%t.name)
                 t.delete()
