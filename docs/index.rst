@@ -35,7 +35,8 @@ Citing YSE_PZ
 
 If you are using YSE_PZ in your research please cite the Zenodo record
 
-.. code::
+.. code:: none
+
    @software{coulter_d_a_2022_7278430,
    author       = {Coulter, D. A and
                   Jones, D. O. and
