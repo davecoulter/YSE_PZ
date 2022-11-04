@@ -1,5 +1,7 @@
 # YSE_PZ
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7278430.svg)](https://doi.org/10.5281/zenodo.7278430)
+[![Documentation Status](https://readthedocs.org/projects/yse-pz/badge/?version=latest)](https://yse-pz.readthedocs.io/en/latest/?badge=latest)
 ## Documentation 
 
 [https://yse-pz.readthedocs.io/en/latest/](https://yse-pz.readthedocs.io/en/latest/)
