@@ -40,8 +40,8 @@ class YSE(CronJobBase):
             from django.db.models import Q #HAS To Remain Here,
             #save time b/c the other cron jobs print a time for completion
 
-            if not os.path.exists('database/GHOST.csv'):
-                getGHOST(real=True, verbose=False)
+            if not os.path.exists(f'{djangoSettings.ghost_path}/database/GHOST.csv'):
+                getGHOST(real=True, verbose=False, installpath=djangoSettings.ghost_path)
             #we might reset this once when we update
             
             transients = Transient.objects.filter(~Q(tags__name__in='YSE') &

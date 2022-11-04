@@ -219,6 +219,7 @@ TNSDECAMUSER = config.get('main','tns_decam_bot_name')
 TNSDECAMID = config.get('main','tns_decam_bot_id')
 TNSDECAMAPIKEY = config.get('main','tnsdecamapikey')
 REDYSEFILTER = config.get('yse','red_yse_filter')
+ghost_path = config.get('main','ghost_path')
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
