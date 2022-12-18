@@ -17,11 +17,12 @@ import astropy.units as u
 import sys
 
 def split_band(band,exp_name):
-	if re.match('o[0-9][0-9][0-9][0-9]g[0-9][0-9][0-9][0-9]o',exp_name):
+	if re.match('o[0-9][0-9][0-9][0-9][0-9]g[0-9][0-9][0-9][0-9]o',exp_name):
 		return 'GPC1-%s'%band.split('.')[0]
-	elif re.match('o[0-9][0-9][0-9][0-9]h[0-9][0-9][0-9][0-9]o',exp_name):
+	elif re.match('o[0-9][0-9][0-9][0-9][0-9]h[0-9][0-9][0-9][0-9]o',exp_name):
 		return 'GPC2-%s'%band.split('.')[0]
-	else: raise RuntimeError('couldn\'t parse exp name')
+	else:
+		raise RuntimeError('couldn\'t parse exp name')
 	
 def split_survey_field(survey_field):
 	return '.'.join(survey_field.split('.')[1:3])
