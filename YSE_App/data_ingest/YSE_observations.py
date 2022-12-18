@@ -21,6 +21,10 @@ def split_band(band,exp_name):
 		return 'GPC1-%s'%band.split('.')[0]
 	elif re.match('o[0-9][0-9][0-9][0-9][0-9]h[0-9][0-9][0-9][0-9]o',exp_name):
 		return 'GPC2-%s'%band.split('.')[0]
+	elif re.match('o[0-9][0-9][0-9][0-9]g[0-9][0-9][0-9][0-9]o',exp_name):
+		return 'GPC1-%s'%band.split('.')[0]
+	elif re.match('o[0-9][0-9][0-9][0-9]h[0-9][0-9][0-9][0-9]o',exp_name):
+		return 'GPC2-%s'%band.split('.')[0]
 	else:
 		raise RuntimeError('couldn\'t parse exp name')
 	
