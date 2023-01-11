@@ -14,13 +14,13 @@ discovery alerts, resolves those transients to host galaxies, downloads coincide
 archival data, and retrieves forced photometry from a variety of online sources.
 YSE-PZ supports group-level data permissions and is currently used by the Young
 Supernova Experiment, the Keck Infrared Transient Survey, and Dark Energy Bedrock
-All Sky Supernovae team. YSE-PZ exposes many observing tools to coordinate
-follow-up observations, including generating airmass plots, finding charts,
-and front-end forms to trigger follow-up observations. YSE-PZ supports a rich set
-of query tools that allow users to explore the database and generate personalized
-dashboards to track transients of interest. YSE-PZ is currently hosted by the
-UC Santa Cruz Transients team but is built to be flexibly deployed and can be easily
-installed in a local instance or the cloud.
+All Sky Supernovae team. YSE-PZ exposes many observing tools to coordinate follow-up
+observations, including generating airmass plots, finding charts, and front-end forms
+to trigger follow-up observations. YSE-PZ supports a rich set of query tools that
+allow users to explore the database and generate personalized dashboards to track
+transients of interest. YSE-PZ is currently hosted by the UC Santa Cruz Transients
+team but is built to be flexibly deployed and can be easily installed in a local
+instance or the cloud.
 
 .. toctree::
    :maxdepth: 1
