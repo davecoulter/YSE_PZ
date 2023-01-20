@@ -50,7 +50,7 @@ If you are using YSE_PZ in your research please cite the Zenodo record
                  to explore the database and generate personalized dashboards to track transients 
                  of interest. YSE-PZ is currently hosted by the UC Santa Cruz Transients 
                  team but is built to be flexibly deployed and can be easily installed 
-                 in a local instance or the cloud.}},
+                 in a local instance or the cloud.}}, 
   month        = nov,
   year         = 2022,
   note         = {{YSE-PZ was developed by the UC Santa Cruz 
