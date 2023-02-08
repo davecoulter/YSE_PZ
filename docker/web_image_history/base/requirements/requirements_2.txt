@@ -24,7 +24,7 @@ click==8.0.0
 confluent-kafka==1.7.0
 coreapi==2.3.3
 coreschema==0.0.4
-cryptography==3.4.7
+cryptography==39.0.1
 cycler==0.10.0
 Cython==0.29.23
 DateTime==4.3
