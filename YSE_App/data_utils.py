@@ -150,7 +150,7 @@ def add_yse_survey_obs(request):
                     # if there's no RA/Dec match, find field based on name
                     if not len(fk):
                         fk = fkmodel.objects.filter(field_id=survey[surveykey])
-
+                        print(survey[surveykey])
                         fk_new = fk[0]
                         fk_new.ra_cen = survey['ra_cen']
                         fk_new.dec_cen = survey['dec_cen']
@@ -752,7 +752,7 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
             for k in photometry['photdata']:
                 p = photometry['photdata'][k]
                 pmjd = Time(p['obs_date'],format='isot').mjd
-                print(transient.name,instrument.name,pmjd,p['flux'])
+
                 band = PhotometricBand.objects.filter(name=p['band']).filter(instrument__name=photometry['instrument'])
                 if len(band): band = band[0]
                 else: band = PhotometricBand.objects.filter(name='Unknown')[0]

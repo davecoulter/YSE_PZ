@@ -440,6 +440,7 @@ class YSE_Scheduler:
 
         survey_obs_dict = {'survey_obs_date':date_requested.strftime('%m/%d/%y'),
                            'ztf_field_id':'%s'%field_id.replace('P2',''),
+                           'instrument':self.options.instrument,
                            'priority':priority}
         r = requests.post(url = '%sadd_survey_obs/'%(self.options.dburl.replace('api/','')),
                           data = survey_obs_dict,

@@ -75,7 +75,7 @@ class TransientFollowupForm(ModelForm):
 class ClassicalResourceForm(ModelForm):
 
 	observing_date = forms.DateTimeField()
-    
+	
 	class Meta:
 		model = ClassicalResource
 		fields = [
@@ -123,10 +123,9 @@ class SurveyFieldForm(ModelForm):
 class SurveyObsForm(ModelForm):
 
 	survey_obs_date = forms.DateTimeField()
-	#import pdb; pdb.set_trace()
 	
 	qs = [(i['ztf_field_id'], i['ztf_field_id']) for i in SurveyField.objects.filter(~Q(obs_group__name='ZTF')).values('ztf_field_id').distinct().order_by('ztf_field_id')]
-
+	
 	if len(qs):
 		ztf_field_id = forms.MultipleChoiceField(
 			choices=qs,
@@ -137,9 +136,15 @@ class SurveyObsForm(ModelForm):
 			choices=[],
 			required=True)
 
+		
+	instrument = forms.MultipleChoiceField(
+		choices=[['GPC1','GPC1'],['GPC2','GPC2']],
+        initial=['GPC1','GPC1'],
+		required=True)
+		
 	class Meta:
 		model = SurveyObservation
-		fields = ['survey_obs_date','ztf_field_id','priority']
+		fields = ['survey_obs_date','ztf_field_id','priority','instrument']
 
 		
 class OncallForm(ModelForm):
