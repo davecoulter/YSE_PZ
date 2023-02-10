@@ -5,7 +5,7 @@ import json
 import time
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 import astropy.table as at
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, Angle
 import astropy.units as u
 from astropy.time import Time
 import numpy as np
@@ -26,6 +26,9 @@ from django.db.models import Q,F
 from YSE_App.models import Transient, TransientTag, TransientPhotData, TransientPhotometry, TransientSpectrum
 import sys
 from tendo import singleton
+
+### new antares search for ZTF matches
+from antares_client.search import cone_search
 
 from string import ascii_lowercase
 import itertools
@@ -113,6 +116,38 @@ def get_ps_score(RA, DEC):
         print('PS_SCORE: %.3f' %output)
 
     return output
+
+def getZTFPhotometry_ANTARES(ra,dec,clobber=True):
+    sc = SkyCoord(ra,dec,unit=u.deg)
+    for s in cone_search(sc, Angle("5s")):
+        photometrydict = {'instrument':'ZTF-Cam',
+                          'obs_group':'ZTF',
+                          'photdata':{}}
+
+        for i in range(len(s.lightcurve)):
+            PhotUploadDict = {'obs_date':s.lightcurve['time'][i].replace(' ','T'),
+                              'band':'%s-ZTF'%s.lightcurve['ant_passband'][i],
+                              'groups':[]}
+
+            if s.lightcurve['ant_mag'][i] == s.lightcurve['ant_mag'][i]:
+                PhotUploadDict['mag'] = s.lightcurve['ant_mag'][i]
+                PhotUploadDict['mag_err'] = s.lightcurve['ant_magerr'][i]
+                PhotUploadDict['flux'] = 10**(-0.4*(s.lightcurve['ant_mag'][i]-27.5))
+                PhotUploadDict['flux_err'] = 0.4*np.log(10)*PhotUploadDict['flux']*s.lightcurve['ant_magerr'][i]
+                PhotUploadDict['data_quality'] = 0
+                PhotUploadDict['forced'] = None
+                PhotUploadDict['flux_zero_point'] = None
+                PhotUploadDict['discovery_point'] = 0
+                PhotUploadDict['diffim'] = 1
+            else:
+                continue
+                    
+            photometrydict['photdata']['%s_%i'%(s.lightcurve['time'][i],i)] = PhotUploadDict
+
+        return photometrydict
+    
+    return None
+
 
 class QUB(CronJobBase):
 
@@ -348,7 +383,7 @@ class QUB(CronJobBase):
             transientdict[s['ps1_designation']]['transientphotometry'] = PhotUploadAll
 
             try:
-                photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+                photometrydict_ztf = getZTFPhotometry_ANTARES(s['ra_psf'],s['dec_psf'],clobber=self.options.clobber)
                 if photometrydict_ztf is not None:
                     PhotUploadAll['ZTF'] = photometrydict_ztf
             except:
@@ -357,42 +392,6 @@ class QUB(CronJobBase):
             nsn += 1
 
         return transientdict,nsn
-
-    def getZTFPhotometry(self,ra,dec):
-
-        ztfurl = '%s/?format=json&sort_value=jd&sort_order=desc&cone=%.7f%%2C%.7f%%2C0.0014'%(
-            self.options.ztfurl,ra,dec)
-        client = coreapi.Client()
-        schema = client.get(ztfurl)
-        if 'results' in schema.keys():
-            PhotUploadAll = {"mjdmatchmin":0.01,
-                             "clobber":self.options.clobber}
-            photometrydict = {'instrument':'ZTF-Cam',
-                              'obs_group':'ZTF',
-                              'photdata':{}}
-
-            for i in range(len(schema['results'])):
-                phot = schema['results'][i]['candidate']
-                if phot['isdiffpos'] == 'f':
-                    continue
-                PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
-                                  'band':'%s-ZTF'%phot['filter'],
-                                  'groups':[]}
-                PhotUploadDict['mag'] = phot['magpsf']
-                PhotUploadDict['mag_err'] = phot['sigmapsf']
-                PhotUploadDict['flux'] = None
-                PhotUploadDict['flux_err'] = None
-                PhotUploadDict['data_quality'] = 0
-                PhotUploadDict['forced'] = None
-                PhotUploadDict['flux_zero_point'] = None
-                PhotUploadDict['discovery_point'] = 0
-                PhotUploadDict['diffim'] = 1
-
-                photometrydict['photdata']['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
-
-            return photometrydict
-
-        else: return None
 
     
     def send_data(self,TransientUploadDict):
@@ -743,7 +742,7 @@ class YSE(CronJobBase):
                 rb_factor = None
             else:
                 rb_factor = s['rb_factor_image']
-
+            print(s['local_designation'])
             tdict = {'name':s['local_designation'],
                      'ra':s['ra_psf'],
                      'dec':s['dec_psf'],
@@ -878,7 +877,7 @@ class YSE(CronJobBase):
             transientdict[s['local_designation']]['transientphotometry'] = PhotUploadAll
 
             try:
-                photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+                photometrydict_ztf = getZTFPhotometry_ANTARES(s['ra_psf'],s['dec_psf'],clobber=self.options.clobber)
                 if photometrydict_ztf is not None:
                     PhotUploadAll['ZTF'] = photometrydict_ztf
             except:
@@ -887,42 +886,6 @@ class YSE(CronJobBase):
             nsn += 1
 
         return transientdict,nsn
-
-    def getZTFPhotometry(self,ra,dec):
-
-        ztfurl = '%s/?format=json&sort_value=jd&sort_order=desc&cone=%.7f%%2C%.7f%%2C0.0014'%(
-            self.options.ztfurl,ra,dec)
-        client = coreapi.Client()
-        schema = client.get(ztfurl)
-        if 'results' in schema.keys():
-            PhotUploadAll = {"mjdmatchmin":0.01,
-                             "clobber":False}
-            photometrydict = {'instrument':'ZTF-Cam',
-                              'obs_group':'ZTF',
-                              'photdata':{}}
-
-            for i in range(len(schema['results'])):
-                phot = schema['results'][i]['candidate']
-                if phot['isdiffpos'] == 'f':
-                    continue
-                PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
-                                  'band':'%s-ZTF'%phot['filter'],
-                                  'groups':[]}
-                PhotUploadDict['mag'] = phot['magpsf']
-                PhotUploadDict['mag_err'] = phot['sigmapsf']
-                PhotUploadDict['flux'] = None
-                PhotUploadDict['flux_err'] = None
-                PhotUploadDict['data_quality'] = 0
-                PhotUploadDict['forced'] = None
-                PhotUploadDict['flux_zero_point'] = None
-                PhotUploadDict['discovery_point'] = 0
-                PhotUploadDict['diffim'] = 1
-
-                photometrydict['photdata']['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
-
-            return photometrydict
-
-        else: return None
 
     
     def send_data(self,TransientUploadDict):
@@ -1381,7 +1344,7 @@ class YSE_Stack(CronJobBase):
             transientdict[tdict['name']]['transientphotometry'] = PhotUploadAll
 
             try:
-                photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+                photometrydict_ztf = getZTFPhotometry_ANTARES(s['ra_psf'],s['dec_psf'],clobber=self.options.clobber)
                 if photometrydict_ztf is not None:
                     PhotUploadAll['ZTF'] = photometrydict_ztf
             except:
@@ -1390,43 +1353,6 @@ class YSE_Stack(CronJobBase):
             nsn += 1
 
         return transientdict,nsn
-
-    def getZTFPhotometry(self,ra,dec):
-
-        ztfurl = '%s/?format=json&sort_value=jd&sort_order=desc&cone=%.7f%%2C%.7f%%2C0.0014'%(
-            self.options.ztfurl,ra,dec)
-        client = coreapi.Client()
-        schema = client.get(ztfurl)
-        if 'results' in schema.keys():
-            PhotUploadAll = {"mjdmatchmin":0.01,
-                             "clobber":False}
-            photometrydict = {'instrument':'ZTF-Cam',
-                              'obs_group':'ZTF',
-                              'photdata':{}}
-
-            for i in range(len(schema['results'])):
-                phot = schema['results'][i]['candidate']
-                if phot['isdiffpos'] == 'f':
-                    continue
-                PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
-                                  'band':'%s-ZTF'%phot['filter'],
-                                  'groups':[]}
-                PhotUploadDict['mag'] = phot['magpsf']
-                PhotUploadDict['mag_err'] = phot['sigmapsf']
-                PhotUploadDict['flux'] = None
-                PhotUploadDict['flux_err'] = None
-                PhotUploadDict['data_quality'] = 0
-                PhotUploadDict['forced'] = None
-                PhotUploadDict['flux_zero_point'] = None
-                PhotUploadDict['discovery_point'] = 0
-                PhotUploadDict['diffim'] = 1
-
-                photometrydict['photdata']['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
-
-            return photometrydict
-
-        else: return None
-
     
     def send_data(self,TransientUploadDict):
 

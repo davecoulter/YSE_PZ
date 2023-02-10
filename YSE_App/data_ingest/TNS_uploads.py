@@ -20,7 +20,7 @@ from astroquery.irsa_dust import IrsaDust
 from datetime import timedelta
 import json
 import os
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, Angle
 from astropy.coordinates import ICRS, Galactic, FK4, FK5
 from astropy.time import Time
 import coreapi
@@ -54,6 +54,9 @@ except:
     pass
 import os
 from tendo import singleton
+
+### new antares search for ZTF matches
+from antares_client.search import cone_search
 
 reg_obj = "https://www.wis-tns.org/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -270,41 +273,44 @@ class processTNS:
                 
         return TransientDict
 
-    def getZTFPhotometry(self,sc):
-        ztfurl = '%s/?format=json&sort_value=jd&sort_order=desc&cone=%.7f%%2C%.7f%%2C0.0014'%(
-            self.ztfurl,sc.ra.deg,sc.dec.deg)
-        client = coreapi.Client()
-        schema = client.get(ztfurl)
-        if 'results' in schema.keys():
+    def getZTFPhotometry_ANTARES(self,sc):
+
+        for s in cone_search(sc, Angle("5s")):
             PhotUploadAll = {"mjdmatchmin":0.01,
                              "clobber":self.clobber}
             photometrydict = {'instrument':'ZTF-Cam',
                               'obs_group':'ZTF',
                               'photdata':{}}
 
-            for i in range(len(schema['results'])):
-                phot = schema['results'][i]['candidate']
-                if phot['isdiffpos'] == 'f':
-                    continue
-                PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
-                                  'band':'%s-ZTF'%phot['filter'],
+            for i in range(len(s.lightcurve)):
+                PhotUploadDict = {'obs_date':s.lightcurve['time'][i].replace(' ','T'),
+                                  'band':'%s-ZTF'%s.lightcurve['ant_passband'][i],
                                   'groups':[]}
-                PhotUploadDict['mag'] = phot['magpsf']
-                PhotUploadDict['mag_err'] = phot['sigmapsf']
-                PhotUploadDict['flux'] = None
-                PhotUploadDict['flux_err'] = None
-                PhotUploadDict['data_quality'] = 0
-                PhotUploadDict['forced'] = None
-                PhotUploadDict['flux_zero_point'] = None
-                PhotUploadDict['discovery_point'] = 0
-                PhotUploadDict['diffim'] = 1
 
-                photometrydict['photdata']['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
+                if s.lightcurve['ant_mag'][i] == s.lightcurve['ant_mag'][i]:
+                    PhotUploadDict['mag'] = s.lightcurve['ant_mag'][i]
+                    PhotUploadDict['mag_err'] = s.lightcurve['ant_magerr'][i]
+                    PhotUploadDict['flux'] = 10**(-0.4*(s.lightcurve['ant_mag'][i]-27.5))
+                    PhotUploadDict['flux_err'] = 0.4*np.log(10)*PhotUploadDict['flux']*s.lightcurve['ant_magerr'][i]
+                    PhotUploadDict['data_quality'] = 0
+                    PhotUploadDict['forced'] = None
+                    PhotUploadDict['flux_zero_point'] = None
+                    PhotUploadDict['discovery_point'] = 0
+                    PhotUploadDict['diffim'] = 1
+                else:
+                    continue
+
+                photometrydict['photdata']['%s_%i'%(s.lightcurve['time'][i],i)] = PhotUploadDict
+
             PhotUploadAll['ZTF'] = photometrydict
+            print('found ZTF data')
             return PhotUploadAll
+    
+        return None
 
-        else: return None
+        
 
+        
     def get_PS_DR2_data(self, sc):
         """
         Returns a dictionary of photometric data
@@ -813,7 +819,7 @@ class processTNS:
             for ra in re.findall(reg_ra,body): ras.append(ra)
             for dec in re.findall(reg_dec,body): decs.append(dec)
             if len(objs) != len(ras):
-                import pdb; pdb.set_trace()
+                raise RuntimeError("ra and dec lists aren't the same length")
 
             
             # Mark messages as "Seen"
@@ -873,7 +879,6 @@ class processTNS:
 
                         
             print('E(B-V)/GHOST time: %.1f seconds'%(time.time()-ebvtstart))
-
             signal.alarm(0)
 
         if doEBV and not doGHOST:
@@ -988,8 +993,9 @@ class processTNS:
 
             transientdict = self.getTNSData(jd,obj,sc,ebv)
             try:
-                photdict = self.getZTFPhotometry(sc)
+                photdict = self.getZTFPhotometry_ANTARES(sc)
             except: photdict = None
+
             try:
                 if jd:
                     photdict,nondetectdate,nondetectmaglim,nondetectfilt,nondetectins = \
