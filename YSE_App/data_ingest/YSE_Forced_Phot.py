@@ -132,6 +132,10 @@ def get_camera(exp_name):
         return 'GPC1'
     elif re.match('o[0-9][0-9][0-9][0-9]h[0-9][0-9][0-9][0-9]o',exp_name):
         return 'GPC2'
+    elif re.match('o[0-9][0-9][0-9][0-9][0-9]g[0-9][0-9][0-9][0-9]o',exp_name):
+        return 'GPC1'
+    elif re.match('o[0-9][0-9][0-9][0-9][0-9]h[0-9][0-9][0-9][0-9]o',exp_name):
+        return 'GPC2'
     else: raise RuntimeError('couldn\'t parse exp name')
 
 def fits_to_png(ff,outfile,log=False):
