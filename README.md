@@ -4,7 +4,9 @@
 [![Documentation Status](https://readthedocs.org/projects/yse-pz/badge/?version=latest)](https://yse-pz.readthedocs.io/en/latest/?badge=latest)
 ## Documentation 
 
-[https://yse-pz.readthedocs.io/en/latest/](https://yse-pz.readthedocs.io/en/latest/)
+[https://yse-pz.readthedocs.io/en/latest/](https://yse-pz.readthedocs.io/en/latest/),
+
+Modern transient astrophysics greatly benefits from the real-time collation and management of many heterogeneous data streams to allocate finite follow-up resources. Efficient management of this information enhances the ability to extract useful transient science. YSE-PZ is an open-source, general-purpose Target and Observation Management (TOM) platform that ingests a live stream of transient discovery alerts, resolves those transients to host galaxies, downloads coincident archival data, and retrieves forced photometry from a variety of online sources. YSE-PZ supports group-level data permissions and is currently used by the Young Supernova Experiment, the Keck Infrared Transient Survey, and Dark Energy Bedrock All Sky Supernovae team. YSE-PZ exposes many observing tools to coordinate follow-up observations, including generating airmass plots, finding charts, and front-end forms to trigger follow-up observations. YSE-PZ supports a rich set of query tools that allow users to explore the database and generate personalized dashboards to track transients of interest. YSE-PZ is currently hosted by the UC Santa Cruz Transients team but is built to be flexibly deployed and can be easily installed in a local instance or the cloud.
 
 ## Citation
 
