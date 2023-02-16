@@ -142,7 +142,7 @@ uritemplate==3.0.0
 urllib3==1.22
 wcwidth==0.2.5
 webencodings==0.5.1
-Werkzeug==2.0.1
+Werkzeug==2.2.3
 wget==3.2
 wrapt==1.12.1
 zipp==3.4.1
