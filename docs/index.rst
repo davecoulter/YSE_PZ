@@ -35,7 +35,26 @@ Indices and tables
 Citing YSE_PZ
 =============
 
-If you are using YSE_PZ in your research please cite the Zenodo record
+If you are using YSE_PZ in your research please cite the paper and Zenodo record
+
+.. code:: none
+      
+      @ARTICLE{2023arXiv230302154C,
+       author = {{Coulter}, D.~A. and {Jones}, D.~O. and {McGill}, P. and {Foley}, R.~J. and {Aleo}, P.~D. and {Bustamante-Rosell}, M.~J. and {Chatterjee}, D. and {Davis}, K.~W. and {Dickinson}, C. and {Engel}, A. and {Gagliano}, A. and {Jacobson-Gal{\'a}n}, W.~V. and {Kilpatrick}, C.~D. and {Kutcka}, J. and {Le Saux}, X.~K. and {Pan}, Y. -C. and {Qui{\~n}onez}, P.~J. and {Rojas-Bravo}, C. and {Siebert}, M.~R. and {Taggart}, K. and {Tinyanont}, S. and {Wang}, Q.},
+        title = "{YSE-PZ: A Transient Survey Management Platform that Empowers the Human-in-the-Loop}",
+      journal = {arXiv e-prints},
+      keywords = {Astrophysics - Instrumentation and Methods for Astrophysics},
+      year = 2023,
+      month = mar,
+      eid = {arXiv:2303.02154},
+      pages = {arXiv:2303.02154},
+      archivePrefix = {arXiv},
+      eprint = {2303.02154},
+      primaryClass = {astro-ph.IM},
+      adsurl = {https://ui.adsabs.harvard.edu/abs/2023arXiv230302154C},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+      }
+
 
 .. code:: none
 
