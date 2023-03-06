@@ -5,22 +5,8 @@
 
 Welcome to the YSE_PZ documentation!
 ====================================
-Modern transient astrophysics greatly benefits from the real-time collation
-and management of many heterogeneous data streams to allocate finite follow-up
-resources. Efficient management of this information enhances the ability to extract
-useful transient science. YSE-PZ is an open-source, general-purpose Target and
-Observation Management (TOM) platform that ingests a live stream of transient
-discovery alerts, resolves those transients to host galaxies, downloads coincident
-archival data, and retrieves forced photometry from a variety of online sources.
-YSE-PZ supports group-level data permissions and is currently used by the Young
-Supernova Experiment, the Keck Infrared Transient Survey, and Dark Energy Bedrock
-All Sky Supernovae team. YSE-PZ exposes many observing tools to coordinate follow-up
-observations, including generating airmass plots, finding charts, and front-end forms
-to trigger follow-up observations. YSE-PZ supports a rich set of query tools that
-allow users to explore the database and generate personalized dashboards to track
-transients of interest. YSE-PZ is currently hosted by the UC Santa Cruz Transients
-team but is built to be flexibly deployed and can be easily installed in a local
-instance or the cloud.
+
+The modern study of astrophysical transients has been transformed by an exponentially growing volume of data. Within the last decade, the transient discovery rate has increased by a factor of ~20, with associated survey data, archival data, and metadata also increasing with the number of discoveries. To manage the data at this increased rate, we require new tools. Here we present YSE_PZ, a transient survey management platform that ingests multiple live streams of transient discovery alerts, identifies the host galaxies of those transients, downloads coincident archival data, and retrieves photometry and spectra from ongoing surveys. YSE_PZ also presents a user with a range of tools to make and support timely and informed transient follow-up decisions. Those subsequent observations enhance transient science and can reveal physics only accessible with rapid follow-up observations. Rather than automating out human interaction, YSE_PZ focuses on accelerating and enhancing human decision making, a role we describe as empowering the human-in-the-loop. Finally, YSE_PZ is built to be flexibly used and deployed; YSE_PZ can support multiple, simultaneous, and independent transient collaborations through group-level data permissions, allowing a user to view the data associated with the union of all groups in which they are a member. YSE_PZ can be used as a local instance installed via Docker or deployed as a service hosted in the cloud. We provide YSE_PZ as an open-source tool for the community.
 
 .. toctree::
    :maxdepth: 1
