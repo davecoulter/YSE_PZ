@@ -13,8 +13,9 @@ class Tag(BaseModel):
     ### Properties ###
     # Required
     name = models.CharField(max_length=256)
-    
+
+
 class TransientTag(Tag):
-    
+
     def __str__(self):
         return "Name: %s" % self.name

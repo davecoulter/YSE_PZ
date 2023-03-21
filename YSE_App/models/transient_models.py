@@ -27,11 +27,12 @@ class Transient(BaseModel):
 	# Required
 	status = models.ForeignKey(TransientStatus, models.SET(get_sentinel_transientstatus))
 	obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
-    
+
 	# Optional
 	non_detect_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 	best_spec_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 	photo_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
+	photo_class_conf = models.FloatField(null=True, blank=True)
 	context_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 	best_spectrum = models.ForeignKey('TransientSpectrum', related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 	host = models.ForeignKey(Host, null=True, blank=True, on_delete=models.SET_NULL)
@@ -40,7 +41,7 @@ class Transient(BaseModel):
 	internal_survey = models.ForeignKey(InternalSurvey, null=True, blank=True, on_delete=models.SET_NULL)
 	tags = models.ManyToManyField(TransientTag, blank=True)
 
-	
+
 	### Properties ###
 	# Required
 	name = models.CharField(max_length=64)
@@ -50,7 +51,7 @@ class Transient(BaseModel):
 	# Optional
 	ra_err = models.FloatField(null=True, blank=True)
 	dec_err = models.FloatField(null=True, blank=True)
-    
+
 	disc_date = models.DateTimeField(null=True, blank=True)
 	candidate_hosts = models.TextField(null=True, blank=True) # A string field to hold n hosts -- if we don't quite know which is the correct one
 	redshift = models.FloatField(null=True, blank=True)
@@ -72,11 +73,11 @@ class Transient(BaseModel):
 	TNS_spec_class = models.CharField(max_length=64, null=True, blank=True) # To hold the TNS classiciation in case we don't have a matching enum
 	point_source_probability = models.FloatField(null=True, blank=True)
 	alt_status = models.CharField(max_length=64,null=True,blank=True) # QUB statuses
-    
+
 	slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
 
 	real_bogus_score = models.FloatField(null=True, blank=True)
-	
+
 	has_hst = models.BooleanField(null=True, blank=True)
 	has_spitzer = models.BooleanField(null=True, blank=True)
 	has_chandra = models.BooleanField(null=True, blank=True)
@@ -107,7 +108,7 @@ class Transient(BaseModel):
 						Q(dec_cen__gt = self.dec-dec_offset.degree) &
 						Q(dec_cen__lt = self.dec+dec_offset.degree)))
 
-		if len(sf): 
+		if len(sf):
 			so = SurveyObservation.objects.filter(survey_field__field_id=sf[0].field_id).filter(obs_mjd__isnull=False).order_by('-obs_mjd')
 			if len(so):
 				time_since_last_obs = date_to_mjd(datetime.datetime.utcnow())-so[0].obs_mjd
@@ -129,7 +130,7 @@ class Transient(BaseModel):
 					Q(dec_cen__gt = self.dec-dec_offset.degree) &
 					Q(dec_cen__lt = self.dec+dec_offset.degree)))
 
-		if len(sf): 
+		if len(sf):
 			return sf[0].field_id
 		else: return None
 
@@ -148,7 +149,7 @@ class Transient(BaseModel):
 
 		sc = cd.SkyCoord(self.ra,self.dec,unit=u.deg)
 		sc2 = cd.SkyCoord(sf[0].ra_cen,sf[0].dec_cen,unit=u.deg)
-		if len(sf): 
+		if len(sf):
 			return '%.1f'%sc.separation(sc2).degree
 		else: return None
 
@@ -165,7 +166,7 @@ class Transient(BaseModel):
 					Q(dec_cen__gt = self.dec-dec_offset.degree) &
 					Q(dec_cen__lt = self.dec+dec_offset.degree)))
 
-		if len(sf): 
+		if len(sf):
 			return sf[0].field_id
 		else: return None
 
@@ -184,11 +185,11 @@ class Transient(BaseModel):
 
 		sc = cd.SkyCoord(self.ra,self.dec,unit=u.deg)
 		sc2 = cd.SkyCoord(sf[0].ra_cen,sf[0].dec_cen,unit=u.deg)
-		if len(sf): 
+		if len(sf):
 			return '%.1f'%sc.separation(sc2).degree
 		else: return None
-		
-		
+
+
 	def modified_date_pacific(self):
 		date_format = '%m/%d/%Y %H:%M:%S %Z'
 		mod_date = self.modified_date.astimezone(timezone('US/Pacific'))
@@ -286,7 +287,7 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 				instance.k2_validated = True
 				instance.k2_msg = C16_msg
 				instance.tags.add(k2c16tag)
-			
+
 			elif is_k2_C17_validated:
 				k2c17tag = TransientTag.objects.get(name='K2 C17')
 				instance.k2_validated = True
@@ -321,7 +322,7 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 				thachertag = TransientTag.objects.get(name='Thacher')
 				instance.tags.add(thachertag)
 			except: pass
-			
+
 		instance.save()
 		#if is_k2_C19_validated:
 		#	coord_string = GetSexigesimalString(instance.ra, instance.dec)
@@ -336,7 +337,7 @@ class AlternateTransientNames(BaseModel):
 
 	# Optional
 	obs_group = models.ForeignKey(ObservationGroup, null=True, blank=True, on_delete=models.SET_NULL)
-	
+
 	### Properities ###
 	# Required
 	name = models.CharField(max_length=64)
