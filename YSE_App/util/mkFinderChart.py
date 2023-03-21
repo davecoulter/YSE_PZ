@@ -282,14 +282,14 @@ def panstamps_lite(ra,dec,filt,size,outfile):
 		return(None)
 		
 	for s in stackFitsUrls:
-		s = s.replace('ps1images.stsci.edu//','')
+		s = s.replace('ps1images.stsci.edu//','').replace('amp;','')
 		if not os.path.dirname(outfile):
 			outdlfile = '%.7f_%.7f_%s.PS1.fits'%(ra,dec,time.time())
 		else:
 			outdlfile = '%s/%.7f_%.7f_%s.PS1.fits'%(os.path.dirname(outfile),ra,dec,time.time())
 		urllib.request.urlretrieve (s, filename=outdlfile)
 		break
-	print(outdlfile)
+
 	if os.path.exists(outdlfile):
 		return(outdlfile)
 	else: return(None)
