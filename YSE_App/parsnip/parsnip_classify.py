@@ -65,7 +65,7 @@ def do(model, sess_3cls, input_name_3cls, label_name_3cls, plot_cm=True, debug=F
 
 	light_curve_list_z,transient_list_z,tns_spec_allclass_l = [],[],[]
 	#print("len transients_to_classify", len(transients_to_classify))
-	for t in transients_to_classify[20000:20100]:
+	for t in transients_to_classify:
 		ra, dec, objid, spec_class = t.ra, t.dec, t.name, t.TNS_spec_class
 		#print(f"Processing {t.name}")
 		# try:
