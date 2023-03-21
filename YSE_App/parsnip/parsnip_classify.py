@@ -5,9 +5,37 @@
 # Written by Patrick Aleo (github: patrickaleo)
 # Model by Patrick Aleo, Kostya Malanchev
 # See YSE DR1 paper for details (https://arxiv.org/pdf/2211.07128.pdf)
-# Last updated: 2023-01-20
+# Last updated: 2023-03-21
 
 from django_cron import CronJobBase, Schedule
+from django.conf import settings as djangoSettings
+import configparser
+
+# read in the options from the param file and the command line
+# some convoluted syntax here, making it so param file is not required
+
+# parser = self.add_options(usage=usagestring)
+# options,  args = parser.parse_known_args()
+
+config = configparser.ConfigParser()
+#print("CONFIG", config)
+config.read("%s/settings.ini"%djangoSettings.PROJECT_DIR)
+#config.get('parsnip','parsnip_classifier_onnx_model_path')
+import argparse
+# Added model paths to settings.ini fileself.
+# Will run automatically without --arguments
+usagestring = "parsnip_classify.py <options>"
+parser = argparse.ArgumentParser(usage=usagestring, conflict_handler="resolve")
+parser.add_argument('--parsnip_classifier_onnx_model_path', default=config.get('parsnip','parsnip_classifier_onnx_model_path'), type=str, help='parsnip_classifier_onnx_model_path')
+parser.add_argument('--parsnip_sims_model_path', default=config.get('parsnip','parsnip_sims_model_path'), type=str, help='parsnip_sims_model_path')
+print(parser)
+options,  args = parser.parse_known_args()
+#print("OP", options.parsnip_classifier_onnx_model_path)
+#print("OP2", options.parsnip_sims_model_path)
+
+# config = configparser.ConfigParser()
+# parsnip_classifier_onnx_model_path = config.read("%s/settings.ini"%djangoSettings.parsnip_classifier_onnx_model_path)
+# print("parsnip_classifier_onnx_model_path", parsnip_classifier_onnx_model_path)
 
 import pickle
 import pandas as pd
@@ -43,7 +71,8 @@ BAND_MAP = {
 
 def load_parsnip_RFC_file(n_classes):
     print(f"Loading ParSNIP RCF model files for {n_classes} Classes...")
-    sess = rt.InferenceSession(f"./YSE_APP/parsnip/parsnip_random_forest_classifier_model_220112_{n_classes}classes.onnx")
+    #sess = rt.InferenceSession(f"./YSE_APP/parsnip/parsnip_random_forest_classifier_model_220112_{n_classes}classes.onnx")
+    sess = rt.InferenceSession(options.parsnip_classifier_onnx_model_path)
     input_name = sess.get_inputs()[0].name
     label_name = sess.get_outputs()[0].name
     print("Loaded!")
@@ -65,7 +94,7 @@ def do(model, sess_3cls, input_name_3cls, label_name_3cls, plot_cm=True, debug=F
 
 	light_curve_list_z,transient_list_z,tns_spec_allclass_l = [],[],[]
 	#print("len transients_to_classify", len(transients_to_classify))
-	for t in transients_to_classify:
+	for t in transients_to_classify: # test with transients_to_classify[20000:20100]
 		ra, dec, objid, spec_class = t.ra, t.dec, t.name, t.TNS_spec_class
 		#print(f"Processing {t.name}")
 		# try:
@@ -100,9 +129,9 @@ def do(model, sess_3cls, input_name_3cls, label_name_3cls, plot_cm=True, debug=F
 			    elif t.host.photo_z_PSCNN:
 				    print("Using photo-z_PSCNN")
 				    redshift = t.host.photo_z_PSCNN
-			    elif t.host.photo_z_source:
-				    print("Using photo-z_source")
-				    redshift = t.host.photo_z_source
+			    # elif t.host.photo_z_source:
+				#     print("Using photo-z_source")
+				#     redshift = t.host.photo_z_source
 			    # if no spec redshift nor photoz estimate, use median of YSE DR1 value
 			    else:
 				    print(f"No z for {objid}! Using median value of YSE DR1 (z=0.14)...")
@@ -249,6 +278,7 @@ def do(model, sess_3cls, input_name_3cls, label_name_3cls, plot_cm=True, debug=F
 				t.photo_class = TransientClass.objects.get(name=photclass_3cls)
 				#t.photo_class_prob_3cls_d = prob_3cls_d
 				t.photo_class_conf = photo_class_conf
+				print("Transient Name", t_info)
 				print("Saving photo class", t.photo_class)
 				print("Saving photo class conf", t.photo_class_conf)
 				t.save()
@@ -411,7 +441,7 @@ class parsnip_classify_cron(CronJobBase):
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.parsnip.parsnip_classify.parsnip_classify_cron'	 # a unique code
 	print("running ParSNIP Cron!")
-	model = parsnip.load_model('/sims_220427_zstd0.05.pt')
+	model = parsnip.load_model(options.parsnip_sims_model_path)
 	#print("Model", model)
 	#print("Model settings", model.settings)
 
@@ -426,6 +456,29 @@ class parsnip_classify_cron(CronJobBase):
 		except Exception as e:
 			exc_type, exc_obj, exc_tb = sys.exc_info()
 			print("""PARSNIP cron failed with error %s at line number %s"""%(repr(e),exc_tb.tb_lineno))
+
+  # def add_options(self, parser=None, usage=None, config=None):
+  # import argparse
+  # if parser == None:
+  #  parser = argparse.ArgumentParser(usage=usage, conflict_handler="resolve")
+  #
+  # # The basics
+  # parser.add_argument('-v', '--verbose', action="count", dest="verbose",default=1)
+  # parser.add_argument('--clobber', default=False, action="store_true", help='clobber output file')
+  # parser.add_argument('-s','--settingsfile', default=None, type=str, help='settings file (login/password info)')
+  # parser.add_argument('--status', default='New', type=str, help='transient status to enter in YS_PZ')
+  # parser.add_argument('--parsnip_classifier_onnx_model_path', default=config.get('main','parsnip_classifier_onnx_model_path'), type=str, help='parsnip_classifier_onnx_model_path')
+  # parser.add_argument('--parsnip_sims_model_path', default=config.get('main','parsnip_sims_model_path'), type=str, help='parsnip_classifier_onnx_model_path')
+  #
+  # if config:
+  #  parser.add_argument('--parsnip_classifier_onnx_model_path', default=config.get('main','parsnip_classifier_onnx_model_path'), type=str, help='parsnip_classifier_onnx_model_path')
+  #  parser.add_argument('--parsnip_sims_model_path', default=config.get('main','parsnip_sims_model_path'), type=str, help='parsnip_classifier_onnx_model_path')
+  #
+  # else:
+  #  pass
+  #
+  #
+  # return(parser)
 
 if __name__ == "__main__":
 	do()
