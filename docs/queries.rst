@@ -34,58 +34,8 @@ interested in through the :ref:`detail`.
 Writing Simple Database Queries
 -------------------------------
 
-A few example queries are provided below to demonstrate
-the relationships between the various database tables.
+A few example queries are provided here: :ref:`example_queries`.  These examples demonstrate common use cases as well as the relationships between the various database tables.
 
-Every spectroscopically classified SN Ia in the last 30 days::
-
-  SELECT t.name
-  FROM YSE_App_transient t
-  WHERE t.TNS_spec_class = 'SN Ia' AND DATEDIFF(CURDATE(),t.disc_date) < 30
-  
-Every SN that has been tagged as :code:`Young`::
-
-  SELECT t.name
-  FROM YSE_App_transient t
-  INNER JOIN YSE_App_transient_tags tt ON tt.transient_id = t.id
-  INNER JOIN YSE_App_transienttag tg ON tg.id = tt.transienttag_id
-  WHERE tg.name = 'Young'
-  
-Every SN where the most recent magnitude is brighter than 18::
-
-  SELECT t.name, pd.mag
-   FROM YSE_App_transient t, YSE_App_transientphotdata pd, YSE_App_transientphotometry p
-   WHERE pd.photometry_id = p.id AND pd.mag < 18 AND
-   pd.id = (
-         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id AND ISNULL(pd2.data_quality_id) = True
-         ORDER BY pd2.obs_date DESC
-         LIMIT 1
-     )
-  
-Every SN within 40 kpc of a z < 0.01 host galaxy::
-
-  SELECT t.name,
-       t.ra AS transient_RA,
-       t.`dec` AS transient_Dec,
-       t.TNS_spec_class AS spec_class,
-       t.redshift AS transient_z,
-       h.ra AS host_RA,
-       h.`dec` AS host_Dec,
-       h.redshift AS host_z,
-       DEGREES(ACOS(SIN(RADIANS(t.`dec`))*SIN(RADIANS(h.`dec`)) + COS(RADIANS(t.`dec`))*COS(RADIANS(h.`dec`))*COS(RADIANS(ABS(t.ra - h.ra)))))*3600 AS AngSepArcSec,
-       (3e+5*COALESCE(t.redshift, h.redshift)/73) AS LuminosityDistanceMpc,
-       (3e+5*COALESCE(t.redshift, h.redshift)/73)/POW((1.0 + COALESCE(t.redshift, h.redshift)), 2) AS AngularDiameterDistanceMpc,
-       (ACOS(SIN(RADIANS(t.`dec`))*SIN(RADIANS(h.`dec`)) + COS(RADIANS(t.`dec`))*COS(RADIANS(h.`dec`))*COS(RADIANS(ABS(t.ra - h.ra))))*(3e+5*COALESCE(t.redshift, h.redshift)/73)/POW((1.0 + COALESCE(t.redshift, h.redshift)), 2)*1000) AS ProjectedDistKpc
-  FROM YSE_App_transient t
-  INNER JOIN YSE_App_host h ON h.id = t.host_id
-  WHERE t.host_id IS NOT NULL
-  AND (t.redshift
-  OR h.redshift) IS NOT NULL
-  AND COALESCE(t.redshift, h.redshift) > 0.028
-  AND COALESCE(t.redshift, h.redshift) < 0.032
-  AND t.TNS_spec_class = "SN Ia"
-  AND (ACOS(SIN(RADIANS(t.`dec`))*SIN(RADIANS(h.`dec`)) + COS(RADIANS(t.`dec`))*COS(RADIANS(h.`dec`))*COS(RADIANS(ABS(t.ra - h.ra))))*(3e+5*COALESCE(t.redshift, h.redshift)/73)/POW((1.0 + COALESCE(t.redshift, h.redshift)), 2)*1000) < 40;
 
 Writing Python-Based Queries on the YSE-PZ backend
 ==================================================

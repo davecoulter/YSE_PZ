@@ -150,7 +150,7 @@ def add_yse_survey_obs(request):
                     # if there's no RA/Dec match, find field based on name
                     if not len(fk):
                         fk = fkmodel.objects.filter(field_id=survey[surveykey])
-
+                        print(survey[surveykey])
                         fk_new = fk[0]
                         fk_new.ra_cen = survey['ra_cen']
                         fk_new.dec_cen = survey['dec_cen']
@@ -337,9 +337,9 @@ def add_transient(request):
 
                     #taglist = []
                     #if 'tags' in transientkeys:
-                    #	for tag in transient['tags']:
-                    #		tagobj = TransientTag.objects.get(name=tag)
-                    #		taglist += [tagobj]
+                    #   for tag in transient['tags']:
+                    #       tagobj = TransientTag.objects.get(name=tag)
+                    #       taglist += [tagobj]
                     dbtransient.update(**transientdict)
                     if 'tags' in transientkeys:
                         for tag in transient['tags']:
@@ -392,8 +392,8 @@ def add_transient(request):
                 dbtransient = dbtransient[0]
 
             #print('saved transient in %.1f sec'%(t4-t3))
-            #		dbtransient.tags.add(tagobj)
-            #	dbtransient.save()
+            #       dbtransient.tags.add(tagobj)
+            #   dbtransient.save()
 
             #print('applied tags in %.1f sec'%(t5-t4))
 
@@ -402,12 +402,12 @@ def add_transient(request):
             print('Transient %s failed!'%transient['name'])
             print("Sending email to: %s" % user.username)
             html_msg = """Alert : YSE_PZ Failed to upload transient %s with error %s at line number %s"""
-            #import pdb; pdb.set_trace()
+
             sendemail(from_addr, user.email, subject, html_msg%(transient['name'],e,exc_tb.tb_lineno),
                       djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
             # sending SMS is too scary for now
             #sendsms(from_addr, phone_email, subject, txt_msg%transient['name'],
-            #		 djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+            #        djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
 
     Transient.objects.bulk_create(transient_entries)
     for t in transient_entries:
@@ -484,8 +484,9 @@ def add_transient(request):
                 transient['transientphotometry'],dbtransient,user,do_photdata=True)
             for t in transientphot:
                 phot_entries.append(t)
-
+    
     TransientPhotometry.objects.bulk_create(photdata_entries)
+    
     return_dict = {"message":"success"}
     return JsonResponse(return_dict)
 
@@ -598,7 +599,7 @@ def add_gw_candidate(request):
                       djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
             # sending SMS is too scary for now
             #sendsms(from_addr, phone_email, subject, txt_msg%transient['name'],
-            #		 djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
+            #        djangoSettings.SMTP_LOGIN, djangoSettings.SMTP_PASSWORD, smtpserver)
 
     return_dict = {"message":"success"}
 
@@ -750,24 +751,23 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
         if do_photdata:
             for k in photometry['photdata']:
                 p = photometry['photdata'][k]
-
                 pmjd = Time(p['obs_date'],format='isot').mjd
 
                 band = PhotometricBand.objects.filter(name=p['band']).filter(instrument__name=photometry['instrument'])
                 if len(band): band = band[0]
                 else: band = PhotometricBand.objects.filter(name='Unknown')[0]
-
                 obsExists = False
-                for e in existingphot:
+
+                for idx,e in enumerate(existingphot):
                     if e.photometry.id == transientphot.id:
                         if e.band == band:
                             try:
                                 mjd = Time(e.obs_date.isoformat().split('+')[0],format='isot').mjd
                             except:
                                 mjd = Time(e.obs_date,format='isot').mjd
+
                             if np.abs(mjd - pmjd) < photdict['mjdmatchmin']:
                                 obsExists = True
-
                                 if photdict['clobber']:
 
                                     dq = None
@@ -797,6 +797,7 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
                                     e.band = band
                                     e.modified_by_id = user.id
                                     e.save()
+
                                 if 'diffimg' in p.keys():
                                     existing_diff = TransientDiffImage.objects.filter(phot_data=e)
                                     p['diffimg']['created_by_id'] = user.id
@@ -914,7 +915,7 @@ def add_transient_spec_util(specdict,transient,user):
         if len(existingspec) and specdict['clobber']:
             for e in existingspec: e.delete()
         elif len(existingspec):
-            return_dict = {"message":"spectrum exists.	Not clobbering"}
+            return_dict = {"message":"spectrum exists.  Not clobbering"}
             return JsonResponse(return_dict)
 
         specdata = spectrum['specdata']
@@ -1176,7 +1177,7 @@ def add_transient_spec(request):
         if len(existingspec) and hd['clobber']:
             for e in existingspec: e.delete()
         elif len(existingspec):
-            return_dict = {"message":"spectrum exists.	Not clobbering"}
+            return_dict = {"message":"spectrum exists.  Not clobbering"}
             return JsonResponse(return_dict)
 
         for k in spec_data.keys():
@@ -1226,7 +1227,7 @@ def find_separation(host_queryset, query_coord, sep_threshold):
     for idx in np.where(sep.arcminute <= sep_threshold)[0]:
         yield host_queryset[int(idx)],sep.arcminute[idx]
 
-@login_or_basic_auth_required		
+@login_or_basic_auth_required       
 def get_host(request, ra, dec, sep):
 
     query_coord = SkyCoord(ra,dec,unit=(u.deg, u.deg))
@@ -1247,7 +1248,7 @@ def get_host(request, ra, dec, sep):
 
     return JsonResponse(return_dict)
 
-@login_or_basic_auth_required		
+@login_or_basic_auth_required       
 def get_rising_transients_box(request, ra, dec, ra_width, dec_width):
 
     qs = recent_rising_transient_queryset(ndays=5)
@@ -1270,7 +1271,7 @@ def get_rising_transients_box(request, ra, dec, ra_width, dec_width):
 
     return JsonResponse(return_dict)
 
-@login_or_basic_auth_required		
+@login_or_basic_auth_required       
 def get_new_transients_box(request, ra, dec, ra_width, dec_width):
 
     qs = Transient.objects.all() #filter(disc_date__gte=datetime.datetime.utcnow()-datetime.timedelta(5)) #.filter(~Q(TNS_spec_class__isnull=True))
@@ -1292,7 +1293,7 @@ def get_new_transients_box(request, ra, dec, ra_width, dec_width):
 
     return JsonResponse(return_dict)
 
-@login_or_basic_auth_required		
+@login_or_basic_auth_required       
 def get_all_transients_box(request, ra, dec, ra_width, dec_width):
 
     qs = Transient.objects.all() #filter(disc_date__gte=datetime.datetime.utcnow()-datetime.timedelta(5)) #.filter(~Q(TNS_spec_class__isnull=True))
@@ -1339,7 +1340,7 @@ def query_api(request,query_name):
     serialized_transients = []
     for vals in field_vals:
         #tdict = {"transient_ra":t.ra,"transient_dec":t.dec,
-        #		 "transient_name":t.name,"transient_id":t.id}
+        #        "transient_name":t.name,"transient_id":t.id}
         tdict = {}
         for f,v in zip(field_names,vals):
             tdict[f] = v

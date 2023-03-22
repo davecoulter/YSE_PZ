@@ -191,19 +191,21 @@ class YSE_Scheduler:
         #    dburl = 'https://ziggy.ucolick.org/yse/api/'
             
         offsetcount = 0
-        r = requests.get(f'{self.options.dburl}surveyobservations/?obs_mjd_gte={nowmjd-40:.0f}&obs_mjd_lte={nowmjd:.0f}&limit=1000&status_in=Successful&obs_group=YSE',
-                         auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
+        r = requests.get(
+            f'{self.options.dburl}surveyobservations/?obs_mjd_gte={nowmjd-40:.0f}&obs_mjd_lte={nowmjd:.0f}&limit=1000&status_in=Successful&obs_group=YSE&instrument={self.options.instrument}',
+            auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
 
         data = json.loads(r.text)
         data_results = data['results']
         while len(data['results']) == 1000:
             offsetcount += 1000
-            r = requests.get(f'{self.options.dburl}surveyobservations/?obs_mjd_gte={nowmjd-40:.0f}&obs_mjd_lte={nowmjd:.0f}&limit=1000&offset={offsetcount}&status_in=Successful&obs_group=YSE',
-                             auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
+            r = requests.get(
+                f'{self.options.dburl}surveyobservations/?obs_mjd_gte={nowmjd-40:.0f}&obs_mjd_lte={nowmjd:.0f}&limit=1000&offset={offsetcount}&status_in=Successful&obs_group=YSE&instrument={self.options.instrument}',
+                auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
             data = json.loads(r.text)
 
             data_results = np.append(data_results,data['results']) #r['results'])
-        
+
         r = requests.get(f'{self.options.dburl}surveyfields/?limit=1000&obs_group=YSE&instrument={self.options.instrument}',
                          auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
         surveyfielddata = json.loads(r.text)['results']
@@ -221,11 +223,18 @@ class YSE_Scheduler:
             if d['obs_mjd'] is None: obs_mjd = d['mjd_requested']
             obs_mjds = np.append(obs_mjds,obs_mjd)
             obs_dates = np.append(obs_dates,mjd_to_date(obs_mjd))
+            url_exists = False
             for s in surveyfielddata:
                 if s['url'] == survey_field_url:
-                    fields = np.append(fields,s['ztf_field_id'])
+                    if self.options.instrument == 'GPC2':
+                        fields = np.append(fields,s['ztf_field_id']+'P2')
+                    else:
+                        fields = np.append(fields,s['ztf_field_id'])
                     ras = np.append(ras,s['ra_cen'])
                     decs = np.append(decs,s['dec_cen'])
+                    url_exists = True
+                    break
+
         unqfields,idx = np.unique(fields,return_index=True)
         ras = ras[idx]; decs = decs[idx]
 
@@ -233,7 +242,6 @@ class YSE_Scheduler:
         for uf in unqfields:
             most_recent_mjd = np.sort(obs_mjds[fields == uf])[-1]
             last_obs_dates = np.append(last_obs_dates,mjd_to_date(most_recent_mjd))
-
         if field_list is not None:
             for f in field_list:
                 if f not in unqfields:
@@ -432,6 +440,7 @@ class YSE_Scheduler:
 
         survey_obs_dict = {'survey_obs_date':date_requested.strftime('%m/%d/%y'),
                            'ztf_field_id':'%s'%field_id.replace('P2',''),
+                           'instrument':self.options.instrument,
                            'priority':priority}
         r = requests.post(url = '%sadd_survey_obs/'%(self.options.dburl.replace('api/','')),
                           data = survey_obs_dict,

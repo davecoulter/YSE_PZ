@@ -219,6 +219,7 @@ TNSDECAMUSER = config.get('main','tns_decam_bot_name')
 TNSDECAMID = config.get('main','tns_decam_bot_id')
 TNSDECAMAPIKEY = config.get('main','tnsdecamapikey')
 REDYSEFILTER = config.get('yse','red_yse_filter')
+ghost_path = config.get('main','ghost_path')
 
 # PARSNIP
 PARSNIP_SIMS_MODEL_PATH = config.get('parsnip', 'parsnip_sims_model_path')

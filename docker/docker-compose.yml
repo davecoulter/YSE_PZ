@@ -1,4 +1,4 @@
-version: '2'
+version: '3.8'
 services:
     web:
         container_name: ysepz_web_container
@@ -24,6 +24,9 @@ services:
           DB_CONFIG: /opt/project/db_configuration
         env_file:
           - ".env"
+        depends_on:
+          yse_db:
+            condition: service_healthy
     yse_db:
       container_name: ysepz_db_container
       image: "mysql:8.0.25"
@@ -39,8 +42,14 @@ services:
         - ./db_init/YSE_rest_of_tables_insert.sql:/docker-entrypoint-initdb.d/4.sql
         - ./db_init/YSE_django_migrations_insert.sql:/docker-entrypoint-initdb.d/5.sql
         - ./db_init/YSE_create_users.sql:/docker-entrypoint-initdb.d/6.sql
+        - ${VOL_DB_LOG}:/var/log/mysql
+        - ${VOL_GHOST}:/app/ghost_logs
       environment:
         MYSQL_ROOT_PASSWORD: ${DB_PWD}
+      healthcheck:
+        test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+        timeout: 20s
+        retries: 10
     yse_nginx:
       container_name: ysepz_web_nginx_container
       image: "nginx:1.21-alpine"
@@ -51,8 +60,4 @@ services:
         - ${STATIC_VOL}:/static
       depends_on:
         - web
-
-
-
-
 

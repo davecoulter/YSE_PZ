@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse, HttpResponseNotFound
 from django.template import loader
 from django.views import generic
 from django.contrib.auth import authenticate, login, logout
@@ -366,10 +366,15 @@ class AddSurveyObsFormView(FormView):
 			m = date_to_mjd(form.cleaned_data['survey_obs_date'])
 			time = Time(m,format='mjd')
 			sunset_forobs = mjd_to_date(tel.sun_set_time(time,which="next"))
-			survey_field_blocks = SurveyFieldMSB.objects.filter(Q(name=form.cleaned_data['ztf_field_id'][0]) |
-                                                                Q(name=form.cleaned_data['ztf_field_id'][0]+'P2'))
-			#survey_field = SurveyField.objects.filter(ztf_field_id__in=form.cleaned_data['ztf_field_id'])
-			for sb in survey_field_blocks:
+
+			if form.cleaned_data['instrument'][0] == 'GPC1':
+				survey_field = SurveyFieldMSB.objects.filter(name=form.cleaned_data['ztf_field_id'][0])
+			elif form.cleaned_data['instrument'][0] == 'GPC2':
+				survey_field = SurveyFieldMSB.objects.filter(name=form.cleaned_data['ztf_field_id'][0]+'P2')
+			else:
+				return HttpResponseNotFound
+
+			for sb in survey_field:
 				for s in sb.survey_fields.all():
 					t = Time(m,format='mjd')
 					illum = moon_illumination(t)
@@ -382,15 +387,15 @@ class AddSurveyObsFormView(FormView):
 					if len(previous_msb):
 						previous_field = previous_msb[0].survey_fields.all()[0]
 						previous_obs = SurveyObservation.objects.filter(survey_field=previous_field).\
-							filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').\
+							filter(Q(obs_mjd__lt=m) & Q(obs_mjd__isnull=False)).order_by('-obs_mjd').\
 							order_by('-mjd_requested').select_related()
 					else:
 						previous_obs = SurveyObservation.objects.filter(survey_field=s).\
-							filter(Q(obs_mjd__lt=m) | Q(mjd_requested__lt=m)).order_by('-obs_mjd').\
+							filter(Q(obs_mjd__lt=m) | Q(obs_mjd__isnull=False)).order_by('-obs_mjd').\
 							order_by('-mjd_requested').select_related()
 
 					# reddest_yse_filter gives hard-coded YSE "mini-survey" filter choice
-					if s.instrument.name == 'GPC1':
+					if s.instrument.name == 'GPC2':
 						reddest_yse_filter = _reddest_yse_filter[:]
 					else:
 						reddest_yse_filter = 'z'
@@ -445,7 +450,7 @@ class AddSurveyObsFormView(FormView):
 						photometric_band=band1,
 						created_by=self.request.user,
 						modified_by=self.request.user,
-                        priority=form.cleaned_data['priority'])
+						priority=form.cleaned_data['priority'])
 					SurveyObservation.objects.create(
 						mjd_requested=date_to_mjd(sunset_forobs),
 						survey_field=s,
@@ -454,7 +459,7 @@ class AddSurveyObsFormView(FormView):
 						photometric_band=band2,
 						created_by=self.request.user,
 						modified_by=self.request.user,
-                        priority=form.cleaned_data['priority'])
+						priority=form.cleaned_data['priority'])
 
 			# for key,value in form.cleaned_data.items():
 			data = {

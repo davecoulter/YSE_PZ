@@ -53,7 +53,7 @@ class add_yse_fields:
             raise RuntimeError('invalid field name format')
         if 'P2.' not in self.options.name and self.options.instrument == 'GPC2':
             raise RuntimeError(f"if instrument is GPC2, field must have 'P2.' at the end of numeric field ID")
-        
+
         # see if MSB exists; if it doesn't, create a new MSB
         msb_name = self.options.name.split('.')[0]
         rmsb = requests.get(
@@ -93,13 +93,10 @@ class add_yse_fields:
         msb_id = rmsb['id']
             
         # see if the survey field exists in the database already
-        try:
-            rfield = requests.get(
-                url=f'%ssurveyfields/?field_id={self.options.name}'%self.options.dburl,
-                auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword)).json()
-        except:
-            import pdb; pdb.set_trace()
-        
+        rfield = requests.get(
+            url=f'%ssurveyfields/?field_id={self.options.name}'%self.options.dburl,
+            auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword)).json()
+
         if len(rfield['results']):
             # if it exists, make sure it's associated with the MSB
             field_in_msb = False
@@ -114,9 +111,11 @@ class add_yse_fields:
             print(f'field {self.options.name} exists but is not associated with MSB {msb_name}')
             print('adding it now...')
             survey_field_list = [{'id':rfield['results'][0]['url'].split('/')[-2]}]
+
             if len(rmsb['survey_fields']):
                 survey_field_list += [{'id':sf['id']} for sf in rmsb['survey_fields'] \
                                       if sf['id'] != rfield['results'][0]['url'].split('/')[-2]]
+
             rmsb_add = requests.put(url=f'{self.options.dburl}surveyfieldmsbs/{msb_id}/',
                                     json={'obs_group':yse_group,'name':msb_name,
                                           'survey_fields':survey_field_list},

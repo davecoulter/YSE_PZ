@@ -17,6 +17,7 @@ docker/.env
 docker/old/*
 
 database/*
+database_logs/*
 *.bak
 *.DS_Store
 

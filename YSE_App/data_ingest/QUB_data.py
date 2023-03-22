@@ -5,7 +5,7 @@ import json
 import time
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 import astropy.table as at
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, Angle
 import astropy.units as u
 from astropy.time import Time
 import numpy as np
@@ -22,10 +22,13 @@ import smtplib
 from io import open as iopen
 import datetime
 import dateutil
-from django.db.models import Q
-from YSE_App.models import Transient, TransientTag
+from django.db.models import Q,F
+from YSE_App.models import Transient, TransientTag, TransientPhotData, TransientPhotometry, TransientSpectrum
 import sys
 from tendo import singleton
+
+### new antares search for ZTF matches
+from antares_client.search import cone_search
 
 from string import ascii_lowercase
 import itertools
@@ -113,6 +116,38 @@ def get_ps_score(RA, DEC):
         print('PS_SCORE: %.3f' %output)
 
     return output
+
+def getZTFPhotometry_ANTARES(ra,dec,clobber=True):
+    sc = SkyCoord(ra,dec,unit=u.deg)
+    for s in cone_search(sc, Angle("5s")):
+        photometrydict = {'instrument':'ZTF-Cam',
+                          'obs_group':'ZTF',
+                          'photdata':{}}
+
+        for i in range(len(s.lightcurve)):
+            PhotUploadDict = {'obs_date':s.lightcurve['time'][i].replace(' ','T'),
+                              'band':'%s-ZTF'%s.lightcurve['ant_passband'][i],
+                              'groups':[]}
+
+            if s.lightcurve['ant_mag'][i] == s.lightcurve['ant_mag'][i]:
+                PhotUploadDict['mag'] = s.lightcurve['ant_mag'][i]
+                PhotUploadDict['mag_err'] = s.lightcurve['ant_magerr'][i]
+                PhotUploadDict['flux'] = 10**(-0.4*(s.lightcurve['ant_mag'][i]-27.5))
+                PhotUploadDict['flux_err'] = 0.4*np.log(10)*PhotUploadDict['flux']*s.lightcurve['ant_magerr'][i]
+                PhotUploadDict['data_quality'] = 0
+                PhotUploadDict['forced'] = None
+                PhotUploadDict['flux_zero_point'] = None
+                PhotUploadDict['discovery_point'] = 0
+                PhotUploadDict['diffim'] = 1
+            else:
+                continue
+                    
+            photometrydict['photdata']['%s_%i'%(s.lightcurve['time'][i],i)] = PhotUploadDict
+
+        return photometrydict
+    
+    return None
+
 
 class QUB(CronJobBase):
 
@@ -254,7 +289,7 @@ class QUB(CronJobBase):
             self.send_data(transientdict)
             self.copy_stamps(transientdict)
             nsn += 25
-        
+    
     def parse_data(self,summary,lc,transient_idx=0,max_transients=None):
         # today's date
         nowmjd = Time.now().mjd
@@ -348,7 +383,7 @@ class QUB(CronJobBase):
             transientdict[s['ps1_designation']]['transientphotometry'] = PhotUploadAll
 
             try:
-                photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+                photometrydict_ztf = getZTFPhotometry_ANTARES(s['ra_psf'],s['dec_psf'],clobber=self.options.clobber)
                 if photometrydict_ztf is not None:
                     PhotUploadAll['ZTF'] = photometrydict_ztf
             except:
@@ -357,42 +392,6 @@ class QUB(CronJobBase):
             nsn += 1
 
         return transientdict,nsn
-
-    def getZTFPhotometry(self,ra,dec):
-
-        ztfurl = '%s/?format=json&sort_value=jd&sort_order=desc&cone=%.7f%%2C%.7f%%2C0.0014'%(
-            self.options.ztfurl,ra,dec)
-        client = coreapi.Client()
-        schema = client.get(ztfurl)
-        if 'results' in schema.keys():
-            PhotUploadAll = {"mjdmatchmin":0.01,
-                             "clobber":self.options.clobber}
-            photometrydict = {'instrument':'ZTF-Cam',
-                              'obs_group':'ZTF',
-                              'photdata':{}}
-
-            for i in range(len(schema['results'])):
-                phot = schema['results'][i]['candidate']
-                if phot['isdiffpos'] == 'f':
-                    continue
-                PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
-                                  'band':'%s-ZTF'%phot['filter'],
-                                  'groups':[]}
-                PhotUploadDict['mag'] = phot['magpsf']
-                PhotUploadDict['mag_err'] = phot['sigmapsf']
-                PhotUploadDict['flux'] = None
-                PhotUploadDict['flux_err'] = None
-                PhotUploadDict['data_quality'] = 0
-                PhotUploadDict['forced'] = None
-                PhotUploadDict['flux_zero_point'] = None
-                PhotUploadDict['discovery_point'] = 0
-                PhotUploadDict['diffim'] = 1
-
-                photometrydict['photdata']['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
-
-            return photometrydict
-
-        else: return None
 
     
     def send_data(self,TransientUploadDict):
@@ -602,7 +601,7 @@ class YSE(CronJobBase):
             # grab CSV files
             r = requests.get(url=yselink_summary,
                              auth=HTTPBasicAuth(self.options.qubuser,self.options.qubpass))
-            #import pdb; pdb.set_trace()
+
             if r.status_code != 200: raise RuntimeError('problem accessing summary link %s'%self.options.yselink_summary)
             try: summary = at.Table.read(r.text, format='ascii', delimiter='|')
             except: continue
@@ -625,20 +624,14 @@ class YSE(CronJobBase):
                     iSummary = np.append(iSummary,np.where(sep < 5)[0])
             
             nowmjd = Time.now().mjd
-            #summary = summary[nowmjd - summary['mjd_obs'] < self.options.max_days]
-            #self.options.max_days = 14
             iSummary = np.append(iSummary,np.where((nowmjd - summary['mjd_obs'] < self.options.max_days) |
                                                    (nowmjd - summary['latest_mjd_forced'] < self.options.max_days))[0])
             summary_upload = summary[iSummary]
-            #import pdb; pdb.set_trace()
-            #summary_upload = summary_upload[summary_upload['local_designation'] == '12BYSEaup']
-            #summary_upload = summary_upload[summary_upload['tns_name'] == '2022czy']
-            while nsn_single == 10:
+            for nsn in range(0,len(summary_upload),10):
                 transientdict,nsn_single = self.parse_data(summary_upload,lc,transient_idx=nsn,max_transients=10)
                 print('uploading %i transients'%nsn_single)
                 self.send_data(transientdict)
                 self.copy_stamps(transientdict)
-                nsn += 10
 
         return nsn
         
@@ -646,18 +639,57 @@ class YSE(CronJobBase):
         # today's date
         nowmjd = Time.now().mjd
 
+        # check that static dir exists
+        lcforced_static_dir = f"{djangoSettings.STATIC_ROOT}/yseforcedphot"
+        if not os.path.exists(lcforced_static_dir):
+            os.makedirs(lcforced_static_dir)
+        
         transientdict = {}
         obj,ra,dec = [],[],[]
         nsn = 0
 
         for i,s in enumerate(summary[transient_idx:transient_idx+max_transients]):
 
-            r = requests.get(url='https://psweb.mp.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'])
-            #r = requests.get(url='https://star.pst.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'])
+            if s['ra_psf'] < 0:
+                s['ra_psf'] += 360 # WTF....
+            
+            # lets do some backend ops to speed this crap up
+            ramin,ramax,decmin,decmax = getRADecBox(s['ra_psf'],s['dec_psf'],size=0.00042)
+            dbtransient = Transient.objects.filter(
+                Q(ra__gt=ramin) & Q(ra__lt=ramax) & Q(dec__gt=decmin) & Q(dec__lt=decmax) &
+                Q(disc_date__gte=dateutil.parser.parse(s['followup_flag_date'])-datetime.timedelta(365)) &
+                Q(disc_date__lte=dateutil.parser.parse(s['followup_flag_date'])+datetime.timedelta(365)))
+            if len(dbtransient) == 1:
+                transient_exists = True
+                dbtransient = dbtransient[0]
+            else:
+                transient_exists = False
 
-            if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
+            #### get associated photometry
+            if transient_exists:
+                photdata = TransientPhotData.objects.\
+                    filter(Q(photometry__instrument__name='GPC1') | Q(photometry__instrument__name = 'GPC2')).\
+                    filter(photometry__transient=dbtransient)
+
+            # see if we have forced phot on disk already
+            lcfile = f"{lcforced_static_dir}/{s['id']}.forcedphot.dat"
+            if os.path.exists(lcfile):
+                # see when this file was last modified...
+                stat = os.stat(lcfile)
+                mjd_mod = Time(dateutil.parser.parse(time.ctime(stat.st_mtime))).mjd
+                if s['latest_mjd_forced'] > mjd_mod:
+                    r = requests.get(url='https://psweb.mp.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'])
+                    if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
+                    with open(lcfile,'w') as fout:
+                        print(r.text,file=fout)
+            else:
+                r = requests.get(url='https://psweb.mp.qub.ac.uk/sne/ps1yse/psdb/lightcurveforced/%s'%s['id'])
+                if r.status_code != 200: raise RuntimeError('problem accessing lc link %s'%self.options.yselink_summary)
+                with open(lcfile,'w') as fout:
+                    print(r.text,file=fout)
+
             try:
-                lc_forced = at.Table.read(r.text, format='ascii', delimiter=' ')
+                lc_forced = at.Table.read(lcfile, format='ascii', delimiter=' ')
                 if len(lc_forced): has_forced_phot = True
                 else: has_forced_phot = False
             except:
@@ -710,7 +742,7 @@ class YSE(CronJobBase):
                 rb_factor = None
             else:
                 rb_factor = s['rb_factor_image']
-
+            print(s['local_designation'])
             tdict = {'name':s['local_designation'],
                      'ra':s['ra_psf'],
                      'dec':s['dec_psf'],
@@ -736,7 +768,8 @@ class YSE(CronJobBase):
             dec += [s['dec_psf']]
 
             PhotUploadAll = {"mjdmatchmin":0.01,
-                             "clobber":self.options.clobber}
+                             "clobber":True} #self.options.clobber}
+            # should clobber to update unforced phot to forced phot
             gpc1photometrydict = {'instrument':'GPC1',
                                   'obs_group':'YSE',
                                   'photdata':{}}
@@ -753,25 +786,40 @@ class YSE(CronJobBase):
                         forced_mag,forced_mag_err = None,None
                     else:
                         forced_mag,forced_mag_err = lf['cal_psf_mag'],lf['psf_inst_mag_sig']
- 
+
+                    flux = fluxToMicroJansky(lf['psf_inst_flux'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9))
+                    flux_err = fluxToMicroJansky(lf['psf_inst_flux_sig'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9))
+                    
+                    ### does this data point already exist??
+                    if transient_exists:
+                        phot_existing = photdata.filter(Q(band__name=lf['filter']) &
+                                                        Q(obs_date__gt=mjd_to_date(lf['mjd']-0.01)) &
+                                                        Q(obs_date__lt=mjd_to_date(lf['mjd']+0.01)) &
+                                                        Q(forced=1) &
+                                                        Q(flux__gt=flux-0.1) &
+                                                        Q(flux__lt=flux+0.1))
+                        if len(phot_existing):
+                            continue
+                    
                     # forced photometry
                     phot_upload_dict = {'obs_date':mjd_to_date(lf['mjd']),
                                         'band':lf['filter'],
                                         'groups':['YSE'],
                                         'mag':forced_mag,
                                         'mag_err':forced_mag_err,
-                                        'flux':fluxToMicroJansky(lf['psf_inst_flux'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
-                                        'flux_err':fluxToMicroJansky(lf['psf_inst_flux_sig'],27.0,lf['zero_pt'])*10**(0.4*(27.5-23.9)),
+                                        'flux':flux,
+                                        'flux_err':flux_err,
                                         'data_quality':0,
                                         'forced':1,
                                         'flux_zero_point':27.5,
                                         'discovery_point':disc_point,
                                         'diffim':1}
+                    #if dbtransient.name == '12CYSEbcy' and (np.abs(flux - 1636.6174110682693) < 0.01 or np.abs(flux - 1919.3442757753062) < 0.01):
 
                     if lf['pscamera'] == 'GPC1': gpc1photometrydict['photdata']['%s_%i'%(mjd_to_date(lf['mjd']),j)] = phot_upload_dict
                     elif lf['pscamera'] == 'GPC2': gpc2photometrydict['photdata']['%s_%i'%(mjd_to_date(lf['mjd']),j)] = phot_upload_dict
                     else: raise RuntimeError(f"unknown camera! {lf['pscamera']}")
-
+            
             for j,l in enumerate(lc[iLC][np.argsort(lc['mjd_obs'][iLC])]):
                 if has_forced_phot and np.min(np.abs(lc_forced['mjd']-l['mjd_obs'])) < 0.01: continue
                 if j == 0 and np.abs(date_to_mjd(s['followup_flag_date'])-l['mjd_obs']) < 1: disc_point = 1
@@ -785,6 +833,18 @@ class YSE(CronJobBase):
                 else:
                     mag_err = l['psf_inst_mag_sig']
 
+                ### does this data point already exist??
+                if transient_exists:
+                    phot_existing = photdata.filter(Q(band__name=l['filter']) &
+                                                    Q(obs_date__gt=mjd_to_date(l['mjd_obs']-0.01)) &
+                                                    Q(obs_date__lt=mjd_to_date(l['mjd_obs']+0.01)) &
+                                                    Q(forced=0) &
+                                                    Q(flux__gt=flux-0.1) &
+                                                    Q(flux__lt=flux+0.1))
+                    if len(phot_existing):
+                        continue
+
+                    
                 # unforced photometry
                 phot_upload_dict = {'obs_date':mjd_to_date(l['mjd_obs']),
                                     'band':l['filter'],
@@ -805,57 +865,27 @@ class YSE(CronJobBase):
                     else: raise RuntimeError(f"unknown camera! {lf['pscamera']}")
                 else:
                     gpc1photometrydict['photdata']['%s_%i'%(mjd_to_date(l['mjd_obs']),j)] = phot_upload_dict
+
+            if transient_exists and \
+               not len(list(gpc1photometrydict['photdata'].keys())) and \
+               not len(list(gpc2photometrydict['photdata'].keys())):
+                continue
+
             PhotUploadAll['PS1'] = gpc1photometrydict
             PhotUploadAll['PS2'] = gpc2photometrydict
             transientdict[s['local_designation']] = tdict
             transientdict[s['local_designation']]['transientphotometry'] = PhotUploadAll
 
             try:
-                photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+                photometrydict_ztf = getZTFPhotometry_ANTARES(s['ra_psf'],s['dec_psf'],clobber=self.options.clobber)
                 if photometrydict_ztf is not None:
                     PhotUploadAll['ZTF'] = photometrydict_ztf
             except:
                 pass
-            
+
             nsn += 1
 
         return transientdict,nsn
-
-    def getZTFPhotometry(self,ra,dec):
-
-        ztfurl = '%s/?format=json&sort_value=jd&sort_order=desc&cone=%.7f%%2C%.7f%%2C0.0014'%(
-            self.options.ztfurl,ra,dec)
-        client = coreapi.Client()
-        schema = client.get(ztfurl)
-        if 'results' in schema.keys():
-            PhotUploadAll = {"mjdmatchmin":0.01,
-                             "clobber":False}
-            photometrydict = {'instrument':'ZTF-Cam',
-                              'obs_group':'ZTF',
-                              'photdata':{}}
-
-            for i in range(len(schema['results'])):
-                phot = schema['results'][i]['candidate']
-                if phot['isdiffpos'] == 'f':
-                    continue
-                PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
-                                  'band':'%s-ZTF'%phot['filter'],
-                                  'groups':[]}
-                PhotUploadDict['mag'] = phot['magpsf']
-                PhotUploadDict['mag_err'] = phot['sigmapsf']
-                PhotUploadDict['flux'] = None
-                PhotUploadDict['flux_err'] = None
-                PhotUploadDict['data_quality'] = 0
-                PhotUploadDict['forced'] = None
-                PhotUploadDict['flux_zero_point'] = None
-                PhotUploadDict['discovery_point'] = 0
-                PhotUploadDict['diffim'] = 1
-
-                photometrydict['photdata']['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
-
-            return photometrydict
-
-        else: return None
 
     
     def send_data(self,TransientUploadDict):
@@ -926,7 +956,7 @@ class YSE(CronJobBase):
         try:
             r = requests.post(url = url, data = json.dumps(TransientUploadDict),
                               auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword),
-                              timeout=60)
+                              timeout=300)
             try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
             except: print(r.text)
             print("Process done.")
@@ -1314,7 +1344,7 @@ class YSE_Stack(CronJobBase):
             transientdict[tdict['name']]['transientphotometry'] = PhotUploadAll
 
             try:
-                photometrydict_ztf = self.getZTFPhotometry(s['ra_psf'],s['dec_psf'])
+                photometrydict_ztf = getZTFPhotometry_ANTARES(s['ra_psf'],s['dec_psf'],clobber=self.options.clobber)
                 if photometrydict_ztf is not None:
                     PhotUploadAll['ZTF'] = photometrydict_ztf
             except:
@@ -1323,43 +1353,6 @@ class YSE_Stack(CronJobBase):
             nsn += 1
 
         return transientdict,nsn
-
-    def getZTFPhotometry(self,ra,dec):
-
-        ztfurl = '%s/?format=json&sort_value=jd&sort_order=desc&cone=%.7f%%2C%.7f%%2C0.0014'%(
-            self.options.ztfurl,ra,dec)
-        client = coreapi.Client()
-        schema = client.get(ztfurl)
-        if 'results' in schema.keys():
-            PhotUploadAll = {"mjdmatchmin":0.01,
-                             "clobber":False}
-            photometrydict = {'instrument':'ZTF-Cam',
-                              'obs_group':'ZTF',
-                              'photdata':{}}
-
-            for i in range(len(schema['results'])):
-                phot = schema['results'][i]['candidate']
-                if phot['isdiffpos'] == 'f':
-                    continue
-                PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
-                                  'band':'%s-ZTF'%phot['filter'],
-                                  'groups':[]}
-                PhotUploadDict['mag'] = phot['magpsf']
-                PhotUploadDict['mag_err'] = phot['sigmapsf']
-                PhotUploadDict['flux'] = None
-                PhotUploadDict['flux_err'] = None
-                PhotUploadDict['data_quality'] = 0
-                PhotUploadDict['forced'] = None
-                PhotUploadDict['flux_zero_point'] = None
-                PhotUploadDict['discovery_point'] = 0
-                PhotUploadDict['diffim'] = 1
-
-                photometrydict['photdata']['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
-
-            return photometrydict
-
-        else: return None
-
     
     def send_data(self,TransientUploadDict):
 
@@ -1429,7 +1422,7 @@ class YSE_Stack(CronJobBase):
         try:
             r = requests.post(url = url, data = json.dumps(TransientUploadDict),
                               auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword),
-                              timeout=60)
+                              timeout=300)
             try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
             except: print(r.text)
             print("Process done.")
@@ -1517,18 +1510,35 @@ class CheckDuplicates(CronJobBase):
 
     def main(self):
         from YSE_App.models import Transient
-        # 10HYSEkcp
         
-        transients = Transient.objects.filter(created_date__gt=datetime.datetime.now()-datetime.timedelta(1)).filter(name__startswith='1')
+        transients = Transient.objects.filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1)).filter(name__startswith='1')
         for t in transients:
             if t.disc_date is None: continue
             ramin,ramax,decmin,decmax = getRADecBox(t.ra,t.dec,size=0.00042)
             dups = Transient.objects.filter(Q(ra__gt=ramin) & Q(ra__lt=ramax) &
                                             Q(dec__gt=decmin) & Q(dec__lt=decmax) &
-                                            Q(disc_date__gte=t.disc_date-datetime.timedelta(365)))
+                                            (Q(disc_date__gte=t.disc_date-datetime.timedelta(365)) &
+                                             Q(disc_date__lte=t.disc_date+datetime.timedelta(365))))
             if len(dups) > 1:
                 print('deleting transient %s'%t.name)
                 t.delete()
+
+        transients = Transient.objects.filter(~Q(name=F('slug')))
+        for t in transients:
+            t_good = Transient.objects.filter(slug=t.name)
+            if not len(t_good): continue
+            t_good = t_good[0]
+            
+            tp = TransientPhotometry.objects.filter(transient__name=t.name)
+            ts = TransientSpectrum.objects.filter(transient__name=t.name)
+            for tps in tp:
+                tps.transient = t_good
+                tps.save()
+            for tss in ts:
+                tss.transient = t_good
+                tss.save()
+            print('deleting transient %s with slug %s'%(t.name,t.slug))
+            t.delete()
         return len(transients)
     
 def jd_to_date(jd):

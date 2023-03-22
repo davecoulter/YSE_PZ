@@ -251,6 +251,8 @@ class DECam_clusters(CronJobBase):
                               help='email password, if post=True (default=%default)')
             parser.add_argument('--dburl', default=config.get('main','dburl'), type=str,
                               help='URL to POST transients to a database (default=%default)')
+            parser.add_argument('--ghost_path', default=config.get('main','ghost_path'), type=str,
+                                help='GHOST data directory (default=%default)')
             parser.add_argument('--ztfurl', default=config.get('ztf','ztfurl'), type=str,
                               help='ZTF URL (default=%default)')
             parser.add_argument('--STATIC', default=config.get('site_settings','STATIC'), type=str,
@@ -308,8 +310,8 @@ class DECam_clusters(CronJobBase):
 
         # prelims
         transientdict = {}
-        if not os.path.exists('database/GHOST.csv'):
-            getGHOST(real=True, verbose=True)
+        if not os.path.exists(f'{self.options.ghost_path}/database/GHOST.csv'):
+            getGHOST(real=True, verbose=True, installpath=self.options.ghost_path)
 
         nowdate = datetime.datetime.now()
         numdays = (datetime.datetime.now()-date).days
@@ -370,7 +372,8 @@ class DECam_clusters(CronJobBase):
                             #import pdb; pdb.set_trace()
                             try:
                                 ghost_hosts = getTransientHosts(
-                                    ['tmp'+candid],[SkyCoord(ra,dec,unit=(u.hour,u.deg))], verbose=True, starcut='gentle', ascentMatch=False)
+                                    ['tmp'+candid],[SkyCoord(ra,dec,unit=(u.hour,u.deg))], verbose=True, starcut='gentle', ascentMatch=False,
+                                    GHOSTpath=self.options.ghost_path)
                                 ghost_hosts = calc_photoz(ghost_hosts)
                             except:
                                 ghost_hosts = None

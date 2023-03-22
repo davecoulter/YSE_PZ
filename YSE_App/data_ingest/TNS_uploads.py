@@ -20,7 +20,7 @@ from astroquery.irsa_dust import IrsaDust
 from datetime import timedelta
 import json
 import os
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, Angle
 from astropy.coordinates import ICRS, Galactic, FK4, FK5
 from astropy.time import Time
 import coreapi
@@ -54,6 +54,9 @@ except:
     pass
 import os
 from tendo import singleton
+
+### new antares search for ZTF matches
+from antares_client.search import cone_search
 
 reg_obj = "https://www.wis-tns.org/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -152,6 +155,9 @@ class processTNS:
                                 help='time interval for grabbing very recent TNS events (default=%default)')
             parser.add_argument('--hostmatchrad', default=config.get('main','hostmatchrad'), type=float,
                                 help='matching radius for hosts (arcmin) (default=%default)')
+            parser.add_argument('--ghost_path', default=config.get('main','ghost_path'), type=str,
+                                help='GHOST data directory (default=%default)')
+
             parser.add_argument('--ztfurl', default=config.get('ztf','ztfurl'), type=str,
                                 help='ZTF URL (default=%default)')
 
@@ -185,7 +191,9 @@ class processTNS:
                                 help='TNS API key (default=%default)')
             parser.add_argument('--ztfurl', default="", type=str,
                                 help='ZTF URL (default=%default)')
-
+            parser.add_argument('--ghost_path', default="", type=str,
+                                help='GHOST data directory (default=%default)')
+            
             parser.add_argument('--SMTP_LOGIN', default='', type=str,
                                 help='SMTP login (default=%default)')
             parser.add_argument('--SMTP_HOST', default='', type=str,
@@ -265,41 +273,44 @@ class processTNS:
                 
         return TransientDict
 
-    def getZTFPhotometry(self,sc):
-        ztfurl = '%s/?format=json&sort_value=jd&sort_order=desc&cone=%.7f%%2C%.7f%%2C0.0014'%(
-            self.ztfurl,sc.ra.deg,sc.dec.deg)
-        client = coreapi.Client()
-        schema = client.get(ztfurl)
-        if 'results' in schema.keys():
+    def getZTFPhotometry_ANTARES(self,sc):
+
+        for s in cone_search(sc, Angle("5s")):
             PhotUploadAll = {"mjdmatchmin":0.01,
                              "clobber":self.clobber}
             photometrydict = {'instrument':'ZTF-Cam',
                               'obs_group':'ZTF',
                               'photdata':{}}
 
-            for i in range(len(schema['results'])):
-                phot = schema['results'][i]['candidate']
-                if phot['isdiffpos'] == 'f':
-                    continue
-                PhotUploadDict = {'obs_date':jd_to_date(phot['jd']),
-                                  'band':'%s-ZTF'%phot['filter'],
+            for i in range(len(s.lightcurve)):
+                PhotUploadDict = {'obs_date':s.lightcurve['time'][i].replace(' ','T'),
+                                  'band':'%s-ZTF'%s.lightcurve['ant_passband'][i],
                                   'groups':[]}
-                PhotUploadDict['mag'] = phot['magpsf']
-                PhotUploadDict['mag_err'] = phot['sigmapsf']
-                PhotUploadDict['flux'] = None
-                PhotUploadDict['flux_err'] = None
-                PhotUploadDict['data_quality'] = 0
-                PhotUploadDict['forced'] = None
-                PhotUploadDict['flux_zero_point'] = None
-                PhotUploadDict['discovery_point'] = 0
-                PhotUploadDict['diffim'] = 1
 
-                photometrydict['photdata']['%s_%i'%(jd_to_date(phot['jd']),i)] = PhotUploadDict
+                if s.lightcurve['ant_mag'][i] == s.lightcurve['ant_mag'][i]:
+                    PhotUploadDict['mag'] = s.lightcurve['ant_mag'][i]
+                    PhotUploadDict['mag_err'] = s.lightcurve['ant_magerr'][i]
+                    PhotUploadDict['flux'] = 10**(-0.4*(s.lightcurve['ant_mag'][i]-27.5))
+                    PhotUploadDict['flux_err'] = 0.4*np.log(10)*PhotUploadDict['flux']*s.lightcurve['ant_magerr'][i]
+                    PhotUploadDict['data_quality'] = 0
+                    PhotUploadDict['forced'] = None
+                    PhotUploadDict['flux_zero_point'] = None
+                    PhotUploadDict['discovery_point'] = 0
+                    PhotUploadDict['diffim'] = 1
+                else:
+                    continue
+
+                photometrydict['photdata']['%s_%i'%(s.lightcurve['time'][i],i)] = PhotUploadDict
+
             PhotUploadAll['ZTF'] = photometrydict
+            print('found ZTF data')
             return PhotUploadAll
+    
+        return None
 
-        else: return None
+        
 
+        
     def get_PS_DR2_data(self, sc):
         """
         Returns a dictionary of photometric data
@@ -808,7 +819,7 @@ class processTNS:
             for ra in re.findall(reg_ra,body): ras.append(ra)
             for dec in re.findall(reg_dec,body): decs.append(dec)
             if len(objs) != len(ras):
-                import pdb; pdb.set_trace()
+                raise RuntimeError("ra and dec lists aren't the same length")
 
             
             # Mark messages as "Seen"
@@ -827,12 +838,12 @@ class processTNS:
         ebv_timeout,ned_timeout = False,False
         if doGHOST:
 
-            if not os.path.exists('database/GHOST.csv'):
+            if not os.path.exists(f'{self.ghost_path}/database/GHOST.csv'):
                 try:
-                    getGHOST(real=True, verbose=True)
+                    getGHOST(real=True, verbose=True, installpath=self.ghost_path)
                 except:
                     pass
-            
+                
             def handler(signum, frame):
                 raise Exception("timeout!")
                 
@@ -844,7 +855,8 @@ class processTNS:
                     scall = [SkyCoord(r,d,unit=u.deg) for r,d in zip(ras,decs)]
                 else:
                     scall = [SkyCoord(r,d,unit=(u.hourangle,u.deg)) for r,d in zip(ras,decs)]
-                ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False)
+
+                ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False, GHOSTpath=self.ghost_path)
                 if is_photoz:
                     ghost_hosts = calc_photoz(ghost_hosts)[1]
                 os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
@@ -867,7 +879,6 @@ class processTNS:
 
                         
             print('E(B-V)/GHOST time: %.1f seconds'%(time.time()-ebvtstart))
-
             signal.alarm(0)
 
         if doEBV and not doGHOST:
@@ -982,8 +993,9 @@ class processTNS:
 
             transientdict = self.getTNSData(jd,obj,sc,ebv)
             try:
-                photdict = self.getZTFPhotometry(sc)
+                photdict = self.getZTFPhotometry_ANTARES(sc)
             except: photdict = None
+
             try:
                 if jd:
                     photdict,nondetectdate,nondetectmaglim,nondetectfilt,nondetectins = \
@@ -1223,7 +1235,8 @@ class TNS_emails(CronJobBase):
         tnsproc.tns_bot_id = options.tns_bot_id
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
-
+        tnsproc.ghost_path = options.ghost_path
+        
         # in case of code failures
         smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
         from_addr = "%s@gmail.com" % options.SMTP_LOGIN
@@ -1307,7 +1320,8 @@ class TNS_updates(CronJobBase):
         tnsproc.tns_bot_id = options.tns_bot_id
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
-
+        tnsproc.ghost_path = options.ghost_path
+        
         # in case of code failures
         smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
         from_addr = "%s@gmail.com" % options.SMTP_LOGIN
@@ -1388,7 +1402,8 @@ class TNS_Ignore_updates(CronJobBase):
         tnsproc.tns_bot_id = options.tns_bot_id
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
-
+        tnsproc.ghost_path = options.ghost_path
+        
         # in case of code failures
         smtpserver = "%s:%s" % (options.SMTP_HOST, options.SMTP_PORT)
         from_addr = "%s@gmail.com" % options.SMTP_LOGIN
@@ -1468,6 +1483,7 @@ class TNS_recent(CronJobBase):
         tnsproc.tns_bot_id = options.tns_bot_id
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
+        tnsproc.ghost_path = options.ghost_path
         tnsproc.ndays = float(options.tns_recent_ndays)
         tnsproc.tns_fastupdates_nminutes = float(options.tns_fastupdates_nminutes)
 
@@ -1550,6 +1566,7 @@ class TNS_recent_realtime(CronJobBase):
         tnsproc.tns_bot_id = options.tns_bot_id
         tnsproc.tns_bot_name = options.tns_bot_name
         tnsproc.ztfurl = options.ztfurl
+        tnsproc.ghost_path = options.ghost_path
         tnsproc.ndays = float(options.tns_recent_ndays)
         tnsproc.tns_fastupdates_nminutes = float(options.tns_fastupdates_nminutes)
 
@@ -1606,7 +1623,7 @@ class UpdateGHOST(CronJobBase):
         scall = [SkyCoord(t.ra,t.dec,unit=u.deg) for t in transients]
         names = [t.name for t in transients]
 
-        ghost_hosts = getTransientHosts(names, scall, verbose=True, starcut='gentle', ascentMatch=False)
+        ghost_hosts = getTransientHosts(names, scall, verbose=True, starcut='gentle', ascentMatch=False, GHOSTpath=djangoSettings.ghost_path)
         if is_photoz:
             ghost_hosts = calc_photoz(ghost_hosts)[1]
         os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
