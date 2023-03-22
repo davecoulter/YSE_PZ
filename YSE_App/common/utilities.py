@@ -57,7 +57,7 @@ def GetSexigesimalString(ra_decimal, dec_decimal):
 
 def get_psstamp_url(request, transient_id, Transient):
 
-	ps1url = ("http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f+%.7f&filter=color"%(
+	ps1url = ("http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f+%.7f&filter=color"%(
 		Transient.objects.get(pk=transient_id).ra,Transient.objects.get(pk=transient_id).dec))
 
 	try:
