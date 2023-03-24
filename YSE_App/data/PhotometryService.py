@@ -7,16 +7,35 @@ def GetUserGroupQuery(user):
     for g in user.groups.all():
         user_groups.append(g.name)
 
-    no_group = Q(groups__isnull=True)
-    contains_group = Q(groups__name__in=user_groups)
 
-    return no_group, contains_group
+    # Check if you're a member, by string of the observation group associated with the record
+    contains_obs_group = Q(obs_group__name__in=user_groups)
+
+    # Default to viewable, any photometry with no many-to-many auth group association
+    no_group = Q(groups__isnull=True)
+
+    # Check if user within many-to-many auth_group collection
+    contains_many_to_many_group = Q(groups__name__in=user_groups)
+
+    # return no_group, contains_group
+    return contains_obs_group, no_group, contains_many_to_many_group
 
 def GetAuthorizedTransientPhotometry_ByUser(user):
     group_query_tuple = GetUserGroupQuery(user)
-    allowed_phot = TransientPhotometry.objects.filter(group_query_tuple[0] | group_query_tuple[1]).distinct()
 
+    contains_obs_group = group_query_tuple[0]
+    no_auth_groups = group_query_tuple[1]
+    auth_groups = group_query_tuple[2]
+
+    # allowed_phot = TransientPhotometry.objects.filter(group_query_tuple[0] | group_query_tuple[1]).distinct()
+    # allowed_phot = TransientPhotometry.objects.filter(group_query_tuple[1]).distinct()
+    # allowed_phot = TransientPhotometry.objects.filter(group_query_tuple[0])
+    # test = allowed_phot.filter(group_query_tuple[1]).distinct()
+
+    # get photometry that has no auth_group look ups, and is in the same obs_group as a user
+    allowed_phot = TransientPhotometry.objects.filter((no_auth_groups & contains_obs_group) | contains_obs_group)
     return allowed_phot
+    # return test
 
 def GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient_id):
 
