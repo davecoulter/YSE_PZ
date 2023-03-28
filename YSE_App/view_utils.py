@@ -1793,7 +1793,7 @@ def get_ps1_image(request,transient_id):
     except t.DoesNotExist:
         raise Http404("Transient id does not exist")
 
-    ps1url = ("http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f+%.7f&filter=color" % (t.ra,t.dec))
+    ps1url = ("http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f+%.7f&filter=color" % (t.ra,t.dec))
     try:
         response = requests.get(url=ps1url,timeout=5)
     except:

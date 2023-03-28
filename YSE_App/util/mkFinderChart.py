@@ -244,7 +244,7 @@ def panstamps_lite(ra,dec,filt,size,outfile):
 
 	try:
 		response = requests.get(
-			url="http://plpsipp1v.stsci.edu/cgi-bin/ps1cutouts",
+			url="http://ps1images.stsci.edu/cgi-bin/ps1cutouts",
 			params={
 				"pos": pos,
 				"filter": filt,
@@ -260,7 +260,7 @@ def panstamps_lite(ra,dec,filt,size,outfile):
 		print('HTTP Request failed')
 		
 	reFitscutouts = re.compile(
-			r"""<th>(?P<imagetype>\w+)\s+(?P<skycellid>\d+.\d+)\s+(?P<ffilter>[\w\\]+)(\s+(?P<mjd>\d+\.\d+))?<br.*?href="(http:)?//plpsipp1v.*?Display</a>.*?Fits cutout" href="(?P<fiturl>(http:)?//plpsipp1v.*?\.fits)".*?</th>""", re.I)
+			r"""<th>(?P<imagetype>\w+)\s+(?P<skycellid>\d+.\d+)\s+(?P<ffilter>[\w\\]+)(\s+(?P<mjd>\d+\.\d+))?<br.*?href="(http:)?//ps1images.*?Display</a>.*?Fits cutout" href="(?P<fiturl>(http:)?//ps1images.*?\.fits)".*?</th>""", re.I)
 
 	if sys.version_info[0] < 3:
 		thisIter = reFitscutouts.finditer(response.content)
@@ -272,7 +272,7 @@ def panstamps_lite(ra,dec,filt,size,outfile):
 		imagetype = item.group("imagetype")
 		skycellid = item.group("skycellid")
 		ffilter = item.group("ffilter")
-		fiturl = 'http://plpsipp1v.stsci.edu%s'%item.group("fiturl")
+		fiturl = 'http://ps1images.stsci.edu%s'%item.group("fiturl")
 		if fiturl[0:5] != "http:":
 			fiturl = "http:" + fiturl
 			mjd = item.group("mjd")
@@ -282,14 +282,14 @@ def panstamps_lite(ra,dec,filt,size,outfile):
 		return(None)
 		
 	for s in stackFitsUrls:
-		s = s.replace('plpsipp1v.stsci.edu//','')
+		s = s.replace('ps1images.stsci.edu//','').replace('amp;','')
 		if not os.path.dirname(outfile):
 			outdlfile = '%.7f_%.7f_%s.PS1.fits'%(ra,dec,time.time())
 		else:
 			outdlfile = '%s/%.7f_%.7f_%s.PS1.fits'%(os.path.dirname(outfile),ra,dec,time.time())
 		urllib.request.urlretrieve (s, filename=outdlfile)
 		break
-	print(outdlfile)
+
 	if os.path.exists(outdlfile):
 		return(outdlfile)
 	else: return(None)
