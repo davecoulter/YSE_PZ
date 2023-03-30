@@ -335,6 +335,9 @@ def add_transient(request):
                         transientdict['postage_stamp_ref_fits'] = dbtransient[0].postage_stamp_ref_fits
                         transientdict['postage_stamp_diff_fits'] = dbtransient[0].postage_stamp_diff_fits
 
+                    if dbtransient[0].disc_date is not None and 'TNS' not in transient_data.keys():
+                        transientdict['disc_date'] = dbtransient[0].disc_date
+                        
                     #taglist = []
                     #if 'tags' in transientkeys:
                     #   for tag in transient['tags']:
