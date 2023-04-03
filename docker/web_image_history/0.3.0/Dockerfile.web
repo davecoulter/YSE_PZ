@@ -1,8 +1,10 @@
-FROM ghcr.io/davecoulter/yse_pz:latest
-LABEL description="Ubuntu image for YSEPZ"
+FROM ghcr.io/davecoulter/yse_pz:0.2.7
+LABEL description="Ubuntu image for YSEPZ v0.3.0"
 LABEL maintainer="Dave Coulter (dcoulter@ucsc.edu)"
 
 SHELL ["/bin/bash", "-c"]
+
+
 
 RUN apt-get update --fix-missing && \
 pip install --upgrade pip
@@ -10,8 +12,8 @@ pip install --upgrade pip
 WORKDIR /app
 RUN mkdir -p /app/ghost_logs
 
-COPY requirements.web.dev /app/requirements.web.txt
-RUN pip install -r /app/requirements.web.txt
+COPY requirements.txt /app/requirements.txt
+RUN pip install -r /app/requirements.txt
 
 RUN apt-get clean && \
 rm -rf /var/lib/apt/lists/*

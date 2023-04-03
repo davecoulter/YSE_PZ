@@ -385,7 +385,7 @@ class YSE_PA:
 
 
         fielddict,fieldfilts = self.get_requested_fields()
-
+        
 
         transients_all,transients_goodcell,status_all = np.array([]),np.array([]),np.array([])
         r = requests.get(f'{self.options.yseurl}/query_api/all_yse_transients/',
@@ -473,9 +473,9 @@ class YSE_PA:
                     outtr = '['+','.join(np.concatenate(trlist))+']'
                 else:
                     outtr = ''
-                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} {outtr} priority={plist[0]}"
+                output += f"\n{k.replace('P2','')} {','.join(fieldfilts[k])} {outpa} {outtrans} {outtr} priority={plist[0]}"
             else:
-                output += f"\n{k} {','.join(fieldfilts[k])} {outpa} {outtrans} priority={plist[0]}"
+                output += f"\n{k.replace('P2','')} {','.join(fieldfilts[k])} {outpa} {outtrans} priority={plist[0]}"
             # OK WE'RE OUTPUTTING AN EXTRA CARRIAGE RETURN GOTTA FIX THAT
 
         if len(output) == 0:

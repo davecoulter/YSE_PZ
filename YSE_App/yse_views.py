@@ -143,7 +143,6 @@ def select_yse_fields(request):
     GPC1 = Instrument.objects.get(name='GPC1')
     all_yse_fields = SurveyField.objects.filter(obs_group__name='YSE').order_by('field_id')
     
-    #import pdb; pdb.set_trace()
     context = {'yse_gpc1_field_data':yse_gpc1_field_data,
                'active_yse_gpc1_field_data':active_yse_gpc1_field_data,
                'yse_gpc2_field_data':yse_gpc2_field_data,

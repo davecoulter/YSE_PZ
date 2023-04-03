@@ -40,8 +40,8 @@ class YSE(CronJobBase):
             from django.db.models import Q #HAS To Remain Here,
             #save time b/c the other cron jobs print a time for completion
 
-            if not os.path.exists('database/GHOST.csv'):
-                getGHOST(real=True, verbose=False)
+            if not os.path.exists(f'{djangoSettings.ghost_path}/database/GHOST.csv'):
+                getGHOST(real=True, verbose=False, installpath=djangoSettings.ghost_path)
             #we might reset this once when we update
             
             transients = Transient.objects.filter(~Q(tags__name__in='YSE') &
@@ -89,7 +89,7 @@ class YSE(CronJobBase):
             snCoord = [SkyCoord(ra*u.deg, dec*u.deg, frame='icrs') for ra,dec in zip(RA,DEC)] 
             
             snName = ['SN'+T.name for i,T in enumerate(transients)]
-            hosts = getTransientHosts(snName, snCoord, verbose=True, starcut='normal', ascentMatch=False)
+            hosts = getTransientHosts(snName, snCoord, verbose=True, starcut='gentle', ascentMatch=False)
             
             #hosts is a df that may or may not have the hosts, so 
             #we can use the fact that the names are ordered to
