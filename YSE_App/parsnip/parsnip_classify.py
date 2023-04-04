@@ -73,13 +73,45 @@ def load_parsnip_RFC_file(n_classes):
     print(f"Loading ParSNIP RCF model files for {n_classes} Classes...")
     #sess = rt.InferenceSession(f"./YSE_APP/parsnip/parsnip_random_forest_classifier_model_220112_{n_classes}classes.onnx")
     sess = rt.InferenceSession(options.parsnip_classifier_onnx_model_path)
+    #sess = "test"
+
     input_name = sess.get_inputs()[0].name
+    #input_name = "test2"
     label_name = sess.get_outputs()[0].name
+    #label_name = "test3"
     print("Loaded!")
     return sess, input_name, label_name
 
 # def do(model, sess_3cls, input_name_3cls, label_name_3cls, sess_2cls, input_name_2cls, label_name_2cls, plot_cm=True, debug=False):
 def do(model, sess_3cls, input_name_3cls, label_name_3cls, plot_cm=True, debug=False):
+	def _generate_features(model):
+		# From the ParSNIP paper
+		# order of features determined by classification_paper.py in YSEphotclass github repo
+		FEATURES = ['color',
+					'color_error',
+					'luminosity',
+					'luminosity_error',
+					'reference_time_error',
+					's1',
+					's1_error',
+					's2',
+					's2_error',
+					's3',
+					's3_error']
+
+		dataset = lc
+		#with open('dataset.pickle', 'wb') as f:
+		#    print("saving pickle")
+		#    pickle.dump(dataset, f)
+
+		predictions = model.predict_dataset(dataset)
+		avail_features = [f for f in FEATURES if f in predictions.columns]
+		features = predictions[avail_features]
+		features_x = np.stack([features[c] for c in features.columns]).T
+		return features_x
+
+
+
 	# run this under Admin
 	user = User.objects.get(username='Admin')
 
@@ -92,21 +124,12 @@ def do(model, sess_3cls, input_name_3cls, label_name_3cls, plot_cm=True, debug=F
 								 Q(status__name = 'Following') |
 								 Q(tags__name = 'YSE') | Q(tags__name = 'YSE Forced Phot')).distinct()
 
-	light_curve_list_z,transient_list_z,tns_spec_allclass_l = [],[],[]
+	light_curve_list_z,transient_list_t,tns_spec_allclass_l = [],[],[]
 	#print("len transients_to_classify", len(transients_to_classify))
 	for t in transients_to_classify: # test with transients_to_classify[20000:20100]
 		ra, dec, objid, spec_class = t.ra, t.dec, t.name, t.TNS_spec_class
-		#print(f"Processing {t.name}")
-		# try:
-		#     if t.TNS_spec_class == 'SN Ia' or t.TNS_spec_class == 'SN Ib' or t.TNS_spec_class == 'SN Ic' or t.TNS_spec_class == 'SN Ib/c' or t.TNS_spec_class == 'SN II' or t.TNS_spec_class == 'SN IIn' or t.TNS_spec_class == 'SN IIP' or t.TNS_spec_class == 'SLSN-I':
-		# 	    print("g", t, t.TNS_spec_class)
-		# 	    tns_spec_allclass_l.append(t.TNS_spec_class)
-		#     else:
-		# 	    print("not considered sn", t, t.TNS_spec_class)
-		# 	    continue
-		# except:
-		#     print('none')
-		#     continue
+		#if objid != '2021mwb': continue # for testing
+
 		redshift = t.redshift #t.z_or_hostz() throws error...
 		if redshift is None:
 			#print(f"No z for {objid}! Using median value of YSE DR1 (z=0.14)...")
@@ -169,13 +192,11 @@ def do(model, sess_3cls, input_name_3cls, label_name_3cls, plot_cm=True, debug=F
 		   continue
 		mjd, passband, fluxcals, fluxerrs, mag, magerr, zeropoint, photflag = np.array([]),np.array([]),[],[],[],[],[],[]
 
-		#print("setting first detection as false")
-		#first_detection_set = False
 		for obs,filt in zip([gobs.order_by('obs_date'),robs.order_by('obs_date'), iobs.order_by('obs_date'), zobs.order_by('obs_date'), ztf_gobs.order_by('obs_date'), ztf_robs.order_by('obs_date')], ['g', 'r', 'i', 'z', 'X', 'Y']):
 			for p in obs:
 
 				if p.data_quality == 'YSE_App.DataQuality.None':
-				    #print("p.data_quality has issue? skip!", p.data_quality)
+				    print("p.data_quality has issue? skip!", p.data_quality)
 				    continue
 				if not p.mag: 		 # for some reason if no mag, skip!
 				    #print("no p.mag")
@@ -208,52 +229,25 @@ def do(model, sess_3cls, input_name_3cls, label_name_3cls, plot_cm=True, debug=F
 		light_curve_info = lcdata.Dataset(Table(meta), [table])
 
 		light_curve_list_z += [light_curve_info,]
-		transient_list_z += [t]
+		transient_list_t += [t]
 
 	parsnip_d_3cls, parsnip_d_2cls = {}, {}
 	best_preds_3cls, probs_3cls, best_preds_2cls, probs_2cls, TNS_spec_3class_l, TNS_spec_2class_l = [], [], [], [], [], []
-	for lc, t_info in zip(light_curve_list_z, transient_list_z):
-
-		def generate_features(model):
-			# From the ParSNIP paper
-			# order of features determined by classification_paper.py in YSEphotclass github repo
-			FEATURES = ['color',
-						'color_error',
-						'luminosity',
-						'luminosity_error',
-						'reference_time_error',
-						's1',
-						's1_error',
-						's2',
-						's2_error',
-						's3',
-						's3_error']
-
-			dataset = lc
-			#with open('dataset.pickle', 'wb') as f:
-			#    print("saving pickle")
-			#    pickle.dump(dataset, f)
-
-			predictions = model.predict_dataset(dataset)
-			avail_features = [f for f in FEATURES if f in predictions.columns]
-			features = predictions[avail_features]
-			features_x = np.stack([features[c] for c in features.columns]).T
-			return features_x
-
-
+	for lc, t in zip(light_curve_list_z, transient_list_t):
 
 		print("Defining Features model")
 		try:
-		    features_x = generate_features(model=model)
-		except:
+		    features_x = _generate_features(model=model)
+		except Exception as e:
+		    print(e)
 		    print("Some error with making features from this object. Skip!")
 		    continue
 
 
 		for n_classes in [3]: #[3, 2]
-			print("running classifiers!")
+			print("Running classifiers!")
 			if n_classes == 3:
-				TNS_spec_3class_l.append(t_info.TNS_spec_class)
+				TNS_spec_3class_l.append(t.TNS_spec_class)
 				print("Tertiary (SN Ia / SN II / SN Ibc) classifier")
 				pred_onx_3cls = sess_3cls.run([label_name_3cls],
 											  {input_name_3cls: features_x.astype(np.float32)})[0]
@@ -272,16 +266,16 @@ def do(model, sess_3cls, input_name_3cls, label_name_3cls, plot_cm=True, debug=F
 				best_preds_3cls.append(photclass_3cls)
 				probs_3cls.append(prob_3cls_d)
 
-				parsnip_d_3cls[t_info.name] = [photclass_3cls, prob_3cls_d]
+				parsnip_d_3cls[t.name] = [photclass_3cls, prob_3cls_d]
 
 				# Save 3 class photometric classification
 				t.photo_class = TransientClass.objects.get(name=photclass_3cls)
-				#t.photo_class_prob_3cls_d = prob_3cls_d
+				t.save()
+
 				t.photo_class_conf = photo_class_conf
-				print("Transient Name", t_info)
+				t.save()
 				print("Saving photo class", t.photo_class)
 				print("Saving photo class conf", t.photo_class_conf)
-				t.save()
 
 			# elif n_classes == 2:
 			# 	TNS_spec_2class_l.append(t_info.TNS_spec_class)
@@ -309,14 +303,12 @@ def do(model, sess_3cls, input_name_3cls, label_name_3cls, plot_cm=True, debug=F
 			else:
 				raise("Not Implemented!")
 
-			print("\n")
+	# print("Successfully finished classifying with ParSNIP!")
+	# print("Final results...")
+	# print("Last object:")
+	# print("t.photo_class", t.photo_class)
+	# print("t.photo_class_conf", t.photo_class_conf)
 
-	print("Successfully finished classifying with ParSNIP!")
-	print("Final results...")
-	print("Last object:")
-	print("t.photo_class", t.photo_class)
-	#print("t.photo_class_prob_3cls_d", t.photo_class_prob_3cls_d)
-	print("t.photo_class_conf", t.photo_class_conf)
 	# print("t.photo_class_2cls", t.photo_class_2cls)
 	# print("t.photo_class_prob_2cls_d", t.photo_class_prob_2cls_d)
 	# print("t.photo_class_2cls_conf", t.photo_class_2cls_conf)
@@ -432,7 +424,7 @@ def do(model, sess_3cls, input_name_3cls, label_name_3cls, plot_cm=True, debug=F
 		# plt.savefig(f'./YSE_App/parsnip/new_completeness_cm_2classes_counts.png', dpi=300, bbox_inches='tight')
 		# #plt.show()
 
-		print("Done with ParSNIP classifications! Cron run Successfully.")
+	print("Done with ParSNIP classifications! Cron run Successfully.")
 
 
 class parsnip_classify_cron(CronJobBase):
@@ -441,7 +433,9 @@ class parsnip_classify_cron(CronJobBase):
 	schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
 	code = 'YSE_App.parsnip.parsnip_classify.parsnip_classify_cron'	 # a unique code
 	print("running ParSNIP Cron!")
-	model = parsnip.load_model(options.parsnip_sims_model_path)
+	model = parsnip.load_model(options.parsnip_sims_model_path) # Loads the model
+	#model = 'test' # for testing
+
 	#print("Model", model)
 	#print("Model settings", model.settings)
 
