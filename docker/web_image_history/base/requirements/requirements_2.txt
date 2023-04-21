@@ -123,7 +123,7 @@ SecretStorage==2.3.1
 sfdmap==0.1.1
 six==1.15.0
 sncosmo==2.5.0
-sqlparse==0.2.4
+sqlparse==0.4.4
 tensorboard==2.5.0
 tensorboard-data-server==0.6.1
 tensorboard-plugin-wit==1.8.0
