@@ -4,7 +4,7 @@ USE YSE;
 --
 -- Host: 127.0.0.1    Database: YSE
 -- ------------------------------------------------------
--- Server version	8.0.25
+-- Server version 8.0.25
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -1565,6 +1565,7 @@ CREATE TABLE `YSE_App_transient` (
   `has_chandra` tinyint(1) DEFAULT NULL,
   `has_hst` tinyint(1) DEFAULT NULL,
   `has_spitzer` tinyint(1) DEFAULT NULL,
+  `has_jwst` tinyint(1) DEFAULT NULL,
   `dec_err` double DEFAULT NULL,
   `ra_err` double DEFAULT NULL,
   `real_bogus_score` double DEFAULT NULL,

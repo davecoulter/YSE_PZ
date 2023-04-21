@@ -39,6 +39,7 @@
                     <li><a href="#photometry_tab" data-toggle="tab">Detailed Photometry</a></li>
                     <li><a href="#spectra_tab" data-toggle="tab">Spectra</a></li>
                     <li><a href="#hst_tab" data-toggle="tab" id="hst_tab_header">HST Data</a></li>
+                    <li><a href="#jwst_tab" data-toggle="tab" id="jwst_tab_header">JWST Data</a></li>
                     <li><a href="#chandra_tab" data-toggle="tab" id="chandra_tab_header">Chandra Data</a></li>
                     {% if gw_candidate %}
                         <li><a href="#gw_tab" data-toggle="tab" id="gw_tab_header">GW Info</a></li>
@@ -1104,6 +1105,21 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="tab-pane" id="jwst_tab">
+                        <h4>JWST Images for {{transient.name}}</h4>
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Filter</th>
+                                    <th>Instrument</th>
+                                    <th>Image</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jwst_image_list">
+                            </tbody>
+                        </table>
+                    </div>
                     <div class="tab-pane" id="chandra_tab">
                         <h4>Chandra Images for {{transient.name}}</h4>
                         <h4 id="totalchandraexp">total exposure time<h4>
@@ -1274,9 +1290,9 @@
 
                     // make the event draggable using jQuery UI
                     $(this).draggable({
-                        zIndex			: 1070,
-                        revert			: true,	// will cause the event to go back to its
-                        revertDuration	:0  //		original position after the drag
+                        zIndex          : 1070,
+                        revert          : true, // will cause the event to go back to its
+                        revertDuration  :0  //      original position after the drag
                     })
                 })
             }
@@ -1520,7 +1536,7 @@
 
 
             //$('#spec_obs_date').datetimepicker({
-            //	format: 'dd/MM/yyyy hh:mm:ss',
+            //  format: 'dd/MM/yyyy hh:mm:ss',
             //    language: 'pt-BR'
             //});
 
@@ -1528,17 +1544,17 @@
                 //timePicker24Hour: true,
                 //timePicker: true,
                 //timePickerIncrement: 1,
-            //	format: 'yyyy-mm-dd HH:mm',
+            //  format: 'yyyy-mm-dd HH:mm',
             //});
 
             //$('#obs_date').timepicker({
                 //timePicker24Hour: true,
                 //timePicker: true,
                 //timePickerIncrement: 1,
-            //	format: 'MM/DD/YYYY',
-            //	locale: {
-            //		format: 'MM/DD/YYYY'
-            //	}
+            //  format: 'MM/DD/YYYY',
+            //  locale: {
+            //      format: 'MM/DD/YYYY'
+            //  }
             //});
 
             $('#obs_task_desired_picker').daterangepicker({
@@ -2432,6 +2448,30 @@
                 $(rows_full).append(htmltextfull)
             }
         });
+        $.get("{% url 'get_jwst_image' transient.id %}").done(function(json){
+            var rows = $("#jwst_image")
+            var rows_full = $("#jwst_image_list")
+            var rows_tab = $("#jwst_tab_header")
+            var htmltext = "<p class=\"text-muted\">No JWST Images available</p>"
+            if (json.jpegurl[0]) {
+                var htmltext = "<img src=\"" + json.jpegurl[0] + "\" style='width:240px' alt=\"\" /></a>"
+
+            } else {
+                var headertext = "No "
+                $(rows_tab).prepend(headertext)
+            }
+            $(rows).append(htmltext)
+
+            for(var ju in json.jpegurl){
+                var htmltextfull = "<tr>" +
+                "<td>" + json.obsdate[ju] + "</td>" +
+                "<td>" + json.filters[ju] + "</td>" +
+                "<td>" + json.inst[ju] + "</td>" +
+                "<td><a href='" + json.fitsurl[ju] + "' target='_blank'><img src='" + json.jpegurl[ju] + "' style='width:240px' alt='' /></a></td>" //+
+                "</tr>"
+                $(rows_full).append(htmltextfull)
+            }
+        });
         $.get("{% url 'get_chandra_image' transient.id %}").done(function(json){
             var rows = $("#chandra_image")
             var rows_full = $("#chandra_image_list")
@@ -2477,7 +2517,7 @@
 
         //$.get("{% url 'lightcurveplot_detail' transient.id %}").done(function(htmlresponse){
         //
-        //	$("#biglcplot").html(htmlresponse.replace("width: 500px; height: 400px;","width: 1000px; height: 800px;"));
+        //  $("#biglcplot").html(htmlresponse.replace("width: 500px; height: 400px;","width: 1000px; height: 800px;"));
         //});
 
 
