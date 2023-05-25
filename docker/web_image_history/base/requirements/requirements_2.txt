@@ -133,7 +133,7 @@ tensorflow-estimator==2.5.0
 termcolor==1.1.0
 threadpoolctl==2.1.0
 toml==0.10.2
-tornado==6.1
+tornado==6.3.2
 traitlets==5.0.5
 typeguard==2.12.1
 typing-extensions==3.7.4.3
