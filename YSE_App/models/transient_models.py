@@ -337,7 +337,7 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
             except: pass
 
         # CHIME FRB
-        from IPython import embed; embed(header="chime_tags_test.py: Transient post_save")
+        #from IPython import embed; embed(header="chime_tags_test.py: Transient post_save")
         if instance.context_class.name == 'FRB' and instance.obs_group.name == 'CHIME':
             tags = chime_tags.set_from_instance(instance)
             frb_tags = [ftag.name for ftag in FRBTag.objects.all()]
