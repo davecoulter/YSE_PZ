@@ -1,8 +1,6 @@
 version: '3.8'
 services:
     web:
-        mem_limit: ${MEM_LIMIT}
-        cpus: ${CPU_LIMIT}
         container_name: ysepz_web_container
         image: "ghcr.io/davecoulter/yse_pz:latest"
         platform: linux/amd64
@@ -31,8 +29,6 @@ services:
           yse_db:
             condition: service_healthy
     yse_db:
-      mem_limit: ${MEM_LIMIT}
-      cpus: ${CPU_LIMIT}
       container_name: ysepz_db_container
       image: "mysql:8.0.25"
       platform: linux/amd64
@@ -57,8 +53,6 @@ services:
         timeout: 20s
         retries: 10
     yse_nginx:
-      mem_limit: ${MEM_LIMIT}
-      cpus: ${CPU_LIMIT}
       container_name: ysepz_web_nginx_container
       image: "nginx:1.21-alpine"
       ports:
