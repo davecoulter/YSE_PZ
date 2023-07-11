@@ -4,7 +4,7 @@ from YSE_App.models.base import *
 from YSE_App.models.enum_models import *
 from YSE_App.models.photometric_band_models import *
 from YSE_App.models.host_models import *
-from YSE_App.models.tag_models import *
+from YSE_App.models.tag_models import TransientTag
 from YSE_App.common.utilities import GetSexigesimalString
 from YSE_App.common.alert import IsK2Pixel, SendTransientAlert
 from YSE_App.common.thacher_transient_search import thacher_transient_search
@@ -20,6 +20,8 @@ import astropy.units as u
 from YSE_App.models.survey_models import *
 import datetime
 from auditlog.registry import auditlog
+
+from YSE_App.chime import tags as chime_tags
 
 class Transient(BaseModel):
 
@@ -51,8 +53,15 @@ class Transient(BaseModel):
 	ra_err = models.FloatField(null=True, blank=True)
 	dec_err = models.FloatField(null=True, blank=True)
 
+    # #####################
+    # FRB items
+
     # Dispersion measure
 	DM = models.FloatField(null=True, blank=True)
+
+    # FRB Tags
+	frb_tags = models.ManyToManyField(TransientTag, blank=True)
+
     
 	disc_date = models.DateTimeField(null=True, blank=True)
 	candidate_hosts = models.TextField(null=True, blank=True) # A string field to hold n hosts -- if we don't quite know which is the correct one
@@ -301,9 +310,9 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 				instance.k2_validated = True
 				instance.k2_msg = C19_msg
 				instance.tags.add(k2c19tag)
-		tag_TESS,tag_Thacher = True,True #False,False
-		print('Checking TESS')
+		tag_TESS,tag_Thacher = False,False
 		if tag_TESS and instance.disc_date:
+            print('Checking TESS')
 			TESSFlag = tess_obs(instance.ra,instance.dec,date_to_mjd(instance.disc_date)+2400000.5)
 			if TESSFlag:
 				try:
@@ -318,12 +327,19 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 					instance.tags.add(tesstag)
 				except: pass
 
-		print('Checking Thacher')
 		if tag_Thacher and thacher_transient_search(instance.ra,instance.dec):
+            print('Checking Thacher')
 			try:
 				thachertag = TransientTag.objects.get(name='Thacher')
 				instance.tags.add(thachertag)
 			except: pass
+
+        # CHIME FRB
+        if instance.context_class == 'FRB' and instance.obs_group == 'CHIME':
+            tags = chime_tags.set_from_instance(instance)
+            for tag_name in tags:
+                frb_tag = TransientTag.objects.get(name=tag_name)
+				instance.frb_tags.add(frb_tag)
 			
 		instance.save()
 		#if is_k2_C19_validated:

@@ -1,19 +1,26 @@
-""" Add CHIME test FRBs to the database """
+""" Add CHIME test FRBs to the database 
+and confirm they follow the Survey logic """
+
 import os
 from pkg_resources import resource_filename
-from YSE_App.models import Transient
-from YSE_App.models.enum_models import ObservationGroup
 
 from django.contrib import auth
 from django.db.models import ForeignKey
 
+from YSE_App.models import Transient
+from YSE_App.models.enum_models import ObservationGroup
+from YSE_App.chime import tags as chime_tags
+from YSE_App.models.tag_models import TransientTag
+
+
 import pandas
 
+from IPython import embed
 
 def run():
     # Load up the table
     csv_file = os.path.join(
-        resource_filename('YSE_App', 'test_files'), 'chime_tests.csv')
+        resource_filename('YSE_App', 'chime'), 'chime_tests.csv')
     df_frbs = pandas.read_csv(csv_file)
 
     user = auth.authenticate(username='root', password='F4isthebest')
@@ -57,16 +64,26 @@ def run():
                 fk = fkmodel.objects.filter(name=transient[transientkey])
                 transientdict[transientkey] = fk[0]
 
+        # FRB
+        transientdict['context_class'] = 'FRB'
+        
         # Build it
         dbtransient = Transient(**transientdict)
 
         # Add to list
         dbtransients.append(dbtransient)
 
+        # Tag
+        tags = chime_tags.set_from_instance(dbtransient)
+        for tag_name in tags:
+            frb_tag = TransientTag.objects.get(name=tag_name)
+            dbtransient.frb_tags.add(frb_tag)
+
         # Save me!
         dbtransient.save()
 
     # Test them!
+    embed(header='86 of chime_survey_test.py')
 
     # Break it down
     if flag_CHIME:
@@ -74,3 +91,6 @@ def run():
 
     for dbtransient in dbtransients:
         dbtransient.delete()
+
+    # Finish
+    print(Transient.objects.all())
