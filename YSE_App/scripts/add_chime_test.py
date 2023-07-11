@@ -18,6 +18,7 @@ def run():
     user = auth.authenticate(username='root', password='F4isthebest')
 
     # Loop on me
+    dbtransients = []
     for ss in range(len(df_frbs)):
 
         transient = df_frbs.iloc[ss]
@@ -36,3 +37,9 @@ def run():
                 transientkey == 'internal_names': continue
             if not isinstance(Transient._meta.get_field(transientkey), ForeignKey):
                 if transient[transientkey] is not None: transientdict[transientkey] = transient[transientkey]
+
+        # Build it
+        dbtransient = Transient(**transientdict)
+        dbtransients.append(dbtransient)
+
+            # Save me!
