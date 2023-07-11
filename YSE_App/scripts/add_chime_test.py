@@ -2,7 +2,7 @@
 import os
 from pkg_resources import resource_filename
 from YSE_App.models import Transient
-from YSE_App.models.enum_models import TransientStatus 
+from YSE_App.models.enum_models import ObservationGroup
 
 from django.contrib import auth
 from django.db.models import ForeignKey
@@ -18,12 +18,26 @@ def run():
 
     user = auth.authenticate(username='root', password='F4isthebest')
 
+    # Add CHIME ObservatoniGroup?
+    obs_names = [obs.name for obs in ObservationGroup.objects.all()]
+    flag_CHIME = False
+    if 'CHIME' not in obs_names:
+        obs = ObservationGroup(name='CHIME', created_by_id=user.id, modified_by_id=user.id)
+        obs.save()
+        flag_CHIME = True
+
+    # TNS names
+    tns_names = [t.name for t in Transient.objects.all()]
+
     # Loop on me
     dbtransients = []
     for ss in range(len(df_frbs)):
 
         transient = df_frbs.iloc[ss]
         transientkeys = transient.keys()
+
+        if transient['name'] in tns_names:
+            raise IOError(f"Transient {transient['name']} already exists in the database")
 
         transientdict = {'created_by_id':user.id,
                          'modified_by_id':user.id}
@@ -49,4 +63,14 @@ def run():
         # Add to list
         dbtransients.append(dbtransient)
 
-            # Save me!
+        # Save me!
+        dbtransient.save()
+
+    # Test them!
+
+    # Break it down
+    if flag_CHIME:
+        obs.delete()
+
+    for dbtransient in dbtransients:
+        dbtransient.delete()
