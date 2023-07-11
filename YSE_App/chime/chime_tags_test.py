@@ -74,10 +74,18 @@ def run():
         dbtransients.append(dbtransient)
 
         # Tag
-        embed(header='68 of chime_survey_test.py')
         tags = chime_tags.set_from_instance(dbtransient)
+        frb_tags = [ftag.name for ftag in FRBTag.objects.all()]
+        new_tags = []
+        embed(header='77 of chime_survey_test.py')
         for tag_name in tags:
+            # Add?
+            if tag_name not in frb_tags:
+                new_tag = FRBTag(name=tag_name, created_by_id=user.id, modified_by_id=user.id)
+                new_tags.append(new_tag)
+            # Use
             frb_tag = FRBTag.objects.get(name=tag_name)
+
             dbtransient.frb_tags.add(frb_tag)
 
         # Save me!
@@ -86,9 +94,12 @@ def run():
     # Test them!
     embed(header='86 of chime_survey_test.py')
 
-    # Break it down
+    # Break it all down
     if flag_CHIME:
         obs.delete()
+
+    for new_tag in new_tags:
+        new_tag.delete()
 
     for dbtransient in dbtransients:
         dbtransient.delete()
