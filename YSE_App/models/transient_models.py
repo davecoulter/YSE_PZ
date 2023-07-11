@@ -339,12 +339,16 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
         # CHIME FRB
         if instance.context_class == 'FRB' and instance.obs_group == 'CHIME':
             tags = chime_tags.set_from_instance(instance)
+            frb_tags = [ftag.name for ftag in FRBTag.objects.all()]
             for tag_name in tags:
+                # Add the tag if it doesn't exist
                 if tag_name not in frb_tags:
                     new_tag = FRBTag(name=tag_name, created_by_id=user.id, modified_by_id=user.id)
                     new_tag.save()
+                # Record
                 frb_tag = FRBTag.objects.get(name=tag_name)
                 instance.frb_tags.add(frb_tag)
+                print(f"Added FRB tag: {tag_name}")
             
         instance.save()
         #if is_k2_C19_validated:

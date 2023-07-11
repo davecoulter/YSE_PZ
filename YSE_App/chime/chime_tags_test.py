@@ -106,8 +106,8 @@ def run():
     if flag_CHIME:
         obs.delete()
 
-    for new_tag in new_tags:
-        new_tag.delete()
+    #for new_tag in new_tags:
+    #    new_tag.delete()
 
     for dbtransient in dbtransients:
         dbtransient.delete()
