@@ -90,9 +90,14 @@ def run():
         
         dbtransient.save()
 
-
     # Test them!
-    embed(header='86 of chime_survey_test.py')
+    for ss in range(len(df_frbs)):
+        ifrb = df_frbs.iloc[ss]
+        assert ifrb['name'] in [t.name for t in Transient.objects.all()]
+        # Tag
+        if ifrb['name'] == 'FRB20300102B':
+            t = Transient.objects.get(name=ifrb['name'])
+            assert 'CHIME-Blind' in [t.name for t in t.frb_tags.all()]
 
     # Break it all down
     if flag_CHIME:
@@ -106,3 +111,4 @@ def run():
 
     # Finish
     print(Transient.objects.all())
+    print("All clear!")
