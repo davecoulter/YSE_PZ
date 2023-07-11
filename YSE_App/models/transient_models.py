@@ -4,7 +4,7 @@ from YSE_App.models.base import *
 from YSE_App.models.enum_models import *
 from YSE_App.models.photometric_band_models import *
 from YSE_App.models.host_models import *
-from YSE_App.models.tag_models import TransientTag
+from YSE_App.models.tag_models import TransientTag, FRBTag
 from YSE_App.common.utilities import GetSexigesimalString
 from YSE_App.common.alert import IsK2Pixel, SendTransientAlert
 from YSE_App.common.thacher_transient_search import thacher_transient_search
@@ -60,7 +60,7 @@ class Transient(BaseModel):
     DM = models.FloatField(null=True, blank=True)
 
     # FRB Tags
-    frb_tags = models.ManyToManyField(TransientTag, blank=True)
+    frb_tags = models.ManyToManyField(FRBTag, blank=True)
 
     
     disc_date = models.DateTimeField(null=True, blank=True)
@@ -336,12 +336,14 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
                 instance.tags.add(thachertag)
             except: pass
 
+        '''
         # CHIME FRB
         if instance.context_class == 'FRB' and instance.obs_group == 'CHIME':
             tags = chime_tags.set_from_instance(instance)
             for tag_name in tags:
-                frb_tag = TransientTag.objects.get(name=tag_name)
+                frb_tag = FRBTag.objects.get(name=tag_name)
                 instance.frb_tags.add(frb_tag)
+        '''
             
         instance.save()
         #if is_k2_C19_validated:

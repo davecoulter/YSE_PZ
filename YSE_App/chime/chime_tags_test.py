@@ -10,7 +10,7 @@ from django.db.models import ForeignKey
 from YSE_App.models import Transient
 from YSE_App.models.enum_models import ObservationGroup
 from YSE_App.chime import tags as chime_tags
-from YSE_App.models.tag_models import TransientTag
+from YSE_App.models.tag_models import FRBTag
 
 
 import pandas
@@ -74,9 +74,10 @@ def run():
         dbtransients.append(dbtransient)
 
         # Tag
+        embed(header='77 of chime_survey_test.py')
         tags = chime_tags.set_from_instance(dbtransient)
         for tag_name in tags:
-            frb_tag = TransientTag.objects.get(name=tag_name)
+            frb_tag = FRBTag.objects.get(name=tag_name)
             dbtransient.frb_tags.add(frb_tag)
 
         # Save me!
