@@ -50,6 +50,9 @@ class Transient(BaseModel):
 	# Optional
 	ra_err = models.FloatField(null=True, blank=True)
 	dec_err = models.FloatField(null=True, blank=True)
+
+    # Dispersion measure
+	DM = models.FloatField(null=True, blank=True)
     
 	disc_date = models.DateTimeField(null=True, blank=True)
 	candidate_hosts = models.TextField(null=True, blank=True) # A string field to hold n hosts -- if we don't quite know which is the correct one
