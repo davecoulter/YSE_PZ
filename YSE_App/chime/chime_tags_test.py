@@ -65,7 +65,6 @@ def run():
                 transientdict[transientkey] = fk[0]
 
         # FRB
-        embed(header='68 of chime_survey_test.py')
         transientdict['context_class'] = TransientClass(name='FRB')
         
         # Build it
@@ -75,6 +74,7 @@ def run():
         dbtransients.append(dbtransient)
 
         # Tag
+        embed(header='68 of chime_survey_test.py')
         tags = chime_tags.set_from_instance(dbtransient)
         for tag_name in tags:
             frb_tag = FRBTag.objects.get(name=tag_name)

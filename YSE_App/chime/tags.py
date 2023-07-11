@@ -18,4 +18,6 @@ def set_from_instance(instance):
             instance.dec > dec_rng[0] and instance.dec < dec_rng[1]:
             tags.append(blind_survey['name'])
 
+    if len(tags) == 0:
+        tags = ['CHIME-Unknown']
     return tags
