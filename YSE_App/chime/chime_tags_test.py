@@ -17,7 +17,7 @@ import pandas
 
 from IPython import embed
 
-def run():
+def run(delete_existing:bool=False):
     # Load up the table
     csv_file = os.path.join(
         resource_filename('YSE_App', 'chime'), 'chime_tests.csv')
@@ -44,7 +44,11 @@ def run():
         transientkeys = transient.keys()
 
         if transient['name'] in tns_names:
-            raise IOError(f"Transient {transient['name']} already exists in the database")
+            if delete_existing:
+                t = Transient.objects.get(name=transient['name'])
+                t.delete()
+            else:
+                raise IOError(f"Transient {transient['name']} already exists in the database")
 
         transientdict = {'created_by_id':user.id,
                          'modified_by_id':user.id}
