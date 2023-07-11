@@ -64,9 +64,8 @@ def run():
                 fk = fkmodel.objects.filter(name=transient[transientkey])
                 transientdict[transientkey] = fk[0]
 
-        # FRB
-        embed(header='68 of chime_survey_test.py')
-        transientdict['context_class'] = TransientClass.get(name='FRB')
+        # Add context (FRB)
+        transientdict['context_class'] = TransientClass.objects.filter(name='FRB')
         
         # Build it
         dbtransient = Transient(**transientdict)
