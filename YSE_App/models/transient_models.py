@@ -312,8 +312,8 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
                 instance.tags.add(k2c19tag)
 
         tag_TESS,tag_Thacher = False,False
-        #print('Checking TESS')
         if tag_TESS and instance.disc_date:
+            print('Checking TESS')
             TESSFlag = tess_obs(instance.ra,instance.dec,date_to_mjd(instance.disc_date)+2400000.5)
             if TESSFlag:
                 try:
@@ -330,6 +330,7 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 
         #print('Checking Thacher')
         if tag_Thacher and thacher_transient_search(instance.ra,instance.dec):
+            print('Checking Thacher')
             try:
                 thachertag = TransientTag.objects.get(name='Thacher')
                 instance.tags.add(thachertag)
