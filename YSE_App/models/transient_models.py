@@ -344,9 +344,9 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
             for tag_name in tags:
                 # Add the tag if it doesn't exist
                 if tag_name not in frb_tags:
-                    new_tag = FRBTag(name=tag_name)#, 
-                                     #created_by_id=user.id, 
-                                     #modified_by_id=user.id)
+                    new_tag = FRBTag(name=tag_name, 
+                                     created_by_id=instance.created_by_id,
+                                     modified_by_id=instance.modified_by_id)
                     new_tag.save()
                 # Record
                 frb_tag = FRBTag.objects.get(name=tag_name)
