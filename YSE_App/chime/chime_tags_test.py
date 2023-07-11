@@ -73,7 +73,10 @@ def run():
         # Add to list
         dbtransients.append(dbtransient)
 
-        # Tag
+        # Save me!
+        dbtransient.save()
+
+        # Tag (must come after saving)
         tags = chime_tags.set_from_instance(dbtransient)
         frb_tags = [ftag.name for ftag in FRBTag.objects.all()]
         new_tags = []
@@ -82,14 +85,13 @@ def run():
             # Add?
             if tag_name not in frb_tags:
                 new_tag = FRBTag(name=tag_name, created_by_id=user.id, modified_by_id=user.id)
+                new_tag.save()
                 new_tags.append(new_tag)
             # Use
             frb_tag = FRBTag.objects.get(name=tag_name)
 
             dbtransient.frb_tags.add(frb_tag)
 
-        # Save me!
-        dbtransient.save()
 
     # Test them!
     embed(header='86 of chime_survey_test.py')
