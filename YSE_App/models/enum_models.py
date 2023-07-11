@@ -7,23 +7,6 @@ from YSE_App.models.base import *
 def get_sentinel_transientstatus():
 	return TransientStatus.objects.get_or_create(name='StatusDeleted', created_by_id='1', modified_by_id='1')[0]
 
-class FRBSurvey(BaseModel):
-	"""
-	A general type of status for the FRB Survey in FFFF-PZ
-	
-	Examples of usage are, CHIME-Blind, CHIME-HighDM
-	
-	Attributes:
-		name (CharField): name of the status to be displayed.
-	"""
-	name = models.CharField(max_length=64)
-
-	def __str__(self):
-		return self.name
-
-	def natural_key(self):
-		return self.name
-
 
 class TransientStatus(BaseModel):
 	"""
