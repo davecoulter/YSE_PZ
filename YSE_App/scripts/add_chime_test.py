@@ -2,6 +2,7 @@
 import os
 from pkg_resources import resource_filename
 from YSE_App.models import Transient
+from YSE_App.models.enum_models import TransientStatus 
 
 from django.contrib import auth
 from django.db.models import ForeignKey
@@ -37,9 +38,15 @@ def run():
                 transientkey == 'internal_names': continue
             if not isinstance(Transient._meta.get_field(transientkey), ForeignKey):
                 if transient[transientkey] is not None: transientdict[transientkey] = transient[transientkey]
+            else:
+                fkmodel = Transient._meta.get_field(transientkey).remote_field.model
+                fk = fkmodel.objects.filter(name=transient[transientkey])
+                transientdict[transientkey] = fk[0]
 
         # Build it
         dbtransient = Transient(**transientdict)
+
+        # Add to list
         dbtransients.append(dbtransient)
 
             # Save me!
