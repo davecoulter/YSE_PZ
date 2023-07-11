@@ -73,6 +73,8 @@ def run():
         # Save me!
         dbtransient.save()
 
+        '''
+        # MOVED TO transient_models
         # Tag (must come after saving)
         tags = chime_tags.set_from_instance(dbtransient)
         frb_tags = [ftag.name for ftag in FRBTag.objects.all()]
@@ -89,6 +91,7 @@ def run():
             dbtransient.frb_tags.add(frb_tag)
         
         dbtransient.save()
+        '''
 
     # Test them!
     for ss in range(len(df_frbs)):

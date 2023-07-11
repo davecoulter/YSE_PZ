@@ -336,14 +336,15 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
                 instance.tags.add(thachertag)
             except: pass
 
-        '''
         # CHIME FRB
         if instance.context_class == 'FRB' and instance.obs_group == 'CHIME':
             tags = chime_tags.set_from_instance(instance)
             for tag_name in tags:
+                if tag_name not in frb_tags:
+                    new_tag = FRBTag(name=tag_name, created_by_id=user.id, modified_by_id=user.id)
+                    new_tag.save()
                 frb_tag = FRBTag.objects.get(name=tag_name)
                 instance.frb_tags.add(frb_tag)
-        '''
             
         instance.save()
         #if is_k2_C19_validated:
