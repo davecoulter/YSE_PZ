@@ -1,13 +1,26 @@
 """ Specify CHIME Tags """
 
+# "Unbiased" survey
 blind_survey = dict(
     name='CHIME-Blind',
+    version='1.0',
     ra_rngs=[[0, 225]],
     dec_rngs=[[-10, 10]],
     label=['Stripe 82'],
     )
 
 def set_from_instance(instance):
+    """ Set tags from an instance
+
+    Eventually this will loop through all of the
+    possible CHIME tags and set them
+
+    Args:
+        instance (Transient): Transient instance
+
+    Returns:
+        list: list of CHIME tags
+    """
     # Blind?
     tags = []
     for ra_rng, dec_rng, label in zip(
