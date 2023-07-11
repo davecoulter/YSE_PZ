@@ -65,7 +65,8 @@ def run():
                 transientdict[transientkey] = fk[0]
 
         # FRB
-        transientdict['context_class'] = TransientClass(name='FRB')
+        embed(header='68 of chime_survey_test.py')
+        transientdict['context_class'] = TransientClass.get(name='FRB')
         
         # Build it
         dbtransient = Transient(**transientdict)
