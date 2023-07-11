@@ -64,9 +64,6 @@ def run():
                 fk = fkmodel.objects.filter(name=transient[transientkey])
                 transientdict[transientkey] = fk[0]
 
-        # Add context (FRB)
-        transientdict['context_class'] = TransientClass.objects.filter(name='FRB')
-        
         # Build it
         dbtransient = Transient(**transientdict)
 
