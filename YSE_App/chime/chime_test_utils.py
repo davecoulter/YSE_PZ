@@ -1,9 +1,26 @@
 """ Common methods for CHIME tests """
 
-from YSE_App.models import Transient
+import pandas
+
 from django.db.models import ForeignKey
 
-def add_df_to_db(df_frbs, user, delete_existing:bool=False):
+from YSE_App.models import Transient
+
+def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
+    """ Add a pandas DataFrame of FRBs to the database
+
+    Args:
+        df_frbs (pandas.DataFrame): pandas DataFrame of FRBs
+        user (_type_): autheticated user
+        delete_existing (bool, optional): If True, delete any
+            existing FRBs with the same TNS first. Defaults to False.
+
+    Raises:
+        IOError: _description_
+
+    Returns:
+        list: list of the Transient objects added to the database
+    """
 
     # TNS names
     tns_names = [t.name for t in Transient.objects.all()]

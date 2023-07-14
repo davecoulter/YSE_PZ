@@ -16,11 +16,18 @@ import pandas
 from IPython import embed
 
 def run(delete_existing:bool=False):
+    """ Test the CHIME FRB tags
+
+    Args:
+        delete_existing (bool, optional): If True, delete any
+            existing FRBs with the same TNS first. Defaults to False.
+    """
     # Load up the table
     csv_file = os.path.join(
         resource_filename('YSE_App', 'chime'), 'chime_tests.csv')
     df_frbs = pandas.read_csv(csv_file)
 
+    # Authenticate
     user = auth.authenticate(username='root', password='F4isthebest')
 
     # Add CHIME ObservatoniGroup?
