@@ -38,7 +38,7 @@ def add_df_to_db(df_frbs, user, delete_existing:bool=False):
             else:
                 fkmodel = Transient._meta.get_field(transientkey).remote_field.model
                 fk = fkmodel.objects.filter(name=transient[transientkey])
-                transientdict[transientkey] = fk[-1]
+                transientdict[transientkey] = fk[0]
 
         # Build it
         dbtransient = Transient(**transientdict)
