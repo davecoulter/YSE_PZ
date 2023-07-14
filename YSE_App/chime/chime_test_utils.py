@@ -30,6 +30,8 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
     for ss in range(len(df_frbs)):
 
         transient = df_frbs.iloc[ss]
+
+        # Nearly all of the following was taken from add_transient() in data_utils.py
         transientkeys = transient.keys()
 
         if transient['name'] in tns_names:
