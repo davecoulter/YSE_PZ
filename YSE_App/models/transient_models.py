@@ -37,7 +37,8 @@ class Transient(BaseModel):
     context_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
     best_spectrum = models.ForeignKey('TransientSpectrum', related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 
-    # TODO -- Deprecate this to instead be the name of the best Candidate in the databsae
+    # 
+    candidates = models.ManyToManyField(Host, blank=True) 
     host = models.ForeignKey(Host, null=True, blank=True, on_delete=models.SET_NULL)
 
     abs_mag_peak_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
@@ -67,7 +68,6 @@ class Transient(BaseModel):
 
     
     disc_date = models.DateTimeField(null=True, blank=True)
-    candidate_hosts = models.TextField(null=True, blank=True) # A string field to hold n hosts -- if we don't quite know which is the correct one
     redshift = models.FloatField(null=True, blank=True)
     redshift_err = models.FloatField(null=True, blank=True)
     redshift_source = models.CharField(max_length=64, null=True, blank=True)
