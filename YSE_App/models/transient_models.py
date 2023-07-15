@@ -37,9 +37,10 @@ class Transient(BaseModel):
     context_class = models.ForeignKey(TransientClass, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
     best_spectrum = models.ForeignKey('TransientSpectrum', related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 
-    # 
+    # Host(s)
     candidates = models.ManyToManyField(Host, blank=True) 
     host = models.ForeignKey(Host, null=True, blank=True, on_delete=models.SET_NULL)
+    #path = models.ManyToManyField(Path, blank=True) 
 
     abs_mag_peak_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
     antares_classification = models.ForeignKey(AntaresClassification, null=True, blank=True, on_delete=models.SET_NULL)
@@ -60,8 +61,14 @@ class Transient(BaseModel):
     # #####################
     # FRB items
 
+    # Required
     # Dispersion measure
     DM = models.FloatField(null=True, blank=True)
+
+    # Optional
+    # PATH PU_x
+    P_Ux = models.FloatField(null=True, blank=True)
+    #RM = models.FloatField(null=True, blank=True)
 
     # FRB Tags
     frb_tags = models.ManyToManyField(FRBTag, blank=True)

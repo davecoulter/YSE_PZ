@@ -54,6 +54,10 @@ def run_path_on_instance(instance, ssize:float=5.,
         nmin (int, optional): Minimum number of objects to return, if this
             many canidates exist. Defaults to 2.
         nmax (int, optional): Maximum number of objects to return. Defaults to 10.
+
+    Returns:
+        tuple: pandas.DataFrame of the candidates, P(U|x) for the best candidate,
+            PATH object
     """
 
     if priors is None:
