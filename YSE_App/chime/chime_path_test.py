@@ -13,7 +13,7 @@ from YSE_App.models import Transient
 from YSE_App.models import Host, Path
 from YSE_App.models.enum_models import ObservationGroup
 from YSE_App.chime import chime_test_utils as ctu
-from YSE_App.common.utilities import GetSexigesimalString
+from YSE_App.common.utilities import getGalaxyname
 
 
 import pandas
@@ -57,7 +57,7 @@ def run(delete_existing:bool=False):
     for ss in range(len(candidates)):
         icand = candidates.iloc[ss]
         # Add
-        name = GetSexigesimalString(icand.ra, icand.dec)
+        name = getGalaxyname(icand.ra, icand.dec)
         if Host.objects.filter(name=name).count() > 0:
             continue
         host = Host(name=name, ra=icand.ra, dec=icand.dec, created_by_id=user.id, modified_by_id=user.id)
