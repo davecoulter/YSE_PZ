@@ -4,8 +4,11 @@ import numpy as np
 
 import pandas 
 
-sys.path.append(os.path.abspath("../galaxies"))
-import path
+try:
+    sys.path.append(os.path.abspath("../galaxies"))
+    import path
+except ModuleNotFoundError:
+    from YSE_App.galaxies import path
 
 from IPython import embed
 
@@ -29,3 +32,5 @@ def internal_test_of_path():
 # Command line execution
 if __name__ == '__main__':
     internal_test_of_path()
+
+# Repos installed
