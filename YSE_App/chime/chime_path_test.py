@@ -3,6 +3,7 @@ of an FRB added to the database """
 
 import os
 from pkg_resources import resource_filename
+from importlib import reload
 import numpy as np
 import pandas
 
@@ -40,7 +41,6 @@ def run(delete_existing:bool=False):
     dbtransients = ctu.add_df_to_db(df_frbs, user, 
                                     delete_existing=delete_existing)
 
-    embed(header='54 of chime_path_test.py')
     # Run PATH on one
     ifrb = np.where(df_frbs.name == 'FRB20300714A')[0][0]
     itransient = dbtransients[ifrb]
@@ -52,6 +52,7 @@ def run(delete_existing:bool=False):
     candidates['P_Ox'] = [0.98, 0.01]
     P_Ux = 0.01
 
+    embed(header='54 of chime_path_test.py')
     # Add to DB
     new_hosts = []
     for ss in range(len(candidates)):
