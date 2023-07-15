@@ -40,6 +40,7 @@ def run(delete_existing:bool=False):
     dbtransients = ctu.add_df_to_db(df_frbs, user, 
                                     delete_existing=delete_existing)
 
+    embed(header='54 of chime_path_test.py')
     # Run PATH on one
     ifrb = np.where(df_frbs.name == 'FRB20300714A')[0][0]
     itransient = dbtransients[ifrb]
