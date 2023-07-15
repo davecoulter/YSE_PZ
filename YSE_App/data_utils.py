@@ -1425,7 +1425,7 @@ def getRADecBox(ra,dec,size=None,dec_size=None):
             ramax+=360.0
     return(ramin,ramax,decmin,decmax)
 
-def add_or_grab_obj(iclass, uni_fields, extra_fields, user=None):
+def add_or_grab_obj(iclass, uni_fields:dict, extra_fields:dict, user=None):
     try:
         obj = iclass.objects.get(**uni_fields)
     except ObjectDoesNotExist:

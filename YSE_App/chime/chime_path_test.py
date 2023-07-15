@@ -71,26 +71,11 @@ def run(delete_existing:bool=True,
     new_Paths = []
     for ss in range(len(candidates)):
         icand = candidates.iloc[ss]
-        # Add
+        # Add or grab
         name = getGalaxyname(icand.ra, icand.dec)
         host = data_utils.add_or_grab_obj(
             Host, dict(name=name), dict(ra=icand.ra, dec=icand.dec, 
                        ang_size=icand.ang_size), user=user)
-        '''
-        if Host.objects.filter(name=name).count() == 1:
-            print(f"Host {name} already exists! Using the existing one")
-            host = Host.objects.get(name=name)
-        elif Host.objects.filter(name=name).count() == 0:
-            # Create
-            host = Host(name=name, ra=icand.ra, dec=icand.dec, 
-                        ang_size=icand.ang_size,
-                        created_by_id=user.id, modified_by_id=user.id)
-            # Save
-            host.save()
-        else:
-            # How should we handle errors for real?
-            raise IOError("Bad host count")
-        '''
         new_hosts.append(host)
 
         # Add Photometry
