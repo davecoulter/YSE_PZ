@@ -99,7 +99,9 @@ class Path(BaseModel):
 
     ### Properties ###
     # Required
-    P_Ox = models.FloatField(null=True, blank=True)
+    P_Ox = models.FloatField()
+    frb_name = models.CharField(max_length=64)
+    host_name = models.CharField(max_length=64)
 
     def __str__(self):
-        return str(self.P_Ox)
+        return f'Path: {self.frb_name}, {self.host_name}, {self.P_Ox}'   

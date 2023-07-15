@@ -46,13 +46,13 @@ def run(delete_existing:bool=False):
     itransient = dbtransients[ifrb]
     #candidates, P_Ux, Path = ctu.run_path_on_instance(idbtransient)
 
+    # The following will come from PATH
     candidates = pandas.DataFrame()
     candidates['ra'] = [183.979572, 183.979442]
     candidates['dec'] = [-13.0213, -13.0201]
     candidates['P_Ox'] = [0.98, 0.01]
     P_Ux = 0.01
 
-    embed(header='54 of chime_path_test.py')
     # Add to DB
     new_hosts = []
     for ss in range(len(candidates)):
@@ -60,16 +60,17 @@ def run(delete_existing:bool=False):
         # Add
         name = getGalaxyname(icand.ra, icand.dec)
         if Host.objects.filter(name=name).count() > 0:
-            continue
-        host = Host(name=name, ra=icand.ra, dec=icand.dec, created_by_id=user.id, modified_by_id=user.id)
-        # Save
-        host.save()
-        new_hosts.append(host)
+            print(f"Host {name} already exists!")
+        else:
+            host = Host(name=name, ra=icand.ra, dec=icand.dec, created_by_id=user.id, modified_by_id=user.id)
+            # Save
+            host.save()
+            new_hosts.append(host)
         # Add to transient
         itransient.candidates.add(host)
 
         # PATH
-        #ipath = Path(name=name, created_by_id=user.id, modified_by_id=user.id)
+        ipath = Path(name=name, created_by_id=user.id, modified_by_id=user.id)
 
     # Save PATH values
     itransient.P_Ux = P_Ux
@@ -77,9 +78,9 @@ def run(delete_existing:bool=False):
     # Save
     itransient.save()
 
-    embed(header='40 of chime_path_test.py')
 
     # Test them!
+    embed(header='81 of chime_path_test.py')
 
     # Break it all down
     if flag_CHIME:
