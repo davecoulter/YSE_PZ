@@ -95,40 +95,14 @@ class Host(BaseModel):
 		return self.HostString()
 
 class Candidate(Host):
-	### Entity relationships ###
-	# Optional
-	host_morphology = models.ForeignKey(HostMorphology, null=True, blank=True, on_delete=models.SET_NULL)
-	host_sed = models.ForeignKey(HostSED, null=True, blank=True, on_delete=models.SET_NULL)
-	band_sextract = models.ForeignKey(PhotometricBand, null=True, blank=True, on_delete=models.SET_NULL)
-	best_spec = models.ForeignKey('HostSpectrum', related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 
-	### Properties ###
-	# Required
-	ra = models.FloatField()
-	dec = models.FloatField()
-
-	# Optional
-	name = models.CharField(max_length=64, null=True, blank=True)
-	redshift = models.FloatField(null=True, blank=True)
-	redshift_err = models.FloatField(null=True, blank=True)
-	r_a = models.FloatField(null=True, blank=True)
-	r_b = models.FloatField(null=True, blank=True)
-	theta = models.FloatField(null=True, blank=True)
-	eff_offset = models.FloatField(null=True, blank=True)
-	photo_z = models.FloatField(null=True, blank=True)
-	photo_z_err = models.FloatField(null=True, blank=True)
-	photo_z_internal = models.FloatField(null=True, blank=True)
-	photo_z_err_internal = models.FloatField(null=True, blank=True)
-	photo_z_PSCNN = models.FloatField(null=True, blank=True)
-	photo_z_err_PSCNN = models.FloatField(null=True, blank=True)
-	photo_z_source = models.CharField(max_length=64, null=True, blank=True)
-	transient_host_rank = models.IntegerField(null=True, blank=True)
-	panstarrs_objid = models.BigIntegerField(null=True, blank=True)
-
-	def HostString(self):
+	def CandidateString(self):
 		ra_str, dec_str = GetSexigesimalString(self.ra, self.dec)
 
 		if self.name:
 			return "Candidate: %s; (%s, %s)" % (self.name, ra_str, dec_str)
 		else:
 			return "Candidate: (%s, %s)" % (ra_str, dec_str)
+
+	def __str__(self):
+		return self.CandidateString()
