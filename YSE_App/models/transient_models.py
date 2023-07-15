@@ -39,7 +39,8 @@ class Transient(BaseModel):
 
     # Host(s)
     candidates = models.ManyToManyField(Host, blank=True) 
-    host = models.ForeignKey(Host, null=True, blank=True, on_delete=models.SET_NULL)
+    host = models.CharField(max_length=64)
+    #host = models.ForeignKey(Host, null=True, blank=True, on_delete=models.SET_NULL)
     #path = models.ManyToManyField(Path, blank=True) 
 
     abs_mag_peak_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
