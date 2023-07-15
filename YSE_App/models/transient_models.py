@@ -51,7 +51,7 @@ class Transient(BaseModel):
     
     ### Properties ###
     # Required
-    name = models.CharField(max_length=64)
+    name = models.CharField(max_length=64, unique=True)
     ra = models.FloatField()
     dec = models.FloatField()
 
@@ -287,6 +287,16 @@ class Transient(BaseModel):
 
     def natural_key(self):
         return self.name
+
+    def get_Path_values(self):
+        if Path.objects.filter(transient_id=self.id).count() > 0:
+            path_values, hosts = [], []
+            for p in Path.objects.filter(transient_id=self.id):
+                path_values.append(p.P_Ox)
+                host = Host.objects.filter(id=p.host_id)
+                if p.host_id:
+                    hosts.append(p.host_id)
+            return self.Path_values
 
 auditlog.register(Transient)
 

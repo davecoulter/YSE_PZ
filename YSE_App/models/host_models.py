@@ -52,7 +52,8 @@ class Host(BaseModel):
     # Required
     ra = models.FloatField()
     dec = models.FloatField()
-    name = models.CharField(max_length=64, null=True, blank=True)
+    # J2000 name
+    name = models.CharField(max_length=64, unique=True)
 
     # Optional
     redshift = models.FloatField(null=True, blank=True)
@@ -100,8 +101,12 @@ class Path(BaseModel):
     ### Properties ###
     # Required
     P_Ox = models.FloatField()
-    frb_name = models.CharField(max_length=64)
+    transient_name = models.CharField(max_length=64)
     host_name = models.CharField(max_length=64)
 
     def __str__(self):
-        return f'Path: {self.frb_name}, {self.host_name}, {self.P_Ox}'   
+        return f'Path: {self.transient_name}, {self.host_name}, {self.P_Ox}'   
+
+    @property
+    def host(self):
+        return Host.objects.get(name=self.host_name)
