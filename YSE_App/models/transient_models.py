@@ -67,7 +67,6 @@ class Transient(BaseModel):
     DM = models.FloatField(null=True, blank=True)
 
     # Optional
-    # PATH PU_x
     P_Ux = models.FloatField(null=True, blank=True)
     #RM = models.FloatField(null=True, blank=True)
 
@@ -289,14 +288,21 @@ class Transient(BaseModel):
         return self.name
 
     def get_Path_values(self):
-        if Path.objects.filter(transient_id=self.id).count() > 0:
-            path_values, hosts = [], []
-            for p in Path.objects.filter(transient_id=self.id):
+        path_values, hosts = [], []
+        if Path.objects.filter(transient_name=self.name).count() > 0:
+            for p in Path.objects.filter(transient_name=self.name):
                 path_values.append(p.P_Ox)
-                host = Host.objects.filter(id=p.host_id)
-                if p.host_id:
-                    hosts.append(p.host_id)
-            return self.Path_values
+                hosts.append(Host.objects.get(name=p.host_name))
+        return path_values, hosts
+
+    @property
+    def best_Path_host(self):
+        path_values, hosts = self.get_Path_values()
+        if len(hosts) > 0:
+            imax = np.argmax(path_values)
+            return hosts[imax]
+        else:
+            return None
 
 auditlog.register(Transient)
 

@@ -3,6 +3,7 @@ from YSE_App.models.base import *
 from YSE_App.models.enum_models import *
 from YSE_App.models.photometric_band_models import *
 from YSE_App.common.utilities import *
+from YSE_App import models as yse_models
 
 class HostSED(BaseModel):
     ### Entity relationships ###
@@ -72,6 +73,9 @@ class Host(BaseModel):
     transient_host_rank = models.IntegerField(null=True, blank=True)
     panstarrs_objid = models.BigIntegerField(null=True, blank=True)
 
+    # Angular size (in arcsec; typically half-light radius)
+    ang_size = models.FloatField(null=True, blank=True)
+
     def HostString(self):
         ra_str, dec_str = GetSexigesimalString(self.ra, self.dec)
 
@@ -94,6 +98,16 @@ class Host(BaseModel):
 
     def natural_key(self):
         return self.HostString()
+
+    @property
+    def phot_dict(self):
+        pdict = {}
+        for phot in yse_models.HostPhotometry.objects.filter(host=self):
+            top_key = f'{phot.instrument}'
+            pdict[top_key] = {}
+            for phot_data in yse_models.HostPhotData.objects.filter(photometry=phot):
+                pdict[top_key][phot_data.band.name] = phot_data.mag
+        return pdict
 
 # PATH values;  distinct from Host because it is an FRB/Host coupling
 class Path(BaseModel):

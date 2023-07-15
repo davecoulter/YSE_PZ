@@ -132,4 +132,4 @@ def run_path_on_instance(instance, ssize:float=5.,
     nobj = min(nobj, len(Path.candidates))
 
     # Return
-    return Path.candidates.iloc[:nobj], P_Ux, Path
+    return Path.candidates.iloc[:nobj], P_Ux, Path, mag_key, priors
