@@ -75,6 +75,10 @@ class Transient(BaseModel):
 
     
     disc_date = models.DateTimeField(null=True, blank=True)
+    # TODO
+    # Remove this!
+    candidate_hosts = models.TextField(null=True, blank=True) # A string field to hold n hosts -- if we don't quite know which is the correct one
+
     redshift = models.FloatField(null=True, blank=True)
     redshift_err = models.FloatField(null=True, blank=True)
     redshift_source = models.CharField(max_length=64, null=True, blank=True)
