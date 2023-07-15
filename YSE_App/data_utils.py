@@ -4,6 +4,8 @@ from django.shortcuts import render, get_object_or_404
 from .models import *
 from django.db import models
 from astropy.coordinates import get_moon, SkyCoord
+from django.core.exceptions import ObjectDoesNotExist
+
 from astropy.time import Time
 import astropy.units as u
 import datetime
@@ -1422,3 +1424,22 @@ def getRADecBox(ra,dec,size=None,dec_size=None):
             ramin+=360.0
             ramax+=360.0
     return(ramin,ramax,decmin,decmax)
+
+def add_or_grab_obj(iclass, uni_fields, extra_fields, user=None):
+    try:
+        obj = iclass.objects.get(**uni_fields)
+    except ObjectDoesNotExist:
+        # Merge
+        all_fields = uni_fields.copy()
+        all_fields.update(extra_fields)
+        # Add user?
+        if user is not None:
+            all_fields['created_by'] = user
+            all_fields['modified_by'] = user
+        obj = iclass(**all_fields)
+        obj.save()
+        print("Object created")
+    else:
+        print("Object existed, returning it")
+    # Return
+    return obj

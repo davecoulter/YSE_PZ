@@ -10,6 +10,7 @@ import datetime
 
 from django.contrib import auth
 from django.db.models import ForeignKey
+from django.db import IntegrityError
 
 from YSE_App.models import Transient
 from YSE_App.models import Host, Path
@@ -18,6 +19,8 @@ from YSE_App.models.phot_models import HostPhotData, HostPhotometry, Photometric
 from YSE_App.models.instrument_models import Instrument
 from YSE_App.chime import chime_test_utils as ctu
 from YSE_App.common.utilities import getGalaxyname
+
+from YSE_App import data_utils
 
 
 import pandas
@@ -70,6 +73,10 @@ def run(delete_existing:bool=True,
         icand = candidates.iloc[ss]
         # Add
         name = getGalaxyname(icand.ra, icand.dec)
+        host = data_utils.add_or_grab_obj(
+            Host, dict(name=name), dict(ra=icand.ra, dec=icand.dec, 
+                       ang_size=icand.ang_size), user=user)
+        '''
         if Host.objects.filter(name=name).count() == 1:
             print(f"Host {name} already exists! Using the existing one")
             host = Host.objects.get(name=name)
@@ -83,6 +90,7 @@ def run(delete_existing:bool=True,
         else:
             # How should we handle errors for real?
             raise IOError("Bad host count")
+        '''
         new_hosts.append(host)
 
         # Add Photometry
@@ -92,17 +100,18 @@ def run(delete_existing:bool=True,
             photom_inst_name = 'Instrument: Pan-STARRS1 - GPC1'
         else:
             raise IOError("Bad survey")
-        hp = HostPhotometry(host=host,
-                            instrument=Instrument.objects.get(name=inst_name),
-                            obs_group=ObservationGroup.objects.get(name=obs_group),
-                            created_by=user, modified_by=user)
-        hp.save()
-        hpd = HostPhotData(photometry=hp,
-                           band=PhotometricBand.objects.filter(instrument__name=inst_name).get(name=F),
-                           mag=icand.mag, 
-                           created_by=user, modified_by=user,
-                           obs_date=datetime.datetime.now()) #!!! these are stack images, no one observing date...?
-        hpd.save()
+        hp = data_utils.add_or_grab_obj(
+            HostPhotometry, 
+            dict(host=host, instrument=Instrument.objects.get(name=inst_name), 
+                 obs_group=ObservationGroup.objects.get(name=obs_group)),
+                 {}, user=user)
+        hpd = data_utils.add_or_grab_obj(
+            HostPhotData, 
+            dict(photometry=hp,
+                 band=PhotometricBand.objects.filter(instrument__name=inst_name).get(name=F)),
+            dict(mag=icand.mag, 
+                 obs_date=datetime.datetime.now()),
+            user=user)
 
         # Add to transient
         itransient.candidates.add(host)
