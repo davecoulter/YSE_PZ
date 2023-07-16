@@ -6,21 +6,16 @@ from pkg_resources import resource_filename
 from importlib import reload
 import numpy as np
 import pandas
-import datetime
 
 from django.contrib import auth
 from django.db.models import ForeignKey
-from django.db import IntegrityError
 
 from YSE_App.models import Transient
 from YSE_App.models import Host, Path
 from YSE_App.models.enum_models import ObservationGroup
-from YSE_App.models.phot_models import HostPhotData, HostPhotometry, PhotometricBand
-from YSE_App.models.instrument_models import Instrument
 from YSE_App.chime import chime_test_utils as ctu
-from YSE_App.common.utilities import getGalaxyname
 
-from YSE_App import data_utils
+from YSE_App.galaxies import path
 
 
 import pandas
@@ -64,60 +59,17 @@ def run(delete_existing:bool=True,
     mag_key = 'Pan-STARRS_r'
     F = mag_key[-1]
     P_Ux = 0.01
-    priors = dict(survey='Pan-STARRS')
 
-    # Add to DB
-    new_hosts = []
-    new_Paths = []
-    for ss in range(len(candidates)):
-        icand = candidates.iloc[ss]
-        # Add or grab
-        name = getGalaxyname(icand.ra, icand.dec)
-        host = data_utils.add_or_grab_obj(
-            Host, dict(name=name), dict(ra=icand.ra, dec=icand.dec, 
-                       ang_size=icand.ang_size), user=user)
-        new_hosts.append(host)
+    # Ingest
+    photom_inst_name = path.ingest_path_results(
+        itransient, candidates, 
+        F, 'GPC1', 'Pan-STARRS1', P_Ux, user)
 
-        # Add Photometry
-        if priors['survey'] == 'Pan-STARRS':
-            inst_name = 'GPC1'
-            obs_group = 'Pan-STARRS1'
-            photom_inst_name = 'Instrument: Pan-STARRS1 - GPC1'
-        else:
-            raise IOError("Bad survey")
-        hp = data_utils.add_or_grab_obj(
-            HostPhotometry, 
-            dict(host=host, instrument=Instrument.objects.get(name=inst_name), 
-                 obs_group=ObservationGroup.objects.get(name=obs_group)),
-                 {}, user=user)
-        hpd = data_utils.add_or_grab_obj(
-            HostPhotData, 
-            dict(photometry=hp,
-                 band=PhotometricBand.objects.filter(instrument__name=inst_name).get(name=F)),
-            dict(mag=icand.mag, 
-                 obs_date=datetime.datetime.now()),
-            user=user)
-
-        # Add to transient
-        itransient.candidates.add(host)
-
-        # PATH
-        ipath = Path(transient_name=itransient.name, 
-                     host_name=host.name, P_Ox=icand.P_Ox,
-                     created_by_id=user.id, modified_by_id=user.id)
-        ipath.save()
-        new_Paths.append(ipath)
-
-    # Save PATH values
-    itransient.P_Ux = P_Ux
-
-    # Save
-    itransient.save()
-
-    # Test them!
+    # Test!
     assert max([ipath.P_Ox for ipath in Path.objects.filter(transient_name=itransient.name)]) >= 0.98
     photom = itransient.best_Path_host.phot_dict
-    assert np.isclose(photom[photom_inst_name][F], candidates.iloc[0].mag, rtol=1e-3)
+    assert np.isclose(photom[photom_inst_name][F], 
+                      candidates.iloc[0].mag, rtol=1e-3)
 
 
     # Break it all down
@@ -130,16 +82,10 @@ def run(delete_existing:bool=True,
     if delete_all_paths:
         for ipath in Path.objects.all():
             ipath.delete()
-    else:
-        for new_Path in new_Paths:
-            new_Path.delete()
     
     if delete_all_hosts:
         for host in Host.objects.all():
             host.delete()
-    else:
-        for new_host in new_hosts:
-            new_host.delete()
 
     # Finish
     print(Transient.objects.all())

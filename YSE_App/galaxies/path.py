@@ -1,12 +1,18 @@
 """ Module for PATH related items """
 
 import numpy as np
+import pandas
+import datetime
 
 from astropy.coordinates import SkyCoord
 
-
-from astropath import path
-from astropath import catalogs
+from YSE_App.common.utilities import getGalaxyname
+from YSE_App import data_utils
+from YSE_App.models import Host, Path, HostPhotData 
+from YSE_App.models import HostPhotometry, PhotometricBand
+from YSE_App.models import Transient
+from YSE_App.models.instrument_models import Instrument
+from YSE_App.models.enum_models import ObservationGroup
 
 from IPython import embed
 
@@ -17,6 +23,54 @@ chime_priors = {}
 chime_priors['PU'] = 0.2
 chime_priors['survey'] = 'Pan-STARRS'
 chime_priors['scale'] = 0.5
+
+def ingest_path_results(itransient:Transient,
+                        candidates:pandas.DataFrame, 
+                        Filter:str,
+                        inst_name:str,
+                        obs_group:str,
+                        P_Ux:float, user):
+
+    # Add to DB
+    for ss in range(len(candidates)):
+        icand = candidates.iloc[ss]
+        # Add or grab the host candidates
+        name = getGalaxyname(icand.ra, icand.dec)
+        host = data_utils.add_or_grab_obj(
+            Host, dict(name=name), dict(ra=icand.ra, dec=icand.dec, 
+                       ang_size=icand.ang_size), user=user)
+
+        # Photometry
+        hp = data_utils.add_or_grab_obj(
+            HostPhotometry, 
+            dict(host=host, instrument=Instrument.objects.get(name=inst_name), 
+                 obs_group=ObservationGroup.objects.get(name=obs_group)),
+                 {}, user=user)
+        hpd = data_utils.add_or_grab_obj(
+            HostPhotData, 
+            dict(photometry=hp,
+                 band=PhotometricBand.objects.filter(instrument__name=inst_name).get(name=Filter)),
+            dict(mag=icand.mag, 
+                 obs_date=datetime.datetime.now()),
+            user=user)
+
+        # Add to transient
+        itransient.candidates.add(host)
+
+        # PATH
+        ipath = Path(transient_name=itransient.name, 
+                     host_name=host.name, P_Ox=icand.P_Ox,
+                     created_by_id=user.id, modified_by_id=user.id)
+        ipath.save()
+
+    # PATH P(U|x)
+    itransient.P_Ux = P_Ux
+
+    # Save
+    itransient.save()
+
+    # Return (mainly for testing)
+    return hp.instrument
 
 
 def run_path_on_instance(instance, ssize:float=5., 
@@ -59,6 +113,9 @@ def run_path_on_instance(instance, ssize:float=5.,
         tuple: pandas.DataFrame of the candidates, P(U|x) for the best candidate,
             PATH object
     """
+    from astropath import path
+    from astropath import catalogs
+
 
     if priors is None:
         priors = chime_priors
