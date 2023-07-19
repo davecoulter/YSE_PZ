@@ -75,8 +75,8 @@ def run(delete_existing:bool=True,
     embed(header='80 of chime_path_test.py')
 
     # Break it all down
-    if flag_CHIME:
-        obs.delete()
+    #if flag_CHIME:
+    #    obs.delete()
 
     #for dbtransient in dbtransients:
     #    dbtransient.delete()
