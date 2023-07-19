@@ -84,6 +84,9 @@ def ingest_path_results(itransient:Transient,
     # PATH P(U|x)
     itransient.P_Ux = P_Ux
 
+    # Set host from highest P_Ox
+    itransient.host = itransient.best_Path_host
+
     # Save
     itransient.save()
 

@@ -38,10 +38,8 @@ class Transient(BaseModel):
     best_spectrum = models.ForeignKey('TransientSpectrum', related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 
     # Host(s)
-    candidates = models.ManyToManyField(Host, blank=True) 
-    host = models.CharField(max_length=64, null=True, blank=True)
-    #host = models.ForeignKey(Host, null=True, blank=True, on_delete=models.SET_NULL)
-    #path = models.ManyToManyField(Path, blank=True) 
+    host = models.ForeignKey(Host, null=True, blank=True, on_delete=models.SET_NULL, related_name='transient')
+    candidates = models.ManyToManyField(Host, blank=True, related_name='transient_candidates')
 
     abs_mag_peak_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
     antares_classification = models.ForeignKey(AntaresClassification, null=True, blank=True, on_delete=models.SET_NULL)

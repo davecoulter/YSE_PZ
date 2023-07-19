@@ -11,7 +11,7 @@ from django.contrib import auth
 from django.db.models import ForeignKey
 
 from YSE_App.models import Transient
-from YSE_App.models import Host, Path
+from YSE_App.models import Host, Path#, Candidate
 from YSE_App.models.enum_models import ObservationGroup
 from YSE_App.chime import chime_test_utils as ctu
 
@@ -63,6 +63,7 @@ def run(delete_existing:bool=True,
     P_Ux = 0.01
 
     # Ingest
+    #embed(header='66 of chime_path_test.py')
     photom_inst_name = path.ingest_path_results(
         itransient, candidates, 
         F, 'GPC1', 'Pan-STARRS1', P_Ux, user)
@@ -89,6 +90,8 @@ def run(delete_existing:bool=True,
     if delete_all_hosts:
         for host in Host.objects.all():
             host.delete()
+        #for obj in Candidate.objects.all():
+        #    obj.delete()
 
     # Finish
     print(Transient.objects.all())

@@ -109,6 +109,20 @@ class Host(BaseModel):
                 pdict[top_key][phot_data.band.name] = phot_data.mag
         return pdict
 
+'''
+# Build to avoid overloading the Host table
+#  I expect there is a more elegant way to do this..
+class Candidate(Host):
+
+    def CandidateString(self):
+        ra_str, dec_str = GetSexigesimalString(self.ra, self.dec)
+
+        if self.name:
+            return "Candidate: %s; (%s, %s)" % (self.name, ra_str, dec_str)
+        else:
+            return "Candidate: (%s, %s)" % (ra_str, dec_str)
+
+'''
 # PATH values;  distinct from Host because it is an FRB/Host coupling
 class Path(BaseModel):
 
@@ -116,11 +130,13 @@ class Path(BaseModel):
     # Required
     P_Ox = models.FloatField()
     transient_name = models.CharField(max_length=64)
+    # Candidate name
+    #cand_name = models.CharField(max_length=64)
     host_name = models.CharField(max_length=64)
 
     def __str__(self):
         return f'Path: {self.transient_name}, {self.host_name}, {self.P_Ox}'   
 
     @property
-    def host(self):
+    def galaxy(self):
         return Host.objects.get(name=self.host_name)
