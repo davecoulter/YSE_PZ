@@ -29,9 +29,23 @@ def ingest_path_results(itransient:Transient,
                         Filter:str,
                         inst_name:str,
                         obs_group:str,
-                        P_Ux:float, user):
+                        P_Ux:float, user,
+                        remove_previous:bool=True):
 
-    # Add to DB
+    # Remove previous
+    if remove_previous:
+        embed(header='37 of path.py')
+        for p in Path.objects.filter(transient_name=itransient.name):
+            # Remove host
+            host = Host.objects.get(name=p.host_name)
+            itransient.candidates.remove(host)
+            # Did that get the photometry too?
+            # If that was the only link, is the host gone?
+            p.delete()
+        # Check all the canddiates are gone`` 
+        embed(header='46 of path.py')
+
+    # Add new ones to DB
     for ss in range(len(candidates)):
         icand = candidates.iloc[ss]
         # Add or grab the host candidates

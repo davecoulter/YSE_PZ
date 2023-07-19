@@ -71,13 +71,15 @@ def run(delete_existing:bool=True,
     assert np.isclose(photom[photom_inst_name][F], 
                       candidates.iloc[0].mag, rtol=1e-3)
 
+    # Do it again
+    embed(header='80 of chime_path_test.py')
 
     # Break it all down
     if flag_CHIME:
         obs.delete()
 
-    for dbtransient in dbtransients:
-        dbtransient.delete()
+    #for dbtransient in dbtransients:
+    #    dbtransient.delete()
 
     if delete_all_paths:
         for ipath in Path.objects.all():
