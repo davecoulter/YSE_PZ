@@ -34,16 +34,19 @@ def ingest_path_results(itransient:Transient,
 
     # Remove previous
     if remove_previous:
-        embed(header='37 of path.py')
         for p in Path.objects.filter(transient_name=itransient.name):
-            # Remove host
             host = Host.objects.get(name=p.host_name)
+            # Remove candidate
             itransient.candidates.remove(host)
-            # Did that get the photometry too?
-            # If that was the only link, is the host gone?
+            # Remove host?
+            delete_host = True
+            for t in Transient.objects.all():
+                if host in t.candidates.all():
+                    delete_host = False
+            if delete_host:
+                host.delete()
+            # Delete from PATH
             p.delete()
-        # Check all the canddiates are gone`` 
-        embed(header='46 of path.py')
 
     # Add new ones to DB
     for ss in range(len(candidates)):
@@ -84,7 +87,7 @@ def ingest_path_results(itransient:Transient,
     itransient.save()
 
     # Return (mainly for testing)
-    return hp.instrument
+    return str(hp.instrument)
 
 
 def run_path_on_instance(instance, ssize:float=5., 
