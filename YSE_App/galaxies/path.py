@@ -32,20 +32,21 @@ def ingest_path_results(itransient:Transient,
                         P_Ux:float, user,
                         remove_previous:bool=True):
 
+    # TODO -- move to a utility module
     # Remove previous
     if remove_previous:
         for p in Path.objects.filter(transient_name=itransient.name):
             host = Host.objects.get(name=p.host_name)
             # Remove candidate
             itransient.candidates.remove(host)
-            # Remove host?
+            # Remove host altogether (likely)?
             delete_host = True
             for t in Transient.objects.all():
                 if host in t.candidates.all():
                     delete_host = False
-            if delete_host:
+            if delete_host:  # This also deletes the photometry
                 host.delete()
-            # Delete from PATH
+            # Delete from PATH table
             p.delete()
 
     # Add new ones to DB
