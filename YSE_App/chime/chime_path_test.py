@@ -90,8 +90,6 @@ def run(delete_existing:bool=True,
     if delete_all_hosts:
         for host in Host.objects.all():
             host.delete()
-        #for obj in Candidate.objects.all():
-        #    obj.delete()
 
     # Finish
     print(Transient.objects.all())

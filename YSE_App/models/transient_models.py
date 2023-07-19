@@ -38,7 +38,9 @@ class Transient(BaseModel):
     best_spectrum = models.ForeignKey('TransientSpectrum', related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 
     # Host(s)
-    host = models.ForeignKey(Host, null=True, blank=True, on_delete=models.SET_NULL, related_name='transient')
+    host = models.ForeignKey(Host, null=True, blank=True, 
+                             on_delete=models.SET_NULL, 
+                             related_name='transient') # Needs to be here for backwards compatibility
     candidates = models.ManyToManyField(Host, blank=True, related_name='transient_candidates')
 
     abs_mag_peak_band = models.ForeignKey(PhotometricBand, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
