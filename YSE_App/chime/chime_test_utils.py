@@ -35,12 +35,13 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
         transientkeys = transient.keys()
 
         if transient['name'] in tns_names:
+            t = Transient.objects.get(name=transient['name'])
             if delete_existing:
-                t = Transient.objects.get(name=transient['name'])
                 t.delete()
             else:
                 print(f"Transient {transient['name']} already exists in the database")
                 print("Skipping")
+                dbtransients.append(t)
                 continue
 
         transientdict = {'created_by_id':user.id,
