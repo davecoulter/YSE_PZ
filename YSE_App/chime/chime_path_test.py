@@ -40,15 +40,17 @@ def run(delete_existing:bool=True,
         obs.save()
         flag_CHIME = True
 
-    # Add em
-    dbtransients = ctu.add_df_to_db(df_frbs, user, 
-                                    delete_existing=delete_existing)
+    # Add em (if necessary)
+    _ = ctu.add_df_to_db(df_frbs, user, 
+                         delete_existing=delete_existing)
 
-    # Run PATH on one
-    ifrb = np.where(df_frbs.name == 'FRB20300714A')[0][0]
-    itransient = dbtransients[ifrb]
+    # Transient for PATH
+    itransient = Transient.objects.get(name='FRB20300714A')
+
+    # Run PATH 
     #candidates, P_Ux, Path, mag_key, priors = ctu.run_path_on_instance(idbtransient)
 
+    # Or us an input table
     # The following will come from PATH
     candidates = pandas.DataFrame()
     candidates['ra'] = [183.979572, 183.979442]
