@@ -65,6 +65,8 @@ def run(delete_existing:bool=True,
         itransient, candidates, 
         F, 'GPC1', 'Pan-STARRS1', P_Ux, user)
 
+    embed(header='80 of chime_path_test.py')
+
     # Test!
     assert max([ipath.P_Ox for ipath in Path.objects.filter(transient_name=itransient.name)]) >= 0.98
     photom = itransient.best_Path_host.phot_dict
@@ -72,7 +74,6 @@ def run(delete_existing:bool=True,
                       candidates.iloc[0].mag, rtol=1e-3)
 
     # Do it again
-    embed(header='80 of chime_path_test.py')
 
     # Break it all down
     #if flag_CHIME:
