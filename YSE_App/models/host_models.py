@@ -133,7 +133,7 @@ class Host(BaseModel):
 
     @property
     def P_Ox(self):
-        path = Path.objects.get(host_name=self.name)
+        path = Path.objects.filter(host_name=self.name)
         if len(path) == 1:
             return path[0].P_Ox
         else:
