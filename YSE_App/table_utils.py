@@ -1636,7 +1636,7 @@ class CandidatesTable(tables.Table):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
+        #self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
 
 #    def order_best_redshift(self, queryset, is_descending):
 #

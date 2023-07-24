@@ -1033,6 +1033,9 @@ def transient_detail(request, slug):
         #import pdb
         #pdb.set_trace()
 
+        has_new_comment = len(Log.objects.filter(transient=transient_obj).\
+                              filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1))) > 0
+
         '''
         # https://django-tables2.readthedocs.io/en/latest/pages/tutorial.html
         # Candidates
