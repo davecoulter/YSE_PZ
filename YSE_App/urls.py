@@ -16,6 +16,8 @@ from YSE_App.yse_utils import yse_pointings, yse_view_utils
 from YSE_App.views import SearchResultsView
 from YSE_App.util import submit_to_tns
 
+from YSE_App.chime import chime_test_views 
+
 schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
 
 # Wire up our API using automatic URL routing.
@@ -32,7 +34,8 @@ urlpatterns = [
     re_path(r'^get_transient_tags/$', views.get_transient_tags, name='get_transient_tags'),
 
     # Testing
-    re_path(r'^candidates/$', views.CandidatesListView.as_view(), name='candidates'),
+    #re_path(r'^candidates/$', views.CandidatesListView.as_view(), name='candidates'),
+    #re_path(r'^candidates/$', chime_test_views.candidatesview, name='candidates'),
 
     # survey info
     re_path(r'^survey/$', surveypages.survey, name='survey'),

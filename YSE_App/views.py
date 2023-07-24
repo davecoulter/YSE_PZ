@@ -46,7 +46,7 @@ from astropy.time import Time
 from .common.utilities import getRADecBox
 
 from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable,ToOFollowupTable
-from .table_utils import CandidatesTable
+from .table_utils import CandidatesTable, CandidatesFilter
 from .queries.yse_python_queries import *
 from .queries import yse_python_queries
 import django_tables2 as tables
@@ -1036,17 +1036,18 @@ def transient_detail(request, slug):
         has_new_comment = len(Log.objects.filter(transient=transient_obj).\
                               filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1))) > 0
 
-        '''
         # https://django-tables2.readthedocs.io/en/latest/pages/tutorial.html
         # Candidates
-        candidates = Host.objects.all().select_related()
-        # Include P_Ox??
-        candidatefilter = CandidateFilter(
-            request.GET, queryset=candidates)#,prefix=t)
-        candidate_table = CandidateTable(candidatefilter.qs,prefix=t)
-        RequestConfig(request, paginate={'per_page': 10}).configure(candidate_table)
-        candidate_table_context = (candidate_table,candidates,candidatefilter)
-        '''
+        candidates = Host.objects.filter(transient_candidates=transient_obj.id)
+        if len(candidates) > 0:
+            # Include P_Ox??
+            candidatefilter = CandidatesFilter(
+                request.GET, queryset=candidates)#,prefix=t)
+            candidate_table = CandidatesTable(candidatefilter.qs)
+            RequestConfig(request, paginate={'per_page': 10}).configure(candidate_table)
+            candidate_table_context = (candidate_table,candidates,candidatefilter)
+        else:
+            candidate_table_context = None
 
         
         # obsnights,tellist = view_utils.getObsNights(transient[0])
@@ -1067,6 +1068,7 @@ def transient_detail(request, slug):
         context = {
             'transient':transient_obj,
             'followups':followups,
+            'candidates': candidate_table_context,
             # 'telescope_list': tellist,
             'observing_nights': obsnights,
             'too_resource_list': too_resources.select_related(),
@@ -1677,10 +1679,11 @@ job_submitted=%s"""%(log_file_name,datetime.datetime.utcnow().isoformat())
     #response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
     return JsonResponse(context) #HttpResponse('')
 
-from django_tables2 import SingleTableView
+# TODO -- Remove this test view
+#from django_tables2 import SingleTableView
+#
+#class CandidatesListView(SingleTableView):
+#    model = Host
+#    table_class = CandidatesTable
+#    template_name = 'YSE_App/candidates.html'
 
-
-class CandidatesListView(SingleTableView):
-    model = Host
-    table_class = CandidatesTable
-    template_name = 'YSE_App/candidates.html'

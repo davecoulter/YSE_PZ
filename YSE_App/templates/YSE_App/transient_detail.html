@@ -2,6 +2,7 @@
 {% load static %}
 {% load transient_detail_extras %}
 {% load widget_tweaks %}
+{% load render_table from django_tables2 %}
 
 {% block styles %}
     <!-- include Aladin Lite CSS file in the head section of your page -->
@@ -390,6 +391,22 @@
                                     <div class="row">
                                         <div class="col-xs-4">
                                             <div class="form-group">
+                                                <strong>PATH: P(O|x)</strong>
+                                                <p class="text-muted">
+                                                    {% if transient.host %}
+                                                        {% if transient.host.P_Ox %}
+                                                            {{ transient.host.P_Ox|floatformat:3 }}
+                                                        {% endif %}
+                                                    {% else %}
+                                                        Unknown
+                                                    {% endif %}
+                                                </p>
+                                        </div>
+                                    </div>
+                                    <!--
+                                    <div class="row">
+                                        <div class="col-xs-4">
+                                            <div class="form-group">
                                                 <strong>Photo-z (SDSS)</strong>
                                                 <p class="text-muted">
                                                     {% if transient.host %}
@@ -406,6 +423,7 @@
                                                 </p>
                                         </div>
                                     </div>
+                                    -->
                                     <div class="col-xs-4">
                                             <div class="form-group">
                                                 <strong>Photo-z (Pan-STARRS CNN)</strong>
@@ -573,6 +591,15 @@
                                                 </div>
                                             {% endif %}
                                         </div>
+                                    </div>
+                                <!--<div class="col-xs-13">-->
+                                    <div class="box box-primary">
+                                        <div class="box-header">
+                                            <h3 class="box-title">Candidates</h3>
+                                        </div>
+                                        {% if candidates %}
+                                            {% render_table candidates.0 %}
+                                        {% endif %}
                                     </div>
                                 <!--<div class="col-xs-13">-->
                                     <div class="box box-primary">

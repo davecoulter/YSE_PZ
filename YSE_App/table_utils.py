@@ -1556,7 +1556,7 @@ class ObsNightFollowupFilter(django_filters.FilterSet):
             qs = qs.filter(q_totals)
         return qs
 
-class CandidateFilter(django_filters.FilterSet):
+class CandidatesFilter(django_filters.FilterSet):
 
     ex = django_filters.CharFilter(method='filter_ex',label='Search')
     search_fields = ['transient__name']
