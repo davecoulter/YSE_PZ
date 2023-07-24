@@ -1032,8 +1032,18 @@ def transient_detail(request, slug):
         #import pdb
         #pdb.set_trace()
 
-        has_new_comment = len(Log.objects.filter(transient=transient_obj).\
-                              filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1))) > 0
+        '''
+        # https://django-tables2.readthedocs.io/en/latest/pages/tutorial.html
+        # Candidates
+        candidates = Host.objects.all().select_related()
+        # Include P_Ox??
+        candidatefilter = CandidateFilter(
+            request.GET, queryset=candidates)#,prefix=t)
+        candidate_table = CandidateTable(candidatefilter.qs,prefix=t)
+        RequestConfig(request, paginate={'per_page': 10}).configure(candidate_table)
+        candidate_table_context = (candidate_table,candidates,candidatefilter)
+        '''
+
         
         # obsnights,tellist = view_utils.getObsNights(transient[0])
         # too_resources = ToOResource.objects.all()

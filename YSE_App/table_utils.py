@@ -1556,6 +1556,33 @@ class ObsNightFollowupFilter(django_filters.FilterSet):
             qs = qs.filter(q_totals)
         return qs
 
+class CandidateFilter(django_filters.FilterSet):
+
+    ex = django_filters.CharFilter(method='filter_ex',label='Search')
+    search_fields = ['transient__name']
+
+    class Meta:
+        model = Host
+        fields = ['ex',]
+
+    def filter_ex(self, qs, name, value):
+        if value:
+            q_parts = value.split()
+
+            list1=self.search_fields
+            list2=q_parts
+            perms = [zip(x,list2) for x in itertools.permutations(list1,len(list2))]
+
+            q_totals = Q()
+            for perm in perms:
+                q_part = Q()
+                for p in perm:
+                    q_part = q_part & Q(**{p[0]+'__icontains': p[1]})
+                q_totals = q_totals | q_part
+
+            qs = qs.filter(q_totals)
+        return qs
+
 
 
 def dashboard_tables(request):
@@ -1568,3 +1595,74 @@ def dashboard_tables(request):
     context = {'k2_transients': table}
 
     return render(request, 'YSE_App/dashboard_table.html', context)
+
+
+class CandidatesTable(tables.Table):
+
+    name_string = tables.TemplateColumn(accessor='NameString',
+                                        verbose_name='Name',orderable=True,order_by='name')
+    ra_string = tables.Column(accessor='CoordString.0',
+                              verbose_name='RA',orderable=True,order_by='ra')
+    dec_string = tables.Column(accessor='CoordString.1',
+                               verbose_name='DEC',orderable=True,order_by='dec')
+    filter_string = tables.Column(accessor='FilterMagString.0',
+                               verbose_name='Filter',orderable=False)
+    mag_string = tables.Column(accessor='FilterMagString.1',
+                               verbose_name='Mag',orderable=False)
+    #disc_date_string = tables.Column(accessor='disc_date_string',
+    #                                 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
+    #recent_mag = tables.Column(accessor='recent_mag',
+    #                           verbose_name='Last Mag',orderable=True)
+    #recent_magdate = tables.Column(accessor='recent_magdate',
+    #                           verbose_name='Last Obs. Date',orderable=True)
+    #best_redshift = tables.Column(accessor='z_or_hostz',
+    #                              verbose_name='Redshift',orderable=True,order_by='host__redshift')
+
+#    status_string = tables.TemplateColumn("""<div class="btn-group">
+#<button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
+#                                            <span id="{{ record.id }}_status_name" class="dropbtn">{{ record.status }}</span>
+#                                        </button>
+#                                        <ul class="dropdown-menu">
+#                                            {% for status in all_transient_statuses %}
+#                                                    <li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+#                                            {% endfor %}
+#                                        </ul>
+#</div>""",
+#                                          verbose_name='Status',orderable=True,order_by='status')
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
+
+#    def order_best_redshift(self, queryset, is_descending):
+#
+#        queryset = queryset.annotate(
+#            best_redshift=Coalesce('redshift', 'host__redshift'),
+#        ).order_by(('-' if is_descending else '') + 'best_redshift')
+#        return (queryset, True)
+
+
+    class Meta:
+        model = Host
+        fields = ('name_string','ra_string','dec_string','filter_string',
+                  'mag_string')
+
+        template_name='YSE_App/django-tables2/bootstrap.html'
+        attrs = {
+            'th' : {
+                '_ordering': {
+                    'orderable': 'sortable', # Instead of `orderable`
+                    'ascending': 'ascend',	 # Instead of `asc`
+                    'descending': 'descend'	 # Instead of `desc`
+                }
+            },
+            'class': 'table table-bordered table-hover',
+            'id': 'k2_transient_tbl',
+            "columnDefs": [
+                {"type":"title-numeric","targets":1},
+                {"type":"title-numeric","targets":2},
+            ],
+            "order": [[ 3, "desc" ]],
+        }

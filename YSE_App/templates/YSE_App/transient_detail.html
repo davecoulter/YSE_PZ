@@ -109,6 +109,18 @@
                                         </div>
                                         <div class="col-xs-4">
                                             <div class="form-group">
+                                                <strong>DM</strong>
+                                                <p class="text-muted">
+                                                    {% if transient.DM %}
+                                                        {{ transient.DM }}
+                                                    {% else %}
+                                                        Unknown
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4">
+                                            <div class="form-group">
                                                 <strong>Redshift</strong>
                                                 <p class="text-muted">
                                                     {% if transient.redshift %}

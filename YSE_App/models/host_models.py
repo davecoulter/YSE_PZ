@@ -84,6 +84,10 @@ class Host(BaseModel):
         else:
             return "Host: (%s, %s)" % (ra_str, dec_str)
 
+    def NameString(self):
+        ra_str, dec_str = GetSexigesimalString(self.ra, self.dec)
+        return f'J{ra_str}{dec_str}'
+
     def CoordString(self):
         return GetSexigesimalString(self.ra, self.dec)
 
@@ -98,6 +102,27 @@ class Host(BaseModel):
 
     def natural_key(self):
         return self.HostString()
+
+    def FilterMagString(self):
+        """ Return the filter and magnitude for the host
+
+        First preference is given to 'r/R' band
+        Then, anything goes..
+        """
+        pdict = self.phot_dict
+        if len(pdict) == 0:
+            return 'None'
+        # Take first 'r/R'-band if we have it
+        for inst_key in pdict.keys():
+            for ifilter in pdict[inst_key].keys():
+                if ifilter[-1] in ['r', 'R']:
+                    return ifilter, '%.2f'%(pdict[inst_key][ifilter])
+
+        # Take the first one we have
+        inst_key = list(pdict.keys())[0]
+        ifilter = pdict[inst_key].keys()[0]
+        return ifilter, '%.2f'%(pdict[inst_key][ifilter])
+
 
     @property
     def phot_dict(self):
