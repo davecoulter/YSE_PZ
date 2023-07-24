@@ -1609,6 +1609,8 @@ class CandidatesTable(tables.Table):
                                verbose_name='Filter',orderable=False)
     mag_string = tables.Column(accessor='FilterMagString.1',
                                verbose_name='Mag',orderable=False)
+    POx_string = tables.Column(accessor='POxString',
+                               verbose_name='P(O|x)',orderable=False)
     #disc_date_string = tables.Column(accessor='disc_date_string',
     #                                 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
     #recent_mag = tables.Column(accessor='recent_mag',

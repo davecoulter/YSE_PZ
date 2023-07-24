@@ -31,6 +31,9 @@ urlpatterns = [
     re_path(r'^transient_tags/$', views.transient_tags, name='transient_tags'),
     re_path(r'^get_transient_tags/$', views.get_transient_tags, name='get_transient_tags'),
 
+    # Testing
+    re_path(r'^candidates/$', views.CandidatesListView.as_view(), name='candidates'),
+
     # survey info
     re_path(r'^survey/$', surveypages.survey, name='survey'),
     re_path(r'^news/$', surveypages.news, name='news'),

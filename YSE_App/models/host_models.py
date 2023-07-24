@@ -133,6 +133,12 @@ class Host(BaseModel):
 
     @property
     def P_Ox(self):
+        """ Grab the P_Ox from the PATH table, if it exists
+
+        Returns:
+            float: P_Ox or None
+
+        """
         path = Path.objects.filter(host_name=self.name)
         if len(path) == 1:
             return path[0].P_Ox
@@ -141,6 +147,12 @@ class Host(BaseModel):
 
     @property
     def phot_dict(self):
+        """ Grab the photometry for the host, if it exists
+
+        Returns:
+            dict: photometry dictionary or None
+
+        """
         pdict = {}
         for phot in yse_models.HostPhotometry.objects.filter(host=self):
             top_key = f'{phot.instrument}'

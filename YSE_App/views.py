@@ -46,6 +46,7 @@ from astropy.time import Time
 from .common.utilities import getRADecBox
 
 from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable,ToOFollowupTable
+from .table_utils import CandidatesTable
 from .queries.yse_python_queries import *
 from .queries import yse_python_queries
 import django_tables2 as tables
@@ -1673,3 +1674,10 @@ job_submitted=%s"""%(log_file_name,datetime.datetime.utcnow().isoformat())
     #response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
     return JsonResponse(context) #HttpResponse('')
 
+from django_tables2 import SingleTableView
+
+
+class CandidatesListView(SingleTableView):
+    model = Host
+    table_class = CandidatesTable
+    template_name = 'YSE_App/candidates.html'
