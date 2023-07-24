@@ -1599,7 +1599,7 @@ def dashboard_tables(request):
 
 class CandidatesTable(tables.Table):
 
-    name_string = tables.TemplateColumn(accessor='NameString',
+    name_string = tables.Column(accessor='NameString',
                                         verbose_name='Name',orderable=True,order_by='name')
     ra_string = tables.Column(accessor='CoordString.0',
                               verbose_name='RA',orderable=True,order_by='ra')
