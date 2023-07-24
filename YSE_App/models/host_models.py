@@ -123,6 +123,21 @@ class Host(BaseModel):
         ifilter = pdict[inst_key].keys()[0]
         return ifilter, '%.2f'%(pdict[inst_key][ifilter])
 
+    def POxString(self):
+        """ Return the P_Ox for the host
+        """
+        if self.P_Ox is None:
+            return 'None'
+        else:
+            return '%.2f'%(self.P_Ox)
+
+    @property
+    def P_Ox(self):
+        path = Path.objects.get(host_name=self.name)
+        if len(path) == 1:
+            return path[0].P_Ox
+        else:
+            return None
 
     @property
     def phot_dict(self):
