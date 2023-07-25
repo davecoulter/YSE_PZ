@@ -83,10 +83,6 @@ class Host(BaseModel):
         else:
             return "Host: (%s, %s)" % (ra_str, dec_str)
 
-    def NameString(self):
-        ra_str, dec_str = GetSexigesimalString(self.ra, self.dec)
-        return f'J{ra_str}{dec_str}'.replace(':', '')
-
     def CoordString(self):
         return GetSexigesimalString(self.ra, self.dec)
 

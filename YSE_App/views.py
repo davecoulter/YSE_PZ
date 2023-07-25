@@ -1037,21 +1037,6 @@ def transient_detail(request, slug):
         has_new_comment = len(Log.objects.filter(transient=transient_obj).\
                               filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1))) > 0
 
-        '''
-        # https://django-tables2.readthedocs.io/en/latest/pages/tutorial.html
-        # Candidates
-        candidates = Host.objects.filter(transient_candidates=transient_obj.id)
-        if len(candidates) > 0:
-            # Include P_Ox??
-            candidatefilter = CandidatesFilter(
-                request.GET, queryset=candidates)#,prefix=t)
-            candidate_table = CandidatesTable(candidatefilter.qs)
-            RequestConfig(request, paginate={'per_page': 10}).configure(candidate_table)
-            candidate_table_context = (candidate_table,candidates,candidatefilter)
-        else:
-            candidate_table_context = None
-        '''
-
         
         # obsnights,tellist = view_utils.getObsNights(transient[0])
         # too_resources = ToOResource.objects.all()
@@ -1071,7 +1056,6 @@ def transient_detail(request, slug):
         context = {
             'transient':transient_obj,
             'followups':followups,
-            #'candidates': candidate_table_context,
             # 'telescope_list': tellist,
             'observing_nights': obsnights,
             'too_resource_list': too_resources.select_related(),

@@ -5,6 +5,16 @@ from YSE_App.models import Photometry, PhotData
 from YSE_App.models import FRBGalaxy
 
 class GalaxyPhotometry(Photometry):
+    """ django model for galaxy photometry
+
+    Builds on Photometry
+
+    Args:
+        Photometry (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
 
     # Required
     galaxy = models.ForeignKey(FRBGalaxy, on_delete=models.CASCADE)
@@ -23,6 +33,16 @@ class GalaxyPhotometry(Photometry):
 
 
 class GalaxyPhotData(PhotData):
+    """ django model for galaxy photometry data
+
+    Builds on PhotData
+
+    Args:
+        PhotData (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     # Entity relationships ###
     # Required
     photometry = models.ForeignKey(GalaxyPhotometry, on_delete=models.CASCADE)

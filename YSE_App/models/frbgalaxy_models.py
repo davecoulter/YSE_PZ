@@ -5,6 +5,12 @@ from YSE_App import models as yse_models
 from YSE_App.common.utilities import GetSexigesimalString 
 
 class FRBGalaxy(BaseModel):
+    """django model for FRB host galaxies
+
+    These will almost always (maybe always) be candidates
+    for GRB hosts
+
+    """
     ### Entity relationships ###
     # Optional
     #morphology = models.ForeignKey(HostMorphology, null=True, blank=True, on_delete=models.SET_NULL)
@@ -73,7 +79,7 @@ class FRBGalaxy(BaseModel):
         return ifilter, '%.2f'%(pdict[inst_key][ifilter])
 
     def POxString(self):
-        """ Return the P_Ox for the galaxy
+        """ Return the P_Ox for the galaxy as a string (for viewing)
         """
         if self.P_Ox is None:
             return 'None'
@@ -111,12 +117,20 @@ class FRBGalaxy(BaseModel):
         return pdict
 
 class Path(BaseModel):
+    """ django model for PATH table
+
+    Args:
+        BaseModel (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
 
     ### Properties ###
     # Required
     # Transient name
     transient_name = models.CharField(max_length=64)
-    # PATH P(O|x)
+    # PATH P(O|x) value
     P_Ox = models.FloatField()
     # Candidate name
     galaxy_name = models.CharField(max_length=64)

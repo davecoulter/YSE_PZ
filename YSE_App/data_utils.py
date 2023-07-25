@@ -1426,6 +1426,19 @@ def getRADecBox(ra,dec,size=None,dec_size=None):
     return(ramin,ramax,decmin,decmax)
 
 def add_or_grab_obj(iclass, uni_fields:dict, extra_fields:dict, user=None):
+    """ Convenience utility to add/grab an object
+
+    Args:
+        iclass (django model): Model to add/grab
+        uni_fields (dict): 
+            dict of fields that uniquely identify the object
+        extra_fields (dict): 
+            dict of additional fields to add to the object if it is created
+        user (django user object, optional): user object. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """
     try:
         obj = iclass.objects.get(**uni_fields)
     except ObjectDoesNotExist:

@@ -36,6 +36,8 @@ urlpatterns = [
     # FRBs
     re_path(r'^frb_dashboard/$', views.frb_dashboard, name='frb_dashboard'),
     re_path(r'^frb_transient_detail/(?P<slug>.*)/$', views.frb_transient_detail, name='frb_transient_detail'),
+
+    # Test pages
     #re_path(r'^candidates/$', views.CandidatesListView.as_view(), name='candidates'),
     #re_path(r'^candidates/$', chime_test_views.candidatesview, name='candidates'),
 

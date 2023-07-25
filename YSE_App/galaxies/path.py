@@ -31,8 +31,25 @@ def ingest_path_results(itransient:FRBTransient,
                         obs_group:str,
                         P_Ux:float, user,
                         remove_previous:bool=True):
+    """ Method to ingest a table of PATH results into the DB
 
-    # TODO -- move to a utility module
+    Args:
+        itransient (FRBTransient): FRBTansient object
+        candidates (pandas.DataFrame): 
+            Table of candidates from PATH
+        Filter (str): Name of the filter
+        inst_name (str): Name of the instrument
+        obs_group (str): Name of the observation group
+        P_Ux (float): PATH unseen probability P(U|x)
+        user (django user object): user 
+        remove_previous (bool, optional): If True, remove any previous
+            entries from the DB. Defaults to True.
+
+    Returns:
+        str: DB name for the instrument (mainly used for testing)
+    """
+
+    # TODO -- move the following code to a utility module
     # Remove previous
     if remove_previous:
         for p in Path.objects.filter(transient_name=itransient.name):
@@ -87,7 +104,7 @@ def ingest_path_results(itransient:FRBTransient,
     # Set host from highest P_Ox
     itransient.host = itransient.best_Path_galaxy
 
-    # Save
+    # Save to DB
     itransient.save()
 
     # Return (mainly for testing)

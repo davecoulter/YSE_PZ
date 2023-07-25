@@ -1557,12 +1557,20 @@ class ObsNightFollowupFilter(django_filters.FilterSet):
         return qs
 
 class CandidatesFilter(django_filters.FilterSet):
+    """ Filter method for a set of Candidates (i.e. FRBGalaxy's)
+
+    Args:
+        django_filters (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
 
     ex = django_filters.CharFilter(method='filter_ex',label='Search')
     search_fields = ['transient__name']
 
     class Meta:
-        model = Host
+        model = FRBGalaxy
         fields = ['ex',]
 
     def filter_ex(self, qs, name, value):
@@ -1602,6 +1610,8 @@ def dashboard_tables(request):
 ################################################################
 
 class CandidatesTable(tables.Table):
+    """ Table for displaying a set of Candidates (i.e. FRBGalaxy's)
+    """
 
     name_string = tables.Column(accessor='NameString',
                                         verbose_name='Name',orderable=True,order_by='name')
@@ -1674,6 +1684,8 @@ class CandidatesTable(tables.Table):
         }
 
 class FRBTransientFilter(django_filters.FilterSet):
+    """ FilterSet for FRBTransients """
+
 
     #name_string = django_filters.CharFilter(name='name',lookup_expr='icontains',
     #										label='Name')
@@ -1709,6 +1721,7 @@ class FRBTransientFilter(django_filters.FilterSet):
         return qs
 
 class FRBTransientTable(tables.Table):
+    """ Table for displaying a set of FRBTransients """
 
     name_string = tables.TemplateColumn("<a href=\"{% url 'frb_transient_detail' record.slug %}\">{{ record.name }}</a>",
                                         verbose_name='Name',orderable=True,order_by='name')
