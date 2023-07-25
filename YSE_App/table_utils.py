@@ -1597,6 +1597,10 @@ def dashboard_tables(request):
     return render(request, 'YSE_App/dashboard_table.html', context)
 
 
+################################################################
+# FRB Items
+################################################################
+
 class CandidatesTable(tables.Table):
 
     name_string = tables.Column(accessor='NameString',
@@ -1647,9 +1651,123 @@ class CandidatesTable(tables.Table):
 
 
     class Meta:
-        model = Host
+        model = FRBGalaxy
         fields = ('name_string','ra_string','dec_string','filter_string',
                   'mag_string')
+
+        template_name='YSE_App/django-tables2/bootstrap.html'
+        attrs = {
+            'th' : {
+                '_ordering': {
+                    'orderable': 'sortable', # Instead of `orderable`
+                    'ascending': 'ascend',	 # Instead of `asc`
+                    'descending': 'descend'	 # Instead of `desc`
+                }
+            },
+            'class': 'table table-bordered table-hover',
+            'id': 'k2_transient_tbl',
+            "columnDefs": [
+                {"type":"title-numeric","targets":1},
+                {"type":"title-numeric","targets":2},
+            ],
+            "order": [[ 3, "desc" ]],
+        }
+
+class FRBTransientFilter(django_filters.FilterSet):
+
+    #name_string = django_filters.CharFilter(name='name',lookup_expr='icontains',
+    #										label='Name')
+
+    ex = django_filters.CharFilter(method='filter_ex',label='Search')
+    search_fields = ['name','ra','dec','obs_group_name',
+                     'redshift', 'status_name', 'frb_survey_name']
+
+    class Meta:
+        model = FRBTransient
+        fields = ['ex',]
+
+    def filter_ex(self, qs, name, value):
+        if value:
+
+            qs = annotate_with_disc_mag(qs)
+
+            q_parts = value.split()
+
+
+            list1=self.search_fields
+            list2=q_parts
+            perms = [zip(x,list2) for x in itertools.permutations(list1,len(list2))]
+
+            q_totals = Q()
+            for perm in perms:
+                q_part = Q()
+                for p in perm:
+                    q_part = q_part & Q(**{p[0]+'__icontains': p[1]})
+                q_totals = q_totals | q_part
+
+            qs = qs.filter(q_totals)
+        return qs
+
+class FRBTransientTable(tables.Table):
+
+    name_string = tables.TemplateColumn("<a href=\"{% url 'frb_transient_detail' record.slug %}\">{{ record.name }}</a>",
+                                        verbose_name='Name',orderable=True,order_by='name')
+    ra_string = tables.Column(accessor='CoordString.0',
+                              verbose_name='RA',orderable=True,order_by='ra')
+    dec_string = tables.Column(accessor='CoordString.1',
+                               verbose_name='DEC',orderable=True,order_by='dec')
+    dm_string = tables.Column(accessor='DMString',
+                               verbose_name='DM',orderable=True,order_by='dm')
+    tags_string = tables.Column(accessor='FRBTagsString',
+                               verbose_name='Tags',orderable=True,order_by='dm')
+    #disc_date_string = tables.Column(accessor='disc_date_string',
+    #                                 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
+    #recent_mag = tables.Column(accessor='recent_mag',
+    #                           verbose_name='Last Mag',orderable=True)
+    #recent_magdate = tables.Column(accessor='recent_magdate',
+    #                           verbose_name='Last Obs. Date',orderable=True)
+    #best_redshift = tables.Column(accessor='z_or_hostz',
+    #                              verbose_name='Redshift',orderable=True,order_by='host__redshift')
+    #ps_score = tables.Column(accessor='point_source_probability',
+    #                         verbose_name='PS Score',orderable=True)
+#
+    #mw_ebv = tables.Column(accessor='mw_ebv',
+    #						   verbose_name='MW E(B-V)',orderable=True)
+    #mw_ebv = tables.TemplateColumn("""{% if record.mw_ebv %}
+#{% if record.mw_ebv >= 0.2 %}
+#&nbsp;<b class="text-red">{{ record.mw_ebv }}</b>
+#{% else %}
+#{{ record.mw_ebv }}
+#{% endif %}
+#{% else %}
+#-
+#{% endif %}""",
+#                                   verbose_name='MW E(B-V)',orderable=True,order_by='mw_ebv')
+
+
+    status_string = tables.TemplateColumn("""<div class="btn-group">
+<button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
+                                            <span id="{{ record.id }}_status_name" class="dropbtn">{{ record.status }}</span>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            {% for status in all_transient_statuses %}
+                                                    <li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
+                                            {% endfor %}
+                                        </ul>
+</div>""",
+                                          verbose_name='Status',orderable=True,order_by='status')
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        #self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
+
+    class Meta:
+        model = FRBTransient
+        fields = ('name_string','ra_string','dec_string',
+                  'dm_string', 'frb_survey', 'tags_string',
+                  'status_string')
 
         template_name='YSE_App/django-tables2/bootstrap.html'
         attrs = {

@@ -64,6 +64,16 @@ class FRBTransient(BaseModel):
     def DecDecimalString(self):
         return '%.7f'%(self.dec)
 
+    def DMString(self):
+        return '%.1f'%(self.DM)
+
+    def FRBTagsString(self):
+        tags = [tag.name for tag in self.frb_tags.all()]
+        if len(tags) > 0:
+            return ','.join(tags)
+        else:
+            return ''
+
     def Separation(self):
         host = FRBGalaxy.objects.get(pk=self.host_id)
         return '%.2f'%getSeparation(self.ra,self.dec,host.ra,host.dec)

@@ -33,7 +33,9 @@ urlpatterns = [
     re_path(r'^transient_tags/$', views.transient_tags, name='transient_tags'),
     re_path(r'^get_transient_tags/$', views.get_transient_tags, name='get_transient_tags'),
 
-    # Testing
+    # FRBs
+    re_path(r'^frb_dashboard/$', views.frb_dashboard, name='frb_dashboard'),
+    re_path(r'^frb_transient_detail/(?P<slug>.*)/$', views.frb_transient_detail, name='frb_transient_detail'),
     #re_path(r'^candidates/$', views.CandidatesListView.as_view(), name='candidates'),
     #re_path(r'^candidates/$', chime_test_views.candidatesview, name='candidates'),
 

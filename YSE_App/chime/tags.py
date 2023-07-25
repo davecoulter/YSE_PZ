@@ -16,7 +16,7 @@ def set_from_instance(instance):
     possible CHIME tags and set them
 
     Args:
-        instance (Transient): Transient instance
+        instance (FRBTransient): FRBTransient instance
 
     Returns:
         list: list of CHIME tags
