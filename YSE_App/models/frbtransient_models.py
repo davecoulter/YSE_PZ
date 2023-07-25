@@ -4,11 +4,12 @@ from auditlog.registry import auditlog
 from django.db import models
 
 from YSE_App.models.base import BaseModel
-from YSE_App.models.enum_models import FRBSurvey, get_sentinel_transientstatus
-from YSE_App.models.tag_models import FRBTag
-from YSE_App.models import FRBGalaxy, Path
+#from YSE_App.models.enum_models import FRBSurvey, get_sentinel_transientstatus
+#from YSE_App.models.tag_models import FRBTag
+from YSE_App.models import *  # Avoids circular import
 from YSE_App.chime import tags as chime_tags
 from YSE_App.common.utilities import GetSexigesimalString, getSeparation
+from YSE_App.models.frbgalaxy_models import FRBGalaxy
 
 class FRBTransient(BaseModel):
 
@@ -46,7 +47,7 @@ class FRBTransient(BaseModel):
     redshift_err = models.FloatField(null=True, blank=True)
 
     # FRB Tags
-    frb_tags = models.ManyToManyField(enum_models.FRBTag, blank=True)
+    frb_tags = models.ManyToManyField(FRBTag, blank=True)
 
     slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
 

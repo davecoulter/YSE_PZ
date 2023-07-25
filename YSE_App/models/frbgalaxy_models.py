@@ -2,6 +2,7 @@ from django.db import models
 
 from YSE_App.models.base import BaseModel
 from YSE_App import models as yse_models
+from YSE_App.common.utilities import GetSexigesimalString 
 
 class FRBGalaxy(BaseModel):
     ### Entity relationships ###
@@ -110,10 +111,14 @@ class Path(BaseModel):
 
     ### Properties ###
     # Required
-    P_Ox = models.FloatField()
+    # Transient name
     transient_name = models.CharField(max_length=64)
+    # PATH P(O|x)
+    P_Ox = models.FloatField()
     # Candidate name
     galaxy_name = models.CharField(max_length=64)
+
+    # Optional
 
     def __str__(self):
         return f'Path: {self.transient_name}, {self.galaxy_name}, {self.P_Ox}'   

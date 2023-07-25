@@ -2,6 +2,7 @@ from django.contrib.auth.models import Group
 from django.db import models
 
 from YSE_App.models import Photometry, PhotData
+from YSE_App.models import FRBGalaxy
 
 class GalaxyPhotometry(Photometry):
 
