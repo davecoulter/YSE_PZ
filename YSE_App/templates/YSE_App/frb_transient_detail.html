@@ -370,3 +370,36 @@
     </div>
 
 {% endblock %}
+
+{% block scripts %}
+
+    <script type="text/javascript" src="//aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.js" charset="utf-8"></script>
+
+    <script src="{% static 'YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'YSE_App/bokeh-2.4.2.min.js' %}"></script>
+    <script src="{% static 'YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js' %}"></script>
+
+    <script>
+
+        $(function() {
+      $( document ).ready(function(){
+        $.get("{% url 'get_ps1_image' transient.id %}").done(function(json){
+        var rows = $("#ps1_image")
+        if (json["jpegurl"]) {
+        htmltext = "<a href=\"http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color\" class=\"ps1-thumb\" title=\"Link to PanSTARRS-1\" target=\"_blank\"><img src=\"" + json["jpegurl"] + "\" style='width:240px' alt=\"\" /></a>"
+          } else if (json["msg"] = 'timeout') {
+            var htmltext = "<p class=\"text-muted\">Cutout server timed out</p>"
+          } else {
+          var htmltext = "<p class=\"text-muted\">Coordinates are outside the PS1 footprint</p>"
+        }
+
+          $(rows).append(htmltext)
+        });
+
+    });
+    });
+
+    </script>
+
+{% endblock %}
