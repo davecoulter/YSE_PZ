@@ -15,12 +15,15 @@ class FRBGalaxy(BaseModel):
     dec = models.FloatField()
     # J2000 name
     name = models.CharField(max_length=64, unique=True)
-    # Source of the host, e.g. PS1
+    # Source of the galaxy, e.g. PS1
     source = models.CharField(max_length=64)
 
     # Optional
     redshift = models.FloatField(null=True, blank=True)
     redshift_err = models.FloatField(null=True, blank=True)
+
+    # Angular size (in arcsec; typically half-light radius)
+    ang_size = models.FloatField(null=True, blank=True)
 
     def GalaxyString(self):
         ra_str, dec_str = GetSexigesimalString(self.ra, self.dec)
@@ -50,7 +53,7 @@ class FRBGalaxy(BaseModel):
         return self.GalaxyString()
 
     def FilterMagString(self):
-        """ Return the filter and magnitude for the host
+        """ Return the filter and magnitude for the galaxy
 
         First preference is given to 'r/R' band
         Then, anything goes..
@@ -70,7 +73,7 @@ class FRBGalaxy(BaseModel):
         return ifilter, '%.2f'%(pdict[inst_key][ifilter])
 
     def POxString(self):
-        """ Return the P_Ox for the host
+        """ Return the P_Ox for the galaxy
         """
         if self.P_Ox is None:
             return 'None'
@@ -93,17 +96,17 @@ class FRBGalaxy(BaseModel):
 
     @property
     def phot_dict(self):
-        """ Grab the photometry for the host, if it exists
+        """ Grab the photometry for the galaxy, if it exists
 
         Returns:
             dict: photometry dictionary or None
 
         """
         pdict = {}
-        for phot in yse_models.HostPhotometry.objects.filter(host=self):
+        for phot in yse_models.GalaxyPhotometry.objects.filter(galaxy=self):
             top_key = f'{phot.instrument}'
             pdict[top_key] = {}
-            for phot_data in yse_models.HostPhotData.objects.filter(photometry=phot):
+            for phot_data in yse_models.GalaxyPhotData.objects.filter(photometry=phot):
                 pdict[top_key][phot_data.band.name] = phot_data.mag
         return pdict
 

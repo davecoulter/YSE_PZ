@@ -2,11 +2,15 @@ from autoslug import AutoSlugField
 from auditlog.registry import auditlog
 
 from django.db import models
+from django.dispatch import receiver
+
+import numpy as np
 
 from YSE_App.models.base import BaseModel
 #from YSE_App.models.enum_models import FRBSurvey, get_sentinel_transientstatus
 #from YSE_App.models.tag_models import FRBTag
 from YSE_App.models import *  # Avoids circular import
+from YSE_App.models.frbgalaxy_models import Path
 from YSE_App.chime import tags as chime_tags
 from YSE_App.common.utilities import GetSexigesimalString, getSeparation
 from YSE_App.models.frbgalaxy_models import FRBGalaxy
@@ -95,7 +99,7 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
     if created:
         # CHIME FRB
         #from IPython import embed; embed(header="chime_tags_test.py: Transient post_save")
-        if instance.context_class.name == 'FRB' and instance.frb_survey.name == 'CHIME':
+        if instance.frb_survey.name == 'CHIME/FRB':
             tags = chime_tags.set_from_instance(instance)
             frb_tags = [ftag.name for ftag in FRBTag.objects.all()]
             for tag_name in tags:

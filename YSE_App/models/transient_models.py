@@ -38,6 +38,7 @@ class Transient(BaseModel):
     best_spectrum = models.ForeignKey('TransientSpectrum', related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 
     # Host(s)
+    # TODO -- Set this back the way it was
     host = models.ForeignKey(Host, null=True, blank=True, 
                              on_delete=models.SET_NULL, 
                              related_name='transient') # Needs to be here for backwards compatibility
@@ -51,6 +52,7 @@ class Transient(BaseModel):
     
     ### Properties ###
     # Required
+    # TODO - remove unique
     name = models.CharField(max_length=64, unique=True)
     ra = models.FloatField()
     dec = models.FloatField()
@@ -59,24 +61,7 @@ class Transient(BaseModel):
     ra_err = models.FloatField(null=True, blank=True)
     dec_err = models.FloatField(null=True, blank=True)
 
-    # #####################
-    # FRB items
-
-    # Required
-    # Dispersion measure
-    DM = models.FloatField(null=True, blank=True)
-
-    # Optional
-    P_Ux = models.FloatField(null=True, blank=True)
-    #RM = models.FloatField(null=True, blank=True)
-
-    # FRB Tags
-    frb_tags = models.ManyToManyField(FRBTag, blank=True)
-
-    
     disc_date = models.DateTimeField(null=True, blank=True)
-    # TODO
-    # Remove this!
     candidate_hosts = models.TextField(null=True, blank=True) # A string field to hold n hosts -- if we don't quite know which is the correct one
 
     redshift = models.FloatField(null=True, blank=True)
@@ -367,23 +352,6 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
                 instance.tags.add(thachertag)
             except: pass
 
-        # CHIME FRB
-        #from IPython import embed; embed(header="chime_tags_test.py: Transient post_save")
-        if instance.context_class.name == 'FRB' and instance.obs_group.name == 'CHIME':
-            tags = chime_tags.set_from_instance(instance)
-            frb_tags = [ftag.name for ftag in FRBTag.objects.all()]
-            for tag_name in tags:
-                # Add the tag if it doesn't exist
-                if tag_name not in frb_tags:
-                    new_tag = FRBTag(name=tag_name, 
-                                     created_by_id=instance.created_by_id,
-                                     modified_by_id=instance.modified_by_id)
-                    new_tag.save()
-                # Record
-                frb_tag = FRBTag.objects.get(name=tag_name)
-                instance.frb_tags.add(frb_tag)
-                print(f"Added FRB tag: {tag_name}")
-            
         instance.save()
         #if is_k2_C19_validated:
         #	coord_string = GetSexigesimalString(instance.ra, instance.dec)

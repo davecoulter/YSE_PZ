@@ -53,10 +53,9 @@ class Host(BaseModel):
     # Required
     ra = models.FloatField()
     dec = models.FloatField()
-    # J2000 name
-    name = models.CharField(max_length=64, unique=True)
 
     # Optional
+    name = models.CharField(max_length=64, null=True, blank=True)
     redshift = models.FloatField(null=True, blank=True)
     redshift_err = models.FloatField(null=True, blank=True)
     r_a = models.FloatField(null=True, blank=True)
@@ -74,7 +73,7 @@ class Host(BaseModel):
     panstarrs_objid = models.BigIntegerField(null=True, blank=True)
 
     # Angular size (in arcsec; typically half-light radius)
-    ang_size = models.FloatField(null=True, blank=True)
+    #ang_size = models.FloatField(null=True, blank=True)
 
     def HostString(self):
         ra_str, dec_str = GetSexigesimalString(self.ra, self.dec)
@@ -102,63 +101,3 @@ class Host(BaseModel):
 
     def natural_key(self):
         return self.HostString()
-
-    def FilterMagString(self):
-        """ Return the filter and magnitude for the host
-
-        First preference is given to 'r/R' band
-        Then, anything goes..
-        """
-        pdict = self.phot_dict
-        if len(pdict) == 0:
-            return 'None'
-        # Take first 'r/R'-band if we have it
-        for inst_key in pdict.keys():
-            for ifilter in pdict[inst_key].keys():
-                if ifilter[-1] in ['r', 'R']:
-                    return ifilter, '%.2f'%(pdict[inst_key][ifilter])
-
-        # Take the first one we have
-        inst_key = list(pdict.keys())[0]
-        ifilter = pdict[inst_key].keys()[0]
-        return ifilter, '%.2f'%(pdict[inst_key][ifilter])
-
-    def POxString(self):
-        """ Return the P_Ox for the host
-        """
-        if self.P_Ox is None:
-            return 'None'
-        else:
-            return '%.2f'%(self.P_Ox)
-
-    @property
-    def P_Ox(self):
-        """ Grab the P_Ox from the PATH table, if it exists
-
-        Returns:
-            float: P_Ox or None
-
-        """
-        path = Path.objects.filter(host_name=self.name)
-        if len(path) == 1:
-            return path[0].P_Ox
-        else:
-            return None
-
-    @property
-    def phot_dict(self):
-        """ Grab the photometry for the host, if it exists
-
-        Returns:
-            dict: photometry dictionary or None
-
-        """
-        pdict = {}
-        for phot in yse_models.HostPhotometry.objects.filter(host=self):
-            top_key = f'{phot.instrument}'
-            pdict[top_key] = {}
-            for phot_data in yse_models.HostPhotData.objects.filter(photometry=phot):
-                pdict[top_key][phot_data.band.name] = phot_data.mag
-        return pdict
-
-# PATH values;  distinct from Host because it is an FRB/Host coupling

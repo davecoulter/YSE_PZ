@@ -35,7 +35,7 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
         transientkeys = transient.keys()
 
         if transient['name'] in tns_names:
-            t = Transient.objects.get(name=transient['name'])
+            t = FRBTransient.objects.get(name=transient['name'])
             if delete_existing:
                 t.delete()
             else:
@@ -60,7 +60,10 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
             else:
                 fkmodel = FRBTransient._meta.get_field(transientkey).remote_field.model
                 fk = fkmodel.objects.filter(name=transient[transientkey])
-                transientdict[transientkey] = fk[0]
+                try:
+                    transientdict[transientkey] = fk[0]
+                except:
+                    import pdb; pdb.set_trace()
 
         # Build it
         dbtransient = FRBTransient(**transientdict)

@@ -12,6 +12,7 @@ from django.db.models import ForeignKey
 
 from YSE_App.models import FRBTransient
 from YSE_App.models import FRBGalaxy, Path#, Candidate
+from YSE_App.models import FRBSurvey
 #from YSE_App.models.enum_models import ObservationGroup
 from YSE_App.chime import chime_test_utils as ctu
 
@@ -23,7 +24,7 @@ import pandas
 from IPython import embed
 
 def run(delete_existing:bool=True,
-        delete_all_hosts:bool=True,
+        delete_all_galaxies:bool=True,
         delete_all_paths:bool=True):
     # Load up the table
     csv_file = os.path.join(
@@ -34,8 +35,8 @@ def run(delete_existing:bool=True,
 
     # Add CHIME Observation Group?
     survey_names = [survey.name for survey in FRBSurvey.objects.all()]
-    if 'CHIME' not in survey_names:
-        obs = FRBSurvey(name='CHIME', created_by_id=user.id, modified_by_id=user.id)
+    if 'CHIME/FRB' not in survey_names:
+        obs = FRBSurvey(name='CHIME/FRB', created_by_id=user.id, modified_by_id=user.id)
         obs.save()
 
     # Add em (if necessary)
@@ -68,7 +69,7 @@ def run(delete_existing:bool=True,
 
     # Test!
     assert max([ipath.P_Ox for ipath in Path.objects.filter(transient_name=itransient.name)]) >= 0.98
-    photom = itransient.best_Path_host.phot_dict
+    photom = itransient.best_Path_galaxy.phot_dict
     assert np.isclose(photom[photom_inst_name][F], 
                       candidates.iloc[0].mag, rtol=1e-3)
 
@@ -85,10 +86,10 @@ def run(delete_existing:bool=True,
         for ipath in Path.objects.all():
             ipath.delete()
     
-    if delete_all_hosts:
-        for host in Host.objects.all():
-            host.delete()
+    if delete_all_galaxies:
+        for galaxy in FRBGalaxy.objects.all():
+            galaxy.delete()
 
     # Finish
-    print(Transient.objects.all())
+    print(FRBTransient.objects.all())
     print("All clear!")
