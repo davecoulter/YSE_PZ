@@ -162,18 +162,3 @@ class Host(BaseModel):
         return pdict
 
 # PATH values;  distinct from Host because it is an FRB/Host coupling
-class Path(BaseModel):
-
-    ### Properties ###
-    # Required
-    P_Ox = models.FloatField()
-    transient_name = models.CharField(max_length=64)
-    # Candidate name
-    host_name = models.CharField(max_length=64)
-
-    def __str__(self):
-        return f'Path: {self.transient_name}, {self.host_name}, {self.P_Ox}'   
-
-    @property
-    def galaxy(self):
-        return Host.objects.get(name=self.host_name)

@@ -257,3 +257,23 @@ class MagSystem(BaseModel):
 
 	def natural_key(self):
 		return self.name
+
+######################################################
+# FRB Items
+######################################################
+
+class FRBSurvey(BaseModel):
+	"""
+	Tag specificing the survey that the FRB was detected in.
+	
+	Attributes:
+		name (CharField): name of the source of the data.
+	
+	"""
+	name = models.CharField(max_length=64)
+
+	def __str__(self):
+		return self.name
+
+	def natural_key(self):
+		return self.name
