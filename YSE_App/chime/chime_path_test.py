@@ -10,9 +10,9 @@ import pandas
 from django.contrib import auth
 from django.db.models import ForeignKey
 
-from YSE_App.models import Transient
-from YSE_App.models import Host, Path#, Candidate
-from YSE_App.models.enum_models import ObservationGroup
+from YSE_App.models import FRBTransient
+from YSE_App.models import FRBGalaxy, Path#, Candidate
+#from YSE_App.models.enum_models import ObservationGroup
 from YSE_App.chime import chime_test_utils as ctu
 
 from YSE_App.galaxies import path
@@ -33,19 +33,17 @@ def run(delete_existing:bool=True,
     user = auth.authenticate(username='root', password='F4isthebest')
 
     # Add CHIME Observation Group?
-    obs_names = [obs.name for obs in ObservationGroup.objects.all()]
-    flag_CHIME = False
-    if 'CHIME' not in obs_names:
-        obs = ObservationGroup(name='CHIME', created_by_id=user.id, modified_by_id=user.id)
+    survey_names = [survey.name for survey in FRBSurvey.objects.all()]
+    if 'CHIME' not in survey_names:
+        obs = FRBSurvey(name='CHIME', created_by_id=user.id, modified_by_id=user.id)
         obs.save()
-        flag_CHIME = True
 
     # Add em (if necessary)
     _ = ctu.add_df_to_db(df_frbs, user, 
                          delete_existing=delete_existing)
 
     # Transient for PATH
-    itransient = Transient.objects.get(name='FRB20300714A')
+    itransient = FRBTransient.objects.get(name='FRB20300714A')
 
     # Run PATH 
     #candidates, P_Ux, Path, mag_key, priors = ctu.run_path_on_instance(idbtransient)

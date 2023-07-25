@@ -8,9 +8,9 @@ from astropy.coordinates import SkyCoord
 
 from YSE_App.common.utilities import getGalaxyname
 from YSE_App import data_utils
-from YSE_App.models import Host, Path, HostPhotData 
-from YSE_App.models import HostPhotometry, PhotometricBand
-from YSE_App.models import Transient
+from YSE_App.models import FRBGalaxy, Path, GalaxyPhotData 
+from YSE_App.models import GalaxyPhotometry, PhotometricBand
+from YSE_App.models import FRBTransient
 from YSE_App.models.instrument_models import Instrument
 from YSE_App.models.enum_models import ObservationGroup
 
@@ -24,7 +24,7 @@ chime_priors['PU'] = 0.2
 chime_priors['survey'] = 'Pan-STARRS'
 chime_priors['scale'] = 0.5
 
-def ingest_path_results(itransient:Transient,
+def ingest_path_results(itransient:FRBTransient,
                         candidates:pandas.DataFrame, 
                         Filter:str,
                         inst_name:str,
@@ -36,16 +36,16 @@ def ingest_path_results(itransient:Transient,
     # Remove previous
     if remove_previous:
         for p in Path.objects.filter(transient_name=itransient.name):
-            host = Host.objects.get(name=p.host_name)
+            galaxy = FRBGalaxy.objects.get(name=p.galaxy_name)
             # Remove candidate
-            itransient.candidates.remove(host)
-            # Remove host altogether (likely)?
-            delete_host = True
-            for t in Transient.objects.all():
-                if host in t.candidates.all():
-                    delete_host = False
-            if delete_host:  # This also deletes the photometry
-                host.delete()
+            itransient.candidates.remove(galaxy)
+            # Remove galaxy altogether (likely)?
+            delete_galaxy = True
+            for t in FRBTransient.objects.all():
+                if galaxy in t.candidates.all():
+                    delete_galaxy = False
+            if delete_galaxy:  # This also deletes the photometry
+                galaxy.delete()
             # Delete from PATH table
             p.delete()
 
@@ -54,30 +54,30 @@ def ingest_path_results(itransient:Transient,
         icand = candidates.iloc[ss]
         # Add or grab the host candidates
         name = getGalaxyname(icand.ra, icand.dec)
-        host = data_utils.add_or_grab_obj(
-            Host, dict(name=name), dict(ra=icand.ra, dec=icand.dec, 
+        galaxy = data_utils.add_or_grab_obj(
+            FRBGalaxy, dict(name=name), dict(ra=icand.ra, dec=icand.dec, 
                        ang_size=icand.ang_size), user=user)
 
         # Photometry
-        hp = data_utils.add_or_grab_obj(
-            HostPhotometry, 
-            dict(host=host, instrument=Instrument.objects.get(name=inst_name), 
+        gp = data_utils.add_or_grab_obj(
+            GalaxyPhotometry, 
+            dict(galaxy=galaxy, instrument=Instrument.objects.get(name=inst_name), 
                  obs_group=ObservationGroup.objects.get(name=obs_group)),
                  {}, user=user)
-        hpd = data_utils.add_or_grab_obj(
-            HostPhotData, 
-            dict(photometry=hp,
+        gpd = data_utils.add_or_grab_obj(
+            GalaxyPhotData, 
+            dict(photometry=gp,
                  band=PhotometricBand.objects.filter(instrument__name=inst_name).get(name=Filter)),
             dict(mag=icand.mag, 
                  obs_date=datetime.datetime.now()),
             user=user)
 
         # Add to transient
-        itransient.candidates.add(host)
+        itransient.candidates.add(galaxy)
 
         # PATH
         ipath = Path(transient_name=itransient.name, 
-                     host_name=host.name, P_Ox=icand.P_Ox,
+                     galaxy_name=galaxy.name, P_Ox=icand.P_Ox,
                      created_by_id=user.id, modified_by_id=user.id)
         ipath.save()
 
@@ -85,13 +85,13 @@ def ingest_path_results(itransient:Transient,
     itransient.P_Ux = P_Ux
 
     # Set host from highest P_Ox
-    itransient.host = itransient.best_Path_host
+    itransient.host = itransient.best_Path_galaxy
 
     # Save
     itransient.save()
 
     # Return (mainly for testing)
-    return str(hp.instrument)
+    return str(gp.instrument)
 
 
 def run_path_on_instance(instance, ssize:float=5., 

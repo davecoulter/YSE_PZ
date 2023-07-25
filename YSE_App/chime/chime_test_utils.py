@@ -4,7 +4,7 @@ import pandas
 
 from django.db.models import ForeignKey
 
-from YSE_App.models import Transient
+from YSE_App.models import FRBTransient
 
 def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
     """ Add a pandas DataFrame of FRBs to the database
@@ -23,7 +23,7 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
     """
 
     # TNS names
-    tns_names = [t.name for t in Transient.objects.all()]
+    tns_names = [t.name for t in FRBTransient.objects.all()]
 
     # Loop on me
     dbtransients = []
@@ -39,7 +39,7 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
             if delete_existing:
                 t.delete()
             else:
-                print(f"Transient {transient['name']} already exists in the database")
+                print(f"FRBTransient {transient['name']} already exists in the database")
                 print("Skipping")
                 dbtransients.append(t)
                 continue
@@ -55,15 +55,15 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
                 transientkey == 'gw' or \
                 transientkey == 'non_detect_instrument' or \
                 transientkey == 'internal_names': continue
-            if not isinstance(Transient._meta.get_field(transientkey), ForeignKey):
+            if not isinstance(FRBTransient._meta.get_field(transientkey), ForeignKey):
                 if transient[transientkey] is not None: transientdict[transientkey] = transient[transientkey]
             else:
-                fkmodel = Transient._meta.get_field(transientkey).remote_field.model
+                fkmodel = FRBTransient._meta.get_field(transientkey).remote_field.model
                 fk = fkmodel.objects.filter(name=transient[transientkey])
                 transientdict[transientkey] = fk[0]
 
         # Build it
-        dbtransient = Transient(**transientdict)
+        dbtransient = FRBTransient(**transientdict)
 
         # Add to list
         dbtransients.append(dbtransient)
