@@ -67,7 +67,7 @@ def is_ajax(request):
 
 def index(request):
     if request.user.is_authenticated:
-        return HttpResponseRedirect(reverse_lazy('dashboard'))
+        return HttpResponseRedirect(reverse_lazy('frb_dashboard'))
     return render(request, 'YSE_App/index.html')
 
 #def add_followup(request,obj):
@@ -91,7 +91,7 @@ def auth_login(request):
         if next_page:
             return HttpResponseRedirect(next_page)
         else:
-            return HttpResponseRedirect('/dashboard/')
+            return HttpResponseRedirect('/frb_dashboard/')
         #render(request,'YSE_App/dashboard.html')
     else:
         return render(request, 'YSE_App/login.html')
