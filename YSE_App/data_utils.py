@@ -11,6 +11,7 @@ import astropy.units as u
 import datetime
 import dateutil
 import json
+import pandas
 import time
 import numpy as np
 from django.conf import settings as djangoSettings
@@ -33,6 +34,8 @@ from .queries.yse_python_queries import *
 from .queries import yse_python_queries
 import sys
 from urllib.parse import unquote
+
+from YSE_App.galaxies import path
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -1463,7 +1466,7 @@ def add_or_grab_obj(iclass, uni_fields:dict, extra_fields:dict, user=None):
 @csrf_exempt
 @login_or_basic_auth_required
 def add_frb_galaxy(request):
-    #print(request)
+    
     data = JSONParser().parse(request)
 
     auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
@@ -1488,7 +1491,7 @@ def add_frb_galaxy(request):
 @csrf_exempt
 @login_or_basic_auth_required
 def rm_frb_galaxy(request):
-    #print(request)
+    
     data = JSONParser().parse(request)
 
     auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
@@ -1509,3 +1512,37 @@ def rm_frb_galaxy(request):
         print(f"Deleted {data['name']}")
 
     return JsonResponse(data, status=201)
+
+@csrf_exempt
+@login_or_basic_auth_required
+def ingest_path(request):
+    
+    # Parse the data into a dict
+    data = JSONParser().parse(request)
+
+    # Deal with credentials
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+    print(f'username: {username}')
+
+    try:
+        itransient = FRBTransient.objects.get(name=data['transient_name'])
+    except:
+        return JsonResponse({"message":f"Could not find transient {data['transient_name']} in DB"}, status=400)
+    # Prep 
+    tbl = pandas.read_json(data['table'])
+
+    try:
+        path.ingest_path_results(
+            itransient, tbl, 
+            data['F'], 
+            data['instrument'], data['obs_group'],
+            data['P_Ux'], user,
+            remove_previous=True) # May wish to make this optional
+    except:
+        print("Ingestion failed")
+        return JsonResponse({"message":f"Ingestion failed!"}, status=400)
+    else:
+        print("Successfully ingested")

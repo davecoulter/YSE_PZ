@@ -3,6 +3,7 @@
 import os
 import sys
 import json
+import pandas
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -11,6 +12,42 @@ from IPython import embed
 
 def path_requests(delete:bool=False):
 
+    # Need to delete the PATH entries first
+    # And FRB Galaxies!
+
+    # Test table
+    # The following will come from PATH and read from a .csv file
+    candidates = pandas.DataFrame()
+    candidates['ra'] = [183.979572, 183.979442]
+    candidates['dec'] = [-13.0213, -13.0201]
+    candidates['ang_size'] = [0.5, 1.2] # arcsec
+    candidates['mag'] = [18.5, 19.5]
+    candidates['P_Ox'] = [0.98, 0.01]
+
+    # Prep
+    data = {}
+    data['table'] = candidates.to_json()
+    data['transient_name'] = 'FRB20300714A'
+    data['mag_key'] = 'Pan-STARRS_r'
+    data['F'] = data['mag_key'][-1] # Filter
+    data['P_Ux'] = 0.01
+
+    # These must be in the DB already (or we need to add code to add them)
+    data['instrument'] = 'GPC1'
+    data['obs_group'] = 'Pan-STARRS1'
+
+    url = 'http://0.0.0.0:8000/ingest_path/'
+    try:
+        rt = requests.put(url=url,
+            data=json.dumps(data),
+                auth=HTTPBasicAuth(
+                    os.getenv('FFFF_PZ_USER'),
+                    os.getenv('FFFF_PZ_PASS')),
+                timeout=60)
+    except Exception as e:
+        print("Error: %s"%e)
+
+def sandbox():
     # Grab Transients in PATH table
     url = 'http://0.0.0.0:8000/api/paths/'
     r = requests.get(url=url, 
@@ -59,7 +96,13 @@ def path_requests(delete:bool=False):
     new_path['transient_name'] = 'FRB20300102B'
     new_path['galaxy_name'] = new_galaxy['name']
     new_path['P_Ox'] = 0.95
+    new_path['vetted'] = True
 
+    #  This is a hack for now
+    new_path['created_by'] = "http://0.0.0.0:8000/api/users/189/"
+    new_path['modified_by'] = "http://0.0.0.0:8000/api/users/189/"
+
+    # #######################################
     # Clean up
 
     # Remove galaxy

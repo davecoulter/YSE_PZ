@@ -48,6 +48,9 @@ class FRBTransient(BaseModel):
         FRBGalaxy, blank=True, 
         related_name='frb_candidates')
 
+    # Path Unseen probability
+    P_Ux = models.FloatField(null=True, blank=True)
+
     # Redshift, derived from host
     redshift = models.FloatField(null=True, blank=True)
     redshift_err = models.FloatField(null=True, blank=True)
@@ -147,9 +150,10 @@ class Path(BaseModel):
     #galaxy_name = models.CharField(max_length=64)
 
     # Optional
+    vetted = models.BooleanField(default=False, blank=True)
 
     def __str__(self):
-        return f'Path: {self.transient.name}, {self.galaxy.name}, {self.P_Ox}'   
+        return f'Path: {self.transient.name}, {self.galaxy.name}, {self.P_Ox}, {self.vetted}'   
 
     #@property
     #def galaxy(self):

@@ -41,6 +41,7 @@ urlpatterns = [
     # API
     re_path(r'^add_frb_galaxy/', data_utils.add_frb_galaxy, name='add_frb_galaxy'),
     re_path(r'^rm_frb_galaxy/', data_utils.rm_frb_galaxy, name='rm_frb_galaxy'),
+    re_path(r'^ingest_path/', data_utils.ingest_path, name='ingest_path'),
 
     # Test pages
     #re_path(r'^candidates/$', views.CandidatesListView.as_view(), name='candidates'),
