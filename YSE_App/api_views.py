@@ -486,3 +486,28 @@ class GWCandidateImageViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = GWCandidateImage.objects.all()
     serializer_class = GWCandidateImageSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+# #######################################
+# FRB items
+class FRBTransientViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBTransient.objects.all()
+    serializer_class = FRBTransientSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    #filter_backends = (DjangoFilterBackend,)
+    #filter_class = TransientFilter
+    #filter_fields = ('status','created_date','modified_date','mw_ebv','status__name')
+
+class FRBSurveyViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = FRBSurvey.objects.all()
+    serializer_class = FRBSurveySerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+class FRBTagViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBTag.objects.all()
+    serializer_class = FRBTagSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+class FRBGalaxyViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBGalaxy.objects.all()
+    serializer_class = FRBGalaxySerializer
+    permission_classes = (permissions.IsAuthenticated,)

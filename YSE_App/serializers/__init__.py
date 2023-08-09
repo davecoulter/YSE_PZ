@@ -1,6 +1,7 @@
 from YSE_App.serializers.additional_info_serializers import *
 from YSE_App.serializers.enum_serializers import *
 from YSE_App.serializers.followup_serializers import *
+from YSE_App.serializers.frbtransient_serializers import *
 from YSE_App.serializers.host_serializers import *
 from YSE_App.serializers.instrument_serializers import *
 from YSE_App.serializers.log_serializers import *

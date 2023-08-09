@@ -8,7 +8,7 @@ class FRBGalaxy(BaseModel):
     """django model for FRB host galaxies
 
     These will almost always (maybe always) be candidates
-    for GRB hosts
+    for FRB hosts
 
     """
     ### Entity relationships ###

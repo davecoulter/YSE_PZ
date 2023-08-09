@@ -250,6 +250,13 @@ router.register(r'transienttags', api_views.TransientTagViewSet)
 router.register(r'gwcandidates', api_views.GWCandidateViewSet)
 router.register(r'gwcandidateimages', api_views.GWCandidateImageViewSet)
 
+# FRB specific
+#router.register(r'frbtransientwebresources', api_views.FRBTransientWebResourceViewSet)
+router.register(r'frbtransients', api_views.FRBTransientViewSet)
+router.register(r'frbsurvey', api_views.FRBSurveyViewSet)
+router.register(r'frbtags', api_views.FRBTagViewSet)
+router.register(r'frbgalaxies', api_views.FRBGalaxyViewSet)
+
 # Login/Logout
 api_url_patterns = [re_path(r'^api/', include(router.urls)),
                     re_path(r'^api/schema/$', schema_view),

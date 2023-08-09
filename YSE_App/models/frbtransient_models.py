@@ -10,6 +10,8 @@ from YSE_App.models.base import BaseModel
 #from YSE_App.models.enum_models import FRBSurvey, get_sentinel_transientstatus
 #from YSE_App.models.tag_models import FRBTag
 from YSE_App.models import *  # Avoids circular import
+from YSE_App.models.enum_models import *
+from YSE_App.models.tag_models import *
 from YSE_App.models.frbgalaxy_models import Path
 from YSE_App.chime import tags as chime_tags
 from YSE_App.common.utilities import GetSexigesimalString, getSeparation
