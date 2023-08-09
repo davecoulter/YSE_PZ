@@ -12,7 +12,7 @@ from YSE_App.models.base import BaseModel
 from YSE_App.models import *  # Avoids circular import
 from YSE_App.models.enum_models import *
 from YSE_App.models.tag_models import *
-from YSE_App.models.frbgalaxy_models import Path
+#from YSE_App.models.frbgalaxy_models import Path
 from YSE_App.chime import tags as chime_tags
 from YSE_App.common.utilities import GetSexigesimalString, getSeparation
 from YSE_App.models.frbgalaxy_models import FRBGalaxy
@@ -88,10 +88,10 @@ class FRBTransient(BaseModel):
 
     def get_Path_values(self):
         path_values, galaxies = [], []
-        if Path.objects.filter(transient_name=self.name).count() > 0:
-            for p in Path.objects.filter(transient_name=self.name):
+        if Path.objects.filter(transient=self).count() > 0:
+            for p in Path.objects.filter(transient=self):
                 path_values.append(p.P_Ox)
-                galaxies.append(FRBGalaxy.objects.get(name=p.galaxy_name))
+                galaxies.append(p.galaxy)
         return path_values, galaxies
 
     @property
@@ -127,3 +127,30 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
                 print(f"Added FRB tag: {tag_name}")
             
         instance.save()
+
+class Path(BaseModel):
+    """ django model for PATH table
+
+    Args:
+        BaseModel (_type_): _description_
+
+    """
+
+    ### Properties ###
+    # Required
+    # Transient 
+    transient = models.ForeignKey(FRBTransient, on_delete=models.CASCADE)
+    # PATH P(O|x) value
+    P_Ox = models.FloatField()
+    # Candidate name
+    galaxy = models.ForeignKey(FRBGalaxy, on_delete=models.CASCADE)
+    #galaxy_name = models.CharField(max_length=64)
+
+    # Optional
+
+    def __str__(self):
+        return f'Path: {self.transient.name}, {self.galaxy.name}, {self.P_Ox}'   
+
+    #@property
+    #def galaxy(self):
+    #    return FRBGalaxy.objects.get(name=self.galaxy_name)

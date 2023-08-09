@@ -116,3 +116,9 @@ class FRBGalaxySerializer(serializers.HyperlinkedModelSerializer):
         model = FRBGalaxy
         fields = "__all__"
         
+class PathSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = Path
+        fields = "__all__"
+        

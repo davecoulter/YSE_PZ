@@ -256,6 +256,7 @@ router.register(r'frbtransients', api_views.FRBTransientViewSet)
 router.register(r'frbsurvey', api_views.FRBSurveyViewSet)
 router.register(r'frbtags', api_views.FRBTagViewSet)
 router.register(r'frbgalaxies', api_views.FRBGalaxyViewSet)
+router.register(r'paths', api_views.PathViewSet)
 
 # Login/Logout
 api_url_patterns = [re_path(r'^api/', include(router.urls)),

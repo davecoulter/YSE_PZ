@@ -68,7 +68,7 @@ def run(delete_existing:bool=True,
         F, 'GPC1', 'Pan-STARRS1', P_Ux, user)
 
     # Test!
-    assert max([ipath.P_Ox for ipath in Path.objects.filter(transient_name=itransient.name)]) >= 0.98
+    assert max([ipath.P_Ox for ipath in Path.objects.filter(transient=itransient)]) >= 0.98
     photom = itransient.best_Path_galaxy.phot_dict
     assert np.isclose(photom[photom_inst_name][F], 
                       candidates.iloc[0].mag, rtol=1e-3)

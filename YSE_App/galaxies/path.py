@@ -8,9 +8,9 @@ from astropy.coordinates import SkyCoord
 
 from YSE_App.common.utilities import getGalaxyname
 from YSE_App import data_utils
-from YSE_App.models import FRBGalaxy, Path, GalaxyPhotData 
+from YSE_App.models import FRBGalaxy, GalaxyPhotData 
 from YSE_App.models import GalaxyPhotometry, PhotometricBand
-from YSE_App.models import FRBTransient
+from YSE_App.models import FRBTransient, Path
 from YSE_App.models.instrument_models import Instrument
 from YSE_App.models.enum_models import ObservationGroup
 
@@ -52,8 +52,8 @@ def ingest_path_results(itransient:FRBTransient,
     # TODO -- move the following code to a utility module
     # Remove previous
     if remove_previous:
-        for p in Path.objects.filter(transient_name=itransient.name):
-            galaxy = FRBGalaxy.objects.get(name=p.galaxy_name)
+        for p in Path.objects.filter(transient=itransient):
+            galaxy = FRBGalaxy.objects.get(name=p.galaxy.name)
             # Remove candidate
             itransient.candidates.remove(galaxy)
             # Remove galaxy altogether (likely)?
@@ -93,8 +93,11 @@ def ingest_path_results(itransient:FRBTransient,
         itransient.candidates.add(galaxy)
 
         # PATH
-        ipath = Path(transient_name=itransient.name, 
-                     galaxy_name=galaxy.name, P_Ox=icand.P_Ox,
+        #ipath = Path(transient_name=itransient.name, 
+        #             galaxy_name=galaxy.name, P_Ox=icand.P_Ox,
+        #             created_by_id=user.id, modified_by_id=user.id)
+        ipath = Path(transient=itransient, 
+                     galaxy=galaxy, P_Ox=icand.P_Ox,
                      created_by_id=user.id, modified_by_id=user.id)
         ipath.save()
 

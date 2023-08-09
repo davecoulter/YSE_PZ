@@ -511,3 +511,8 @@ class FRBGalaxyViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = FRBGalaxy.objects.all()
     serializer_class = FRBGalaxySerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+class PathViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = Path.objects.all()
+    serializer_class = PathSerializer
+    permission_classes = (permissions.IsAuthenticated,)
