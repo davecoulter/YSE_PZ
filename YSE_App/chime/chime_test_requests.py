@@ -10,42 +10,6 @@ from requests.auth import HTTPBasicAuth
 
 from IPython import embed
 
-def path_requests(delete:bool=False):
-
-    # Need to delete the PATH entries first
-    # And FRB Galaxies!
-
-    # Test table
-    # The following will come from PATH and read from a .csv file
-    candidates = pandas.DataFrame()
-    candidates['ra'] = [183.979572, 183.979442]
-    candidates['dec'] = [-13.0213, -13.0201]
-    candidates['ang_size'] = [0.5, 1.2] # arcsec
-    candidates['mag'] = [18.5, 19.5]
-    candidates['P_Ox'] = [0.98, 0.01]
-
-    # Prep
-    data = {}
-    data['table'] = candidates.to_json()
-    data['transient_name'] = 'FRB20300714A'
-    data['mag_key'] = 'Pan-STARRS_r'
-    data['F'] = data['mag_key'][-1] # Filter
-    data['P_Ux'] = 0.01
-
-    # These must be in the DB already (or we need to add code to add them)
-    data['instrument'] = 'GPC1'
-    data['obs_group'] = 'Pan-STARRS1'
-
-    url = 'http://0.0.0.0:8000/ingest_path/'
-    try:
-        rt = requests.put(url=url,
-            data=json.dumps(data),
-                auth=HTTPBasicAuth(
-                    os.getenv('FFFF_PZ_USER'),
-                    os.getenv('FFFF_PZ_PASS')),
-                timeout=60)
-    except Exception as e:
-        print("Error: %s"%e)
 
 def sandbox():
     # Grab Transients in PATH table
@@ -118,4 +82,4 @@ def sandbox():
         print("Error: %s"%e)
 
 if __name__ == '__main__':
-    path_requests()
+    sandbox()
