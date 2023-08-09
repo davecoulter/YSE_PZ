@@ -18,6 +18,8 @@ from YSE_App.chime import chime_test_utils as ctu
 
 from YSE_App.galaxies import path
 
+from YSE_App.serializers import frbtransient_serializers 
+from YSE_App.serializers import user_serializers
 
 import pandas
 
@@ -93,3 +95,27 @@ def run(delete_existing:bool=True,
     # Finish
     print(FRBTransient.objects.all())
     print("All clear!")
+
+def test_galaxy_serialize():
+    data = {'name': 'J123456.78+123456.7', 'ra': 123.5678, 'dec': 54.321, 'source': 'PS1'}
+
+    # Create
+    create = False
+    if create:
+        user = auth.authenticate(username='root', 
+                                password='F4isthebest')
+
+        #user_serialize = user_serializers.UserSerializer(user)
+        # TODO -- figure out how to serialize the user
+        data['created_by'] = "http://0.0.0.0:8000/api/users/189/"
+        data['modified_by'] = "http://0.0.0.0:8000/api/users/189/"
+
+        serializer = frbtransient_serializers.FRBGalaxySerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+
+    # Destroy
+    destroy = True
+    if destroy:
+        galaxy = FRBGalaxy.objects.get(name=data['name'])
+        galaxy.delete()

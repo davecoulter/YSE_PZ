@@ -112,6 +112,9 @@ class FRBTransientSerializer(serializers.HyperlinkedModelSerializer):
 
 class FRBGalaxySerializer(serializers.HyperlinkedModelSerializer):
 
+    def create(self, validated_data):
+        return FRBGalaxy.objects.create(**validated_data)
+
     class Meta:
         model = FRBGalaxy
         fields = "__all__"

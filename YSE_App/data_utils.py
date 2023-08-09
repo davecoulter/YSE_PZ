@@ -1456,3 +1456,56 @@ def add_or_grab_obj(iclass, uni_fields:dict, extra_fields:dict, user=None):
         print("Object existed, returning it")
     # Return
     return obj
+
+
+# FRB items
+
+@csrf_exempt
+@login_or_basic_auth_required
+def add_frb_galaxy(request):
+    #print(request)
+    data = JSONParser().parse(request)
+
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    # Serialize the user and we are all set
+    #data['created_by'] = user
+    #data['modified_by'] = user
+
+    # Use Serializer
+    serializer = FRBGalaxySerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        print(f"Generated FRB Galaxy: {data['name']}")
+    else:
+        print(f"Not valid!")
+
+    return JsonResponse(serializer.data, status=201)
+
+@csrf_exempt
+@login_or_basic_auth_required
+def rm_frb_galaxy(request):
+    #print(request)
+    data = JSONParser().parse(request)
+
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    # Serialize the user and we are all set
+    #data['created_by'] = user
+    #data['modified_by'] = user
+
+    try:
+        obj = FRBGalaxy.objects.get(name=data['name'])
+    except ObjectDoesNotExist:
+        pass
+    else:
+        obj.delete()
+        print(f"Deleted {data['name']}")
+
+    return JsonResponse(data, status=201)

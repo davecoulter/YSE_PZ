@@ -34,8 +34,13 @@ urlpatterns = [
     re_path(r'^get_transient_tags/$', views.get_transient_tags, name='get_transient_tags'),
 
     # FRBs
+    # Views
     re_path(r'^frb_dashboard/$', views.frb_dashboard, name='frb_dashboard'),
     re_path(r'^frb_transient_detail/(?P<slug>.*)/$', views.frb_transient_detail, name='frb_transient_detail'),
+
+    # API
+    re_path(r'^add_frb_galaxy/', data_utils.add_frb_galaxy, name='add_frb_galaxy'),
+    re_path(r'^rm_frb_galaxy/', data_utils.rm_frb_galaxy, name='rm_frb_galaxy'),
 
     # Test pages
     #re_path(r'^candidates/$', views.CandidatesListView.as_view(), name='candidates'),
