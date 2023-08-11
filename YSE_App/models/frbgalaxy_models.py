@@ -8,6 +8,8 @@ from YSE_App.common.utilities import GetSexigesimalString
 class FRBGalaxy(BaseModel):
     """django model for FRB host galaxies
 
+    Primary model of FFFF-PZ
+
     These will almost always (maybe always) be candidates
     for FRB hosts
 
@@ -20,7 +22,7 @@ class FRBGalaxy(BaseModel):
     # Required
     ra = models.FloatField()
     dec = models.FloatField()
-    # J2000 name
+    # J2000 name with format specified by YSE_App.common.utilities.getGalaxyname()
     name = models.CharField(max_length=64, unique=True)
     # Source of the galaxy, e.g. PS1
     source = models.CharField(max_length=64)

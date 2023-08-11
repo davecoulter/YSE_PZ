@@ -33,6 +33,12 @@ def ingest_path_results(itransient:FRBTransient,
                         remove_previous:bool=True):
     """ Method to ingest a table of PATH results into the DB
 
+    The tables where entries are create/updated include:
+      - FRBGalaxy: Each candidate is added
+      - GalaxyPhotometry: Add PATH photometry for each candidate 
+      - GalaxyPhotData: Added for each candidate 
+      - FRBTransient: Add P_Ux
+
     Args:
         itransient (FRBTransient): FRBTansient object
         candidates (pandas.DataFrame): 
@@ -43,7 +49,7 @@ def ingest_path_results(itransient:FRBTransient,
         P_Ux (float): PATH unseen probability P(U|x)
         user (django user object): user 
         remove_previous (bool, optional): If True, remove any previous
-            entries from the DB. Defaults to True.
+            entries related to PATH from the DB. Defaults to True.
 
     Returns:
         str: DB name for the instrument (mainly used for testing)
@@ -93,9 +99,6 @@ def ingest_path_results(itransient:FRBTransient,
         itransient.candidates.add(galaxy)
 
         # PATH
-        #ipath = Path(transient_name=itransient.name, 
-        #             galaxy_name=galaxy.name, P_Ox=icand.P_Ox,
-        #             created_by_id=user.id, modified_by_id=user.id)
         ipath = Path(transient=itransient, 
                      galaxy=galaxy, P_Ox=icand.P_Ox,
                      created_by_id=user.id, modified_by_id=user.id)
@@ -120,6 +123,9 @@ def run_path_on_instance(instance, ssize:float=5.,
                          tot_posterior:float=0.999,
                          nmin:int=2, nmax:int=10):
     """ Run PATH on a single Transient instance or a pandas.Series
+
+    TODO -- Move this code into chime-ffff-pz
+        We do not plan to run PATH internal to FFFF-PZ
 
     For the current implementation, the instance must have the following attributes:
      - ra

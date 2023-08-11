@@ -33,6 +33,7 @@ urlpatterns = [
     re_path(r'^transient_tags/$', views.transient_tags, name='transient_tags'),
     re_path(r'^get_transient_tags/$', views.get_transient_tags, name='get_transient_tags'),
 
+    # ##############################################################
     # FRBs
     # Views
     re_path(r'^frb_dashboard/$', views.frb_dashboard, name='frb_dashboard'),
@@ -42,6 +43,7 @@ urlpatterns = [
     re_path(r'^add_frb_galaxy/', data_utils.add_frb_galaxy, name='add_frb_galaxy'),
     re_path(r'^rm_frb_galaxy/', data_utils.rm_frb_galaxy, name='rm_frb_galaxy'),
     re_path(r'^ingest_path/', data_utils.ingest_path, name='ingest_path'),
+    # ##############################################################
 
     # Test pages
     #re_path(r'^candidates/$', views.CandidatesListView.as_view(), name='candidates'),
@@ -188,6 +190,8 @@ urlpatterns = [
     #url(r'^silk/', include('silk.urls', namespace='silk')),
 ]
 
+# Views into the API
+
 router = DefaultRouter()
 router.register(r'transientwebresources', api_views.TransientWebResourceViewSet)
 router.register(r'hostwebresources', api_views.HostWebResourceViewSet)
@@ -256,8 +260,8 @@ router.register(r'transienttags', api_views.TransientTagViewSet)
 router.register(r'gwcandidates', api_views.GWCandidateViewSet)
 router.register(r'gwcandidateimages', api_views.GWCandidateImageViewSet)
 
+# ##############################################################
 # FRB specific
-#router.register(r'frbtransientwebresources', api_views.FRBTransientWebResourceViewSet)
 router.register(r'frbtransients', api_views.FRBTransientViewSet)
 router.register(r'frbsurvey', api_views.FRBSurveyViewSet)
 router.register(r'frbtags', api_views.FRBTagViewSet)

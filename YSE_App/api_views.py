@@ -489,6 +489,7 @@ class GWCandidateImageViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
 
 # #######################################
 # FRB items
+
 class FRBTransientViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = FRBTransient.objects.all()
     serializer_class = FRBTransientSerializer

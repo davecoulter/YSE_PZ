@@ -7,13 +7,13 @@ from YSE_App.models import FRBGalaxy
 class GalaxyPhotometry(Photometry):
     """ django model for galaxy photometry
 
-    Builds on Photometry
+    Used for FFFF-PZ analysis
+
+    Inherits from Photometry
 
     Args:
         Photometry (_type_): _description_
 
-    Returns:
-        _type_: _description_
     """
 
     # Required
@@ -35,13 +35,13 @@ class GalaxyPhotometry(Photometry):
 class GalaxyPhotData(PhotData):
     """ django model for galaxy photometry data
 
-    Builds on PhotData
+    Inerits from PhotData
+
+    Used for FFFF-PZ 
 
     Args:
-        PhotData (_type_): _description_
+        PhotData (BaseModel): _description_
 
-    Returns:
-        _type_: _description_
     """
     # Entity relationships ###
     # Required

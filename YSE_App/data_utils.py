@@ -1466,6 +1466,17 @@ def add_or_grab_obj(iclass, uni_fields:dict, extra_fields:dict, user=None):
 @csrf_exempt
 @login_or_basic_auth_required
 def add_frb_galaxy(request):
+    """ Add an FRBGalaxy to the DB from an 
+    outside request
+
+    This is mainly intended for testing
+
+    Args:
+        request (_type_): _description_
+
+    Returns:
+        JsonResponse: _description_
+    """
     
     data = JSONParser().parse(request)
 
@@ -1491,6 +1502,17 @@ def add_frb_galaxy(request):
 @csrf_exempt
 @login_or_basic_auth_required
 def rm_frb_galaxy(request):
+    """ Remove an FRBGalaxy from the DB
+    via an outside request
+
+    This is mainly intended for testing
+
+    Args:
+        request (_type_): _description_
+
+    Returns:
+        JsonResponse: _description_
+    """
     
     data = JSONParser().parse(request)
 
@@ -1516,6 +1538,32 @@ def rm_frb_galaxy(request):
 @csrf_exempt
 @login_or_basic_auth_required
 def ingest_path(request):
+    """
+    Ingest a PATH analysis into the DB
+
+    The request must include the following items
+     in its data (all in JSON, of course; 
+     data types are for after parsing the JSON):
+
+      - transient_name (str): Name of the FRBTransient object
+        Must be in the DB already
+      - table (str): a table of the PATH candidates and their 
+        PATH results, stored as JSON
+      - F (str): name of filter; must be present in the
+        PhotometricBand table
+      - instrument (str): name of the instrumen; must be present in the
+        Instrument table
+      - obs_group (str): name of the instrumen; must be present in the
+        ObservationGroup table
+      - P_Ux (float): Unseen posterior;  added to the transient
+
+    Args:
+        request (requests.request): 
+            Request from outside FFFF-PZ
+
+    Returns:
+        JsonResponse: 
+    """
     
     # Parse the data into a dict
     data = JSONParser().parse(request)

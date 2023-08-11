@@ -18,32 +18,46 @@ from YSE_App.common.utilities import GetSexigesimalString, getSeparation
 from YSE_App.models.frbgalaxy_models import FRBGalaxy
 
 class FRBTransient(BaseModel):
+    """ FRBTransient model
+
+    Based on Transient, this is the primary model for 
+    all the FRBs in FFFF-PZ
+    """
 
     ### Entity relationships ###
     # Required
+
+    # Describes at what stage of follow-up an FRB is at
     status = models.ForeignKey(TransientStatus, models.SET(get_sentinel_transientstatus))
+    # Provides the name of the FRB survey from which it originated
     frb_survey = models.ForeignKey(FRBSurvey, on_delete=models.CASCADE)
 
     ### Properties ###
     # Required
-    # TNS
+    # TNS name;  must be unique
     name = models.CharField(max_length=64, unique=True)
+    # RA in deg
     ra = models.FloatField()
+    # Dec in deg
     dec = models.FloatField()
     # Dispersion Measure
     DM = models.FloatField()
 
     # Optional
+    # Error in RA in deg
     ra_err = models.FloatField(null=True, blank=True)
+    # Error in Dec in deg
     dec_err = models.FloatField(null=True, blank=True)
+    # Localization file
+    localization_file = models.CharField(max_length=64, null=True, blank=True)
 
-    # Host and candidates
-    # Highest P(O|x) candidate
+    # Host -- defined as the Highest P(O|x) candidate
+    #   set in YSE_App.galaxies.path.ingest_path_results()
     host = models.ForeignKey(
         FRBGalaxy, null=True, blank=True, 
         on_delete=models.SET_NULL, 
         related_name='frb') # Needs to be here for backwards compatibility
-    # All candidates ingested into the DB
+    # All candidates ingested into the DB during PATH analysis
     candidates = models.ManyToManyField(
         FRBGalaxy, blank=True, 
         related_name='frb_candidates')
@@ -134,6 +148,9 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 class Path(BaseModel):
     """ django model for PATH table
 
+    Each PATH posterior value P(O|x) is for an FRB-Galaxy pairing
+    which are required properties
+
     Args:
         BaseModel (_type_): _description_
 
@@ -141,15 +158,17 @@ class Path(BaseModel):
 
     ### Properties ###
     # Required
+
     # Transient 
     transient = models.ForeignKey(FRBTransient, on_delete=models.CASCADE)
     # PATH P(O|x) value
     P_Ox = models.FloatField()
     # Candidate name
     galaxy = models.ForeignKey(FRBGalaxy, on_delete=models.CASCADE)
-    #galaxy_name = models.CharField(max_length=64)
 
     # Optional
+
+    # Vetted? If true, a human has confirmed the results are valid
     vetted = models.BooleanField(default=False, blank=True)
 
     def __str__(self):
