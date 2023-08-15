@@ -1556,6 +1556,24 @@ class ObsNightFollowupFilter(django_filters.FilterSet):
             qs = qs.filter(q_totals)
         return qs
 
+
+
+def dashboard_tables(request):
+
+    k2_transients = Transient.objects.all()
+
+    table = TransientTable(k2_transients)
+    RequestConfig(request, paginate={'per_page': 10}).configure(table)
+
+    context = {'k2_transients': table}
+
+    return render(request, 'YSE_App/dashboard_table.html', context)
+
+
+################################################################
+# FRB Items
+################################################################
+
 class CandidatesFilter(django_filters.FilterSet):
     """ Filter method for a set of Candidates (i.e. FRBGalaxy's)
 
@@ -1591,23 +1609,6 @@ class CandidatesFilter(django_filters.FilterSet):
             qs = qs.filter(q_totals)
         return qs
 
-
-
-def dashboard_tables(request):
-
-    k2_transients = Transient.objects.all()
-
-    table = TransientTable(k2_transients)
-    RequestConfig(request, paginate={'per_page': 10}).configure(table)
-
-    context = {'k2_transients': table}
-
-    return render(request, 'YSE_App/dashboard_table.html', context)
-
-
-################################################################
-# FRB Items
-################################################################
 
 class CandidatesTable(tables.Table):
     """ Table for displaying a set of Candidates (i.e. FRBGalaxy's)

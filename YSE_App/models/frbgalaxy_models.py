@@ -6,7 +6,8 @@ from YSE_App import models as yse_models
 from YSE_App.common.utilities import GetSexigesimalString 
 
 class FRBGalaxy(BaseModel):
-    """django model for FRB host galaxies
+    """django model for FRB host galaxy candidates
+    (and the assigned host too)
 
     Primary model of FFFF-PZ
 
@@ -62,7 +63,7 @@ class FRBGalaxy(BaseModel):
         return self.GalaxyString()
 
     def FilterMagString(self):
-        """ Return the filter and magnitude for the galaxy
+        """ Return the filter and magnitude for the galaxy (for viewing)
 
         First preference is given to 'r/R' band
         Then, anything goes..
@@ -105,7 +106,9 @@ class FRBGalaxy(BaseModel):
 
     @property
     def phot_dict(self):
-        """ Grab the photometry for the galaxy, if it exists
+        """ Grab a dict of photometry for the galaxy, if it exists
+
+        phot[instrument][band] = mag
 
         Returns:
             dict: photometry dictionary or None

@@ -1,4 +1,5 @@
-""" Test views for CHIME. """""
+""" Test views for CHIME. """
+
 from django.shortcuts import render
 
 from YSE_App import table_utils
@@ -7,6 +8,14 @@ from YSE_App.models import Host, Transient
 from IPython import embed
 
 def candidatesview(request):
+    """ Simple script used for development/testing
+
+    Args:
+        request (_type_): _description_
+
+    Returns:
+        django.shortcuts.render: 
+    """
     #request=None
     # Grab the candidates
     frb_name = 'FRB20300714A'

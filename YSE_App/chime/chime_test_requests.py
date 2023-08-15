@@ -12,6 +12,10 @@ from IPython import embed
 
 
 def sandbox():
+    """ This is stray code used for development
+
+    Note:  Most of this has moved to chime_ffff_pz
+    """
     # Grab Transients in PATH table
     url = 'http://0.0.0.0:8000/api/paths/'
     r = requests.get(url=url, 

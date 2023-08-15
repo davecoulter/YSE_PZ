@@ -5,14 +5,12 @@ from YSE_App.models import Photometry, PhotData
 from YSE_App.models import FRBGalaxy
 
 class GalaxyPhotometry(Photometry):
-    """ django model for galaxy photometry
+    """ django model for galaxy photometry of
+    FRB host candidates
 
     Used for FFFF-PZ analysis
 
     Inherits from Photometry
-
-    Args:
-        Photometry (_type_): _description_
 
     """
 
@@ -38,9 +36,6 @@ class GalaxyPhotData(PhotData):
     Inerits from PhotData
 
     Used for FFFF-PZ 
-
-    Args:
-        PhotData (BaseModel): _description_
 
     """
     # Entity relationships ###

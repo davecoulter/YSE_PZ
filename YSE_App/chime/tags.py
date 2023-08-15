@@ -1,4 +1,6 @@
-""" Specify CHIME Tags """
+""" This module will specify the tags 
+to be used for CHIME/FRB transients.  This 
+code may move to chime_ffff_pz """
 
 # "Unbiased" survey
 blind_survey = dict(
@@ -10,7 +12,7 @@ blind_survey = dict(
     )
 
 def set_from_instance(instance):
-    """ Set tags from an instance
+    """ Set tags from an instance (usually an FRBTransient)
 
     Eventually this will loop through all of the
     possible CHIME tags and set them
@@ -21,6 +23,7 @@ def set_from_instance(instance):
     Returns:
         list: list of CHIME tags
     """
+
     # Blind?
     tags = []
     for ra_rng, dec_rng, label in zip(

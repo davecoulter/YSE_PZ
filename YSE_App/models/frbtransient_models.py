@@ -7,12 +7,9 @@ from django.dispatch import receiver
 import numpy as np
 
 from YSE_App.models.base import BaseModel
-#from YSE_App.models.enum_models import FRBSurvey, get_sentinel_transientstatus
-#from YSE_App.models.tag_models import FRBTag
 from YSE_App.models import *  # Avoids circular import
 from YSE_App.models.enum_models import *
 from YSE_App.models.tag_models import *
-#from YSE_App.models.frbgalaxy_models import Path
 from YSE_App.chime import tags as chime_tags
 from YSE_App.common.utilities import GetSexigesimalString, getSeparation
 from YSE_App.models.frbgalaxy_models import FRBGalaxy
@@ -74,6 +71,7 @@ class FRBTransient(BaseModel):
 
     slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
 
+    # The String methods are for viewing
     def CoordString(self):
         return GetSexigesimalString(self.ra, self.dec)
 
@@ -104,7 +102,13 @@ class FRBTransient(BaseModel):
         return self.name
 
     def get_Path_values(self):
+        """ Grab lists of the PATH values and candidate galaxies
+
+        Returns:
+            tuple: (list, list) of PATH values and candidate galaxies
+        """
         path_values, galaxies = [], []
+        # Loop on the filtered table
         if Path.objects.filter(transient=self).count() > 0:
             for p in Path.objects.filter(transient=self):
                 path_values.append(p.P_Ox)
@@ -113,6 +117,11 @@ class FRBTransient(BaseModel):
 
     @property
     def best_Path_galaxy(self):
+        """ Return the galaxy with the highest P(O|x) value
+
+        Returns:
+            FRBGalaxy: Galaxy with the highest P(O|x) value or None
+        """
         path_values, galaxies = self.get_Path_values()
         if len(galaxies) > 0:
             imax = np.argmax(path_values)
@@ -126,9 +135,11 @@ auditlog.register(FRBTransient)
 def execute_after_save(sender, instance, created, *args, **kwargs):
 
     if created:
-        # CHIME FRB
-        #from IPython import embed; embed(header="chime_tags_test.py: Transient post_save")
+
+        # CHIME FRB items
         if instance.frb_survey.name == 'CHIME/FRB':
+
+            # Add tags
             tags = chime_tags.set_from_instance(instance)
             frb_tags = [ftag.name for ftag in FRBTag.objects.all()]
             for tag_name in tags:
@@ -151,13 +162,12 @@ class Path(BaseModel):
     Each PATH posterior value P(O|x) is for an FRB-Galaxy pairing
     which are required properties
 
-    Args:
-        BaseModel (_type_): _description_
+    Requires an FRBTansient and FRBGalaxy pairing
 
     """
 
     ### Properties ###
-    # Required
+    # Required 
 
     # Transient 
     transient = models.ForeignKey(FRBTransient, on_delete=models.CASCADE)
@@ -173,7 +183,3 @@ class Path(BaseModel):
 
     def __str__(self):
         return f'Path: {self.transient.name}, {self.galaxy.name}, {self.P_Ox}, {self.vetted}'   
-
-    #@property
-    #def galaxy(self):
-    #    return FRBGalaxy.objects.get(name=self.galaxy_name)

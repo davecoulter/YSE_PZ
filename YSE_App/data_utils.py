@@ -1429,7 +1429,7 @@ def getRADecBox(ra,dec,size=None,dec_size=None):
     return(ramin,ramax,decmin,decmax)
 
 def add_or_grab_obj(iclass, uni_fields:dict, extra_fields:dict, user=None):
-    """ Convenience utility to add/grab an object
+    """ Convenience utility to add/grab an object in the DB
 
     Args:
         iclass (django model): Model to add/grab
@@ -1440,7 +1440,7 @@ def add_or_grab_obj(iclass, uni_fields:dict, extra_fields:dict, user=None):
         user (django user object, optional): user object. Defaults to None.
 
     Returns:
-        _type_: _description_
+        django instance: Object either grabbed or added to the DB
     """
     try:
         obj = iclass.objects.get(**uni_fields)

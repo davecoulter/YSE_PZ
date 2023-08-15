@@ -28,6 +28,19 @@ from IPython import embed
 def run(delete_existing:bool=True,
         delete_all_galaxies:bool=True,
         delete_all_paths:bool=True):
+    """ Run the test which will:
+
+    1. Add CHIME/FRB transients to the database, if needed
+    2. Ingest the results for PATH for one of these (FRB20300714A)
+    3. Test that the results are as expected
+    4. Clean up, as requested
+
+    Args:
+        delete_existing (bool, optional): Delete the FRB Transients
+            from the DB before re-adding them. Defaults to True.
+        delete_all_galaxies (bool, optional): Clean up the FRBGalaxies table. Defaults to True.
+        delete_all_paths (bool, optional): Clean up the Path table. Defaults to True.
+    """
     # Load up the table
     csv_file = os.path.join(
         resource_filename('YSE_App', 'chime'), 'chime_tests.csv')

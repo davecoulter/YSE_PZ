@@ -72,9 +72,6 @@ class Host(BaseModel):
     transient_host_rank = models.IntegerField(null=True, blank=True)
     panstarrs_objid = models.BigIntegerField(null=True, blank=True)
 
-    # Angular size (in arcsec; typically half-light radius)
-    #ang_size = models.FloatField(null=True, blank=True)
-
     def HostString(self):
         ra_str, dec_str = GetSexigesimalString(self.ra, self.dec)
 
