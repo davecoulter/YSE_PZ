@@ -809,14 +809,14 @@ class AddFRBFollowupResourceFormView(FormView):
 	success_url = '/form-success/'
 	
 	def form_invalid(self, form):
-		response = super(AddClassicalResourceFormView, self).form_invalid(form)
+		response = super(AddFRBFollowupResourceFormView, self).form_invalid(form)
 		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
 		else:
 			return response
 
 	def form_valid(self, form):
-		response = super(AddClassicalResourceFormView, self).form_valid(form)
+		response = super(AddFRBFollowupResourceFormView, self).form_valid(form)
 		if is_ajax(self.request):
 
 			instance = form.save(commit=False)

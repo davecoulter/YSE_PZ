@@ -147,6 +147,7 @@ urlpatterns = [
     re_path(r'^finderchart/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderchart, name='finderchart'),
     re_path(r'^finderim/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderim, name='finderim'),
 
+    # Forms
     re_path(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
     re_path(r'^add_classical_resource/', AddClassicalResourceFormView.as_view(), name='add_classical_resource'),
     re_path(r'^add_too_resource/', AddToOResourceFormView.as_view(), name='add_too_resource'),
@@ -160,6 +161,9 @@ urlpatterns = [
     re_path(r'^remove_dashboard_query/(?P<pk>[0-9_-]+)/', RemoveDashboardQueryFormView.as_view(), name='remove_dashboard_query'),
     re_path(r'^add_followup_notice/', AddFollowupNoticeFormView.as_view(), name='add_followup_notice'),
     re_path(r'^remove_followup_notice/(?P<pk>[0-9_-]+)/', RemoveFollowupNoticeFormView.as_view(), name='remove_followup_notice'),
+
+    # FRB Forms
+
     re_path(r'^rise_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',
         view_utils.rise_time, name='rise_time'),
     re_path(r'^set_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',
