@@ -800,3 +800,46 @@ class AddAutomatedSpectrumRequestFormView(FormView):
 			return JsonResponse(data)
 		else:
 			return response
+
+# FRB items
+
+class AddFRBFollowupResourceFormView(FormView):
+	form_class = FRBFollowupResourceForm()
+	template_name = 'YSE_App/form_snippets/classical_resource_form.html'
+	success_url = '/form-success/'
+	
+	def form_invalid(self, form):
+		response = super(AddClassicalResourceFormView, self).form_invalid(form)
+		if is_ajax(self.request):
+			return JsonResponse(form.errors, status=400)
+		else:
+			return response
+
+	def form_valid(self, form):
+		response = super(AddClassicalResourceFormView, self).form_valid(form)
+		if is_ajax(self.request):
+
+			instance = form.save(commit=False)
+			instance.created_by = self.request.user
+			instance.modified_by = self.request.user
+			instance.begin_date_valid = form.cleaned_data['observing_date']
+			instance.end_date_valid = form.cleaned_data['observing_date'] + datetime.timedelta(1)
+			
+			instance.save() #update_fields=['created_by','modified_by']
+			instance.groups.set(Group.objects.filter(name='YSE'))
+			instance.save()
+
+
+			obsdatedict = {'created_by':self.request.user,'modified_by':self.request.user,
+						   'resource':instance,'night_type':ClassicalNightType.objects.filter(name='Full')[0],
+						   'obs_date':form.cleaned_data['observing_date']}
+			ClassicalObservingDate.objects.create(**obsdatedict)
+			
+			print(form.cleaned_data)
+
+			data = {
+				'message': "Successfully submitted form data.",
+			}
+			return JsonResponse(data)
+		else:
+			return response
