@@ -20,6 +20,7 @@ import zipfile
 from io import BytesIO
 from YSE_App.yse_utils.yse_pa import yse_pa
 from django.utils.decorators import method_decorator
+from django.utils import timezone as du_timezone
 
 from astropy.utils import iers
 iers.conf.auto_download = True
@@ -1690,12 +1691,13 @@ def frb_dashboard(request):
         transient_categories += [(table,title,statusname.lower(),transientfilter),]
 
     # Show active follow-up resources
-    followups = FRBFollowUpResource.objects.all()
+
+    # Cut on active/pending
+    followups = FRBFollowUpResource.objects.filter(
+        valid_stop__gt=du_timezone.now())
+
     # Cut on active
-    if len(followups) > 0:
-        ftable = FRBFollowupResourceTable(followups)
-    else:
-        ftable = None
+    ftable = FRBFollowupResourceTable(followups)
     
     if request.META['QUERY_STRING']:
         anchor = request.META['QUERY_STRING'].split('-')[0]

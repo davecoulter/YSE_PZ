@@ -1812,6 +1812,8 @@ class FRBFollowupResourceTable(tables.Table):
                               verbose_name='Instr',orderable=True,order_by='Instr')
     start_string = tables.Column(accessor='StartString',
                               verbose_name='Start',orderable=True,order_by='Instr')
+    stop_string = tables.Column(accessor='StopString',
+                              verbose_name='Stop',orderable=True,order_by='Instr')
     #disc_date_string = tables.Column(accessor='disc_date_string',
     #                                 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
     #recent_mag = tables.Column(accessor='recent_mag',
@@ -1860,7 +1862,7 @@ class FRBFollowupResourceTable(tables.Table):
     class Meta:
         model = FRBTransient
         fields = ('name_string','instr_string','start_string',
-                  )
+                  'stop_string')
 
         template_name='YSE_App/django-tables2/bootstrap.html'
         attrs = {
