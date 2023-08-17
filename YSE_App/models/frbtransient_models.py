@@ -14,6 +14,9 @@ from YSE_App.chime import tags as chime_tags
 from YSE_App.common.utilities import GetSexigesimalString, getSeparation
 from YSE_App.models.frbgalaxy_models import FRBGalaxy
 
+from astropy.coordinates import SkyCoord
+from astroquery import irsa_dust
+
 class FRBTransient(BaseModel):
     """ FRBTransient model
 
@@ -61,6 +64,9 @@ class FRBTransient(BaseModel):
 
     # Path Unseen probability
     P_Ux = models.FloatField(null=True, blank=True)
+
+    # Galactic E(B-V) -- taken from Irsa at creation
+    mw_ebv = models.FloatField(null=True, blank=True)
 
     # Redshift, derived from host
     redshift = models.FloatField(null=True, blank=True)
@@ -154,6 +160,11 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
                 instance.frb_tags.add(frb_tag)
                 print(f"Added FRB tag: {tag_name}")
             
+        # Galactic E(B-V)
+        c = SkyCoord(ra=instance.ra, dec=instance.dec, unit='deg')
+        instance.mw_ebv = irsa_dust.IrsaDust.get_query_table(c)['ext SandF mean'][0]
+
+        # Save
         instance.save()
 
 class Path(BaseModel):

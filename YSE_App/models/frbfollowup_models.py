@@ -11,11 +11,8 @@ from YSE_App.models.base import BaseModel
 from YSE_App.models.frbtransient_models import *
 from YSE_App.models.instrument_models import *
 from YSE_App.models.principal_investigator_models import *
+from YSE_App import frb_utils
 
-from astroplan import Observer
-from astropy.time import Time, TimeDelta
-from astropy.coordinates import SkyCoord, EarthLocation
-from astropy import units
 
 class FRBFollowUpResource(BaseModel):
     """ FRBFollowUpResource model
@@ -71,14 +68,6 @@ class FRBFollowUpResource(BaseModel):
         return self.valid_stop.strftime('%Y-%b-%d')
 
     def valid_frbs(self):
-        #frbfup = FRBFollowUpResource.objects.all()[1]
-
-        # Grab the telescope 
-        telescope = self.instrument.telescope
-        location = EarthLocation.from_geodetic(
-            telescope.longitude*units.deg,telescope.latitude*units.deg,
-            telescope.elevation*units.m)
-        tel = Observer(location=location, timezone="UTC")
 
         # Cut down transients by selection criteria
         #  magnitude
@@ -89,6 +78,15 @@ class FRBFollowUpResource(BaseModel):
         # This needs to be a query set
         gd_frbs = FRBTransient.objects.all()
         nfrb = len(gd_frbs)
+
+        '''
+        # Grab the telescope 
+        telescope = self.instrument.telescope
+        location = EarthLocation.from_geodetic(
+            telescope.longitude*units.deg,telescope.latitude*units.deg,
+            telescope.elevation*units.m)
+        tel = Observer(location=location, timezone="UTC")
+
 
         # Coords
         ras = [frbt.ra for frbt in gd_frbs]
@@ -126,6 +124,10 @@ class FRBFollowUpResource(BaseModel):
             # Add a day
             this_time = this_time + TimeDelta(1, format='jd')
             this_time = tel.twilight_evening_astronomical(this_time, which='previous')
+        '''
+
+        # Caculate minimum airmasses during the Resource period
+        min_AM = frb_utils.calc_airmasses(self, gd_frbs)
 
         # Parse
         keep_frbs = []
