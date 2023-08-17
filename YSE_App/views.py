@@ -46,6 +46,7 @@ from astropy.time import Time
 from .common.utilities import getRADecBox
 
 from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable,ToOFollowupTable
+from .table_utils import FRBFollowupResourceTable
 from .table_utils import FRBTransientFilter, FRBTransientTable
 from .table_utils import CandidatesTable, CandidatesFilter
 from .queries.yse_python_queries import *
@@ -1687,6 +1688,14 @@ def frb_dashboard(request):
         table = FRBTransientTable(transientfilter.qs,prefix=statusname.lower())
         RequestConfig(request, paginate={'per_page': 10}).configure(table)
         transient_categories += [(table,title,statusname.lower(),transientfilter),]
+
+    # Show active follow-up resources
+    followups = FRBFollowUpResource.objects.all()
+    # Cut on active
+    if len(followups) > 0:
+        ftable = FRBFollowupResourceTable(followups)
+    else:
+        ftable = None
     
     if request.META['QUERY_STRING']:
         anchor = request.META['QUERY_STRING'].split('-')[0]
@@ -1694,6 +1703,7 @@ def frb_dashboard(request):
     context = {
         'transient_categories':transient_categories,
         'all_transient_statuses':TransientStatus.objects.order_by('name'),
+        'followup_table':ftable,
         'anchor':anchor,
     }
 
@@ -1768,6 +1778,10 @@ def frb_transient_detail(request, slug):
                 if len(comments): followups[i].comment = '; '.join(comment_list)
                 #else:
         #   followups = None
+        '''
+        followups = FRBFollowUpResource.objects.filter(transient__pk=transient_id).select_related()
+        followups = None
+        '''
 
         hostdata = FRBGalaxy.objects.filter(pk=transient_obj.host_id).select_related()
         if hostdata:

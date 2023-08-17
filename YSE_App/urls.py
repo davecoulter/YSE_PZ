@@ -164,6 +164,7 @@ urlpatterns = [
 
     # FRB Forms
 
+    #
     re_path(r'^rise_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',
         view_utils.rise_time, name='rise_time'),
     re_path(r'^set_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',

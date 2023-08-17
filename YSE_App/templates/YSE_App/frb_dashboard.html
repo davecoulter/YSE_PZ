@@ -23,6 +23,7 @@
 {% block content %}
     
   <!-- Default box -->
+  <!-- Loop on FRB statues-->
   {% for transient_cat in transient_categories %}
 
   <div class="box" id="{{transient_cat.2}}">
@@ -51,6 +52,15 @@
     <!-- /.box-footer-->
   </div>
   <!-- /.box -->
+    
+    <h3>
+        FRB Followup Resources
+    </h3>
+
+    <div class="box-body">
+      {% render_table followup_table %}
+
+    </div>
   
 {% endblock %}
 

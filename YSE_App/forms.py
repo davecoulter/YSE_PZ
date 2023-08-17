@@ -276,10 +276,3 @@ class AutomatedSpectrumRequest(ModelForm):
 		model = TransientFollowup
 		fields =('transient',)
   
-
-
-class FRBFollowupResourceForm(ModelForm):
-
-	class Meta:
-		model = FRBFollowUpResource
-		fields = '__all__'
