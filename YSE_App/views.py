@@ -1896,3 +1896,27 @@ def frb_transient_detail(request, slug):
 
     else:
         return Http404('FRBTransient not found')
+
+
+@login_required
+def frb_followup_resource(request, slug):
+
+    frb_fu = FRBFollowUpResource.objects.get(slug=slug)
+
+    # Valid FRBs
+    gd_frbs = frb_fu.valid_frbs()
+
+    # Build the table
+    ftable = FRBTransientTable(gd_frbs)
+    
+    if request.META['QUERY_STRING']:
+        anchor = request.META['QUERY_STRING'].split('-')[0]
+    else: anchor = ''
+
+    context = {
+        'frb_fu': frb_fu,
+        'frb_table':ftable,
+        'anchor':anchor,
+    }
+
+    return render(request, 'YSE_App/frb_followup_resource.html', context)

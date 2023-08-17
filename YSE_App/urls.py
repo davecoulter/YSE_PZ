@@ -38,6 +38,7 @@ urlpatterns = [
     # Views
     re_path(r'^frb_dashboard/$', views.frb_dashboard, name='frb_dashboard'),
     re_path(r'^frb_transient_detail/(?P<slug>.*)/$', views.frb_transient_detail, name='frb_transient_detail'),
+    re_path(r'^frb_followup_resource/(?P<slug>.*)/$', views.frb_followup_resource, name='frb_followup_resource'),
 
     # API
     re_path(r'^add_frb_galaxy/', data_utils.add_frb_galaxy, name='add_frb_galaxy'),

@@ -1804,10 +1804,10 @@ class FRBTransientTable(tables.Table):
 class FRBFollowupResourceTable(tables.Table):
     """ Table for displaying a set of FRBFollowupResources """
 
-    #name_string = tables.TemplateColumn("<a href=\"{% url 'frb_followup_resource_detail' record.slug %}\">{{ record.name }}</a>",
-    #                                    verbose_name='Name',orderable=True,order_by='name')
-    name_string = tables.Column(accessor='NameString',
-                              verbose_name='Name',orderable=True,order_by='Instr')
+    name_string = tables.TemplateColumn("<a href=\"{% url 'frb_followup_resource' record.slug %}\">{{ record.name }}</a>",
+                                        verbose_name='Name',orderable=True,order_by='name')
+    #name_string = tables.Column(accessor='NameString',
+    #                          verbose_name='Name',orderable=True,order_by='Instr')
     instr_string = tables.Column(accessor='InstrString',
                               verbose_name='Instr',orderable=True,order_by='Instr')
     start_string = tables.Column(accessor='StartString',

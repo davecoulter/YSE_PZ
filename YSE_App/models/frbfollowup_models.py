@@ -70,7 +70,7 @@ class FRBFollowUpResource(BaseModel):
     def StopString(self):
         return self.valid_stop.strftime('%Y-%b-%d')
 
-    def valid_transients(self):
+    def valid_frbs(self):
         #frbfup = FRBFollowUpResource.objects.all()[1]
 
         # Grab the telescope 
