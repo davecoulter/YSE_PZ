@@ -20,14 +20,11 @@ def dev_targets():
     frbfup = FRBFollowUpResource.objects.all()[1]
 
     # Grab the telescope from its name
-    tel = Observer.at_site('keck', timezone='US/Hawaii')
-    '''
     telescope = frbfup.instrument.telescope
     location = EarthLocation.from_geodetic(
         telescope.longitude*units.deg,telescope.latitude*units.deg,
         telescope.elevation*units.m)
     tel = Observer(location=location, timezone="UTC")
-    '''
 
     # Cut down transients by selection criteria
     #  magnitude
