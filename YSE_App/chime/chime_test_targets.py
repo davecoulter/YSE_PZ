@@ -10,15 +10,17 @@ from django.db.models import ForeignKey
 from django.http import HttpResponse,JsonResponse
 
 from YSE_App.models import FRBFollowUpResource
+from YSE_App.models import FRBTag
 #from YSE_App.models.enum_models import ObservationGroup
 from YSE_App.chime import chime_test_utils as ctu
 
-from YSE_App import frb_utils
+from YSE_App import frb_targeting
 
 from IPython import embed
 
+
 def test_target_table():
-    """ Run the test which will:
+    """ Run the test to create an internal target table
 
     This test requires the DB was populated using chime_test_db.build_chime_test_db()
 
@@ -30,12 +32,34 @@ def test_target_table():
     frb_fu = FRBFollowUpResource.objects.get(name='Gemini-LP-2024A-99')
 
     # Grab the targets
-    valid_frbs = frb_fu.valid_frbs()
+    targs = frb_fu.generate_targets()
 
     # Table
-    tbl = frb_utils.target_table_from_frbs(valid_frbs)
+    tbl = frb_targeting.target_table_from_frbs(targs)
 
     # Check
-    embed(header='44 of chime_test_targets.py')
-    #tmp = JsonResponse(tbl.to_json(), status=201, safe=False)
     tmp = JsonResponse(tbl.to_dict(), status=201)
+
+    embed(header='44 of chime_test_targets.py')
+
+def test_multi_surveys():
+
+    # Resource
+    frb_fu = FRBFollowUpResource.objects.get(name='Gemini-LP-2024A-99')
+    frb_fu.frb_surveys = 'CHIME/FRB,CRAFT'
+    gd_frbs = frb_targeting.targetfrbs_for_fu(frb_fu)
+
+    # Test
+    assert len(gd_frbs.filter(name='FRB20300714X')) == 1
+
+def test_tags():
+
+    # Resource
+    frb_fu = FRBFollowUpResource.objects.get(name='Gemini-LP-2024A-99')
+    frb_fu.frb_tags = 'CHIME-Blind'
+
+    gd_frbs = frb_targeting.targetfrbs_for_fu(frb_fu)
+
+    # Test
+    tag = FRBTag.objects.get(name='CHIME-Blind')
+    assert np.all([tag in frb.frb_tags.all() for frb in gd_frbs])

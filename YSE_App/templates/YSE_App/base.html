@@ -52,7 +52,7 @@
 
 	<header class="main-header">
 		<!-- Logo -->
-		<a href="{% url 'dashboard' %}" class="logo">
+		<a href="{% url 'frb_dashboard' %}" class="logo">
 			<!-- mini logo for sidebar mini 50x50 pixels -->
 			<span class="logo-mini"><b>F4</b>PZ</span>
 			<!-- logo for regular state and mobile devices -->
@@ -81,7 +81,7 @@
 			<!-- sidebar menu: : style can be found in sidebar.less -->
 			<ul class="sidebar-menu" data-widget="tree">
 				<li class="header">MAIN NAVIGATION</li>
-				<li><a href="{% url 'dashboard' %}"><i class="fa fa-dashboard"></i> <span>Main Dashboard</span></a></li>
+				<li><a href="{% url 'frb_dashboard' %}"><i class="fa fa-dashboard"></i> <span>Main Dashboard</span></a></li>
 				<li><a href="{% url 'personaldashboard' %}"><i class="fa fa-id-card"></i> <span>{{ user.first_name }}'s Dashboard</span></a></li>
 				<li><a href="{% url 'followup' %}"><i class="fa fa-binoculars"></i> <span>Follow Requests</span></a></li>
 				<li><a href="{% url 'calendar' %}"><i class="fa fa-calendar"></i> <span>On-Call Calendar</span></a></li>

@@ -1,4 +1,4 @@
-""" Utilities for FRB activities """
+""" Methods for FRB targeting """
 
 from YSE_App.models import *
 
@@ -85,6 +85,14 @@ def calc_airmasses(frb_fu, gd_frbs,
     return min_AM
 
 def target_table_from_frbs(frbs:list):
+    """ Generate a pandas table from a list or QuerySet of FRBs
+
+    Args:
+        frbs (list): List of FRBTransient objects
+
+    Returns:
+        pandas.DataFrame: table of FRBTransient properties
+    """
 
 
     # Loop in FRBTansients
@@ -95,6 +103,8 @@ def target_table_from_frbs(frbs:list):
         rdict['FRB_RA'] = itransient.ra
         rdict['FRB_Dec'] = itransient.dec
         rdict['FRB_DM'] = itransient.DM
+        rdict['FRB_Survey'] = itransient.FRBSurveyString()
+        rdict['FRB_tags'] = itransient.FRBTagsString()
 
         # Host?
         if itransient.host:
@@ -114,3 +124,36 @@ def target_table_from_frbs(frbs:list):
 
     # Return
     return df
+
+def targetfrbs_for_fu(frb_fu):
+    """ Provided an FRBFollowupResource, return the
+    QuerySet of FRBTransient objects that are acceptible
+
+    This may be moved as a method to FRBFollowupResource
+
+    Returns:
+        QuerySet of FRBTransient:  _description_
+    """
+    # 
+    # Check Surveys
+    if frb_fu.frb_surveys == 'all':
+        gd_frbs = FRBTransient.objects.all()
+    else:
+        gd_frbs = FRBTransient.objects.filter(frb_survey__in=FRBSurvey.objects.filter(
+            name__in=frb_fu.frb_surveys.split(',')))
+
+    # Status
+    if frb_fu.frb_statuses:
+        gd_frbs = gd_frbs.filter(status__in=TransientStatus.objects.filter(
+            name__in=frb_fu.frb_statuses.split(',')))
+    else:
+        gd_frbs = gd_frbs.filter(status=TransientStatus.objects.get(name='New'))
+
+    # Tags?
+    if frb_fu.frb_tags:
+        gd_frbs = gd_frbs.filter(frb_tags__in=FRBTag.objects.filter(name__in=frb_fu.frb_tags.split(',')))
+    
+    return gd_frbs
+
+def targets_by_mode(frb_fu, frbs):
+    pass

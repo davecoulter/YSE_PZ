@@ -36,7 +36,7 @@ import sys
 from urllib.parse import unquote
 
 from YSE_App.galaxies import path
-from YSE_App import frb_utils
+from YSE_App import frb_targeting
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -1630,9 +1630,9 @@ def targets_from_frb_followup_resource(request):
         return JsonResponse({"message":f"Could not find resource {data['resource_name']} in DB"}, status=400)
 
     # Grab the targets
-    frbs = frb_fu.valid_frbs()
+    frbs = frb_fu.generate_targets()
 
     # Generate a table
-    tbl = frb_utils.target_table_from_frbs(frbs)
+    tbl = frb_targeting.target_table_from_frbs(frbs)
 
     return JsonResponse(tbl.to_dict(), status=201)

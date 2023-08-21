@@ -1904,7 +1904,7 @@ def frb_followup_resource(request, slug):
     frb_fu = FRBFollowUpResource.objects.get(slug=slug)
 
     # Valid FRBs
-    gd_frbs = frb_fu.valid_frbs()
+    gd_frbs = frb_fu.generate_targets()
 
     # Build the table
     ftable = FRBTransientTable(gd_frbs)

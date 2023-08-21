@@ -90,6 +90,9 @@ class FRBTransient(BaseModel):
     def DMString(self):
         return '%.1f'%(self.DM)
 
+    def FRBSurveyString(self):
+        return self.frb_survey.name
+
     def FRBTagsString(self):
         tags = [tag.name for tag in self.frb_tags.all()]
         if len(tags) > 0:

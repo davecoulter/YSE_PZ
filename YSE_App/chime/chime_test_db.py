@@ -27,9 +27,21 @@ def build_chime_test_db():
                   num_targ_mask=4,
                   num_targ_longslit=4,
                   max_AM=1.5,
+                  frb_surveys='CHIME/FRB',
     )
     extra_fields = dict(min_POx=0.9,
                   obs_type='Queue',
     )
     _ = add_or_grab_obj(FRBFollowUpResource,
                         uni_fields, extra_fields, user)
+
+def total_clean():
+
+    for ipath in Path.objects.all():
+        ipath.delete()
+    for galaxy in FRBGalaxy.objects.all():
+        galaxy.delete()
+    for frb_fu in FRBFollowUpResource.objects.all():
+        frb_fu.delete()
+    for itransient in FRBTransient.objects.all():
+        itransient.delete()
