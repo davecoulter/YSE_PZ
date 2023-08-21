@@ -23,13 +23,25 @@ def build_chime_test_db():
                   instrument=instr,
                   valid_start=datetime.datetime(2024, 3, 1, tzinfo=datetime.timezone.utc),
                   valid_stop=datetime.datetime(2024, 3, 7, tzinfo=datetime.timezone.utc),
-                  num_targ_img=0,
+                  num_targ_img=1,
                   num_targ_mask=4,
                   num_targ_longslit=4,
                   max_AM=1.5,
+                  frb_surveys='CHIME/FRB',
     )
     extra_fields = dict(min_POx=0.9,
                   obs_type='Queue',
     )
     _ = add_or_grab_obj(FRBFollowUpResource,
                         uni_fields, extra_fields, user)
+
+def clean_all():
+
+    for ipath in Path.objects.all():
+        ipath.delete()
+    for galaxy in FRBGalaxy.objects.all():
+        galaxy.delete()
+    for frb_fu in FRBFollowUpResource.objects.all():
+        frb_fu.delete()
+    for itransient in FRBTransient.objects.all():
+        itransient.delete()

@@ -44,6 +44,7 @@ urlpatterns = [
     re_path(r'^add_frb_galaxy/', data_utils.add_frb_galaxy, name='add_frb_galaxy'),
     re_path(r'^rm_frb_galaxy/', data_utils.rm_frb_galaxy, name='rm_frb_galaxy'),
     re_path(r'^ingest_path/', data_utils.ingest_path, name='ingest_path'),
+    re_path(r'^targets_from_frb_followup_resource/', data_utils.targets_from_frb_followup_resource, name='targets_from_frb_followup_resource'),
     # ##############################################################
 
     # Test pages

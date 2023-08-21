@@ -26,11 +26,27 @@
 {% block content %}
     
     <h3>
-        Qualifying FRBs
+        FRBs for Imaging
     </h3>
 
     <div class="box-body">
-      {% render_table frb_table %}
+      {% render_table imaging_table %}
+
+    </div>
+  
+    <h3>
+        FRBs for Longslit
+    </h3>
+
+    <div class="box-body">
+      {% render_table longslit_table %}
+
+    <h3>
+        FRBs for Masks
+    </h3>
+
+    <div class="box-body">
+      {% render_table mask_table %}
 
     </div>
   

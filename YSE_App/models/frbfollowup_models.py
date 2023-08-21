@@ -6,12 +6,13 @@ from django.db import models
 from django.dispatch import receiver
 
 import numpy as np
+import pandas
 
 from YSE_App.models.base import BaseModel
 from YSE_App.models.frbtransient_models import *
 from YSE_App.models.instrument_models import *
 from YSE_App.models.principal_investigator_models import *
-from YSE_App import frb_utils
+from YSE_App import frb_targeting
 
 
 class FRBFollowUpResource(BaseModel):
@@ -35,17 +36,27 @@ class FRBFollowUpResource(BaseModel):
     # Maximum AM
     max_AM = models.FloatField()
 
-    # Describes at what stage of follow-up an FRB is at
+    # Surveys to which this resource is applicable
+    #  e.g. CHIME/FRB, CRAFT, etc.
+    #  all is ok too
+    frb_surveys = models.CharField(max_length=64)
+
 
     # Optional
 
     # Classical, ToO, Queue
     obs_type = models.CharField(max_length=64, null=True, blank=True)
+    # PI
     PI = models.ForeignKey(PrincipalInvestigator, on_delete=models.CASCADE, null=True, blank=True)
+    # Program name
     Program = models.CharField(max_length=64, null=True, blank=True)
+    # Semester, period, etc.,  e.g. 2024A
     Period = models.CharField(max_length=64, null=True, blank=True)
 
+    # Items for selecting targets
     min_POx = models.FloatField(null=True, blank=True)
+    frb_tags = models.CharField(max_length=64, null=True, blank=True)
+    frb_statuses = models.CharField(max_length=64, null=True, blank=True)
 
     slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
 
@@ -67,72 +78,50 @@ class FRBFollowUpResource(BaseModel):
     def StopString(self):
         return self.valid_stop.strftime('%Y-%b-%d')
 
-    def valid_frbs(self):
 
+    def get_frbs_by_mode(self):
         # Cut down transients by selection criteria
         #  magnitude
         #  FRB Survey
         #  P(O|x)
         #  E(B-V)
         #  Bright star?
-        # This needs to be a query set
-        gd_frbs = FRBTransient.objects.all()
-        nfrb = len(gd_frbs)
-
-        '''
-        # Grab the telescope 
-        telescope = self.instrument.telescope
-        location = EarthLocation.from_geodetic(
-            telescope.longitude*units.deg,telescope.latitude*units.deg,
-            telescope.elevation*units.m)
-        tel = Observer(location=location, timezone="UTC")
-
-
-        # Coords
-        ras = [frbt.ra for frbt in gd_frbs]
-        decs = [frbt.dec for frbt in gd_frbs]
-        frb_coords = SkyCoord(ra=ras, dec=decs, unit='deg')
-
-        min_AM = np.array([1e9]*nfrb)
-
-        # Loop on nights
-        this_time = Time(self.valid_start)
-        end_time = Time(self.valid_stop)
-        
-        # Loop on nights
-        while(this_time < end_time):
-            night_end = tel.twilight_morning_astronomical(this_time)
-            this_obs_time = this_time.copy()
-
-
-            # Loop on 30min intervals from 
-            while(this_obs_time < min(end_time,night_end)):
-                #print(this_obs_time.datetime)
-
-                # Calculate AM
-                altaz = tel.altaz(this_obs_time, frb_coords)
-                airmass = 1/np.cos((90.-altaz.alt.value)*np.pi/180.)
-                # Below horizon
-                airmass[altaz.alt.value < 0] = 1e9
-
-                # Save
-                min_AM = np.minimum(min_AM, airmass)
-
-                # Increment in 30min
-                this_obs_time = this_obs_time + TimeDelta(1800, format='sec')
-
-            # Add a day
-            this_time = this_time + TimeDelta(1, format='jd')
-            this_time = tel.twilight_evening_astronomical(this_time, which='previous')
-        '''
+        gd_frbs = frb_targeting.targetfrbs_for_fu(self)
 
         # Caculate minimum airmasses during the Resource period
-        min_AM = frb_utils.calc_airmasses(self, gd_frbs)
+        min_AM = frb_targeting.calc_airmasses(self, gd_frbs)
 
-        # Parse
+        # Parse on AM
         keep_frbs = []
-        for ss in range(nfrb):
-            if min_AM[ss] < self.max_AM:
-                keep_frbs.append(gd_frbs[ss])
-        #
-        return keep_frbs
+        for ss in range(len(gd_frbs)):
+            if min_AM[ss] <= self.max_AM:
+                keep_frbs.append(gd_frbs[ss].id)
+        gd_frbs = gd_frbs.filter(id__in=keep_frbs)
+
+        # Now the various modes!
+        frbs_by_mode = frb_targeting.grab_targets_by_mode(self, gd_frbs)
+
+        return frbs_by_mode
+
+    def generate_target_table(self):
+        """ Generate a table of FRBTransients that are valid for this resource, 
+        i.e. meet all the criteria including AM
+
+        Returns:
+            pandas.DataFrame: table of FRBTransients for observing
+        """
+        # All FRBs by mode satisfying criteria
+        frbs_by_mode = self.get_frbs_by_mode()
+
+        # TODO -- Cut down by number requeseted and priority
+        final_targs_by_mode = frbs_by_mode
+
+        # Table me
+        tbls = []
+        for key in final_targs_by_mode.keys():
+            tbls.append(frb_targeting.target_table_from_frbs(final_targs_by_mode[key], key))
+
+        # Combine
+        target_table = pandas.concat(tbls, ignore_index=True)
+
+        return target_table
