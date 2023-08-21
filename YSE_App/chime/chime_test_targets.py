@@ -7,6 +7,7 @@ import pandas
 
 from django.contrib import auth
 from django.db.models import ForeignKey
+from django.http import HttpResponse,JsonResponse
 
 from YSE_App.models import FRBFollowUpResource
 #from YSE_App.models.enum_models import ObservationGroup
@@ -36,3 +37,5 @@ def test_target_table():
 
     # Check
     embed(header='44 of chime_test_targets.py')
+    #tmp = JsonResponse(tbl.to_json(), status=201, safe=False)
+    tmp = JsonResponse(tbl.to_dict(), status=201)

@@ -1633,18 +1633,6 @@ def targets_from_frb_followup_resource(request):
     frbs = frb_fu.valid_frbs()
 
     # Generate a table
-    table = frb_utils.target_table_from_frbs(frbs)
+    tbl = frb_utils.target_table_from_frbs(frbs)
 
-
-    try:
-        path.ingest_path_results(
-            itransient, tbl, 
-            data['F'], 
-            data['instrument'], data['obs_group'],
-            data['P_Ux'], user,
-            remove_previous=True) # May wish to make this optional
-    except:
-        print("Ingestion failed")
-        return JsonResponse({"message":f"Ingestion failed!"}, status=400)
-    else:
-        print("Successfully ingested")
+    return JsonResponse(tbl.to_dict(), status=201)
