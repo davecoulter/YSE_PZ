@@ -9,6 +9,8 @@ from astropy.time import Time, TimeDelta
 from astropy.coordinates import SkyCoord, EarthLocation
 from astropy import units
 
+from IPython import embed
+
 def calc_airmasses(frb_fu, gd_frbs,
                     debug:bool=False):
     """ Calulate the minimum AM for a set of FRBs
@@ -84,11 +86,11 @@ def calc_airmasses(frb_fu, gd_frbs,
 
     return min_AM
 
-def target_table_from_frbs(frbs:list):
+def target_table_from_frbs(frbs, ttype:str):
     """ Generate a pandas table from a list or QuerySet of FRBs
 
     Args:
-        frbs (list): List of FRBTransient objects
+        frbs (QuerySet): List of FRBTransient objects
 
     Returns:
         pandas.DataFrame: table of FRBTransient properties
@@ -97,7 +99,7 @@ def target_table_from_frbs(frbs:list):
 
     # Loop in FRBTansients
     rows = []
-    for itransient in frbs:
+    for itransient in frbs.all():
         rdict = {}
         rdict['TNS'] = itransient.name
         rdict['FRB_RA'] = itransient.ra
@@ -121,6 +123,8 @@ def target_table_from_frbs(frbs:list):
 
     # Table
     df = pandas.DataFrame(rows)
+    if len(df) > 0:
+        df['Target_type'] = ttype
 
     # Return
     return df
@@ -155,5 +159,33 @@ def targetfrbs_for_fu(frb_fu):
     
     return gd_frbs
 
-def targets_by_mode(frb_fu, frbs):
-    pass
+def grab_targets_by_mode(frb_fu, frbs):
+
+    # Imaging
+    if frb_fu.num_targ_img > 0:
+        imaging_frbs = frbs.filter(host__isnull=True)
+    else:
+        imaging_frbs = FRBTransient.objects.none()
+
+
+    # Longslit
+    if frb_fu.num_targ_longslit > 0:
+        longslit_frbs = frbs.filter(host__isnull=False)
+        if frb_fu.min_POx:
+            gd_ids = []
+            for frb in longslit_frbs:
+                if frb.host.P_Ox is not None and frb.host.P_Ox > frb_fu.min_POx:
+                    gd_ids.append(frb.id)
+            longslit_frbs = longslit_frbs.filter(id__in=gd_ids)
+
+    # Mask -- Not yet implemented
+    mask_frbs = FRBTransient.objects.none()
+
+    # Populate
+    targets_by_mode = {}
+    targets_by_mode['imaging'] = imaging_frbs
+    targets_by_mode['longslit'] = longslit_frbs
+    targets_by_mode['mask'] = mask_frbs
+
+    # Return
+    return targets_by_mode

@@ -1903,11 +1903,6 @@ def frb_followup_resource(request, slug):
 
     frb_fu = FRBFollowUpResource.objects.get(slug=slug)
 
-    # Valid FRBs
-    gd_frbs = frb_fu.generate_targets()
-
-    # Build the table
-    ftable = FRBTransientTable(gd_frbs)
     
     if request.META['QUERY_STRING']:
         anchor = request.META['QUERY_STRING'].split('-')[0]
@@ -1915,8 +1910,13 @@ def frb_followup_resource(request, slug):
 
     context = {
         'frb_fu': frb_fu,
-        'frb_table':ftable,
         'anchor':anchor,
     }
+
+    # Valid FRBs
+    frbs_by_mode = frb_fu.get_frbs_by_mode()
+    # Build the tables
+    for key in frbs_by_mode.keys():
+        context[f'{key}_table'] = FRBTransientTable(frbs_by_mode[key])
 
     return render(request, 'YSE_App/frb_followup_resource.html', context)

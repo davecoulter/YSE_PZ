@@ -100,6 +100,12 @@ class FRBTransient(BaseModel):
         else:
             return ''
 
+    def HostString(self):
+        if self.host:
+            return self.host.name
+        else:
+            return ''
+
     def Separation(self):
         host = FRBGalaxy.objects.get(pk=self.host_id)
         return '%.2f'%getSeparation(self.ra,self.dec,host.ra,host.dec)

@@ -6,6 +6,7 @@ from django.db import models
 from django.dispatch import receiver
 
 import numpy as np
+import pandas
 
 from YSE_App.models.base import BaseModel
 from YSE_App.models.frbtransient_models import *
@@ -77,14 +78,8 @@ class FRBFollowUpResource(BaseModel):
     def StopString(self):
         return self.valid_stop.strftime('%Y-%b-%d')
 
-    def generate_targets(self):
-        """ Generate a list of FRBTansients that are valid for this resource, 
-        i.e. meet all the criteria including AM
 
-        Returns:
-            list: list of FRBTransient objects
-        """
-
+    def get_frbs_by_mode(self):
         # Cut down transients by selection criteria
         #  magnitude
         #  FRB Survey
@@ -93,17 +88,40 @@ class FRBFollowUpResource(BaseModel):
         #  Bright star?
         gd_frbs = frb_targeting.targetfrbs_for_fu(self)
 
-        # gd_frbs should be a query set
-        #gd_frbs = FRBTransient.objects.all()
-        nfrb = len(gd_frbs)
-
         # Caculate minimum airmasses during the Resource period
         min_AM = frb_targeting.calc_airmasses(self, gd_frbs)
 
-        # Parse
+        # Parse on AM
         keep_frbs = []
-        for ss in range(nfrb):
-            if min_AM[ss] < self.max_AM:
-                keep_frbs.append(gd_frbs[ss])
-        #
-        return keep_frbs
+        for ss in range(len(gd_frbs)):
+            if min_AM[ss] <= self.max_AM:
+                keep_frbs.append(gd_frbs[ss].id)
+        gd_frbs = gd_frbs.filter(id__in=keep_frbs)
+
+        # Now the various modes!
+        frbs_by_mode = frb_targeting.grab_targets_by_mode(self, gd_frbs)
+
+        return frbs_by_mode
+
+    def generate_target_table(self):
+        """ Generate a table of FRBTransients that are valid for this resource, 
+        i.e. meet all the criteria including AM
+
+        Returns:
+            pandas.DataFrame: table of FRBTransients for observing
+        """
+        # All FRBs by mode satisfying criteria
+        frbs_by_mode = self.get_frbs_by_mode()
+
+        # TODO -- Cut down by number requeseted and priority
+        final_targs_by_mode = frbs_by_mode
+
+        # Table me
+        tbls = []
+        for key in final_targs_by_mode.keys():
+            tbls.append(frb_targeting.target_table_from_frbs(final_targs_by_mode[key], key))
+
+        # Combine
+        target_table = pandas.concat(tbls, ignore_index=True)
+
+        return target_table

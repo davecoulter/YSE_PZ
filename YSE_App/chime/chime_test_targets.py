@@ -32,15 +32,10 @@ def test_target_table():
     frb_fu = FRBFollowUpResource.objects.get(name='Gemini-LP-2024A-99')
 
     # Grab the targets
-    targs = frb_fu.generate_targets()
-
-    # Table
-    tbl = frb_targeting.target_table_from_frbs(targs)
+    tbl = frb_fu.generate_target_table()
 
     # Check
     tmp = JsonResponse(tbl.to_dict(), status=201)
-
-    embed(header='44 of chime_test_targets.py')
 
 def test_multi_surveys():
 
@@ -63,3 +58,15 @@ def test_tags():
     # Test
     tag = FRBTag.objects.get(name='CHIME-Blind')
     assert np.all([tag in frb.frb_tags.all() for frb in gd_frbs])
+
+def test_modes():
+
+    # Resource
+    frb_fu = FRBFollowUpResource.objects.get(name='Gemini-LP-2024A-99')
+    gd_frbs = frb_targeting.targetfrbs_for_fu(frb_fu)
+
+
+    targets_by_mode = frb_targeting.grab_targets_by_mode(frb_fu, gd_frbs)
+
+    # Test
+    assert len(targets_by_mode['longslit'].filter(name='FRB20300714A')) == 1

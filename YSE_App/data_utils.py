@@ -1630,9 +1630,7 @@ def targets_from_frb_followup_resource(request):
         return JsonResponse({"message":f"Could not find resource {data['resource_name']} in DB"}, status=400)
 
     # Grab the targets
-    frbs = frb_fu.generate_targets()
+    target_table = frb_fu.generate_target_table()
 
-    # Generate a table
-    tbl = frb_targeting.target_table_from_frbs(frbs)
-
-    return JsonResponse(tbl.to_dict(), status=201)
+    # Return
+    return JsonResponse(target_table.to_dict(), status=201)

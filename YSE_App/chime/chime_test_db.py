@@ -23,7 +23,7 @@ def build_chime_test_db():
                   instrument=instr,
                   valid_start=datetime.datetime(2024, 3, 1, tzinfo=datetime.timezone.utc),
                   valid_stop=datetime.datetime(2024, 3, 7, tzinfo=datetime.timezone.utc),
-                  num_targ_img=0,
+                  num_targ_img=1,
                   num_targ_mask=4,
                   num_targ_longslit=4,
                   max_AM=1.5,

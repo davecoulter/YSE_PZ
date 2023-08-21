@@ -1734,6 +1734,8 @@ class FRBTransientTable(tables.Table):
                                verbose_name='DM',orderable=True,order_by='dm')
     tags_string = tables.Column(accessor='FRBTagsString',
                                verbose_name='Tags',orderable=True,order_by='dm')
+    host_string = tables.Column(accessor='HostString',
+                               verbose_name='Host')
     #disc_date_string = tables.Column(accessor='disc_date_string',
     #                                 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
     #recent_mag = tables.Column(accessor='recent_mag',
@@ -1781,7 +1783,7 @@ class FRBTransientTable(tables.Table):
         model = FRBTransient
         fields = ('name_string','ra_string','dec_string',
                   'dm_string', 'frb_survey', 'tags_string',
-                  'status_string')
+                  'status_string', 'host_string')
 
         template_name='YSE_App/django-tables2/bootstrap.html'
         attrs = {
