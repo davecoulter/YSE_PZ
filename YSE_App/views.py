@@ -18,7 +18,7 @@ from django.shortcuts import redirect
 from django.db.models import Count, Value, Max, Min
 import zipfile
 from io import BytesIO
-from YSE_App.yse_utils.yse_pa import yse_pa
+#from YSE_App.yse_utils.yse_pa import yse_pa
 from django.utils.decorators import method_decorator
 from django.utils import timezone as du_timezone
 
@@ -40,7 +40,6 @@ from django.core import serializers
 import os
 from .data import PhotometryService, SpectraService, ObservingResourceService
 import json
-import time
 import dateutil.parser
 from astroplan import moon_illumination
 from astropy.time import Time
