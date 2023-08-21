@@ -102,6 +102,10 @@ def target_table_from_frbs(frbs:list):
             rdict['Host_RA'] = itransient.host.ra
             rdict['Host_Dec'] = itransient.host.dec
             rdict['Host_POx'] = itransient.host.P_Ox
+            # Photometry
+            ifilter, mag = itransient.host.FilterMagString()
+            rdict['Host_mag'] = float(mag)
+            rdict['Host_filter'] = ifilter
         #
         rows.append(rdict)
 
