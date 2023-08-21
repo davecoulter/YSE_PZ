@@ -35,7 +35,7 @@ def build_chime_test_db():
     _ = add_or_grab_obj(FRBFollowUpResource,
                         uni_fields, extra_fields, user)
 
-def total_clean():
+def clean_all():
 
     for ipath in Path.objects.all():
         ipath.delete()
