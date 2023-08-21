@@ -36,6 +36,7 @@ import sys
 from urllib.parse import unquote
 
 from YSE_App.galaxies import path
+from YSE_App import frb_utils
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -1573,7 +1574,6 @@ def ingest_path(request):
     credentials = base64.b64decode(credentials.strip()).decode('utf-8')
     username, password = credentials.split(':', 1)
     user = auth.authenticate(username=username, password=password)
-    print(f'username: {username}')
 
     try:
         itransient = FRBTransient.objects.get(name=data['transient_name'])
@@ -1581,6 +1581,60 @@ def ingest_path(request):
         return JsonResponse({"message":f"Could not find transient {data['transient_name']} in DB"}, status=400)
     # Prep 
     tbl = pandas.read_json(data['table'])
+
+    try:
+        path.ingest_path_results(
+            itransient, tbl, 
+            data['F'], 
+            data['instrument'], data['obs_group'],
+            data['P_Ux'], user,
+            remove_previous=True) # May wish to make this optional
+    except:
+        print("Ingestion failed")
+        return JsonResponse({"message":f"Ingestion failed!"}, status=400)
+    else:
+        print("Successfully ingested")
+
+@csrf_exempt
+@login_or_basic_auth_required
+def targets_from_frb_followup_resource(request):
+    """
+    Grab a list of targets from an FRBFollowupResource
+
+    The request must include the following items
+     in its data (all in JSON, of course; 
+     data types are for after parsing the JSON):
+
+      - resource_name (str): Name of the FRBFollowupResource object
+
+    Args:
+        request (requests.request): 
+            Request from outside FFFF-PZ
+
+    Returns:
+        JsonResponse:  Table of information
+    """
+    
+    # Parse the data into a dict
+    data = JSONParser().parse(request)
+
+    # Deal with credentials
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    try:
+        frb_fu = FRBFollowUpResource.objects.get(name=data['resource_name'])
+    except:
+        return JsonResponse({"message":f"Could not find resource {data['resource_name']} in DB"}, status=400)
+
+    # Grab the targets
+    frbs = frb_fu.valid_frbs()
+
+    # Generate a table
+    table = frb_utils.target_table_from_frbs(frbs)
+
 
     try:
         path.ingest_path_results(

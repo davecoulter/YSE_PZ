@@ -1,4 +1,8 @@
+""" Utilities for FRB activities """
+
 from YSE_App.models import *
+
+import pandas
 
 from astroplan import Observer
 from astropy.time import Time, TimeDelta
@@ -79,3 +83,30 @@ def calc_airmasses(frb_fu, gd_frbs,
         this_time = tel.twilight_evening_astronomical(this_time, which='previous')
 
     return min_AM
+
+def target_table_from_frbs(frbs:list):
+
+
+    # Loop in FRBTansients
+    rows = []
+    for itransient in frbs:
+        rdict = {}
+        rdict['TNS'] = itransient.name
+        rdict['FRB_RA'] = itransient.ra
+        rdict['FRB_Dec'] = itransient.dec
+        rdict['FRB_DM'] = itransient.DM
+
+        # Host?
+        if itransient.host:
+            rdict['Host_name'] = itransient.host.name
+            rdict['Host_RA'] = itransient.host.ra
+            rdict['Host_Dec'] = itransient.host.dec
+            rdict['Host_POx'] = itransient.host.P_Ox
+        #
+        rows.append(rdict)
+
+    # Table
+    df = pandas.DataFrame(rows)
+
+    # Return
+    return df
