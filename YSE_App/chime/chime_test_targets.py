@@ -10,7 +10,9 @@ from django.db.models import ForeignKey
 from django.http import HttpResponse,JsonResponse
 
 from YSE_App.models import FRBFollowUpResource
+from YSE_App.models import FRBTransient
 from YSE_App.models import FRBTag
+from YSE_App.models import TransientStatus
 #from YSE_App.models.enum_models import ObservationGroup
 from YSE_App.chime import chime_test_utils as ctu
 
@@ -70,3 +72,23 @@ def test_modes():
 
     # Test
     assert len(targets_by_mode['longslit'].filter(name='FRB20300714A')) == 1
+
+def test_status():
+
+    # Resource
+    frb_fu = FRBFollowUpResource.objects.get(name='Gemini-LP-2024A-99')
+    itransient = FRBTransient.objects.get(name='FRB20300714A')
+    status = TransientStatus.objects.get(name='FollowupRequested')
+    itransient.status = status
+    itransient.save()
+
+
+    gd_frbs = frb_targeting.targetfrbs_for_fu(frb_fu)
+
+    # Test
+    assert len(gd_frbs.filter(name='FRB20300714A')) == 0
+
+    # Revert
+    status = TransientStatus.objects.get(name='New')
+    itransient.status = status
+    itransient.save()
