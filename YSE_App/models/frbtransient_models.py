@@ -51,6 +51,13 @@ class FRBTransient(BaseModel):
     # Localization file
     localization_file = models.CharField(max_length=64, null=True, blank=True)
 
+    # Repeater?
+    repeater = models.BooleanField(default=False, blank=True)
+    # Rotation measure
+    RM = models.FloatField(null=True, blank=True)
+    # S.N
+    s2n = models.FloatField(null=True, blank=True)
+
     # Host -- defined as the Highest P(O|x) candidate
     #   set in YSE_App.galaxies.path.ingest_path_results()
     host = models.ForeignKey(
