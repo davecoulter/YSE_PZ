@@ -108,16 +108,27 @@ def target_table_from_frbs(frbs, ttype:str):
         rdict['FRB_Survey'] = itransient.FRBSurveyString()
         rdict['FRB_tags'] = itransient.FRBTagsString()
 
-        # Host?
-        if itransient.host:
-            rdict['Host_name'] = itransient.host.name
-            rdict['Host_RA'] = itransient.host.ra
-            rdict['Host_Dec'] = itransient.host.dec
-            rdict['Host_POx'] = itransient.host.P_Ox
-            # Photometry
-            ifilter, mag = itransient.host.FilterMagString()
-            rdict['Host_mag'] = float(mag)
-            rdict['Host_filter'] = ifilter
+        # Host candidates?
+        if Path.objects.filter(transient=itransient).count() > 0:
+            path_values, galaxies = itransient.get_Path_values()
+            srt = np.argsort(path_values)[::-1]
+
+            for kk in range(min(2,len(path_values))):
+                galaxy = galaxies[srt[kk]]
+                if kk == 0:
+                    prefix = 'Pri'
+                elif kk == 1:
+                    prefix = 'Sec'
+
+                # Take top two
+                rdict[f'{prefix}_name'] = galaxy.name
+                rdict[f'{prefix}_RA'] = galaxy.ra
+                rdict[f'{prefix}_Dec'] = galaxy.dec
+                rdict[f'{prefix}_POx'] = galaxy.P_Ox
+                # Photometry
+                ifilter, mag = galaxy.FilterMagString()
+                rdict[f'{prefix}_mag'] = float(mag)
+                rdict[f'{prefix}_filter'] = ifilter
         #
         rows.append(rdict)
 
