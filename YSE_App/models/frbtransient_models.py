@@ -158,6 +158,10 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 
     if created:
 
+        # Galactic E(B-V) -- Needs to come before tagging
+        c = SkyCoord(ra=instance.ra, dec=instance.dec, unit='deg')
+        instance.mw_ebv = irsa_dust.IrsaDust.get_query_table(c)['ext SandF mean'][0]
+
         # CHIME FRB items
         if instance.frb_survey.name == 'CHIME/FRB':
 
@@ -176,9 +180,6 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
                 instance.frb_tags.add(frb_tag)
                 print(f"Added FRB tag: {tag_name}")
             
-        # Galactic E(B-V)
-        c = SkyCoord(ra=instance.ra, dec=instance.dec, unit='deg')
-        instance.mw_ebv = irsa_dust.IrsaDust.get_query_table(c)['ext SandF mean'][0]
 
         # Save
         instance.save()
