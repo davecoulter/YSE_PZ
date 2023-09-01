@@ -1552,9 +1552,9 @@ def ingest_path(request):
         PATH results, stored as JSON
       - F (str): name of filter; must be present in the
         PhotometricBand table
-      - instrument (str): name of the instrumen; must be present in the
+      - instrument (str): name of the instrument; must be present in the
         Instrument table
-      - obs_group (str): name of the instrumen; must be present in the
+      - obs_group (str): name of the instrument; must be present in the
         ObservationGroup table
       - P_Ux (float): Unseen posterior;  added to the transient
 

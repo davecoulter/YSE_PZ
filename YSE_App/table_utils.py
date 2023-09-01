@@ -1731,13 +1731,15 @@ class FRBTransientTable(tables.Table):
     dec_string = tables.Column(accessor='CoordString.1',
                                verbose_name='DEC',orderable=True,order_by='dec')
     dm_string = tables.Column(accessor='DMString',
-                               verbose_name='DM',orderable=True,order_by='dm')
+                               verbose_name='DM',orderable=True,order_by='DM')
     tags_string = tables.Column(accessor='FRBTagsString',
                                verbose_name='Tags',orderable=True,order_by='dm')
     host_string = tables.Column(accessor='HostString',
                                verbose_name='Host')
     host_pox_string = tables.Column(accessor='HostPOxString',
                                verbose_name='Host P(O|x)')
+    frb_survey_string = tables.Column(accessor='FRBSurveyString',
+                               verbose_name='FRB Survey',orderable=True,order_by='frb_survey')
     #disc_date_string = tables.Column(accessor='disc_date_string',
     #                                 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
     #recent_mag = tables.Column(accessor='recent_mag',
@@ -1784,7 +1786,7 @@ class FRBTransientTable(tables.Table):
     class Meta:
         model = FRBTransient
         fields = ('name_string','ra_string','dec_string',
-                  'dm_string', 'frb_survey', 'tags_string',
+                  'dm_string', 'frb_survey_string', 'tags_string',
                   'status_string', 'host_string', 'host_pox_string')
 
         template_name='YSE_App/django-tables2/bootstrap.html'

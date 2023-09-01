@@ -119,6 +119,9 @@ class FRBTransient(BaseModel):
         else:
             return ''
 
+    def FRBSurveyString(self):
+        return self.frb_survey.name
+
     def Separation(self):
         host = FRBGalaxy.objects.get(pk=self.host_id)
         return '%.2f'%getSeparation(self.ra,self.dec,host.ra,host.dec)
