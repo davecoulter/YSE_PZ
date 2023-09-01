@@ -1599,11 +1599,11 @@ def ingest_path(request):
 @login_or_basic_auth_required
 def targets_from_frb_followup_resource(request):
     """
-    Grab a list of targets from an FRBFollowupResource
+    Grab a table of targets for a provided FRBFollowupResource
 
     The request must include the following items
      in its data (all in JSON, of course; 
-     data types are for after parsing the JSON):
+     data types refer to those after parsing the JSON):
 
       - resource_name (str): Name of the FRBFollowupResource object
 

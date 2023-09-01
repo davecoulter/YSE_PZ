@@ -9,6 +9,8 @@ from astropy.time import Time, TimeDelta
 from astropy.coordinates import SkyCoord, EarthLocation
 from astropy import units
 
+from YSE_App.chime import tags as chime_tags
+
 from IPython import embed
 
 def calc_airmasses(frb_fu, gd_frbs,
@@ -16,7 +18,7 @@ def calc_airmasses(frb_fu, gd_frbs,
     """ Calulate the minimum AM for a set of FRBs
     tied to a FRBFollowupResource
 
-    Moved here to speed up development.  Could be
+    Moved this code here to speed up development.  Could be
     a method on FRBFollowupResource someday..
 
     Args:
@@ -36,7 +38,8 @@ def calc_airmasses(frb_fu, gd_frbs,
         telescope.elevation*units.m)
     tel = Observer(location=location, timezone="UTC")
 
-    # Cut down transients by selection criteria
+    # TODO -- Cut down transients by selection criteria
+    #   Possibly somewhere else..
     #  magnitude
     #  FRB Survey
     #  P(O|x)
@@ -74,23 +77,24 @@ def calc_airmasses(frb_fu, gd_frbs,
             # Below horizon
             airmass[altaz.alt.value < 0] = 1e9
 
-            # Save
+            # Save minimum AM
             min_AM = np.minimum(min_AM, airmass)
 
-            # Increment in 30min
+            # Increment by 30min
             this_obs_time = this_obs_time + TimeDelta(1800, format='sec')
 
-        # Add a day -- Add to night_end to avoid death loop
+        # Add a day -- Added to night_end to avoid infinite while loop
         this_time = night_end + TimeDelta(1, format='jd')
         this_time = tel.twilight_evening_astronomical(this_time, which='previous')
 
     return min_AM
 
-def target_table_from_frbs(frbs, ttype:str):
+def target_table_from_frbs(frbs, mode:str):
     """ Generate a pandas table from a list or QuerySet of FRBs
 
     Args:
         frbs (QuerySet): List of FRBTransient objects
+        mode (str): Observation mode (e.g. 'imaging')
 
     Returns:
         pandas.DataFrame: table of FRBTransient properties
@@ -134,8 +138,9 @@ def target_table_from_frbs(frbs, ttype:str):
 
     # Table
     df = pandas.DataFrame(rows)
+    # Add mode
     if len(df) > 0:
-        df['Target_type'] = ttype
+        df['Target_type'] = mode
 
     # Return
     return df
@@ -144,10 +149,13 @@ def targetfrbs_for_fu(frb_fu):
     """ Provided an FRBFollowupResource, return the
     QuerySet of FRBTransient objects that are acceptible
 
-    This may be moved as a method to FRBFollowupResource
+    This may eventually be made a method on FRBFollowupResource
+
+    Args:
+        frb_fu (FRBFollowupResource): Follow-up resource
 
     Returns:
-        QuerySet of FRBTransient:  _description_
+        QuerySet of FRBTransient:  All transients satisfying the criteria
     """
     # 
     # Check Surveys
@@ -164,13 +172,28 @@ def targetfrbs_for_fu(frb_fu):
     else:
         gd_frbs = gd_frbs.filter(status=TransientStatus.objects.get(name='New'))
 
-    # Tags?
+    # Tags? aka samples
     if frb_fu.frb_tags:
         gd_frbs = gd_frbs.filter(frb_tags__in=FRBTag.objects.filter(name__in=frb_fu.frb_tags.split(',')))
     
     return gd_frbs
 
 def grab_targets_by_mode(frb_fu, frbs):
+    """ Grab targets by observing mode
+
+    Logic is applied as follows:
+
+      -- Imaging: The FRB must not have a host
+      -- Longslit: The FRB must have a host and the host must have a P_Ox > frb_fu.min_POx
+      -- Mask: Not implemented yet
+
+    Args:
+        frb_fu (FRBFollowupResource): Follow-up resource
+        frbs (QuerySet): List of FRBTransient objects
+
+    Returns:
+        dict: Dictionary of QuerySets for each observing mode
+    """
 
     # Imaging
     if frb_fu.num_targ_img > 0:
@@ -200,3 +223,77 @@ def grab_targets_by_mode(frb_fu, frbs):
 
     # Return
     return targets_by_mode
+
+def select_with_priority(frb_fu, frbs_by_mode:dict): 
+    """ Select targets from the total set by priority
+
+    Args:
+        frb_fu (FRBFollowupResource): Follow-up resource
+        frbs_by_mode (dict): Dictionary of QuerySets for each observing mode
+
+    Returns:
+        dict: final dictionary of selected QuerySets for each observing mode
+    """
+
+    # Final product
+    selected_frbs = {}
+
+    # Loop on all the modes
+    for mode, num_targ in zip(['imaging', 'longslit', 'mask'], 
+                              [frb_fu.num_targ_img, frb_fu.num_targ_longslit, 
+                               frb_fu.num_targ_mask]):
+        # Do we want any?
+        if num_targ > 0:
+            # Do we not have enough?
+            if frb_fu.num_targ_img >= len(frbs_by_mode[mode]):
+                selected_frbs[mode] = frbs_by_mode[mode]
+            else:    
+                # Assign priorities
+                probs = assign_probs(frbs_by_mode[mode])
+
+                # Init
+                keep = []
+                still_left = np.arange(len(frbs_by_mode[mode])).tolist()
+
+                # Loop until we have enough
+                while(len(keep) < num_targ):
+                    need = num_targ - len(keep)
+                    # Random numbers
+                    rand = np.random.uniform(0.,1.,size=len(still_left))
+                    left_probs = np.array(probs)[still_left]
+                    gd = np.where(rand < left_probs)[0]
+                    if len(gd) > need:
+                        gd = gd[:need]
+                    keep += list(np.array(still_left)[gd])
+                    # Remove
+                    for idx in gd:
+                        still_left.remove(idx)
+                # Finish
+                gd_ids = [frbs_by_mode[mode].all()[int(ii)].id for ii in keep]
+                selected_frbs[mode] = frbs_by_mode[mode].filter(id__in=gd_ids)
+        else:
+            # We don't want any
+            selected_frbs[mode] = FRBTransient.objects.none()
+
+    # Return
+    return selected_frbs
+
+        
+def assign_probs(frbs):
+
+    # Collect all possible samples
+    all_samples = chime_tags.all_samples
+
+    probs = []
+    for frb in frbs.all():
+        max_prob = 0.1 # Default
+        tag_names = [itag.name for itag in frb.frb_tags.all()]
+
+        # Query them all
+        for sample in all_samples:
+            if sample['name'] in tag_names:
+                max_prob = max(max_prob, sample['prob'])
+        # Save
+        probs.append(max_prob)
+    # Return
+    return probs

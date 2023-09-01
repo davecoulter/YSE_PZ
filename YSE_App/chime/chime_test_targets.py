@@ -26,8 +26,6 @@ def test_target_table():
 
     This test requires the DB was populated using chime_test_db.build_chime_test_db()
 
-
-    Args:
     """
 
     # Resource
@@ -39,7 +37,11 @@ def test_target_table():
     # Check
     tmp = JsonResponse(tbl.to_dict(), status=201)
 
+    embed(header='test_target_table')
+
 def test_multi_surveys():
+    """ Test that we can target by multiple surveys
+    """
 
     # Resource
     frb_fu = FRBFollowUpResource.objects.get(name='Gemini-LP-2024A-99')
@@ -50,6 +52,8 @@ def test_multi_surveys():
     assert len(gd_frbs.filter(name='FRB20300714X')) == 1
 
 def test_tags():
+    """ Test that we can target by tag
+    """
 
     # Resource
     frb_fu = FRBFollowUpResource.objects.get(name='Gemini-LP-2024A-99')
@@ -62,6 +66,8 @@ def test_tags():
     assert np.all([tag in frb.frb_tags.all() for frb in gd_frbs])
 
 def test_modes():
+    """ Test that we can target by observing mode (e.g. longslit)
+    """
 
     # Resource
     frb_fu = FRBFollowUpResource.objects.get(name='Gemini-LP-2024A-99')
@@ -74,6 +80,8 @@ def test_modes():
     assert len(targets_by_mode['longslit'].filter(name='FRB20300714A')) == 1
 
 def test_status():
+    """ Test that setting FollowupRequested avoids that transient from targeting
+    """
 
     # Resource
     frb_fu = FRBFollowUpResource.objects.get(name='Gemini-LP-2024A-99')

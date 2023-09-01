@@ -9,6 +9,7 @@ from YSE_App.chime import chime_path_test
 from YSE_App.data_utils import add_or_grab_obj
 
 def build_chime_test_db():
+    """ Build the CHIME test DB """
 
     user = auth.authenticate(username='root', password='F4isthebest')
 
@@ -36,12 +37,20 @@ def build_chime_test_db():
                         uni_fields, extra_fields, user)
 
 def clean_all():
+    """ Wipe clean the DB """
 
+    print("Removing Path objects")
     for ipath in Path.objects.all():
         ipath.delete()
+
+    print("Removing FRBGalaxy objects")
     for galaxy in FRBGalaxy.objects.all():
         galaxy.delete()
+
+    print("Removing FRBFollowUpResource objects")
     for frb_fu in FRBFollowUpResource.objects.all():
         frb_fu.delete()
+
+    print("Removing FRBTransient objects")
     for itransient in FRBTransient.objects.all():
         itransient.delete()

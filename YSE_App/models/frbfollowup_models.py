@@ -25,26 +25,26 @@ class FRBFollowUpResource(BaseModel):
     # Required
     name = models.CharField(max_length=64, unique=True)
     instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
-    valid_start = models.DateTimeField() # Start of observing run
-    valid_stop = models.DateTimeField() # End of observing run
+    valid_start = models.DateTimeField() # Start of observing run (UT)
+    valid_stop = models.DateTimeField() # End of observing run (UT)
 
-    # Number or targets
+    # Number or targets for each observing mode [imaging, masks, longslit]
     num_targ_img = models.IntegerField()
     num_targ_mask = models.IntegerField()
     num_targ_longslit = models.IntegerField()
 
-    # Maximum AM
+    # Maximum AM for the observing
     max_AM = models.FloatField()
 
     # Surveys to which this resource is applicable
     #  e.g. CHIME/FRB, CRAFT, etc.
-    #  all is ok too
+    #  all is an allowed value
     frb_surveys = models.CharField(max_length=64)
 
 
     # Optional
 
-    # Classical, ToO, Queue
+    # Classical, ToO, Queue 
     obs_type = models.CharField(max_length=64, null=True, blank=True)
     # PI
     PI = models.ForeignKey(PrincipalInvestigator, on_delete=models.CASCADE, null=True, blank=True)
@@ -53,7 +53,7 @@ class FRBFollowUpResource(BaseModel):
     # Semester, period, etc.,  e.g. 2024A
     Period = models.CharField(max_length=64, null=True, blank=True)
 
-    # Items for selecting targets
+    # Optional items for selecting targets
     min_POx = models.FloatField(null=True, blank=True)
     frb_tags = models.CharField(max_length=64, null=True, blank=True)
     frb_statuses = models.CharField(max_length=64, null=True, blank=True)
@@ -80,6 +80,13 @@ class FRBFollowUpResource(BaseModel):
 
 
     def get_frbs_by_mode(self):
+        """ Generate a dict of valid FRBs for targeting by observing mode
+
+        calls frb_targeting.grab_targets_by_mode()
+
+        Returns:
+            dict: dict of FRBTransients by observing mode
+        """
         # Cut down transients by selection criteria
         #  magnitude
         #  FRB Survey
@@ -113,8 +120,8 @@ class FRBFollowUpResource(BaseModel):
         # All FRBs by mode satisfying criteria
         frbs_by_mode = self.get_frbs_by_mode()
 
-        # TODO -- Cut down by number requeseted and priority
-        final_targs_by_mode = frbs_by_mode
+        # Cut down by number requested and priority
+        final_targs_by_mode = frb_targeting.select_with_priority(self, frbs_by_mode)
 
         # Table me
         tbls = []
