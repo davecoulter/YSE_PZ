@@ -150,7 +150,7 @@ def run_path_on_instance(instance, ssize:float=5.,
         priors (dict, optional): PATH priors. Defaults to None, in which 
             case the CHIME defaults are used.
         min_loc_err (float, optional): _description_. Defaults to 0.2.
-        tot_posterior (float, optional): Total posterior probability to
+        tot_posterior (float, optional): Total posterior probability 
             for the candidates (including P(U|x)). Defaults to 0.999.
         nmin (int, optional): Minimum number of objects to return, if this
             many canidates exist. Defaults to 2.
@@ -193,7 +193,7 @@ def run_path_on_instance(instance, ssize:float=5.,
     keep = (Ddec_arcsec < box_hwidth) & (Dra_arcsec < box_hwidth)
     cut_catalog = catalog[keep]
 
-    # Turn into a cndidate table
+    # Turn into a candidate table
     Path = path.PATH()
 
    # Set up localization

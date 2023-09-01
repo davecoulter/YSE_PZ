@@ -6,7 +6,7 @@ from pkg_resources import resource_filename
 
 from django.contrib import auth
 
-from YSE_App.models import Transient
+from YSE_App.models import FRBTransient
 from YSE_App.models.enum_models import ObservationGroup
 from YSE_App.chime import chime_test_utils as ctu
 
@@ -45,10 +45,10 @@ def run(delete_existing:bool=False):
     # Test them!
     for ss in range(len(df_frbs)):
         ifrb = df_frbs.iloc[ss]
-        assert ifrb['name'] in [t.name for t in Transient.objects.all()]
+        assert ifrb['name'] in [t.name for t in FRBTransient.objects.all()]
         # Tag
         if ifrb['name'] == 'FRB20300102B':
-            t = Transient.objects.get(name=ifrb['name'])
+            t = FRBTransient.objects.get(name=ifrb['name'])
             assert 'CHIME-Blind' in [t.name for t in t.frb_tags.all()]
 
     # Break it all down
