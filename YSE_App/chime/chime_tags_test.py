@@ -62,5 +62,5 @@ def run(delete_existing:bool=False):
         dbtransient.delete()
 
     # Finish
-    print(Transient.objects.all())
+    print(FRBTransient.objects.all())
     print("All clear!")
