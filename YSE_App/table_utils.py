@@ -1733,7 +1733,7 @@ class FRBTransientTable(tables.Table):
     dm_string = tables.Column(accessor='DMString',
                                verbose_name='DM',orderable=True,order_by='DM')
     tags_string = tables.Column(accessor='FRBTagsString',
-                               verbose_name='Tags',orderable=True,order_by='dm')
+                               verbose_name='Tags',orderable=True,order_by='frb_tags')
     host_string = tables.Column(accessor='HostString',
                                verbose_name='Host')
     host_pox_string = tables.Column(accessor='HostPOxString',

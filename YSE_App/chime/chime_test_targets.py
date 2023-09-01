@@ -37,8 +37,6 @@ def test_target_table():
     # Check
     tmp = JsonResponse(tbl.to_dict(), status=201)
 
-    embed(header='test_target_table')
-
 def test_multi_surveys():
     """ Test that we can target by multiple surveys
     """

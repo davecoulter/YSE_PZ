@@ -1694,8 +1694,6 @@ def frb_dashboard(request):
     # Cut on active/pending
     followups = FRBFollowUpResource.objects.filter(
         valid_stop__gt=du_timezone.now())
-
-    # Cut on active
     ftable = FRBFollowupResourceTable(followups)
     
     if request.META['QUERY_STRING']:
