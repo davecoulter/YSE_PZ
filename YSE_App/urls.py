@@ -16,6 +16,8 @@ from YSE_App.yse_utils import yse_pointings, yse_view_utils
 from YSE_App.views import SearchResultsView
 from YSE_App.util import submit_to_tns
 
+from YSE_App.chime import chime_test_views 
+
 schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
 
 # Wire up our API using automatic URL routing.
@@ -30,6 +32,22 @@ urlpatterns = [
     re_path(r'^followup/$', views.followup, name='followup'),
     re_path(r'^transient_tags/$', views.transient_tags, name='transient_tags'),
     re_path(r'^get_transient_tags/$', views.get_transient_tags, name='get_transient_tags'),
+
+    # ##############################################################
+    # FRBs
+    # Views
+    re_path(r'^frb_dashboard/$', views.frb_dashboard, name='frb_dashboard'),
+    re_path(r'^frb_transient_detail/(?P<slug>.*)/$', views.frb_transient_detail, name='frb_transient_detail'),
+
+    # API
+    re_path(r'^add_frb_galaxy/', data_utils.add_frb_galaxy, name='add_frb_galaxy'),
+    re_path(r'^rm_frb_galaxy/', data_utils.rm_frb_galaxy, name='rm_frb_galaxy'),
+    re_path(r'^ingest_path/', data_utils.ingest_path, name='ingest_path'),
+    # ##############################################################
+
+    # Test pages
+    #re_path(r'^candidates/$', views.CandidatesListView.as_view(), name='candidates'),
+    #re_path(r'^candidates/$', chime_test_views.candidatesview, name='candidates'),
 
     # survey info
     re_path(r'^survey/$', surveypages.survey, name='survey'),
@@ -172,6 +190,8 @@ urlpatterns = [
     #url(r'^silk/', include('silk.urls', namespace='silk')),
 ]
 
+# Views into the API
+
 router = DefaultRouter()
 router.register(r'transientwebresources', api_views.TransientWebResourceViewSet)
 router.register(r'hostwebresources', api_views.HostWebResourceViewSet)
@@ -239,6 +259,14 @@ router.register(r'transienttags', api_views.TransientTagViewSet)
 
 router.register(r'gwcandidates', api_views.GWCandidateViewSet)
 router.register(r'gwcandidateimages', api_views.GWCandidateImageViewSet)
+
+# ##############################################################
+# FRB specific
+router.register(r'frbtransients', api_views.FRBTransientViewSet)
+router.register(r'frbsurvey', api_views.FRBSurveyViewSet)
+router.register(r'frbtags', api_views.FRBTagViewSet)
+router.register(r'frbgalaxies', api_views.FRBGalaxyViewSet)
+router.register(r'paths', api_views.PathViewSet)
 
 # Login/Logout
 api_url_patterns = [re_path(r'^api/', include(router.urls)),

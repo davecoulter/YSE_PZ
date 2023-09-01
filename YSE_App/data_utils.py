@@ -4,11 +4,14 @@ from django.shortcuts import render, get_object_or_404
 from .models import *
 from django.db import models
 from astropy.coordinates import get_moon, SkyCoord
+from django.core.exceptions import ObjectDoesNotExist
+
 from astropy.time import Time
 import astropy.units as u
 import datetime
 import dateutil
 import json
+import pandas
 import time
 import numpy as np
 from django.conf import settings as djangoSettings
@@ -31,6 +34,8 @@ from .queries.yse_python_queries import *
 from .queries import yse_python_queries
 import sys
 from urllib.parse import unquote
+
+from YSE_App.galaxies import path
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -1422,3 +1427,170 @@ def getRADecBox(ra,dec,size=None,dec_size=None):
             ramin+=360.0
             ramax+=360.0
     return(ramin,ramax,decmin,decmax)
+
+def add_or_grab_obj(iclass, uni_fields:dict, extra_fields:dict, user=None):
+    """ Convenience utility to add/grab an object in the DB
+
+    Args:
+        iclass (django model): Model to add/grab
+        uni_fields (dict): 
+            dict of fields that uniquely identify the object
+        extra_fields (dict): 
+            dict of additional fields to add to the object if it is created
+        user (django user object, optional): user object. Defaults to None.
+
+    Returns:
+        django instance: Object either grabbed or added to the DB
+    """
+    try:
+        obj = iclass.objects.get(**uni_fields)
+    except ObjectDoesNotExist:
+        # Merge
+        all_fields = uni_fields.copy()
+        all_fields.update(extra_fields)
+        # Add user?
+        if user is not None:
+            all_fields['created_by'] = user
+            all_fields['modified_by'] = user
+        obj = iclass(**all_fields)
+        obj.save()
+        print("Object created")
+    else:
+        print("Object existed, returning it")
+    # Return
+    return obj
+
+
+# FRB items
+
+@csrf_exempt
+@login_or_basic_auth_required
+def add_frb_galaxy(request):
+    """ Add an FRBGalaxy to the DB from an 
+    outside request
+
+    This is mainly intended for testing
+
+    Args:
+        request (_type_): _description_
+
+    Returns:
+        JsonResponse: _description_
+    """
+    
+    data = JSONParser().parse(request)
+
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    # Serialize the user and we are all set
+    #data['created_by'] = user
+    #data['modified_by'] = user
+
+    # Use Serializer
+    serializer = FRBGalaxySerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        print(f"Generated FRB Galaxy: {data['name']}")
+    else:
+        print(f"Not valid!")
+
+    return JsonResponse(serializer.data, status=201)
+
+@csrf_exempt
+@login_or_basic_auth_required
+def rm_frb_galaxy(request):
+    """ Remove an FRBGalaxy from the DB
+    via an outside request
+
+    This is mainly intended for testing
+
+    Args:
+        request (_type_): _description_
+
+    Returns:
+        JsonResponse: _description_
+    """
+    
+    data = JSONParser().parse(request)
+
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    # Serialize the user and we are all set
+    #data['created_by'] = user
+    #data['modified_by'] = user
+
+    try:
+        obj = FRBGalaxy.objects.get(name=data['name'])
+    except ObjectDoesNotExist:
+        pass
+    else:
+        obj.delete()
+        print(f"Deleted {data['name']}")
+
+    return JsonResponse(data, status=201)
+
+@csrf_exempt
+@login_or_basic_auth_required
+def ingest_path(request):
+    """
+    Ingest a PATH analysis into the DB
+
+    The request must include the following items
+     in its data (all in JSON, of course; 
+     data types are for after parsing the JSON):
+
+      - transient_name (str): Name of the FRBTransient object
+        Must be in the DB already
+      - table (str): a table of the PATH candidates and their 
+        PATH results, stored as JSON
+      - F (str): name of filter; must be present in the
+        PhotometricBand table
+      - instrument (str): name of the instrument; must be present in the
+        Instrument table
+      - obs_group (str): name of the instrument; must be present in the
+        ObservationGroup table
+      - P_Ux (float): Unseen posterior;  added to the transient
+
+    Args:
+        request (requests.request): 
+            Request from outside FFFF-PZ
+
+    Returns:
+        JsonResponse: 
+    """
+    
+    # Parse the data into a dict
+    data = JSONParser().parse(request)
+
+    # Deal with credentials
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+    print(f'username: {username}')
+
+    try:
+        itransient = FRBTransient.objects.get(name=data['transient_name'])
+    except:
+        return JsonResponse({"message":f"Could not find transient {data['transient_name']} in DB"}, status=400)
+    # Prep 
+    tbl = pandas.read_json(data['table'])
+
+    try:
+        path.ingest_path_results(
+            itransient, tbl, 
+            data['F'], 
+            data['instrument'], data['obs_group'],
+            data['P_Ux'], user,
+            remove_previous=True) # May wish to make this optional
+    except:
+        print("Ingestion failed")
+        return JsonResponse({"message":f"Ingestion failed!"}, status=400)
+    else:
+        print("Successfully ingested")

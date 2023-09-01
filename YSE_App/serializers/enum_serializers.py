@@ -260,3 +260,24 @@ class DataQualitySerializer(serializers.HyperlinkedModelSerializer):
         instance.dataquality = validated_data.get('dataquality', instance.dataquality)
         instance.save()
         return instance
+
+
+# FRB
+class FRBSurveySerializer(serializers.HyperlinkedModelSerializer):
+    created_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+    modified_by = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+
+    class Meta:
+        model = FRBSurvey
+        fields = "__all__"
+
+    def create(self, validated_data):
+        return FRBSurvey.objects.create(**validated_data)
+
+    '''
+    def update(self, instance, validated_data):
+        instance.modified_by_id = validated_data.get('modified_by', instance.modified_by)
+        instance.unit = validated_data.get('unit', instance.unit)
+        instance.save()
+        return instance
+    '''

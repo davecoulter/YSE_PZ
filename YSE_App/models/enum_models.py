@@ -1,9 +1,12 @@
+""" Models that have multiple entries """
+
 from django.db import models
 from YSE_App.models.base import *
 
 # If a status gets accidentally deleted, create a proxy status created/modified by `admin` superuser (will always be user.id == 1)
 def get_sentinel_transientstatus():
 	return TransientStatus.objects.get_or_create(name='StatusDeleted', created_by_id='1', modified_by_id='1')[0]
+
 
 class TransientStatus(BaseModel):
 	"""
@@ -247,6 +250,26 @@ class DataQuality(BaseModel):
 
 class MagSystem(BaseModel):
 
+	name = models.CharField(max_length=64)
+
+	def __str__(self):
+		return self.name
+
+	def natural_key(self):
+		return self.name
+
+######################################################
+# FRB Items
+######################################################
+
+class FRBSurvey(BaseModel):
+	"""
+	Tag specificing the survey that the FRB was detected in.
+	
+	Attributes:
+		name (CharField): name of the source of the data.
+	
+	"""
 	name = models.CharField(max_length=64)
 
 	def __str__(self):

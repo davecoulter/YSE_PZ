@@ -46,6 +46,8 @@ from astropy.time import Time
 from .common.utilities import getRADecBox
 
 from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable,ToOFollowupTable
+from .table_utils import FRBTransientFilter, FRBTransientTable
+from .table_utils import CandidatesTable, CandidatesFilter
 from .queries.yse_python_queries import *
 from .queries import yse_python_queries
 import django_tables2 as tables
@@ -65,7 +67,7 @@ def is_ajax(request):
 
 def index(request):
     if request.user.is_authenticated:
-        return HttpResponseRedirect(reverse_lazy('dashboard'))
+        return HttpResponseRedirect(reverse_lazy('frb_dashboard'))
     return render(request, 'YSE_App/index.html')
 
 #def add_followup(request,obj):
@@ -89,7 +91,7 @@ def auth_login(request):
         if next_page:
             return HttpResponseRedirect(next_page)
         else:
-            return HttpResponseRedirect('/dashboard/')
+            return HttpResponseRedirect('/frb_dashboard/')
         #render(request,'YSE_App/dashboard.html')
     else:
         return render(request, 'YSE_App/login.html')
@@ -1034,6 +1036,7 @@ def transient_detail(request, slug):
 
         has_new_comment = len(Log.objects.filter(transient=transient_obj).\
                               filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1))) > 0
+
         
         # obsnights,tellist = view_utils.getObsNights(transient[0])
         # too_resources = ToOResource.objects.all()
@@ -1663,3 +1666,217 @@ job_submitted=%s"""%(log_file_name,datetime.datetime.utcnow().isoformat())
     #response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
     return JsonResponse(context) #HttpResponse('')
 
+###############################################################################
+# FRB Views
+###############################################################################
+
+@login_required
+def frb_dashboard(request):
+
+    transient_categories = []
+    for title,statusname in zip(['New FRBs','Followup Requested'],
+                                ['New','FollowupRequested']):
+        status = TransientStatus.objects.filter(name=statusname).order_by('-modified_date')
+        if len(status) == 1:
+            transients = FRBTransient.objects.filter(status=status[0]).order_by('name')
+        else:
+            transients = FRBTransient.objects.filter(status=None).order_by('name')
+        transientfilter = FRBTransientFilter(request.GET, queryset=transients,prefix=statusname.lower())
+        #if statusname == 'New': table = NewFRBTransientTable(transientfilter.qs,prefix=statusname.lower())
+        #else: table = FRBTransientTable(transientfilter.qs,prefix=statusname.lower())
+        table = FRBTransientTable(transientfilter.qs,prefix=statusname.lower())
+        RequestConfig(request, paginate={'per_page': 10}).configure(table)
+        transient_categories += [(table,title,statusname.lower(),transientfilter),]
+    
+    if request.META['QUERY_STRING']:
+        anchor = request.META['QUERY_STRING'].split('-')[0]
+    else: anchor = ''
+    context = {
+        'transient_categories':transient_categories,
+        'all_transient_statuses':TransientStatus.objects.order_by('name'),
+        'anchor':anchor,
+    }
+
+    return render(request, 'YSE_App/frb_dashboard.html', context)
+
+@login_required
+def frb_transient_detail(request, slug):
+
+    classical_resource_form = ClassicalResourceForm()
+    too_resource_form = ToOResourceForm()
+    #automated_spectrum_form = AutomatedSpectrumRequest()
+    
+    transient = FRBTransient.objects.filter(slug=slug)
+    #alternate_transient = AlternateTransientNames.objects.filter(slug=slug)
+    #if len(alternate_transient) and not len(transient):
+    #    transient = Transient.objects.filter(name=alternate_transient[0].transient.name).select_related()
+    #    #return redirect('/transient_detail/%s/'%transient[0].slug)
+    #    return HttpResponseRedirect(reverse_lazy('transient_detail',kwargs={'slug':transient[0].slug}))
+    logs = Log.objects.filter(transient=transient[0].id)
+
+    obs = None
+    if len(transient) == 1:
+        from django.utils import timezone
+        
+        transient_obj = transient.first() # This should throw an exception if more than one or none are returned
+        transient_id = transient[0].id
+
+        #alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
+
+        '''
+        transient_followup_form = TransientFollowupForm()
+        #transient_followup_form.fields["classical_resource"].queryset = \
+        #       view_utils.get_authorized_classical_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
+        transient_followup_form.fields["too_resource"].queryset = view_utils.get_authorized_too_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
+        transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
+
+        transient_observation_task_form = TransientObservationTaskForm()
+
+        spectrum_upload_form = SpectrumUploadForm()
+        '''
+        
+        # Status update properties
+        all_transient_statuses = TransientStatus.objects.all()
+        transient_status_follow = TransientStatus.objects.get(name="Following")
+        transient_status_watch = TransientStatus.objects.get(name="Watch")
+        transient_status_interesting = TransientStatus.objects.get(name="Interesting")
+        transient_status_ignore = TransientStatus.objects.get(name="Ignore")
+        transient_comment_form = TransientCommentForm()
+
+        # Transient tag
+        all_colors = WebAppColor.objects.all().select_related()
+        #all_transient_tags = TransientTag.objects.all().select_related()
+        #assigned_transient_tags = transient_obj.tags.all().select_related()
+
+        # Get associated Observations
+        followups = TransientFollowup.objects.filter(transient__pk=transient_id).select_related()
+        if followups:
+            for i in range(len(followups)):
+                followups[i].observation_set = TransientObservationTask.objects.filter(followup=followups[i].id)
+
+                if followups[i].classical_resource:
+                    followups[i].resource = followups[i].classical_resource
+                elif followups[i].too_resource:
+                    followups[i].resource = followups[i].too_resource
+                elif followups[i].queued_resource:
+                    followups[i].resource = followups[i].queued_resource
+
+                comments = Log.objects.filter(transient_followup=followups[i].id).select_related()
+                comment_list = []
+                for c in comments:
+                    comment_list += [c.comment]
+                if len(comments): followups[i].comment = '; '.join(comment_list)
+                #else:
+        #   followups = None
+
+        hostdata = FRBGalaxy.objects.filter(pk=transient_obj.host_id).select_related()
+        if hostdata:
+            hostphotdata = view_utils.get_recent_phot_for_host(request.user, host_id=hostdata[0].id)
+            transient_obj.hostdata = hostdata[0]
+
+            #ramin,ramax,decmin,decmax = getRADecBox(transient_obj.hostdata.ra,transient_obj.hostdata.dec,size=1/60.)
+            #transients_near_host = Transient.objects.filter(
+            #    Q(ra__gt=ramin) & Q(ra__lt=ramax) &
+            #    Q(dec__gt=decmin) & Q(dec__lt=decmax) & ~Q(name=transient_obj.name)).values_list('name',flat=True)
+            #transients_near_host = ','.join(transients_near_host)
+        else:
+            hostphotdata = None
+            #transients_near_host = None
+
+        if hostphotdata: transient_obj.hostphotdata = hostphotdata
+
+        #has_new_comment = len(Log.objects.filter(transient=transient_obj).\
+        #                      filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1))) > 0
+
+        # https://django-tables2.readthedocs.io/en/latest/pages/tutorial.html
+        # Candidates
+        candidates = FRBGalaxy.objects.filter(frb_candidates=transient_obj.id)
+        if len(candidates) > 0:
+            # Include P_Ox??
+            candidatefilter = CandidatesFilter(
+                request.GET, queryset=candidates)#,prefix=t)
+            candidate_table = CandidatesTable(candidatefilter.qs)
+            RequestConfig(request, paginate={'per_page': 10}).configure(candidate_table)
+            candidate_table_context = (candidate_table,candidates,candidatefilter)
+        else:
+            candidate_table_context = None
+
+        
+        #obsnights = view_utils.get_obs_nights_happening_soon(request.user)
+        #too_resources = view_utils.get_too_resources(request.user)
+
+        date = datetime.datetime.now(tz=pytz.utc)
+        date_format='%m/%d/%Y %H:%M:%S'
+        
+        #spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True)
+        context = {
+            'transient':transient_obj,
+            'followups':followups,
+            'candidates': candidate_table_context,
+            # 'telescope_list': tellist,
+            #'observing_nights': obsnights,
+            #'too_resource_list': too_resources.select_related(),
+            'nowtime':date.strftime(date_format),
+            #'transient_followup_form': transient_followup_form,
+            #'transient_observation_task_form': transient_observation_task_form,
+            #'transient_comment_form': transient_comment_form,
+            #'alt_names': alt_names,
+            #'all_transient_statuses': all_transient_statuses,
+            #'transient_status_follow': transient_status_follow,
+            #'transient_status_watch': transient_status_watch,
+            #'transient_status_ignore': transient_status_ignore,
+            #'transient_status_interesting': transient_status_interesting,
+            'logs':logs,
+            #'all_transient_tags': all_transient_tags,
+            #'assigned_transient_tags': assigned_transient_tags,
+            'all_colors': all_colors,
+            #'all_transient_spectra': spectra,
+            #'gw_candidate':gwcand,
+            #'gw_images':gwimages,
+            #'spectrum_upload_form':spectrum_upload_form,
+            #'diff_images':TransientDiffImage.objects.filter(phot_data__photometry__transient__name=transient_obj.name),
+            'classical_resource_form':classical_resource_form,
+            'too_resource_form':too_resource_form,
+            #'new_comment':has_new_comment,
+            #'transients_near_host':transients_near_host
+        }
+
+        #if transient_followup_form.fields["valid_start"].initial:
+        #    context['followup_initial_dates'] = \
+        #        (transient_followup_form.fields["valid_start"].initial.strftime('%m/%d/%Y HH:MM'),
+        #         transient_followup_form.fields["valid_stop"].initial.strftime('%m/%d/%Y HH:MM'))           
+        
+        #if lastphotdata and firstphotdata:
+        #    context['recent_mag'] = lastphotdata.mag
+        #    context['recent_filter'] = lastphotdata.band
+        #    context['recent_magdate'] = lastphotdata.obs_date
+        #    context['first_mag'] = firstphotdata.mag
+        #    context['first_filter'] = firstphotdata.band
+        #    context['first_magdate'] = firstphotdata.obs_date
+        #    context['allphotdata']=allphotdata
+        #if transient_obj.postage_stamp_file:
+        #    context['qub_candidate'] = transient_obj.postage_stamp_file.split('/')[-1].split('_')[0]
+            
+        #context['automated_spectrum_form'] = automated_spectrum_form
+
+
+        # we need to add a submit to TNS button
+        # for transients that don't have TNS names
+        # - for now, this is only DECam transients
+        #tns_submit_logs = logs.filter(comment__startswith='Submitted to TNS')
+        #tns_sandbox_logs = logs.filter(comment__startswith='TNS sandbox')
+        #if not len(tns_submit_logs) and '_cand' in transient_obj.name and \
+        #   'DECAT' in list(assigned_transient_tags.values_list('name',flat=True)):
+        #    submit_to_tns = True
+        #else:
+        #    submit_to_tns = False
+        #context['submit_to_tns'] = submit_to_tns
+        #if len(tns_sandbox_logs):
+        #    context['tns_sandbox_url'] = tns_sandbox_logs[0].comment.split()[2]
+        
+        return render(request,
+            'YSE_App/frb_transient_detail.html',
+            context)
+
+    else:
+        return Http404('FRBTransient not found')
