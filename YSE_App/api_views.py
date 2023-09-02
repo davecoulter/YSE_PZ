@@ -517,3 +517,13 @@ class PathViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = Path.objects.all()
     serializer_class = PathSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+class FRBFollowUpRequestViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBFollowUpRequest.objects.all()
+    serializer_class = FRBFollowUpRequestSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+class FRBFollowUpResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBFollowUpResource.objects.all()
+    serializer_class = FRBFollowUpResourceSerializer
+    permission_classes = (permissions.IsAuthenticated,)

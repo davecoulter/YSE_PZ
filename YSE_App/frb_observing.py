@@ -14,7 +14,7 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
                    scrub_previous_resource:bool=True):
 
     # TODO
-    # Scrub previous
+    # Scrub previous entries with the named resource?
     
     # Loop on rows
     for ss, row in obsplan.iterrows():
@@ -23,23 +23,23 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
         try:
             transient=FRBTransient.objects.get(name=row['FRB'])
         except:
-            return 202, f"FRB {row['FRB']} not in DB"
+            return 401, f"FRB {row['FRB']} not in DB"
 
         # Check if the transient status is OK
         if row['mode'] in ['image']:
             if transient.status.name != 'Image':
-                return 203, f"FRB {row['FRB']} not in Image status" 
+                return 402, f"FRB {row['FRB']} not in Image status" 
         elif row['mode'] in ['longslit', 'mask']:
             if transient.status.name != 'Spectrum':
-                return 203, f"FRB {row['FRB']} not in Spectrum status" 
+                return 403, f"FRB {row['FRB']} not in Spectrum status" 
         else:
-            return 203, f"Mode {row['mode']} not allowed"
+            return 404, f"Mode {row['mode']} not allowed"
 
         # Grab the resource
         try:
             resource=FRBFollowUpResource.objects.get(name=row['Resource'])
         except:
-            return 202, f"Resource {row['Resource']} not in DB"
+            return 405, f"Resource {row['Resource']} not in DB"
 
         # Add if not already in there
         req = data_utils.add_or_grab_obj(

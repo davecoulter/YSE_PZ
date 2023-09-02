@@ -36,7 +36,7 @@ import sys
 from urllib.parse import unquote
 
 from YSE_App.galaxies import path
-from YSE_App import frb_targeting
+from YSE_App import frb_observing
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -1636,3 +1636,45 @@ def targets_from_frb_followup_resource(request):
 
     # Return
     return JsonResponse(target_table.to_dict(), status=201)
+
+
+@csrf_exempt
+@login_or_basic_auth_required
+def ingest_obsplan(request):
+    """
+    Ingest an observing plan 
+
+    The request must include the following items
+     in its data (all in JSON, of course; 
+     data types are for after parsing the JSON):
+
+      - table (str): a table of the request with columns (all strings):
+        -- FRB: TNS name
+        -- Resource: Resource name
+        -- mode: observing mode ['image', 'longslit', 'mask']
+
+    Args:
+        request (requests.request): 
+            Request from outside FFFF-PZ
+
+    Returns:
+        JsonResponse: 
+    """
+    
+    # Parse the data into a dict
+    data = JSONParser().parse(request)
+
+    # Deal with credentials
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    # Prep 
+    obs_tbl = pandas.read_json(data['table'])
+
+    # Run
+    code, msg = frb_observing.ingest_obsplan(obs_tbl, user)
+
+    # Return
+    return JsonResponse({"message":f"{msg}"}, status=code)
