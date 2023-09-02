@@ -10,8 +10,12 @@ from YSE_App import data_utils
 import pandas
 
 
-def ingest_obsplan(obsplan:pandas.DataFrame, user):
+def ingest_obsplan(obsplan:pandas.DataFrame, user,
+                   scrub_previous_resource:bool=True):
 
+    # TODO
+    # Scrub previous
+    
     # Loop on rows
     for ss, row in obsplan.iterrows():
 

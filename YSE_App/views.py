@@ -1921,10 +1921,16 @@ def frb_followup_resource(request, slug):
         'anchor':anchor,
     }
 
-    # Valid FRBs
+    # Valid FRBs for observing
     frbs_by_mode = frb_fu.get_frbs_by_mode()
     # Build the tables
     for key in frbs_by_mode.keys():
         context[f'{key}_table'] = FRBTransientTable(frbs_by_mode[key])
+
+    # Pending FRBs
+    fu_requested = FRBFollowUpRequest.objects.filter(resource=frb_fu)
+    frb_ids = [x.transient.id for x in fu_requested]
+    pending_frbs = FRBTransient.objects.filter(id__in=frb_ids)
+    context['pending_table'] = FRBTransientTable(pending_frbs)
 
     return render(request, 'YSE_App/frb_followup_resource.html', context)

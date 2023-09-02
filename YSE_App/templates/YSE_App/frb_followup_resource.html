@@ -26,23 +26,31 @@
 {% block content %}
     
     <h3>
-        FRBs for Imaging
+        Pending FRBs
+    </h3>
+
+    <div class="box-body">
+      {% render_table pending_table %}
+    </div>
+  
+    <h3>
+        Valid FRBs for Imaging
     </h3>
 
     <div class="box-body">
       {% render_table imaging_table %}
-
     </div>
   
     <h3>
-        FRBs for Longslit
+        Valid FRBs for Longslit
     </h3>
 
     <div class="box-body">
       {% render_table longslit_table %}
+    </div>
 
     <h3>
-        FRBs for Masks
+        Valid FRBs for Masks
     </h3>
 
     <div class="box-body">

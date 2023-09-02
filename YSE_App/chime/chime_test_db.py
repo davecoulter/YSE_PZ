@@ -4,10 +4,13 @@ import datetime
 
 from django.contrib import auth
 
+import pandas
+
 from YSE_App.models import *
 from YSE_App.chime import chime_path_test
 from YSE_App.data_utils import add_or_grab_obj
 from YSE_App import frb_init
+from YSE_App import frb_observing
 
 def build_chime_test_db():
     """ Build the CHIME test DB from scratch """
@@ -46,6 +49,18 @@ def build_chime_test_db():
     )
     _ = add_or_grab_obj(FRBFollowUpResource,
                         uni_fields, extra_fields, user)
+                
+    # Add a FollowUp request
+    FRB='FRB20300714Y'
+    transient=FRBTransient.objects.get(name=FRB)
+    transient.status = TransientStatus.objects.get(name='Spectrum')
+    transient.save()
+    row = dict(FRB=FRB,
+               Resource='Gemini-LP-2024A-99',
+               mode='longslit')
+    obsplan = pandas.DataFrame([row])
+    code, msg = frb_observing.ingest_obsplan(obsplan, user)
+
 
 def clean_all():
     """ Wipe clean the DB """
