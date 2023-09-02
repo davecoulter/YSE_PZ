@@ -1675,8 +1675,8 @@ job_submitted=%s"""%(log_file_name,datetime.datetime.utcnow().isoformat())
 def frb_dashboard(request):
 
     transient_categories = []
-    for title,statusname in zip(['New FRBs','Followup Requested'],
-                                ['New','FollowupRequested']):
+    for title,statusname in zip(['New FRBs','Followup Needed'],
+                                ['New', 'Spectrum']):
         status = TransientStatus.objects.filter(name=statusname).order_by('-modified_date')
         if len(status) == 1:
             transients = FRBTransient.objects.filter(status=status[0]).order_by('name')

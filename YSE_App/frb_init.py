@@ -25,4 +25,4 @@ def init_status(user):
     # Add into DB
     for status in all_status:
         _ = add_or_grab_obj(TransientStatus,
-                        dict(name=status), user)
+                        dict(name=status), {}, user)

@@ -1740,6 +1740,8 @@ class FRBTransientTable(tables.Table):
                                verbose_name='Host P(O|x)')
     frb_survey_string = tables.Column(accessor='FRBSurveyString',
                                verbose_name='FRB Survey',orderable=True,order_by='frb_survey')
+    status_string = tables.Column(accessor='StatusString',
+                               verbose_name='Status')
     #disc_date_string = tables.Column(accessor='disc_date_string',
     #                                 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
     #recent_mag = tables.Column(accessor='recent_mag',
@@ -1763,20 +1765,6 @@ class FRBTransientTable(tables.Table):
 #-
 #{% endif %}""",
 #                                   verbose_name='MW E(B-V)',orderable=True,order_by='mw_ebv')
-
-
-    status_string = tables.TemplateColumn("""<div class="btn-group">
-<button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
-                                            <span id="{{ record.id }}_status_name" class="dropbtn">{{ record.status }}</span>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            {% for status in all_transient_statuses %}
-                                                    <li><a data-status_id="{{ status.id }}" data-status_name="{{ status.name }}" transient_id="{{ record.id }}" class="transientStatusChange" href="#">{{ status.name }}</a></li>
-                                            {% endfor %}
-                                        </ul>
-</div>""",
-                                          verbose_name='Status',orderable=True,order_by='status')
-
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

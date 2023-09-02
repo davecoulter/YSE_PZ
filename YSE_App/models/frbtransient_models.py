@@ -97,6 +97,9 @@ class FRBTransient(BaseModel):
     def DMString(self):
         return '%.1f'%(self.DM)
 
+    def StatusString(self):
+        return self.status.name
+
     def FRBSurveyString(self):
         return self.frb_survey.name
 
