@@ -81,7 +81,8 @@ def run(delete_existing:bool=True,
     #embed(header='66 of chime_path_test.py')
     photom_inst_name = path.ingest_path_results(
         itransient, candidates, 
-        F, 'GPC1', 'Pan-STARRS1', P_Ux, user)
+        F, 'GPC1', 'Pan-STARRS1', P_Ux, user,
+        False)
 
     # Test!
     assert max([ipath.P_Ox for ipath in Path.objects.filter(transient=itransient)]) >= 0.98

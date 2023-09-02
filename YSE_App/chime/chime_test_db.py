@@ -7,11 +7,17 @@ from django.contrib import auth
 from YSE_App.models import *
 from YSE_App.chime import chime_path_test
 from YSE_App.data_utils import add_or_grab_obj
+from YSE_App import frb_init
 
 def build_chime_test_db():
     """ Build the CHIME test DB """
 
     user = auth.authenticate(username='root', password='F4isthebest')
+
+    # ##############################
+    # Init the DB
+    # Status
+    frb_init.init_status(user)
 
     # Set of FRBs and Path for one
     chime_path_test.run(delete_existing=True,
