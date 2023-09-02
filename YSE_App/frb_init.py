@@ -10,7 +10,7 @@ def init_status(user):
 
     # Create the FRB ones
     all_status = [\
-        'New', # Just ingested, this may not be used 
+        'Unassigned', # Likely just ingested although most will be given PublicPATH
         'PublicPATH', # Needs to be run through PATH with public data
         'Image', # Needs deeper imaging
         'Spectrum', # Needs spectroscopy for redshift

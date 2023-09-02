@@ -1675,19 +1675,30 @@ job_submitted=%s"""%(log_file_name,datetime.datetime.utcnow().isoformat())
 def frb_dashboard(request):
 
     transient_categories = []
-    for title,statusname in zip(['New FRBs','Followup Needed'],
-                                ['New', 'Spectrum']):
-        status = TransientStatus.objects.filter(name=statusname).order_by('-modified_date')
-        if len(status) == 1:
-            transients = FRBTransient.objects.filter(status=status[0]).order_by('name')
-        else:
-            transients = FRBTransient.objects.filter(status=None).order_by('name')
-        transientfilter = FRBTransientFilter(request.GET, queryset=transients,prefix=statusname.lower())
+    for title,statusnames in zip(['Unassigned FRBs',
+                                  'PATH Needed',
+                                  'Followup Needed',
+                                  'Followup Pending'],
+                                [['Unassigned'], 
+                                 ['PublicPATH', 'DeepPATH'],
+                                 ['Image','Spectrum'],
+                                 ['PendingImage', 'PendingSpectrum'],
+                                 ]):
+        transients = FRBTransient.objects.filter(status__in=TransientStatus.objects.filter(
+            name__in=statusnames))
+        #status = TransientStatus.objects.filter(name__in=statusnames).order_by('-modified_date')
+        #if len(status) == 1:
+        #    transients = FRBTransient.objects.filter(status=status[0]).order_by('name')
+        #else:
+        #    transients = FRBTransient.objects.filter(status=None).order_by('name')
+        #transientfilter = FRBTransientFilter(request.GET, queryset=transients,prefix=statusname.lower())
         #if statusname == 'New': table = NewFRBTransientTable(transientfilter.qs,prefix=statusname.lower())
         #else: table = FRBTransientTable(transientfilter.qs,prefix=statusname.lower())
-        table = FRBTransientTable(transientfilter.qs,prefix=statusname.lower())
+        #table = FRBTransientTable(transientfilter.qs)#,prefix=statusname.lower())
+        table = FRBTransientTable(transients)
         RequestConfig(request, paginate={'per_page': 10}).configure(table)
-        transient_categories += [(table,title,statusname.lower(),transientfilter),]
+        #transient_categories += [(table,title,statusnames[0].lower(),transientfilter),]
+        transient_categories += [(table,title,statusnames[0].lower(),None),]
 
     # Show active follow-up resources
 

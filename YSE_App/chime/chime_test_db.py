@@ -10,14 +10,19 @@ from YSE_App.data_utils import add_or_grab_obj
 from YSE_App import frb_init
 
 def build_chime_test_db():
-    """ Build the CHIME test DB """
+    """ Build the CHIME test DB from scratch """
 
     user = auth.authenticate(username='root', password='F4isthebest')
+
+    # Clean first
+    clean_all()
 
     # ##############################
     # Init the DB
     # Status
     frb_init.init_status(user)
+
+    # Add objects
 
     # Set of FRBs and Path for one
     chime_path_test.run(delete_existing=True,

@@ -192,6 +192,8 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
                 instance.frb_tags.add(frb_tag)
                 print(f"Added FRB tag: {tag_name}")
             
+            # Set status to PuplicPATH unless we have criteria here to do otherwise
+            instance.status = TransientStatus.objects.get(name='PublicPATH')
 
         # Save
         instance.save()

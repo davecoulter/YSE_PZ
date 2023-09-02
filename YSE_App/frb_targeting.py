@@ -38,15 +38,6 @@ def calc_airmasses(frb_fu, gd_frbs,
         telescope.elevation*units.m)
     tel = Observer(location=location, timezone="UTC")
 
-    # TODO -- Cut down transients by selection criteria
-    #   Possibly somewhere else..
-    #  magnitude
-    #  FRB Survey
-    #  P(O|x)
-    #  E(B-V)
-    #  Bright star?
-    # This needs to be a query set
-    gd_frbs = FRBTransient.objects.all()
     nfrb = len(gd_frbs)
 
     # Coords
@@ -170,7 +161,9 @@ def targetfrbs_for_fu(frb_fu):
         gd_frbs = gd_frbs.filter(status__in=TransientStatus.objects.filter(
             name__in=frb_fu.frb_statuses.split(',')))
     else:
-        gd_frbs = gd_frbs.filter(status=TransientStatus.objects.get(name='New'))
+        gd_frbs = gd_frbs.filter(
+            status__in=TransientStatus.objects.filter(
+                name__in=['Image', 'Spectrum']))
 
     # Tags? aka samples
     if frb_fu.frb_tags:
@@ -197,14 +190,17 @@ def grab_targets_by_mode(frb_fu, frbs):
 
     # Imaging
     if frb_fu.num_targ_img > 0:
-        imaging_frbs = frbs.filter(host__isnull=True)
+        #imaging_frbs = frbs.filter(host__isnull=True)
+        imaging_frbs = frbs.filter(
+            status=TransientStatus.objects.get(name='Image'))
     else:
         imaging_frbs = FRBTransient.objects.none()
 
 
     # Longslit
     if frb_fu.num_targ_longslit > 0:
-        longslit_frbs = frbs.filter(host__isnull=False)
+        longslit_frbs = frbs.filter(
+            status=TransientStatus.objects.get(name='Spectrum'))
         if frb_fu.min_POx:
             gd_ids = []
             for frb in longslit_frbs:
