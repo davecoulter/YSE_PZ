@@ -1649,7 +1649,7 @@ def ingest_obsplan(request):
      data types are for after parsing the JSON):
 
       - table (str): a table of the request with columns (all strings):
-        -- FRB: TNS name
+        -- TNS: TNS name
         -- Resource: Resource name
         -- mode: observing mode ['image', 'longslit', 'mask']
 
@@ -1675,6 +1675,51 @@ def ingest_obsplan(request):
 
     # Run
     code, msg = frb_observing.ingest_obsplan(obs_tbl, user)
+
+    # Return
+    return JsonResponse({"message":f"{msg}"}, status=code)
+
+@csrf_exempt
+@login_or_basic_auth_required
+def ingest_obslog(request):
+    """
+    Ingest an observing log
+
+    The request must include the following items
+     in its data (all in JSON, of course; 
+     data types are for after parsing the JSON):
+
+      - table (str): a table of the request with columns 
+            -- TNS (str)
+            -- Resource (str)
+            -- mode (str)
+            -- Conditions (str)
+            -- texp (float)
+            -- date (timestamp)
+            -- success (bool)
+
+    Args:
+        request (requests.request): 
+            Request from outside FFFF-PZ
+
+    Returns:
+        JsonResponse: 
+    """
+    
+    # Parse the data into a dict
+    data = JSONParser().parse(request)
+
+    # Deal with credentials
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    # Prep 
+    obs_tbl = pandas.read_json(data['table'])
+
+    # Run
+    code, msg = frb_observing.ingest_obslog(obs_tbl, user)
 
     # Return
     return JsonResponse({"message":f"{msg}"}, status=code)

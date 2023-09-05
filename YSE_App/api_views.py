@@ -527,3 +527,8 @@ class FRBFollowUpResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet
     queryset = FRBFollowUpResource.objects.all()
     serializer_class = FRBFollowUpResourceSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+class FRBFollowUpObservationViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBFollowUpObservation.objects.all()
+    serializer_class = FRBFollowUpObservationSerializer
+    permission_classes = (permissions.IsAuthenticated,)

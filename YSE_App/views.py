@@ -1678,11 +1678,15 @@ def frb_dashboard(request):
     for title,statusnames in zip(['Unassigned FRBs',
                                   'PATH Needed',
                                   'Followup Needed',
-                                  'Followup Pending'],
+                                  'Followup Pending',
+                                  'Observed',
+                                  'Completed'],
                                 [['Unassigned'], 
                                  ['PublicPATH', 'DeepPATH'],
                                  ['Image','Spectrum'],
                                  ['PendingImage', 'PendingSpectrum'],
+                                 ['ObsImage', 'ObsSpectrum'],
+                                 ['Completed'],
                                  ]):
         transients = FRBTransient.objects.filter(status__in=TransientStatus.objects.filter(
             name__in=statusnames))
