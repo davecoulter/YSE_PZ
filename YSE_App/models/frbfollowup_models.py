@@ -131,4 +131,7 @@ class FRBFollowUpResource(BaseModel):
         # Combine
         target_table = pandas.concat(tbls, ignore_index=True)
 
+        # Add in the resource
+        target_table['Resource'] = self.name
+
         return target_table
