@@ -124,6 +124,16 @@ class FRBTransient(BaseModel):
 
     def FRBSurveyString(self):
         return self.frb_survey.name
+    
+    def FRBFollowUpResourcesString(self):
+        resources = FRBFollowUpResource.objects.filter(transient=self)
+        if resources.count() > 0:
+            resouce_list = [r.name for r in resources]
+            # TODO -- Turn this into URLs
+            resouce_names = ','.join(resouce_list)
+            return resouce_names
+        else:
+            return ''
 
     def Separation(self):
         host = FRBGalaxy.objects.get(pk=self.host_id)
