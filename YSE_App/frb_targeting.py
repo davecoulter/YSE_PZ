@@ -131,7 +131,7 @@ def target_table_from_frbs(frbs, mode:str):
     df = pandas.DataFrame(rows)
     # Add mode
     if len(df) > 0:
-        df['Target_type'] = mode
+        df['mode'] = mode
 
     # Return
     return df

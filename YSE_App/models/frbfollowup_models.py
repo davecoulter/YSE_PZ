@@ -131,6 +131,9 @@ class FRBFollowUpResource(BaseModel):
         # Combine
         target_table = pandas.concat(tbls, ignore_index=True)
 
+        # Add in the resource
+        target_table['Resource'] = self.name
+
         return target_table
 
 
@@ -146,6 +149,34 @@ class FRBFollowUpRequest(BaseModel):
     resource = models.ForeignKey(FRBFollowUpResource, on_delete=models.CASCADE)
     transient = models.ForeignKey(FRBTransient, on_delete=models.CASCADE)
     mode = models.CharField(max_length=64) # image, longslit, mask
+
+    def __str__(self):
+        return f'Resource: {self.resource.name} FRB: {self.transient.name} mode: {self.mode}'
+
+class FRBFollowUpObservation(BaseModel):
+    """ FRBFollowUpObservation model
+
+    Used to book-keep actual observations
+    
+    """
+
+    ### Entity relationships ###
+    # Required
+    resource = models.ForeignKey(FRBFollowUpResource, on_delete=models.CASCADE)
+    transient = models.ForeignKey(FRBTransient, on_delete=models.CASCADE)
+    mode = models.CharField(max_length=64) # image, longslit, mask
+
+    # Description of the observation (e.g. clear, cloudy, photometric)
+    conditions = models.CharField(max_length=64) # image, longslit, mask
+
+    # Exposure time (seconds)
+    texp = models.FloatField()
+
+    # Date of observation
+    date = models.DateTimeField() # UT
+
+    # Successful?   
+    success = models.BooleanField()
 
     def __str__(self):
         return f'Resource: {self.resource.name} FRB: {self.transient.name} mode: {self.mode}'

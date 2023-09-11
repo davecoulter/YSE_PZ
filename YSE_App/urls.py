@@ -46,6 +46,7 @@ urlpatterns = [
     re_path(r'^ingest_path/', data_utils.ingest_path, name='ingest_path'),
     re_path(r'^targets_from_frb_followup_resource/', data_utils.targets_from_frb_followup_resource, name='targets_from_frb_followup_resource'),
     re_path(r'^ingest_obsplan/', data_utils.ingest_obsplan, name='ingest_obsplan'),
+    re_path(r'^ingest_obslog/', data_utils.ingest_obslog, name='ingest_obslog'),
     # ##############################################################
 
     # Test pages
@@ -277,6 +278,7 @@ router.register(r'frbgalaxies', api_views.FRBGalaxyViewSet)
 router.register(r'paths', api_views.PathViewSet)
 router.register(r'frbrequests', api_views.FRBFollowUpRequestViewSet)
 router.register(r'frbresources', api_views.FRBFollowUpResourceViewSet)
+router.register(r'frbobservations', api_views.FRBFollowUpObservationViewSet)
 
 # Login/Logout
 api_url_patterns = [re_path(r'^api/', include(router.urls)),

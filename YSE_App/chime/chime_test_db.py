@@ -49,13 +49,20 @@ def build_chime_test_db():
     )
     _ = add_or_grab_obj(FRBFollowUpResource,
                         uni_fields, extra_fields, user)
+
+    # Modify status of 2 FRBs
+    FRB='FRB20300714Z'
+    transient=FRBTransient.objects.get(name=FRB)
+    transient.status = TransientStatus.objects.get(name='Image')
+    transient.save()
                 
-    # Add a FollowUp request
     FRB='FRB20300714Y'
     transient=FRBTransient.objects.get(name=FRB)
     transient.status = TransientStatus.objects.get(name='Spectrum')
     transient.save()
-    row = dict(FRB=FRB,
+
+    # Add a FollowUp request
+    row = dict(TNS=FRB,
                Resource='Gemini-LP-2024A-99',
                mode='longslit')
     obsplan = pandas.DataFrame([row])

@@ -21,3 +21,12 @@ class FRBFollowUpResourceSerializer(serializers.HyperlinkedModelSerializer):
         model = FRBFollowUpResource
         fields = "__all__"
         
+class FRBFollowUpObservationSerializer(serializers.HyperlinkedModelSerializer):
+    """ Serializer for the FRBFollowUpObservation table
+    """
+    instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail', lookup_field="id")
+
+    class Meta:
+        model = FRBFollowUpObservation
+        fields = "__all__"
+        

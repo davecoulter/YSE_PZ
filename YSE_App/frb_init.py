@@ -19,7 +19,7 @@ def init_status(user):
         'PendingSpectrum', # Pending spectroscopy with an FRBFollowUp
         'ObsImage', # Observed with imaging
         'ObsSpectrum', # Observed with spectroscopy
-        'Complete', # Redshift measured or deemed impossible
+        'Complete', # Redshift measured (or deemed impossible)
     ]
 
     # Add into DB
