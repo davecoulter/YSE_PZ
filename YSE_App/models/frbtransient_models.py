@@ -64,6 +64,7 @@ class FRBTransient(BaseModel):
         FRBGalaxy, null=True, blank=True, 
         on_delete=models.SET_NULL, 
         related_name='frb') # Needs to be here for backwards compatibility
+
     # All candidates ingested into the DB during PATH analysis
     candidates = models.ManyToManyField(
         FRBGalaxy, blank=True, 
