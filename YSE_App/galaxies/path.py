@@ -76,8 +76,10 @@ def ingest_path_results(itransient:FRBTransient,
             p.delete()
 
     # Add new ones to DB
+    print('Looping on candidates')
     for ss in range(len(candidates)):
         icand = candidates.iloc[ss]
+        print(f"ss: {ss}, ra: {icand.ra}, dec: {icand.dec}")
         # Add or grab the host candidates
         name = getGalaxyname(icand.ra, icand.dec)
         galaxy = data_utils.add_or_grab_obj(

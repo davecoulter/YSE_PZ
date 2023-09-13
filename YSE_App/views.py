@@ -1760,12 +1760,12 @@ def frb_transient_detail(request, slug):
         '''
         
         # Status update properties
-        all_transient_statuses = TransientStatus.objects.all()
-        transient_status_follow = TransientStatus.objects.get(name="Following")
-        transient_status_watch = TransientStatus.objects.get(name="Watch")
-        transient_status_interesting = TransientStatus.objects.get(name="Interesting")
-        transient_status_ignore = TransientStatus.objects.get(name="Ignore")
-        transient_comment_form = TransientCommentForm()
+        #all_transient_statuses = TransientStatus.objects.all()
+        #transient_status_follow = TransientStatus.objects.get(name="Following")
+        #transient_status_watch = TransientStatus.objects.get(name="Watch")
+        #transient_status_interesting = TransientStatus.objects.get(name="Interesting")
+        #transient_status_ignore = TransientStatus.objects.get(name="Ignore")
+        #transient_comment_form = TransientCommentForm()
 
         # Transient tag
         all_colors = WebAppColor.objects.all().select_related()

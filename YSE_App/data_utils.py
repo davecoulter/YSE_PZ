@@ -1593,9 +1593,11 @@ def ingest_path(request):
             remove_previous=True) # May wish to make this optional
     except:
         print("Ingestion failed")
-        return JsonResponse({"message":f"Ingestion failed!"}, status=400)
+        return JsonResponse({"message":f"Ingestion failed 2x!"}, status=405)
     else:
         print("Successfully ingested")
+
+    return JsonResponse({"message":f"Ingestion successful"}, status=500)
 
 @csrf_exempt
 @login_or_basic_auth_required
