@@ -1631,6 +1631,7 @@ def targets_from_frb_followup_resource(request):
     except:
         return JsonResponse({"message":f"Bad user authentication in DB"}, status=401)
 
+    # Grab the FollowUpResource
     try:
         frb_fu = FRBFollowUpResource.objects.get(name=data['resource_name'])
     except:
