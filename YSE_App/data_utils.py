@@ -1623,15 +1623,18 @@ def targets_from_frb_followup_resource(request):
     data = JSONParser().parse(request)
 
     # Deal with credentials
-    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
-    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
-    username, password = credentials.split(':', 1)
-    user = auth.authenticate(username=username, password=password)
+    try:
+        auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+        credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+        username, password = credentials.split(':', 1)
+        user = auth.authenticate(username=username, password=password)
+    except:
+        return JsonResponse({"message":f"Bad user authentication in DB"}, status=401)
 
     try:
         frb_fu = FRBFollowUpResource.objects.get(name=data['resource_name'])
     except:
-        return JsonResponse({"message":f"Could not find resource {data['resource_name']} in DB"}, status=400)
+        return JsonResponse({"message":f"Could not find resource {data['resource_name']} in DB"}, status=402)
 
     # Grab the targets
     target_table = frb_fu.generate_target_table()
