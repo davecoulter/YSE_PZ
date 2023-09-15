@@ -48,6 +48,12 @@ class FRBTransient(BaseModel):
     ra_err = models.FloatField(null=True, blank=True)
     # Error in Dec in deg
     dec_err = models.FloatField(null=True, blank=True)
+    # Error in ellipse in deg
+    a_err = models.FloatField(null=True, blank=True)
+    # Error in ellipse in deg
+    b_err = models.FloatField(null=True, blank=True)
+    # PA of the ellipse
+    theta = models.FloatField(null=True, blank=True)
     # Localization file
     localization_file = models.CharField(max_length=64, null=True, blank=True)
 

@@ -8,6 +8,7 @@ import pandas
 
 from YSE_App.models import *
 from YSE_App.chime import chime_path_test
+from YSE_App.chime import chime_test_utils
 from YSE_App.data_utils import add_or_grab_obj
 from YSE_App import frb_init
 from YSE_App import frb_observing
@@ -18,7 +19,7 @@ def build_chime_test_db():
     user = auth.authenticate(username='root', password='F4isthebest')
 
     # Clean first
-    clean_all()
+    chime_test_utils.clean_all()
 
     # ##############################
     # Init the DB
@@ -68,22 +69,3 @@ def build_chime_test_db():
     obsplan = pandas.DataFrame([row])
     code, msg = frb_observing.ingest_obsplan(obsplan, user)
 
-
-def clean_all():
-    """ Wipe clean the DB """
-
-    print("Removing Path objects")
-    for ipath in Path.objects.all():
-        ipath.delete()
-
-    print("Removing FRBGalaxy objects")
-    for galaxy in FRBGalaxy.objects.all():
-        galaxy.delete()
-
-    print("Removing FRBFollowUpResource objects")
-    for frb_fu in FRBFollowUpResource.objects.all():
-        frb_fu.delete()
-
-    print("Removing FRBTransient objects")
-    for itransient in FRBTransient.objects.all():
-        itransient.delete()

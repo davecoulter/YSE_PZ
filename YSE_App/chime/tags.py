@@ -82,6 +82,10 @@ def set_from_instance(instance):
     if instance.repeater:
         tags.append(repeater_sample['name'])
 
+    # ###################################
+    # KKO (temporary)
+    tags.append('CHIME-KKO')
+
     # Need something
     if len(tags) == 0:
         tags = ['CHIME-Unknown']
