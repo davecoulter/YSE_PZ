@@ -1729,3 +1729,38 @@ def ingest_obslog(request):
 
     # Return
     return JsonResponse({"message":f"{msg}"}, status=code)
+
+
+@csrf_exempt
+@login_or_basic_auth_required
+def add_frb_followup_resource(request):
+    """ Add an FRBFollowUpResource to the DB from an 
+    outside request
+
+    This is mainly intended for recovering from a "problem"
+
+    Args:
+        request (_type_): _description_
+
+    Returns:
+        JsonResponse: _description_
+    """
+    
+    data = JSONParser().parse(request)
+
+    # Authenticate
+    # TODO -- SHOULD RESTRICT TO ADMIN
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    # Use Serializer
+    serializer = FRBFollowUpResourceSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        print(f"Generated FRBFollowUpResource: {data['name']}")
+    else:
+        print(f"Not valid!")
+
+    return JsonResponse(serializer.data, status=201)
