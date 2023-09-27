@@ -1740,25 +1740,10 @@ def frb_transient_detail(request, slug):
 
     obs = None
     if len(transient) == 1:
-        from django.utils import timezone
         
         transient_obj = transient.first() # This should throw an exception if more than one or none are returned
         transient_id = transient[0].id
 
-        #alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
-
-        '''
-        transient_followup_form = TransientFollowupForm()
-        #transient_followup_form.fields["classical_resource"].queryset = \
-        #       view_utils.get_authorized_classical_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
-        transient_followup_form.fields["too_resource"].queryset = view_utils.get_authorized_too_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
-        transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
-
-        transient_observation_task_form = TransientObservationTaskForm()
-
-        spectrum_upload_form = SpectrumUploadForm()
-        '''
-        
         # Status update properties
         #all_transient_statuses = TransientStatus.objects.all()
         #transient_status_follow = TransientStatus.objects.get(name="Following")
@@ -1773,29 +1758,11 @@ def frb_transient_detail(request, slug):
         #assigned_transient_tags = transient_obj.tags.all().select_related()
 
         # Get associated Observations
-        followups = TransientFollowup.objects.filter(transient__pk=transient_id).select_related()
-        if followups:
-            for i in range(len(followups)):
-                followups[i].observation_set = TransientObservationTask.objects.filter(followup=followups[i].id)
-
-                if followups[i].classical_resource:
-                    followups[i].resource = followups[i].classical_resource
-                elif followups[i].too_resource:
-                    followups[i].resource = followups[i].too_resource
-                elif followups[i].queued_resource:
-                    followups[i].resource = followups[i].queued_resource
-
-                comments = Log.objects.filter(transient_followup=followups[i].id).select_related()
-                comment_list = []
-                for c in comments:
-                    comment_list += [c.comment]
-                if len(comments): followups[i].comment = '; '.join(comment_list)
-                #else:
-        #   followups = None
-        '''
-        followups = FRBFollowUpResource.objects.filter(transient__pk=transient_id).select_related()
-        followups = None
-        '''
+        followups = FRBFollowUpRequest.objects.filter(transient__pk=transient_id)
+        if len(followups) == 0:
+            followup_names = 'None'
+        else:
+            followup_names = ','.join([item.ResourceName() for item in followups])
 
         hostdata = FRBGalaxy.objects.filter(pk=transient_obj.host_id).select_related()
         if hostdata:
@@ -1839,7 +1806,7 @@ def frb_transient_detail(request, slug):
         #spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True)
         context = {
             'transient':transient_obj,
-            'followups':followups,
+            'followup_names': followup_names,
             'candidates': candidate_table_context,
             # 'telescope_list': tellist,
             #'observing_nights': obsnights,
