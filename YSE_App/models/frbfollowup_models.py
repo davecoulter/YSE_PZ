@@ -140,7 +140,8 @@ class FRBFollowUpResource(BaseModel):
 class FRBFollowUpRequest(BaseModel):
     """ FRBFollowUpRequest model
 
-    Used for pending observations
+    This model holds FRBs that are pending observations
+    matching them to their FollowUpResource
     
     """
 
@@ -152,6 +153,9 @@ class FRBFollowUpRequest(BaseModel):
 
     def __str__(self):
         return f'Resource: {self.resource.name} FRB: {self.transient.name} mode: {self.mode}'
+
+    def ResourceName(self):
+        return f'{self.resource.name}'
 
 class FRBFollowUpObservation(BaseModel):
     """ FRBFollowUpObservation model
