@@ -21,7 +21,7 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
         user (_type_): _description_
         scrub_previous_resource (bool, optional): If True, remove all 
         entries to the named resource from FRBFollowUpRequest.
-         NOT YET IMPLEMENTED
+          THIS OPTION IS NOT YET IMPLEMENTED
 
     Returns:
         tuple: (status, message) (int,str) 
@@ -78,7 +78,7 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
     This updates the transient status and adds to FRBFollowUpObservation
 
     Args:
-        obsplan (pandas.DataFrame): table of observations
+        obslog (pandas.DataFrame): table of observations
             -- TNS (str)
             -- Resource (str)
             -- mode (str)
@@ -87,9 +87,6 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
             -- date (timestamp)
             -- success (bool)
         user (_type_): _description_
-        scrub_previous_resource (bool, optional): If True, remove all 
-        entries to the named resource from FRBFollowUpRequest.
-         NOT YET IMPLEMENTED
 
     Returns:
         tuple: (status, message) (int,str) 
@@ -124,13 +121,18 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
             return 405, f"Resource {row['Resource']} not in DB"
 
         # Add to FRBFollowUpRequest if not already in there
-        required = dict(transient=transient, resource=resource, mode=row['mode'],
-            conditions=row['Conditions'], texp=row['texp'], date=pandas.Timestamp(row['date']),
+        required = dict(
+            transient=transient, 
+            resource=resource, 
+            mode=row['mode'],
+            conditions=row['Conditions'], 
+            texp=row['texp'], 
+            date=pandas.Timestamp(row['date']),
             success=row['success'])
                                                                                   
-                        
         # Add to the table
-        obs = data_utils.add_or_grab_obj(FRBFollowUpObservation, required, {}, user)
+        obs = data_utils.add_or_grab_obj(
+            FRBFollowUpObservation, required, {}, user)
                                    
         # Update transient status
         if row['mode'] in ['imaging']:
