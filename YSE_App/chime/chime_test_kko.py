@@ -11,6 +11,8 @@ import pandas
 from YSE_App.models import *
 from YSE_App.chime import chime_test_utils as ctu
 from YSE_App import frb_init
+from YSE_App import frb_status
+from YSE_App import frb_utils
 
 def init_kko(clean:bool=True):
     """ Build the CHIME KKO DB from scratch """
@@ -18,12 +20,12 @@ def init_kko(clean:bool=True):
     user = auth.authenticate(username='root', password='F4isthebest')
 
     # Clean first
-    ctu.clean_all()
+    ctu.clean_all(skip_resources=True)
 
     # ##############################
     # Init the DB
     # Status
-    frb_init.init_status(user)
+    frb_init.init_statuses(user)
 
     # Load up the table
     csv_file = os.path.join(
@@ -38,5 +40,18 @@ def init_kko(clean:bool=True):
             obs.save()
 
     # Add em 
-    _ = ctu.add_df_to_db(df_frbs, user, 
+    transients = ctu.add_df_to_db(df_frbs, user, 
                          delete_existing=False)
+
+    # Set the KKO tag
+    kko_tag = frb_utils.add_or_grab_obj(
+            FRBTag, dict(name='CHIME-KKO'), {}, user)
+    unkn_tag = frb_utils.add_or_grab_obj(
+            FRBTag, dict(name='CHIME-Unknown'), {}, user)
+    for transient in transients:
+        # Drop unknown
+        transient.frb_tags.drop(kko_tag)
+        #
+        transient.frb_tags.add(kko_tag)
+        # Update status (and save)
+        frb_status.set_status(transient)

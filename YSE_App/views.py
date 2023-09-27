@@ -1682,11 +1682,11 @@ def frb_dashboard(request):
                                   'Observed',
                                   'Completed'],
                                 [['Unassigned'], 
-                                 ['PublicPATH', 'DeepPATH'],
-                                 ['Image','Spectrum'],
-                                 ['PendingImage', 'PendingSpectrum'],
-                                 ['ObsImage', 'ObsSpectrum'],
-                                 ['Completed'],
+                                 ['RunPublicPATH', 'RunDeepPATH'],
+                                 ['NeedImage','NeedSpectrum'],
+                                 ['ImagePending', 'SpectrumPending'],
+                                 ['GoodSpectrum'],
+                                 ['TooFaint', 'UnseenHost', 'Completed'],
                                  ]):
         transients = FRBTransient.objects.filter(status__in=TransientStatus.objects.filter(
             name__in=statusnames))

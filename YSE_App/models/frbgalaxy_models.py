@@ -29,8 +29,13 @@ class FRBGalaxy(BaseModel):
     source = models.CharField(max_length=64)
 
     # Optional
+
+    # Redshift
     redshift = models.FloatField(null=True, blank=True)
     redshift_err = models.FloatField(null=True, blank=True)
+    # Source of the redshift
+    #   private,SDSS,DESI, etc.
+    #redshift_source = models.CharField(max_length=64, blank=True)
 
     # Angular size (in arcsec; typically half-light radius)
     ang_size = models.FloatField(null=True, blank=True)
@@ -116,7 +121,7 @@ class FRBGalaxy(BaseModel):
         """
         pdict = {}
         for phot in yse_models.GalaxyPhotometry.objects.filter(galaxy=self):
-            top_key = f'{phot.instrument}'
+            top_key = f'{phot.instrument.tel_instr()}'
             pdict[top_key] = {}
             for phot_data in yse_models.GalaxyPhotData.objects.filter(photometry=phot):
                 pdict[top_key][phot_data.band.name] = phot_data.mag

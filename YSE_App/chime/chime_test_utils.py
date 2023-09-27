@@ -77,7 +77,7 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
     # Return
     return dbtransients
 
-def clean_all():
+def clean_all(skip_resources:bool=False):
     """ Wipe clean the DB """
 
     print("Removing Path objects")
@@ -88,9 +88,11 @@ def clean_all():
     for galaxy in FRBGalaxy.objects.all():
         galaxy.delete()
 
-    print("Removing FRBFollowUpResource objects")
-    for frb_fu in FRBFollowUpResource.objects.all():
-        frb_fu.delete()
+    # FRBFollowUpResource
+    if not skip_resources:
+        print("Removing FRBFollowUpResource objects")
+        for frb_fu in FRBFollowUpResource.objects.all():
+            frb_fu.delete()
 
     print("Removing FRBTransient objects")
     for itransient in FRBTransient.objects.all():

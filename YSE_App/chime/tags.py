@@ -5,11 +5,13 @@ code may move to chime_ffff_pz """
 # "Unbiased" sample
 blind_sample = dict(
     name='CHIME-Blind',
-    version='1.0',
+    version='0.1',
     ra_rngs=[[0, 225]],
     dec_rngs=[[-10, 10]],
     max_EBV=0.3,
     min_POx=0.9,
+    mr_max=24.5,     # Faintest magnitude to try spectroscopy
+    P_Ux_max=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
     end_date='2030-12-31', # Not implemented yet
     prob=0.3,
     label=['Stripe 82'],
@@ -18,20 +20,32 @@ blind_sample = dict(
 # High DM (notional)
 highDM_sample = dict(
     name='CHIME-HighDM',
-    version='0.0',
+    version='0.1',
     max_EBV=0.3,
     min_DM=1000.,
+    mr_max=24.5,   # Faintest magnitude to try spectroscopy
     prob=0.8,
     )
 
 # Repeater (notional)
 repeater_sample = dict(
     name='CHIME-Repeater',
-    version='0.0',
+    version='0.1',
+    prob=0.8,
+    mr_max=24.5,   # Faintest magnitude to try spectroscopy
+    )
+
+# High DM (notional)
+kko_sample = dict(
+    name='CHIME-KKO',
+    version='0.1',
+    max_EBV=0.3,
+    mr_max=24.5,   # Faintest magnitude to try spectroscopy
+    P_Ux_max=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
     prob=0.8,
     )
 
-all_samples = [blind_sample, highDM_sample, repeater_sample]
+all_samples = [blind_sample, highDM_sample, repeater_sample, kko_sample]
 
 
 def set_from_instance(instance):
@@ -81,10 +95,6 @@ def set_from_instance(instance):
     # ###################################
     if instance.repeater:
         tags.append(repeater_sample['name'])
-
-    # ###################################
-    # KKO (temporary)
-    tags.append('CHIME-KKO')
 
     # Need something
     if len(tags) == 0:

@@ -14,6 +14,10 @@ from YSE_App.chime import tags as chime_tags
 from YSE_App.common.utilities import GetSexigesimalString, getSeparation
 from YSE_App.models.frbgalaxy_models import FRBGalaxy
 
+from YSE_App import frb_tags
+from YSE_App import frb_status
+from YSE_App import frb_utils
+
 from astropy.coordinates import SkyCoord
 from astroquery import irsa_dust
 
@@ -185,36 +189,37 @@ auditlog.register(FRBTransient)
 @receiver(models.signals.post_save, sender=FRBTransient)
 def execute_after_save(sender, instance, created, *args, **kwargs):
 
+    # Add a few bits and pieces including tags
     if created:
 
         # Galactic E(B-V) -- Needs to come before tagging
         c = SkyCoord(ra=instance.ra, dec=instance.dec, unit='deg')
-        instance.mw_ebv = irsa_dust.IrsaDust.get_query_table(c)['ext SandF mean'][0]
+        # TODO 
+        #  PUT THIS BACK!!
+        #instance.mw_ebv = irsa_dust.IrsaDust.get_query_table(c)['ext SandF mean'][0]
+        instance.mw_ebv = 0.
 
         # CHIME FRB items
-        if instance.frb_survey.name == 'CHIME/FRB':
+        tags = frb_tags.find_tags(instance)
+        if len(tags) > 0:
 
             # Add tags
-            tags = chime_tags.set_from_instance(instance)
-            frb_tags = [ftag.name for ftag in FRBTag.objects.all()]
             for tag_name in tags:
                 # Add the tag if it doesn't exist
-                if tag_name not in frb_tags:
-                    new_tag = FRBTag(name=tag_name, 
-                                     created_by_id=instance.created_by_id,
-                                     modified_by_id=instance.modified_by_id)
-                    new_tag.save()
+                frb_tag = frb_utils.add_or_grab_obj(
+                    FRBTag, dict(name=tag_name), {}, instance.created_by)
                 # Record
-                frb_tag = FRBTag.objects.get(name=tag_name)
                 instance.frb_tags.add(frb_tag)
-                print(f"Added FRB tag: {tag_name}")
             
-            # Set status to PublicPATH unless we are only CHIME-Unknown
-            tag_names = [tag.name for tag in instance.frb_tags.all()]
-            if len(tag_names) == 1 and tag_names[0] == 'CHIME-Unknown':
-                pass
-            else:
-                instance.status = TransientStatus.objects.get(name='PublicPATH')
+            ## Set status to PublicPATH unless we are only CHIME-Unknown
+            #tag_names = [tag.name for tag in instance.frb_tags.all()]
+            #if len(tag_names) == 1 and tag_names[0] == 'CHIME-Unknown':
+            #    pass
+            #else:
+            #    instance.status = TransientStatus.objects.get(name='PublicPATH')
+
+        # Set status
+        frb_status.set_status(instance)
 
         # Save
         instance.save()
@@ -225,7 +230,7 @@ class Path(BaseModel):
     Each PATH posterior value P(O|x) is for an FRB-Galaxy pairing
     which are required properties
 
-    Requires an FRBTansient and FRBGalaxy pairing
+    Requires an FRBTransient and FRBGalaxy pairing
 
     """
 

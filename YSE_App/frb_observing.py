@@ -6,7 +6,7 @@ from YSE_App.models import FRBFollowUpObservation
 from YSE_App.models import TransientStatus
 from YSE_App.models import FRBTransient
 
-from YSE_App import data_utils
+from YSE_App import frb_utils
 
 import pandas
 
@@ -56,7 +56,7 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
             return 405, f"Resource {row['Resource']} not in DB"
 
         # Add to FRBFollowUpRequest if not already in there
-        req = data_utils.add_or_grab_obj(
+        req = frb_utils.add_or_grab_obj(
             FRBFollowUpRequest,
             dict(transient=transient, resource=resource, mode=row['mode']),
             {}, user)
@@ -131,7 +131,7 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
             success=row['success'])
                                                                                   
         # Add to the table
-        obs = data_utils.add_or_grab_obj(
+        obs = frb_utils.add_or_grab_obj(
             FRBFollowUpObservation, required, {}, user)
                                    
         # Update transient status

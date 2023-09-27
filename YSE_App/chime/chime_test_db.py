@@ -9,7 +9,7 @@ import pandas
 from YSE_App.models import *
 from YSE_App.chime import chime_path_test
 from YSE_App.chime import chime_test_utils
-from YSE_App.data_utils import add_or_grab_obj
+from YSE_App.frb_utils import add_or_grab_obj
 from YSE_App import frb_init
 from YSE_App import frb_observing
 
@@ -24,7 +24,7 @@ def build_chime_test_db():
     # ##############################
     # Init the DB
     # Status
-    frb_init.init_status(user)
+    frb_init.init_statuses(user)
 
     # Add objects
 

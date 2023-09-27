@@ -7,7 +7,7 @@ import datetime
 from astropy.coordinates import SkyCoord
 
 from YSE_App.common.utilities import getGalaxyname
-from YSE_App import data_utils
+from YSE_App import frb_utils
 from YSE_App.models import FRBGalaxy, GalaxyPhotData 
 from YSE_App.models import GalaxyPhotometry, PhotometricBand
 from YSE_App.models import FRBTransient, Path
@@ -82,17 +82,17 @@ def ingest_path_results(itransient:FRBTransient,
         print(f"ss: {ss}, ra: {icand.ra}, dec: {icand.dec}")
         # Add or grab the host candidates
         name = getGalaxyname(icand.ra, icand.dec)
-        galaxy = data_utils.add_or_grab_obj(
+        galaxy = frb_utils.add_or_grab_obj(
             FRBGalaxy, dict(name=name), dict(ra=icand.ra, dec=icand.dec, 
                        ang_size=icand.ang_size), user=user)
 
         # Photometry
-        gp = data_utils.add_or_grab_obj(
+        gp = frb_utils.add_or_grab_obj(
             GalaxyPhotometry, 
             dict(galaxy=galaxy, instrument=Instrument.objects.get(name=inst_name), 
                  obs_group=ObservationGroup.objects.get(name=obs_group)),
                  {}, user=user)
-        gpd = data_utils.add_or_grab_obj(
+        gpd = frb_utils.add_or_grab_obj(
             GalaxyPhotData, 
             dict(photometry=gp,
                  band=PhotometricBand.objects.filter(instrument__name=inst_name).get(name=Filter)),
