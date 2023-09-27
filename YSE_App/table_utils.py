@@ -1734,8 +1734,80 @@ class FRBTransientTable(tables.Table):
                                verbose_name='DM',orderable=True,order_by='DM')
     tags_string = tables.Column(accessor='FRBTagsString',
                                verbose_name='Tags',orderable=True,order_by='frb_tags')
+    host_string = tables.Column(accessor='HostString',
+                               verbose_name='Host')
+    host_pox_string = tables.Column(accessor='HostPOxString',
+                               verbose_name='Host P(O|x)')
     frb_survey_string = tables.Column(accessor='FRBSurveyString',
                                verbose_name='FRB Survey',orderable=True,order_by='frb_survey')
+    status_string = tables.Column(accessor='StatusString',
+                               verbose_name='Status')
+    #disc_date_string = tables.Column(accessor='disc_date_string',
+    #                                 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
+    #recent_mag = tables.Column(accessor='recent_mag',
+    #                           verbose_name='Last Mag',orderable=True)
+    #recent_magdate = tables.Column(accessor='recent_magdate',
+    #                           verbose_name='Last Obs. Date',orderable=True)
+    #best_redshift = tables.Column(accessor='z_or_hostz',
+    #                              verbose_name='Redshift',orderable=True,order_by='host__redshift')
+    #ps_score = tables.Column(accessor='point_source_probability',
+    #                         verbose_name='PS Score',orderable=True)
+#
+    #mw_ebv = tables.Column(accessor='mw_ebv',
+    #						   verbose_name='MW E(B-V)',orderable=True)
+    #mw_ebv = tables.TemplateColumn("""{% if record.mw_ebv %}
+#{% if record.mw_ebv >= 0.2 %}
+#&nbsp;<b class="text-red">{{ record.mw_ebv }}</b>
+#{% else %}
+#{{ record.mw_ebv }}
+#{% endif %}
+#{% else %}
+#-
+#{% endif %}""",
+#                                   verbose_name='MW E(B-V)',orderable=True,order_by='mw_ebv')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        #self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
+
+    class Meta:
+        model = FRBTransient
+        fields = ('name_string','ra_string','dec_string',
+                  'dm_string', 'frb_survey_string', 'tags_string',
+                  'status_string', 'host_string', 'host_pox_string')
+
+        template_name='YSE_App/django-tables2/bootstrap.html'
+        attrs = {
+            'th' : {
+                '_ordering': {
+                    'orderable': 'sortable', # Instead of `orderable`
+                    'ascending': 'ascend',	 # Instead of `asc`
+                    'descending': 'descend'	 # Instead of `desc`
+                }
+            },
+            'class': 'table table-bordered table-hover',
+            'id': 'k2_transient_tbl',
+            "columnDefs": [
+                {"type":"title-numeric","targets":1},
+                {"type":"title-numeric","targets":2},
+            ],
+            "order": [[ 3, "desc" ]],
+        }
+
+class FRBFollowupResourceTable(tables.Table):
+    """ Table for displaying a set of FRBFollowupResources """
+
+    name_string = tables.TemplateColumn("<a href=\"{% url 'frb_followup_resource' record.slug %}\">{{ record.name }}</a>",
+                                        verbose_name='Name',orderable=True,order_by='name')
+    #name_string = tables.Column(accessor='NameString',
+    #                          verbose_name='Name',orderable=True,order_by='Instr')
+    instr_string = tables.Column(accessor='InstrString',
+                              verbose_name='Instr',orderable=True,order_by='Instr')
+    start_string = tables.Column(accessor='StartString',
+                              verbose_name='Start',orderable=True,order_by='Instr')
+    stop_string = tables.Column(accessor='StopString',
+                              verbose_name='Stop',orderable=True,order_by='Instr')
     #disc_date_string = tables.Column(accessor='disc_date_string',
     #                                 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
     #recent_mag = tables.Column(accessor='recent_mag',
@@ -1761,6 +1833,7 @@ class FRBTransientTable(tables.Table):
 #                                   verbose_name='MW E(B-V)',orderable=True,order_by='mw_ebv')
 
 
+    '''
     status_string = tables.TemplateColumn("""<div class="btn-group">
 <button style="margin-bottom:-5px;margin-top:-10px;padding:1px 5px" type="button" class="btn btn-default dropdown-toggle btn-md" data-toggle="dropdown">
                                             <span id="{{ record.id }}_status_name" class="dropbtn">{{ record.status }}</span>
@@ -1772,6 +1845,7 @@ class FRBTransientTable(tables.Table):
                                         </ul>
 </div>""",
                                           verbose_name='Status',orderable=True,order_by='status')
+    '''
 
 
     def __init__(self, *args, **kwargs):
@@ -1781,9 +1855,8 @@ class FRBTransientTable(tables.Table):
 
     class Meta:
         model = FRBTransient
-        fields = ('name_string','ra_string','dec_string',
-                  'dm_string', 'frb_survey_string', 'tags_string',
-                  'status_string')
+        fields = ('name_string','instr_string','start_string',
+                  'stop_string')
 
         template_name='YSE_App/django-tables2/bootstrap.html'
         attrs = {

@@ -1,0 +1,71 @@
+{% extends 'YSE_App/base.html' %}
+{% load static %}
+{% load dashboard_extras %}
+{% load widget_tweaks %}
+{% load render_table from django_tables2 %}
+{% load bootstrap3 %}
+
+{% block content_header %}
+    <h2>
+        FRB Resource: 
+        {{ frb_fu.NameString }}
+    </h2>
+    <h1>
+        TODO: Add a summary of the Resource here
+    </h1>
+    <ol class="breadcrumb">
+        <li><i class="fa fa-dashboard"></i> Home</li>
+    </ol>
+    <ol class="breadcrumb">
+      <form action="{% url 'search' %}" method="get">
+        <input name="q" type="text" placeholder="Name or coord. search">
+      </form>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    
+    <h3>
+        Pending FRBs
+    </h3>
+
+    <div class="box-body">
+      {% render_table pending_table %}
+    </div>
+  
+    <h3>
+        Valid FRBs for Imaging
+    </h3>
+
+    <div class="box-body">
+      {% render_table imaging_table %}
+    </div>
+  
+    <h3>
+        Valid FRBs for Longslit
+    </h3>
+
+    <div class="box-body">
+      {% render_table longslit_table %}
+    </div>
+
+    <h3>
+        Valid FRBs for Masks
+    </h3>
+
+    <div class="box-body">
+      {% render_table mask_table %}
+
+    </div>
+  
+{% endblock %}
+
+{% block scripts %}
+<script type='text/javascript'>
+{% if anchor %}
+$(document).ready(function(){
+    window.location = '#{{ anchor }}'
+});
+{% endif %}
+</script>
+{% endblock %}

@@ -50,9 +50,10 @@ def run(delete_existing:bool=True,
 
     # Add CHIME Observation Group?
     survey_names = [survey.name for survey in FRBSurvey.objects.all()]
-    if 'CHIME/FRB' not in survey_names:
-        obs = FRBSurvey(name='CHIME/FRB', created_by_id=user.id, modified_by_id=user.id)
-        obs.save()
+    for survey in ['CHIME/FRB', 'CRAFT']:
+        if survey not in survey_names:
+            obs = FRBSurvey(name=survey, created_by_id=user.id, modified_by_id=user.id)
+            obs.save()
 
     # Add em (if necessary)
     _ = ctu.add_df_to_db(df_frbs, user, 
@@ -80,7 +81,8 @@ def run(delete_existing:bool=True,
     #embed(header='66 of chime_path_test.py')
     photom_inst_name = path.ingest_path_results(
         itransient, candidates, 
-        F, 'GPC1', 'Pan-STARRS1', P_Ux, user)
+        F, 'GPC1', 'Pan-STARRS1', P_Ux, user,
+        False)
 
     # Test!
     assert max([ipath.P_Ox for ipath in Path.objects.filter(transient=itransient)]) >= 0.98

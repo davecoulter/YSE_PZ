@@ -18,8 +18,9 @@ from django.shortcuts import redirect
 from django.db.models import Count, Value, Max, Min
 import zipfile
 from io import BytesIO
-from YSE_App.yse_utils.yse_pa import yse_pa
+#from YSE_App.yse_utils.yse_pa import yse_pa
 from django.utils.decorators import method_decorator
+from django.utils import timezone as du_timezone
 
 from astropy.utils import iers
 iers.conf.auto_download = True
@@ -39,13 +40,13 @@ from django.core import serializers
 import os
 from .data import PhotometryService, SpectraService, ObservingResourceService
 import json
-import time
 import dateutil.parser
 from astroplan import moon_illumination
 from astropy.time import Time
 from .common.utilities import getRADecBox
 
 from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable,ToOFollowupTable
+from .table_utils import FRBFollowupResourceTable
 from .table_utils import FRBTransientFilter, FRBTransientTable
 from .table_utils import CandidatesTable, CandidatesFilter
 from .queries.yse_python_queries import *
@@ -1674,19 +1675,41 @@ job_submitted=%s"""%(log_file_name,datetime.datetime.utcnow().isoformat())
 def frb_dashboard(request):
 
     transient_categories = []
-    for title,statusname in zip(['New FRBs','Followup Requested'],
-                                ['New','FollowupRequested']):
-        status = TransientStatus.objects.filter(name=statusname).order_by('-modified_date')
-        if len(status) == 1:
-            transients = FRBTransient.objects.filter(status=status[0]).order_by('name')
-        else:
-            transients = FRBTransient.objects.filter(status=None).order_by('name')
-        transientfilter = FRBTransientFilter(request.GET, queryset=transients,prefix=statusname.lower())
+    for title,statusnames in zip(['Unassigned FRBs',
+                                  'PATH Needed',
+                                  'Followup Needed',
+                                  'Followup Pending',
+                                  'Observed',
+                                  'Completed'],
+                                [['Unassigned'], 
+                                 ['PublicPATH', 'DeepPATH'],
+                                 ['Image','Spectrum'],
+                                 ['PendingImage', 'PendingSpectrum'],
+                                 ['ObsImage', 'ObsSpectrum'],
+                                 ['Completed'],
+                                 ]):
+        transients = FRBTransient.objects.filter(status__in=TransientStatus.objects.filter(
+            name__in=statusnames))
+        #status = TransientStatus.objects.filter(name__in=statusnames).order_by('-modified_date')
+        #if len(status) == 1:
+        #    transients = FRBTransient.objects.filter(status=status[0]).order_by('name')
+        #else:
+        #    transients = FRBTransient.objects.filter(status=None).order_by('name')
+        #transientfilter = FRBTransientFilter(request.GET, queryset=transients,prefix=statusname.lower())
         #if statusname == 'New': table = NewFRBTransientTable(transientfilter.qs,prefix=statusname.lower())
         #else: table = FRBTransientTable(transientfilter.qs,prefix=statusname.lower())
-        table = FRBTransientTable(transientfilter.qs,prefix=statusname.lower())
+        #table = FRBTransientTable(transientfilter.qs)#,prefix=statusname.lower())
+        table = FRBTransientTable(transients)
         RequestConfig(request, paginate={'per_page': 10}).configure(table)
-        transient_categories += [(table,title,statusname.lower(),transientfilter),]
+        #transient_categories += [(table,title,statusnames[0].lower(),transientfilter),]
+        transient_categories += [(table,title,statusnames[0].lower(),None),]
+
+    # Show active follow-up resources
+
+    # Cut on active/pending
+    followups = FRBFollowUpResource.objects.filter(
+        valid_stop__gt=du_timezone.now())
+    ftable = FRBFollowupResourceTable(followups)
     
     if request.META['QUERY_STRING']:
         anchor = request.META['QUERY_STRING'].split('-')[0]
@@ -1694,6 +1717,7 @@ def frb_dashboard(request):
     context = {
         'transient_categories':transient_categories,
         'all_transient_statuses':TransientStatus.objects.order_by('name'),
+        'followup_table':ftable,
         'anchor':anchor,
     }
 
@@ -1716,32 +1740,17 @@ def frb_transient_detail(request, slug):
 
     obs = None
     if len(transient) == 1:
-        from django.utils import timezone
         
         transient_obj = transient.first() # This should throw an exception if more than one or none are returned
         transient_id = transient[0].id
 
-        #alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
-
-        '''
-        transient_followup_form = TransientFollowupForm()
-        #transient_followup_form.fields["classical_resource"].queryset = \
-        #       view_utils.get_authorized_classical_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
-        transient_followup_form.fields["too_resource"].queryset = view_utils.get_authorized_too_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
-        transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
-
-        transient_observation_task_form = TransientObservationTaskForm()
-
-        spectrum_upload_form = SpectrumUploadForm()
-        '''
-        
         # Status update properties
-        all_transient_statuses = TransientStatus.objects.all()
-        transient_status_follow = TransientStatus.objects.get(name="Following")
-        transient_status_watch = TransientStatus.objects.get(name="Watch")
-        transient_status_interesting = TransientStatus.objects.get(name="Interesting")
-        transient_status_ignore = TransientStatus.objects.get(name="Ignore")
-        transient_comment_form = TransientCommentForm()
+        #all_transient_statuses = TransientStatus.objects.all()
+        #transient_status_follow = TransientStatus.objects.get(name="Following")
+        #transient_status_watch = TransientStatus.objects.get(name="Watch")
+        #transient_status_interesting = TransientStatus.objects.get(name="Interesting")
+        #transient_status_ignore = TransientStatus.objects.get(name="Ignore")
+        #transient_comment_form = TransientCommentForm()
 
         # Transient tag
         all_colors = WebAppColor.objects.all().select_related()
@@ -1749,25 +1758,11 @@ def frb_transient_detail(request, slug):
         #assigned_transient_tags = transient_obj.tags.all().select_related()
 
         # Get associated Observations
-        followups = TransientFollowup.objects.filter(transient__pk=transient_id).select_related()
-        if followups:
-            for i in range(len(followups)):
-                followups[i].observation_set = TransientObservationTask.objects.filter(followup=followups[i].id)
-
-                if followups[i].classical_resource:
-                    followups[i].resource = followups[i].classical_resource
-                elif followups[i].too_resource:
-                    followups[i].resource = followups[i].too_resource
-                elif followups[i].queued_resource:
-                    followups[i].resource = followups[i].queued_resource
-
-                comments = Log.objects.filter(transient_followup=followups[i].id).select_related()
-                comment_list = []
-                for c in comments:
-                    comment_list += [c.comment]
-                if len(comments): followups[i].comment = '; '.join(comment_list)
-                #else:
-        #   followups = None
+        followups = FRBFollowUpRequest.objects.filter(transient__pk=transient_id)
+        if len(followups) == 0:
+            followup_names = 'None'
+        else:
+            followup_names = ','.join([item.ResourceName() for item in followups])
 
         hostdata = FRBGalaxy.objects.filter(pk=transient_obj.host_id).select_related()
         if hostdata:
@@ -1811,7 +1806,7 @@ def frb_transient_detail(request, slug):
         #spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True)
         context = {
             'transient':transient_obj,
-            'followups':followups,
+            'followup_names': followup_names,
             'candidates': candidate_table_context,
             # 'telescope_list': tellist,
             #'observing_nights': obsnights,
@@ -1819,11 +1814,6 @@ def frb_transient_detail(request, slug):
             'nowtime':date.strftime(date_format),
             #'transient_followup_form': transient_followup_form,
             #'transient_observation_task_form': transient_observation_task_form,
-            #'transient_comment_form': transient_comment_form,
-            #'alt_names': alt_names,
-            #'all_transient_statuses': all_transient_statuses,
-            #'transient_status_follow': transient_status_follow,
-            #'transient_status_watch': transient_status_watch,
             #'transient_status_ignore': transient_status_ignore,
             #'transient_status_interesting': transient_status_interesting,
             'logs':logs,
@@ -1880,3 +1870,33 @@ def frb_transient_detail(request, slug):
 
     else:
         return Http404('FRBTransient not found')
+
+
+@login_required
+def frb_followup_resource(request, slug):
+
+    frb_fu = FRBFollowUpResource.objects.get(slug=slug)
+
+    
+    if request.META['QUERY_STRING']:
+        anchor = request.META['QUERY_STRING'].split('-')[0]
+    else: anchor = ''
+
+    context = {
+        'frb_fu': frb_fu,
+        'anchor':anchor,
+    }
+
+    # Valid FRBs for observing
+    frbs_by_mode = frb_fu.get_frbs_by_mode()
+    # Build the tables
+    for key in frbs_by_mode.keys():
+        context[f'{key}_table'] = FRBTransientTable(frbs_by_mode[key])
+
+    # Pending FRBs
+    fu_requested = FRBFollowUpRequest.objects.filter(resource=frb_fu)
+    frb_ids = [x.transient.id for x in fu_requested]
+    pending_frbs = FRBTransient.objects.filter(id__in=frb_ids)
+    context['pending_table'] = FRBTransientTable(pending_frbs)
+
+    return render(request, 'YSE_App/frb_followup_resource.html', context)

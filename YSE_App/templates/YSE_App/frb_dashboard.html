@@ -23,12 +23,13 @@
 {% block content %}
     
   <!-- Default box -->
+  <!-- Loop on FRB statues-->
   {% for transient_cat in transient_categories %}
 
   <div class="box" id="{{transient_cat.2}}">
     <div class="box-header with-border">
       <!--<h3 class="box-title">{{ transient_cat.1 }}</h3>-->
-      <p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient_cat.1 }}</h3><span style="float:right;"><a href="{% url 'transient_summary' transient_cat.2 %}"><h3 class="box-title">Summary View</h3></a></span></p>
+      <p style="text-align:left;margin:0;padding:0;"><h3 class="box-title">{{ transient_cat.1 }}</h3><span style="float:right;"></span></p>
     </div>
     <div align='right'>
       {% if transient_cat.3 %}
@@ -51,6 +52,15 @@
     <!-- /.box-footer-->
   </div>
   <!-- /.box -->
+    
+    <h3>
+        Active/Pending FRB Followup Resources
+    </h3>
+
+    <div class="box-body">
+      {% render_table followup_table %}
+
+    </div>
   
 {% endblock %}
 

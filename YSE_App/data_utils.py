@@ -36,6 +36,7 @@ import sys
 from urllib.parse import unquote
 
 from YSE_App.galaxies import path
+from YSE_App import frb_observing
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -1556,6 +1557,7 @@ def ingest_path(request):
       - obs_group (str): name of the instrument; must be present in the
         ObservationGroup table
       - P_Ux (float): Unseen posterior;  added to the transient
+      - deeper (bool): Is a deeper image required?
 
     Args:
         request (requests.request): 
@@ -1573,7 +1575,6 @@ def ingest_path(request):
     credentials = base64.b64decode(credentials.strip()).decode('utf-8')
     username, password = credentials.split(':', 1)
     user = auth.authenticate(username=username, password=password)
-    print(f'username: {username}')
 
     try:
         itransient = FRBTransient.objects.get(name=data['transient_name'])
@@ -1588,9 +1589,143 @@ def ingest_path(request):
             data['F'], 
             data['instrument'], data['obs_group'],
             data['P_Ux'], user,
+            data['deeper'],
             remove_previous=True) # May wish to make this optional
     except:
         print("Ingestion failed")
-        return JsonResponse({"message":f"Ingestion failed!"}, status=400)
+        return JsonResponse({"message":f"Ingestion failed 2x!"}, status=405)
     else:
         print("Successfully ingested")
+
+    return JsonResponse({"message":f"Ingestion successful"}, status=500)
+
+@csrf_exempt
+@login_or_basic_auth_required
+def targets_from_frb_followup_resource(request):
+    """
+    Grab a table of targets for a provided FRBFollowupResource
+
+    The request must include the following items
+     in its data (all in JSON, of course; 
+     data types refer to those after parsing the JSON):
+
+      - resource_name (str): Name of the FRBFollowupResource object
+
+    Args:
+        request (requests.request): 
+            Request from outside FFFF-PZ
+
+    Returns:
+        JsonResponse:  Table of information
+    """
+    
+    # Parse the data into a dict
+    data = JSONParser().parse(request)
+
+    # Deal with credentials
+    try:
+        auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+        credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+        username, password = credentials.split(':', 1)
+        user = auth.authenticate(username=username, password=password)
+    except:
+        return JsonResponse({"message":f"Bad user authentication in DB"}, status=401)
+
+    # Grab the FollowUpResource
+    try:
+        frb_fu = FRBFollowUpResource.objects.get(name=data['resource_name'])
+    except:
+        return JsonResponse({"message":f"Could not find resource {data['resource_name']} in DB"}, status=402)
+
+    # Grab the targets
+    target_table = frb_fu.generate_target_table()
+
+    # Return
+    return JsonResponse(target_table.to_dict(), status=201)
+
+
+@csrf_exempt
+@login_or_basic_auth_required
+def ingest_obsplan(request):
+    """
+    Ingest an observing plan 
+
+    The request must include the following items
+     in its data (all in JSON, of course; 
+     data types are for after parsing the JSON):
+
+      - table (str): a table of the request with columns (all strings):
+        -- TNS: TNS name
+        -- Resource: Resource name
+        -- mode: observing mode ['image', 'longslit', 'mask']
+
+    Args:
+        request (requests.request): 
+            Request from outside FFFF-PZ
+
+    Returns:
+        JsonResponse: 
+    """
+    
+    # Parse the data into a dict
+    data = JSONParser().parse(request)
+
+    # Deal with credentials
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    # Prep 
+    obs_tbl = pandas.read_json(data['table'])
+
+    # Run
+    code, msg = frb_observing.ingest_obsplan(obs_tbl, user)
+
+    # Return
+    return JsonResponse({"message":f"{msg}"}, status=code)
+
+@csrf_exempt
+@login_or_basic_auth_required
+def ingest_obslog(request):
+    """
+    Ingest an observing log
+
+    The request must include the following items
+     in its data (all in JSON, of course; 
+     data types are for after parsing the JSON):
+
+      - table (str): a table of the request with columns 
+            -- TNS (str)
+            -- Resource (str)
+            -- mode (str)
+            -- Conditions (str)
+            -- texp (float)
+            -- date (timestamp)
+            -- success (bool)
+
+    Args:
+        request (requests.request): 
+            Request from outside FFFF-PZ
+
+    Returns:
+        JsonResponse: 
+    """
+    
+    # Parse the data into a dict
+    data = JSONParser().parse(request)
+
+    # Deal with credentials
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    # Prep 
+    obs_tbl = pandas.read_json(data['table'])
+
+    # Run
+    code, msg = frb_observing.ingest_obslog(obs_tbl, user)
+
+    # Return
+    return JsonResponse({"message":f"{msg}"}, status=code)

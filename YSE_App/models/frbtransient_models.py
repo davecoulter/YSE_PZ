@@ -14,6 +14,9 @@ from YSE_App.chime import tags as chime_tags
 from YSE_App.common.utilities import GetSexigesimalString, getSeparation
 from YSE_App.models.frbgalaxy_models import FRBGalaxy
 
+from astropy.coordinates import SkyCoord
+from astroquery import irsa_dust
+
 class FRBTransient(BaseModel):
     """ FRBTransient model
 
@@ -48,12 +51,20 @@ class FRBTransient(BaseModel):
     # Localization file
     localization_file = models.CharField(max_length=64, null=True, blank=True)
 
+    # Repeater?
+    repeater = models.BooleanField(default=False, blank=True)
+    # Rotation measure
+    RM = models.FloatField(null=True, blank=True)
+    # S.N
+    s2n = models.FloatField(null=True, blank=True)
+
     # Host -- defined as the Highest P(O|x) candidate
     #   set in YSE_App.galaxies.path.ingest_path_results()
     host = models.ForeignKey(
         FRBGalaxy, null=True, blank=True, 
         on_delete=models.SET_NULL, 
         related_name='frb') # Needs to be here for backwards compatibility
+
     # All candidates ingested into the DB during PATH analysis
     candidates = models.ManyToManyField(
         FRBGalaxy, blank=True, 
@@ -61,6 +72,9 @@ class FRBTransient(BaseModel):
 
     # Path Unseen probability
     P_Ux = models.FloatField(null=True, blank=True)
+
+    # Galactic E(B-V) -- taken from Irsa at creation
+    mw_ebv = models.FloatField(null=True, blank=True)
 
     # Redshift, derived from host
     redshift = models.FloatField(null=True, blank=True)
@@ -84,6 +98,12 @@ class FRBTransient(BaseModel):
     def DMString(self):
         return '%.1f'%(self.DM)
 
+    def StatusString(self):
+        return self.status.name
+
+    def FRBSurveyString(self):
+        return self.frb_survey.name
+
     def FRBTagsString(self):
         tags = [tag.name for tag in self.frb_tags.all()]
         if len(tags) > 0:
@@ -91,8 +111,30 @@ class FRBTransient(BaseModel):
         else:
             return ''
 
+    def HostString(self):
+        if self.host:
+            return self.host.name
+        else:
+            return ''
+
+    def HostPOxString(self):
+        if self.host:
+            return self.host.POxString()
+        else:
+            return ''
+
     def FRBSurveyString(self):
         return self.frb_survey.name
+    
+    def FRBFollowUpResourcesString(self):
+        resources = FRBFollowUpResource.objects.filter(transient=self)
+        if resources.count() > 0:
+            resouce_list = [r.name for r in resources]
+            # TODO -- Turn this into URLs
+            resouce_names = ','.join(resouce_list)
+            return resouce_names
+        else:
+            return ''
 
     def Separation(self):
         host = FRBGalaxy.objects.get(pk=self.host_id)
@@ -139,6 +181,10 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 
     if created:
 
+        # Galactic E(B-V) -- Needs to come before tagging
+        c = SkyCoord(ra=instance.ra, dec=instance.dec, unit='deg')
+        instance.mw_ebv = irsa_dust.IrsaDust.get_query_table(c)['ext SandF mean'][0]
+
         # CHIME FRB items
         if instance.frb_survey.name == 'CHIME/FRB':
 
@@ -157,6 +203,14 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
                 instance.frb_tags.add(frb_tag)
                 print(f"Added FRB tag: {tag_name}")
             
+            # Set status to PublicPATH unless we are only CHIME-Unknown
+            tag_names = [tag.name for tag in instance.frb_tags.all()]
+            if len(tag_names) == 1 and tag_names[0] == 'CHIME-Unknown':
+                pass
+            else:
+                instance.status = TransientStatus.objects.get(name='PublicPATH')
+
+        # Save
         instance.save()
 
 class Path(BaseModel):
