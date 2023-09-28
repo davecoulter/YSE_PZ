@@ -192,7 +192,7 @@ def grab_targets_by_mode(frb_fu, frbs):
     if frb_fu.num_targ_img > 0:
         #imaging_frbs = frbs.filter(host__isnull=True)
         imaging_frbs = frbs.filter(
-            status=TransientStatus.objects.get(name='Image'))
+            status=TransientStatus.objects.get(name='NeedImage'))
     else:
         imaging_frbs = FRBTransient.objects.none()
 
@@ -200,7 +200,7 @@ def grab_targets_by_mode(frb_fu, frbs):
     # Longslit
     if frb_fu.num_targ_longslit > 0:
         longslit_frbs = frbs.filter(
-            status=TransientStatus.objects.get(name='Spectrum'))
+            status=TransientStatus.objects.get(name='NeedSpectrum'))
         if frb_fu.min_POx:
             gd_ids = []
             for frb in longslit_frbs:

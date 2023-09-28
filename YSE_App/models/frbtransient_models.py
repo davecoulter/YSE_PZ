@@ -262,10 +262,13 @@ class Path(BaseModel):
     P_Ox = models.FloatField()
     # Candidate name
     galaxy = models.ForeignKey(FRBGalaxy, on_delete=models.CASCADE)
-    # Filter used -- useful for FRB status
-    band=models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
+
+    band = models.ForeignKey(PhotometricBand, blank=True, null=True,
+        on_delete=models.SET_NULL)
 
     # Optional
+    # Filter used -- useful for FRB status
+    #  Added as optional but should always be present
 
     # Vetted? If true, a human has confirmed the results are valid
     vetted = models.BooleanField(default=False, blank=True)

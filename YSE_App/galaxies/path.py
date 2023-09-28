@@ -28,7 +28,7 @@ chime_priors['survey'] = 'Pan-STARRS'
 chime_priors['scale'] = 0.5
 
 def ingest_path_results(itransient:FRBTransient,
-                        candidates:pandas.DataFrame, 
+                        candidates:pandas.DataFrame,
                         Filter:str,
                         inst_name:str,
                         obs_group:str,
@@ -92,10 +92,11 @@ def ingest_path_results(itransient:FRBTransient,
             dict(galaxy=galaxy, instrument=Instrument.objects.get(name=inst_name), 
                  obs_group=ObservationGroup.objects.get(name=obs_group)),
                  {}, user=user)
+        band=PhotometricBand.objects.filter(instrument__name=inst_name).get(name=Filter)
         gpd = frb_utils.add_or_grab_obj(
             GalaxyPhotData, 
             dict(photometry=gp,
-                 band=PhotometricBand.objects.filter(instrument__name=inst_name).get(name=Filter)),
+                 band=band),
             dict(mag=icand.mag, 
                  obs_date=datetime.datetime.now()),
             user=user)
@@ -107,6 +108,7 @@ def ingest_path_results(itransient:FRBTransient,
         ipath = Path(transient=itransient, 
                      galaxy=galaxy, P_Ox=icand.P_Ox,
                      created_by_id=user.id, modified_by_id=user.id)
+        ipath.band = band
         ipath.save()
 
     # PATH P(U|x)

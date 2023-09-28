@@ -1,5 +1,7 @@
 """ Methods for dealing with FRB Observing """
 
+from django.utils import timezone as du_timezone
+
 from YSE_App.models import FRBFollowUpRequest
 from YSE_App.models import FRBFollowUpResource
 from YSE_App.models import FRBFollowUpObservation
@@ -8,6 +10,7 @@ from YSE_App.models import FRBTransient
 
 from YSE_App import frb_utils
 from YSE_App import frb_status
+
 
 import pandas
 
@@ -76,7 +79,7 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
 
     return 200, "All good"
     
-def ingest_obslog(obslog:pandas.DataFrame, user):
+def ingest_obslog(obslog:pandas.DataFrame, user, override:bool=False):
     """ Ingest an observing log into the DB
 
     This updates the transient status and adds to FRBFollowUpObservation
@@ -91,6 +94,8 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
             -- date (timestamp)
             -- success (bool)
         user (_type_): _description_
+        override (bool, optional): If True, allow several of the
+            checks to be over-ridden.  
 
     Returns:
         tuple: (status, message) (int,str) 
@@ -110,10 +115,10 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
 
         # Check if the transient status is OK
         if row['mode'] in ['imaging']:
-            if transient.status.name != 'ImagePending':
+            if transient.status.name != 'ImagePending' and not override:
                 return 402, f"FRB {row['TNS']} not in PendingImage status" 
         elif row['mode'] in ['longslit', 'mask']:
-            if transient.status.name != 'SpectrumPending':
+            if transient.status.name != 'SpectrumPending' and not override:
                 return 403, f"FRB {row['TNS']} not in PendingSpectrum status" 
         else:
             return 406, f"Mode {row['mode']} not allowed"
@@ -123,6 +128,10 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
             resource=FRBFollowUpResource.objects.get(name=row['Resource'])
         except:
             return 405, f"Resource {row['Resource']} not in DB"
+
+        # Check we are after the stop date
+        if resource.valid_stop > du_timezone.now():
+            return 410, "This cannot be executed until after the valid_stop date!"
 
         # Add to FRBFollowUpObservation if not already in there
         required = dict(
@@ -140,10 +149,13 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
 
         # Remove all items from Pending`
         all_pending = FRBFollowUpRequest.objects.filter(
-            transient=transient,
-            mode=row['mode'])
+            resource=resource)
         for pending in all_pending:
+            transient = pending.transient
+            # Delete
             pending.delete()
+            # Update status
+            frb_status.set_status(transient)
 
         # Update transient status
         frb_status.set_status(transient)
