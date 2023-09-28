@@ -6,6 +6,8 @@ import numpy as np
 from YSE_App import frb_tags
 from YSE_App.chime import tags as chime_tags 
 
+from IPython import embed
+
 # Create the FRB ones
 all_status = [\
     'Unassigned', # Does not meet the criteria for FFFF FollowUp
@@ -45,6 +47,8 @@ def set_status(frb):
     # Hide here for circular imports
     from YSE_App.models import TransientStatus
     from YSE_App.models import Path
+    from YSE_App.models import FRBFollowUpObservation
+    from YSE_App.models import FRBFollowUpRequest
 
     # Run in reverse order of completion
 
@@ -109,13 +113,23 @@ def set_status(frb):
     # #########################################################
     # Need Spectrum
     # #########################################################
-    if frb.host is not None:
-        pass
 
-        # MAKE A DEF OF THE PU criterion
+    if (frb.host is not None) and (
+        not FRBFollowUpRequest.objects.filter(
+            transient=frb,
+            mode__in=['longslit','mask']).exists()) and (
+        not FRBFollowUpObservation.objects.filter(
+            transient=frb,
+            success=True,
+            mode__in=['longslit','mask']).exists()): 
 
-        
-
+        # Require top 2 P(O|x) > min(P_Ux_max)
+        PUx_maxs = frb_tags.values_from_tags(frb, 'P_Ux_max')
+        if (len(PUx_maxs) == 0) or (
+            frb.sum_top_two_PATH > np.min(PUx_maxs)):
+            frb.status = TransientStatus.objects.get(name='NeedSpectrum') 
+            frb.save()
+            return
 
     # #########################################################
     # Run Public PATH

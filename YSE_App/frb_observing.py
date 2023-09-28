@@ -137,16 +137,19 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
         # Add to the table
         obs = frb_utils.add_or_grab_obj(
             FRBFollowUpObservation, required, {}, user)
-                                   
+
+        # Update transient status
+        frb_status.set_status(transient)
+
+        '''
         # Update transient status
         if row['mode'] in ['imaging']:
             transient.status = TransientStatus.objects.get(name='ObsImage') 
         elif row['mode'] in ['longslit', 'mask']:
             transient.status = TransientStatus.objects.get(name='ObsSpectrum') 
-
-
         # Save
         transient.save()
+        '''
 
     return 200, "All good"
     

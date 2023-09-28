@@ -1,6 +1,5 @@
 """ Code related to FRB tags """
 
-from YSE_App.models import *
 from YSE_App.chime import tags as chime_tags
 
 def find_tags(frb):
@@ -22,7 +21,7 @@ def values_from_tags(frb, key:str):
     if frb.frb_survey.name == 'CHIME/FRB':
         # Loop through 
         for sample in chime_tags.all_samples:
-            if sample in tag_names and key in sample.keys():
+            if sample['name'] in tag_names and key in sample.keys():
                 values.append(sample[key])
 
     return values

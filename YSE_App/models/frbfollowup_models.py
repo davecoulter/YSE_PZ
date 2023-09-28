@@ -157,6 +157,18 @@ class FRBFollowUpRequest(BaseModel):
     def ResourceName(self):
         return f'{self.resource.name}'
 
+    def check_for_observation(self, transient, mode:str):
+        """ Check for an observation of this FRB
+
+        Returns:
+            bool: True if an observation exists
+        """
+        # Check
+        if FRBFollowUpObservation.objects.filter(transient=transient).exists():
+            return True
+        else:
+            return False
+
 class FRBFollowUpObservation(BaseModel):
     """ FRBFollowUpObservation model
 

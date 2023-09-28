@@ -170,7 +170,14 @@ class FRBTransient(BaseModel):
                 galaxies.append(p.galaxy)
         return path_values, galaxies
 
+    @property
     def sum_top_two_PATH(self):
+        """ Add the top two PATH P(O|x) values for the transient 
+
+        Returns:
+            float: 0. if there is no PATH analysis
+
+        """
         path_values, _ = self.get_Path_values()
         if len(path_values) == 0:
             return 0.
@@ -180,7 +187,7 @@ class FRBTransient(BaseModel):
             path_values = np.array(path_values)
             argsrt = np.argsort(path_values)
             path_values = path_values[argsrt]
-            return np,sum(path_values[-2:])
+            return np.sum(path_values[-2:])
 
     @property
     def best_Path_galaxy(self):
