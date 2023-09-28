@@ -1526,7 +1526,6 @@ def ingest_path(request):
       - obs_group (str): name of the instrument; must be present in the
         ObservationGroup table
       - P_Ux (float): Unseen posterior;  added to the transient
-      - deeper (bool): Is a deeper image required?
 
     Args:
         request (requests.request): 
@@ -1558,7 +1557,6 @@ def ingest_path(request):
             data['F'], 
             data['instrument'], data['obs_group'],
             data['P_Ux'], user,
-            data['deeper'],
             remove_previous=True) # May wish to make this optional
     except:
         print("Ingestion failed")

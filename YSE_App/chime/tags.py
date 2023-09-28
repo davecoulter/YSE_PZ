@@ -9,9 +9,9 @@ blind_sample = dict(
     ra_rngs=[[0, 225]],
     dec_rngs=[[-10, 10]],
     max_EBV=0.3,
-    min_POx=0.9,
     mr_max=24.5,     # Faintest magnitude to try spectroscopy
-    P_Ux_max=0.5,    # Host is consdiered Unseen if P(U|x) is greater than this
+    max_P_Ux=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
+    min_POx=0.0,    # Minimum P(O|x) to consider (of top 2)
     end_date='2030-12-31', # Not implemented yet
     prob=0.3,
     label=['Stripe 82'],
@@ -23,7 +23,7 @@ highDM_sample = dict(
     version='0.1',
     max_EBV=0.3,
     min_DM=1000.,
-    P_Ux_max=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
+    max_P_Ux=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
     mr_max=24.5,   # Faintest magnitude to try spectroscopy
     prob=0.8,
     )
@@ -42,7 +42,8 @@ kko_sample = dict(
     version='0.1',
     max_EBV=0.3,
     mr_max=23.,      # Faintest magnitude to try spectroscopy
-    P_Ux_max=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
+    min_POx=0.9,     # Minimum P(O|x) to consider (of top 2)
+    max_P_Ux=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
     prob=0.8,
     )
 
@@ -67,7 +68,7 @@ def set_from_instance(instance):
     # ###################################
     # Blind?
     flag_blind = False
-    for ra_rng, dec_rng, label in zip(
+    for ra_rng, dec_rng, _ in zip(
         blind_sample['ra_rngs'], 
         blind_sample['dec_rngs'], 
         blind_sample['label']):

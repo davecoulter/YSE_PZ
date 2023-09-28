@@ -17,6 +17,9 @@ all_status = [\
         # P_Ux > P_Ux_max
         # No Image + successful
     'NeedSpectrum', # Needs spectroscopy for redshift
+        # P(O|x) of top 2 > P_Ux_max
+        # No pending spectrum
+        # No succesfully observed spectrum
     'RunDeepPATH', # Needs PATH run on deeper (typically private) imaging
     'ImagePending', # Pending deeper imaging with an FRBFollowUp
     'SpectrumPending', # Pending spectroscopy with an FRBFollowUp
@@ -25,6 +28,7 @@ all_status = [\
         # r-magnitude (or equivalent) of the top *two* host candidates
         #   are fainter than mr_max for the sample/survey
         # And
+    'AmbiguousHost',  # Host is consideed too ambiguous for further follow-up
     'UnseenHost',  # Even with deep imaging, no compelling host was found
         # P(U|x) is set
         # Deep imaging must exist.  The list of telescope+intrument is below
@@ -56,7 +60,7 @@ def set_status(frb):
     # Complete?
     # #########################################################
     if frb.host is not None and frb.host.redshift is not None:
-        frb.status = TransientStatus.objects.get(name='Complete') 
+        frb.status = TransientStatus.objects.get(name='Complete')
         frb.save()
         return
 
@@ -66,33 +70,45 @@ def set_status(frb):
 
     # In PATH table?
     path_qs = Path.objects.filter(transient=frb)
-    if len(path_qs) > 0:
+    if len(path_qs) > 0 and frb.P_Ux is not None:
         # Check on source of photometry (instrument) for all the galaxies
         all_telinstr = []
         for path in path_qs:
             # Grab a dict of the photometry
             phot_dict = path.galaxy.phot_dict
             all_telinstr += list(phot_dict.keys())
-        # Unique tel+instruments
 
-        # Too shallow
+        # Too shallow?
         too_shallow = True
         for uni_telins in np.unique(all_telinstr):
             if uni_telins in deep_telinstr:
                 too_shallow = False
 
         # P(U|x) too large?
-        if not too_shallow and frb.P_Ux is not None:
-
-            PUx_maxs = frb_tags.values_from_tags(frb, 'P_Ux_max')
+        if not too_shallow: 
+            PUx_maxs = frb_tags.values_from_tags(frb, 'max_P_Ux')
             if len(PUx_maxs) > 0:
                 # Use the max
                 PUx_max = np.max(PUx_maxs)
                 if frb.P_Ux > PUx_max:
-                    frb.status = TransientStatus.objects.get(name='UnseenHost') 
+                    frb.status = TransientStatus.objects.get(
+                        name='UnseenHost')
                     frb.save()
                     return
 
+    # #########################################################
+    # Ambiguous host
+    # #########################################################
+
+    if frb.host is not None:
+        # Require top 2 P(O|x) > min(P_Ox_min)
+        POx_mins = frb_tags.values_from_tags(frb, 'min_POx')
+        if len(POx_mins) > 0 and (
+            frb.sum_top_two_PATH < np.min(POx_mins)):
+            frb.status = TransientStatus.objects.get(name='AmbiguousHost') 
+            frb.save()
+            return
+ 
     # #########################################################
     # Too Faint? 
     # #########################################################
@@ -105,16 +121,35 @@ def set_status(frb):
             mr_max = np.max(mrs)
 
             # Check host candidate magnitudes
+    
+    # #########################################################
+    # Good Spectrum
+    # #########################################################
+
+    if FRBFollowUpObservation.objects.filter(
+            transient=frb,
+            success=True,
+            mode__in=['longslit','mask']).exists():
+        frb.status = TransientStatus.objects.get(name='GoodSpectrum') 
+        frb.save()
+        return
 
     # #########################################################
     # Pending Spectrum
     # #########################################################
 
+    if FRBFollowUpRequest.objects.filter(
+            transient=frb,
+            mode__in=['longslit','mask']).exists():
+        frb.status = TransientStatus.objects.get(name='SpectrumPending') 
+        frb.save()
+        return
+
     # #########################################################
     # Need Spectrum
     # #########################################################
 
-    if (frb.host is not None) and (
+    if frb.host is not None and (
         not FRBFollowUpRequest.objects.filter(
             transient=frb,
             mode__in=['longslit','mask']).exists()) and (
@@ -123,11 +158,32 @@ def set_status(frb):
             success=True,
             mode__in=['longslit','mask']).exists()): 
 
-        # Require top 2 P(O|x) > min(P_Ux_max)
-        PUx_maxs = frb_tags.values_from_tags(frb, 'P_Ux_max')
-        if (len(PUx_maxs) == 0) or (
-            frb.sum_top_two_PATH > np.min(PUx_maxs)):
+        # Require top 2 P(O|x) > min(P_Ox_min)
+        POx_mins = frb_tags.values_from_tags(frb, 'min_POx')
+        if (len(POx_mins) == 0) or (
+            frb.sum_top_two_PATH > np.min(POx_mins)):
             frb.status = TransientStatus.objects.get(name='NeedSpectrum') 
+            frb.save()
+            return
+
+    # #########################################################
+    # Need Image
+    # #########################################################
+
+    if frb.P_Ux is not None and frb.host is not None and (
+        not FRBFollowUpRequest.objects.filter(
+            transient=frb,
+            mode='image').exists()) and (
+        not FRBFollowUpObservation.objects.filter(
+            transient=frb,
+            success=True,
+            mode='image').exists()):
+
+        # Require top P_Ux > min(P_Ux_max)
+        PUx_maxs = frb_tags.values_from_tags(frb, 'max_P_Ux')
+        if (len(PUx_maxs) == 0) or (
+            frb.P_Ux > np.min(PUx_maxs)):
+            frb.status = TransientStatus.objects.get(name='NeedImage') 
             frb.save()
             return
 
@@ -141,11 +197,10 @@ def set_status(frb):
             frb.status = TransientStatus.objects.get(name='RunPublicPATH') 
             frb.save()
             return
-        
 
 
     # #########################################################
-    # Unassigned 
+    # Unassigned
     # #########################################################
 
     frb.status = TransientStatus.objects.get(name='Unassigned') 

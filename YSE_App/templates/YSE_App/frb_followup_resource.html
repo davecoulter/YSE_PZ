@@ -28,10 +28,26 @@
     <h3>
         Pending FRBs
     </h3>
-
     <div class="box-body">
       {% render_table pending_table %}
     </div>
+  
+    {% if obs_table %}
+    <h3>
+        Observed FRBs
+    </h3>
+    <div class="box-body">
+      {% render_table obs_table %}
+    </div>
+    
+    <h3>
+        Obs Log
+    </h3>
+    <div class="box-body">
+      {% render_table obslog_table %}
+    </div>
+
+    {% endif %}
   
     {% if imaging_table %}
         <h3>

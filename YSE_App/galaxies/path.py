@@ -7,13 +7,15 @@ import datetime
 from astropy.coordinates import SkyCoord
 
 from YSE_App.common.utilities import getGalaxyname
-from YSE_App import frb_utils
 from YSE_App.models import FRBGalaxy, GalaxyPhotData 
 from YSE_App.models import GalaxyPhotometry, PhotometricBand
 from YSE_App.models import FRBTransient, Path
 from YSE_App.models import TransientStatus
 from YSE_App.models.instrument_models import Instrument
 from YSE_App.models.enum_models import ObservationGroup
+
+from YSE_App import frb_utils
+from YSE_App import frb_status
 
 from IPython import embed
 
@@ -31,7 +33,6 @@ def ingest_path_results(itransient:FRBTransient,
                         inst_name:str,
                         obs_group:str,
                         P_Ux:float, user,
-                        deeper:bool,
                         remove_previous:bool=True):
     """ Method to ingest a table of PATH results into the DB
 
@@ -50,7 +51,6 @@ def ingest_path_results(itransient:FRBTransient,
         obs_group (str): Name of the observation group
         P_Ux (float): PATH unseen probability P(U|x)
         user (django user object): user 
-        deeper (bool): If True, request deeper photometry
         remove_previous (bool, optional): If True, remove any previous
             entries related to PATH from the DB. Defaults to True.
 
@@ -116,15 +116,8 @@ def ingest_path_results(itransient:FRBTransient,
     itransient.host = itransient.best_Path_galaxy
 
     # Set status
-    if deeper:
-        itransient.status = TransientStatus.objects.get(
-            name='NeedImage')
-    else:
-        itransient.status = TransientStatus.objects.get(
-            name='NeedSpectrum')
+    frb_status.set_status(itransient)
 
-    # Save to DB
-    itransient.save()
 
     # Return (mainly for testing)
     return str(gp.instrument)

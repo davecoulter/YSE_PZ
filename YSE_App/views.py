@@ -47,6 +47,7 @@ from .common.utilities import getRADecBox
 
 from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable,ToOFollowupTable
 from .table_utils import FRBFollowupResourceTable
+from .table_utils import FRBFollowupObservationsTable
 from .table_utils import FRBTransientFilter, FRBTransientTable
 from .table_utils import CandidatesTable, CandidatesFilter
 from .queries.yse_python_queries import *
@@ -1686,7 +1687,7 @@ def frb_dashboard(request):
                                  ['NeedImage','NeedSpectrum'],
                                  ['ImagePending', 'SpectrumPending'],
                                  ['GoodSpectrum'],
-                                 ['TooFaint', 'UnseenHost', 'Completed'],
+                                 ['TooFaint', 'AmbiguousHost', 'UnseenHost', 'Completed'],
                                  ]):
         transients = FRBTransient.objects.filter(status__in=TransientStatus.objects.filter(
             name__in=statusnames))
@@ -1908,5 +1909,13 @@ def frb_followup_resource(request, slug):
     context['pending_table'] = FRBTransientTable(pending_frbs)
 
     # Observed
+    fu_obs = FRBFollowUpObservation.objects.filter(resource=frb_fu)
+    if len(fu_obs) > 0:
+        frb_ids = [x.transient.id for x in fu_obs]
+        obs_frbs = FRBTransient.objects.filter(id__in=frb_ids)
+        context['obs_table'] = FRBTransientTable(obs_frbs)
+
+        # Obs log
+        context['obslog_table'] = FRBFollowupObservationsTable(fu_obs)
 
     return render(request, 'YSE_App/frb_followup_resource.html', context)

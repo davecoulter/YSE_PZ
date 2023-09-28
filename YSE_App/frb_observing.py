@@ -32,7 +32,7 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
     # Scrub previous entries with the named resource?
     
     # Loop on rows
-    for ss, row in obsplan.iterrows():
+    for _, row in obsplan.iterrows():
 
         # Grab the transient
         try:
@@ -100,7 +100,7 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
     # Scrub previous entries with the named resource?
     
     # Loop on rows
-    for ss, row in obslog.iterrows():
+    for _, row in obslog.iterrows():
 
         # Grab the transient
         try:
@@ -110,10 +110,10 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
 
         # Check if the transient status is OK
         if row['mode'] in ['imaging']:
-            if transient.status.name != 'PendingImage':
+            if transient.status.name != 'ImagePending':
                 return 402, f"FRB {row['TNS']} not in PendingImage status" 
         elif row['mode'] in ['longslit', 'mask']:
-            if transient.status.name != 'PendingSpectrum':
+            if transient.status.name != 'SpectrumPending':
                 return 403, f"FRB {row['TNS']} not in PendingSpectrum status" 
         else:
             return 406, f"Mode {row['mode']} not allowed"
@@ -124,13 +124,13 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
         except:
             return 405, f"Resource {row['Resource']} not in DB"
 
-        # Add to FRBFollowUpRequest if not already in there
+        # Add to FRBFollowUpObservation if not already in there
         required = dict(
-            transient=transient, 
-            resource=resource, 
+            transient=transient,
+            resource=resource,
             mode=row['mode'],
-            conditions=row['Conditions'], 
-            texp=row['texp'], 
+            conditions=row['Conditions'],
+            texp=row['texp'],
             date=pandas.Timestamp(row['date']),
             success=row['success'])
                                                                                   
@@ -138,18 +138,15 @@ def ingest_obslog(obslog:pandas.DataFrame, user):
         obs = frb_utils.add_or_grab_obj(
             FRBFollowUpObservation, required, {}, user)
 
+        # Remove all items from Pending`
+        all_pending = FRBFollowUpRequest.objects.filter(
+            transient=transient,
+            mode=row['mode'])
+        for pending in all_pending:
+            pending.delete()
+
         # Update transient status
         frb_status.set_status(transient)
-
-        '''
-        # Update transient status
-        if row['mode'] in ['imaging']:
-            transient.status = TransientStatus.objects.get(name='ObsImage') 
-        elif row['mode'] in ['longslit', 'mask']:
-            transient.status = TransientStatus.objects.get(name='ObsSpectrum') 
-        # Save
-        transient.save()
-        '''
 
     return 200, "All good"
     

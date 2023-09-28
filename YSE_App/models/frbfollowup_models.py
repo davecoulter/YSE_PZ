@@ -196,3 +196,21 @@ class FRBFollowUpObservation(BaseModel):
 
     def __str__(self):
         return f'Resource: {self.resource.name} FRB: {self.transient.name} mode: {self.mode}'
+
+    def TransientString(self):
+        return self.transient.name
+
+    def InstrString(self):
+        return self.resource.InstrString()
+
+    def ModeString(self):
+        return self.mode
+
+    def TexpString(self):
+        return f'{self.texp}'
+
+    def DateString(self):
+        return f'{self.date}'
+
+    def SuccessString(self):
+        return f'{self.success}'
