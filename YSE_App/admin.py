@@ -84,4 +84,5 @@ admin.site.register(CanvasFOV)
 # FRBs
 admin.site.register(FRBTransient)
 admin.site.register(FRBFollowUpResource)
+admin.site.register(FRBFollowUpRequest)
 admin.site.register(FRBGalaxy)

@@ -11,7 +11,7 @@ blind_sample = dict(
     max_EBV=0.3,
     min_POx=0.9,
     mr_max=24.5,     # Faintest magnitude to try spectroscopy
-    P_Ux_max=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
+    P_Ux_max=0.5,    # Host is consdiered Unseen if P(U|x) is greater than this
     end_date='2030-12-31', # Not implemented yet
     prob=0.3,
     label=['Stripe 82'],
@@ -23,6 +23,7 @@ highDM_sample = dict(
     version='0.1',
     max_EBV=0.3,
     min_DM=1000.,
+    P_Ux_max=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
     mr_max=24.5,   # Faintest magnitude to try spectroscopy
     prob=0.8,
     )
@@ -40,7 +41,7 @@ kko_sample = dict(
     name='CHIME-KKO',
     version='0.1',
     max_EBV=0.3,
-    mr_max=24.5,   # Faintest magnitude to try spectroscopy
+    mr_max=23.,      # Faintest magnitude to try spectroscopy
     P_Ux_max=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
     prob=0.8,
     )

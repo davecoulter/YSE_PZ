@@ -50,7 +50,7 @@ def init_kko(clean:bool=True):
             FRBTag, dict(name='CHIME-Unknown'), {}, user)
     for transient in transients:
         # Drop unknown
-        transient.frb_tags.drop(kko_tag)
+        transient.frb_tags.remove(unkn_tag)
         #
         transient.frb_tags.add(kko_tag)
         # Update status (and save)

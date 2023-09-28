@@ -170,6 +170,18 @@ class FRBTransient(BaseModel):
                 galaxies.append(p.galaxy)
         return path_values, galaxies
 
+    def sum_top_two_PATH(self):
+        path_values, _ = self.get_Path_values()
+        if len(path_values) == 0:
+            return 0.
+        elif len(path_values) == 1:
+            return path_values[0]
+        else:
+            path_values = np.array(path_values)
+            argsrt = np.argsort(path_values)
+            path_values = path_values[argsrt]
+            return np,sum(path_values[-2:])
+
     @property
     def best_Path_galaxy(self):
         """ Return the galaxy with the highest P(O|x) value

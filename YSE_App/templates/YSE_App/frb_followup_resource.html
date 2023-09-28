@@ -33,30 +33,36 @@
       {% render_table pending_table %}
     </div>
   
-    <h3>
-        Valid FRBs for Imaging
-    </h3>
+    {% if imaging_table %}
+        <h3>
+            Valid FRBs for Imaging
+        </h3>
 
-    <div class="box-body">
-      {% render_table imaging_table %}
-    </div>
-  
-    <h3>
-        Valid FRBs for Longslit
-    </h3>
+        <div class="box-body">
+            {% render_table imaging_table %}
+        </div>
+    {% endif %}
 
-    <div class="box-body">
-      {% render_table longslit_table %}
-    </div>
+    {% if longslit_table %}
+        <h3>
+            Valid FRBs for Longslit
+        </h3>
 
-    <h3>
-        Valid FRBs for Masks
-    </h3>
+        <div class="box-body">
+            {% render_table longslit_table %}
+        </div>
+    {% endif %}
 
-    <div class="box-body">
-      {% render_table mask_table %}
+    {% if mask_table %}
+        <h3>
+            Valid FRBs for Masks
+        </h3>
 
-    </div>
+        <div class="box-body">
+        {% render_table mask_table %}
+
+        </div>
+    {% endif %}
   
 {% endblock %}
 

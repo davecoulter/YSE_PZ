@@ -1710,6 +1710,11 @@ def frb_dashboard(request):
     followups = FRBFollowUpResource.objects.filter(
         valid_stop__gt=du_timezone.now())
     ftable = FRBFollowupResourceTable(followups)
+
+    # Old ones
+    old_followups = FRBFollowUpResource.objects.filter(
+        valid_stop__lt=du_timezone.now())
+    old_ftable = FRBFollowupResourceTable(old_followups)
     
     if request.META['QUERY_STRING']:
         anchor = request.META['QUERY_STRING'].split('-')[0]
@@ -1718,6 +1723,7 @@ def frb_dashboard(request):
         'transient_categories':transient_categories,
         'all_transient_statuses':TransientStatus.objects.order_by('name'),
         'followup_table':ftable,
+        'old_followup_table':old_ftable,
         'anchor':anchor,
     }
 
@@ -1876,6 +1882,7 @@ def frb_transient_detail(request, slug):
 def frb_followup_resource(request, slug):
 
     frb_fu = FRBFollowUpResource.objects.get(slug=slug)
+    is_old = frb_fu.valid_stop < du_timezone.now()
 
     
     if request.META['QUERY_STRING']:
@@ -1887,16 +1894,19 @@ def frb_followup_resource(request, slug):
         'anchor':anchor,
     }
 
-    # Valid FRBs for observing
-    frbs_by_mode = frb_fu.get_frbs_by_mode()
-    # Build the tables
-    for key in frbs_by_mode.keys():
-        context[f'{key}_table'] = FRBTransientTable(frbs_by_mode[key])
+    if not is_old:
+        # Valid FRBs for observing
+        frbs_by_mode = frb_fu.get_frbs_by_mode()
+        # Build the tables
+        for key in frbs_by_mode.keys():
+            context[f'{key}_table'] = FRBTransientTable(frbs_by_mode[key])
 
     # Pending FRBs
     fu_requested = FRBFollowUpRequest.objects.filter(resource=frb_fu)
     frb_ids = [x.transient.id for x in fu_requested]
     pending_frbs = FRBTransient.objects.filter(id__in=frb_ids)
     context['pending_table'] = FRBTransientTable(pending_frbs)
+
+    # Observed
 
     return render(request, 'YSE_App/frb_followup_resource.html', context)

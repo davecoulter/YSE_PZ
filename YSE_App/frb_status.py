@@ -35,6 +35,7 @@ deep_telinstr = []
 
 # List of frb_rags where one should run a public PATH
 run_public_path = []
+# Include all of the CHIME samples
 run_public_path += [sample['name'] for sample in chime_tags.all_samples]
 
 # Add all of the chime
@@ -100,6 +101,21 @@ def set_status(frb):
             mr_max = np.max(mrs)
 
             # Check host candidate magnitudes
+
+    # #########################################################
+    # Pending Spectrum
+    # #########################################################
+
+    # #########################################################
+    # Need Spectrum
+    # #########################################################
+    if frb.host is not None:
+        pass
+
+        # MAKE A DEF OF THE PU criterion
+
+        
+
 
     # #########################################################
     # Run Public PATH

@@ -163,7 +163,7 @@ def targetfrbs_for_fu(frb_fu):
     else:
         gd_frbs = gd_frbs.filter(
             status__in=TransientStatus.objects.filter(
-                name__in=['Image', 'Spectrum']))
+                name__in=['NeedImage', 'NeedSpectrum']))
 
     # Tags? aka samples
     if frb_fu.frb_tags:

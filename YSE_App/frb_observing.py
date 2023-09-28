@@ -7,6 +7,7 @@ from YSE_App.models import TransientStatus
 from YSE_App.models import FRBTransient
 
 from YSE_App import frb_utils
+from YSE_App import frb_status
 
 import pandas
 
@@ -41,11 +42,11 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
 
         # Check if the transient status is OK
         if row['mode'] in ['imaging']:
-            if transient.status.name != 'Image':
-                return 402, f"FRB {row['TNS']} not in Image status" 
+            if transient.status.name != 'NeedImage':
+                return 402, f"FRB {row['TNS']} not in NeedImage status" 
         elif row['mode'] in ['longslit', 'mask']:
-            if transient.status.name != 'Spectrum':
-                return 403, f"FRB {row['TNS']} not in Spectrum status" 
+            if transient.status.name != 'NeedSpectrum':
+                return 403, f"FRB {row['TNS']} not in NeedSpectrum status" 
         else:
             return 406, f"Mode {row['mode']} not allowed"
 
@@ -62,13 +63,16 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
             {}, user)
                                    
         # Update transient status
+        frb_status.set_status(transient)
+        '''
         if row['mode'] in ['imaging']:
-            transient.status = TransientStatus.objects.get(name='PendingImage') 
+            transient.status = TransientStatus.objects.get(name='ImagePending') 
         elif row['mode'] in ['longslit', 'mask']:
-            transient.status = TransientStatus.objects.get(name='PendingSpectrum') 
+            transient.status = TransientStatus.objects.get(name='SpectrumPending') 
 
         # Save
         transient.save()
+        '''
 
     return 200, "All good"
     

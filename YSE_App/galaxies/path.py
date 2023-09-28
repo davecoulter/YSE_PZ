@@ -117,9 +117,11 @@ def ingest_path_results(itransient:FRBTransient,
 
     # Set status
     if deeper:
-        itransient.status = TransientStatus.objects.get(name='Image')
+        itransient.status = TransientStatus.objects.get(
+            name='NeedImage')
     else:
-        itransient.status = TransientStatus.objects.get(name='Spectrum')
+        itransient.status = TransientStatus.objects.get(
+            name='NeedSpectrum')
 
     # Save to DB
     itransient.save()
