@@ -262,6 +262,8 @@ class Path(BaseModel):
     P_Ox = models.FloatField()
     # Candidate name
     galaxy = models.ForeignKey(FRBGalaxy, on_delete=models.CASCADE)
+    # Filter used -- useful for FRB status
+    band=models.ForeignKey(PhotometricBand, on_delete=models.CASCADE)
 
     # Optional
 

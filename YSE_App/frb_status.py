@@ -4,7 +4,7 @@ import numpy as np
 
 
 from YSE_App import frb_tags
-from YSE_App.chime import tags as chime_tags 
+from YSE_App.chime import tags as chime_tags
 
 from IPython import embed
 
@@ -13,27 +13,33 @@ all_status = [\
     'Unassigned', # Does not meet the criteria for FFFF FollowUp
     'RunPublicPATH', # Needs to be run through PATH with public data
         # P_Ux is None
+        # At least one frb_tag is in the list of run_public_path entries below
     'NeedImage', # Needs deeper imaging
-        # P_Ux > P_Ux_max
-        # No Image + successful
+        # P_Ux > maximum of all P_Ux_max for the frb_tags
+        # No successful Image taken
+        # No Image pending
     'NeedSpectrum', # Needs spectroscopy for redshift
         # P(O|x) of top 2 > P_Ux_max
         # No pending spectrum
         # No succesfully observed spectrum
     'RunDeepPATH', # Needs PATH run on deeper (typically private) imaging
     'ImagePending', # Pending deeper imaging with an FRBFollowUp
+        # FRB appears in FRBFollowUpRequest with mode='image'
     'SpectrumPending', # Pending spectroscopy with an FRBFollowUp
+        # FRB appears in FRBFollowUpRequest with mode='longslit','mask'
     'GoodSpectrum', # Observed with spectroscopy successfully
     'TooFaint', # Host is too faint for spectroscopy
         # r-magnitude (or equivalent) of the top *two* host candidates
         #   are fainter than mr_max for the sample/survey
         # And
     'AmbiguousHost',  # Host is consideed too ambiguous for further follow-up
+        # At least one of the frb_tags has a min_POx value
+        #  and the sum of the top two P(O|x) is less than the minimum of those
     'UnseenHost',  # Even with deep imaging, no compelling host was found
         # P(U|x) is set
         # Deep imaging must exist.  The list of telescope+intrument is below
         # P(U|x) > P_Ux_max
-    'Complete', # Redshift measured (or deemed impossible)
+    'Redshift', # Redshift measured
 ]
 
 # List of telescope+instruments that are considered Deep
@@ -57,10 +63,10 @@ def set_status(frb):
     # Run in reverse order of completion
 
     # #########################################################
-    # Complete?
+    # Redshift?
     # #########################################################
     if frb.host is not None and frb.host.redshift is not None:
-        frb.status = TransientStatus.objects.get(name='Complete')
+        frb.status = TransientStatus.objects.get(name='Redshift')
         frb.save()
         return
 
@@ -85,7 +91,7 @@ def set_status(frb):
                 too_shallow = False
 
         # P(U|x) too large?
-        if not too_shallow: 
+        if not too_shallow:
             PUx_maxs = frb_tags.values_from_tags(frb, 'max_P_Ux')
             if len(PUx_maxs) > 0:
                 # Use the max
@@ -110,7 +116,7 @@ def set_status(frb):
             return
  
     # #########################################################
-    # Too Faint? 
+    # Too Faint?
     # #########################################################
 
     if frb.host is not None:
@@ -120,7 +126,7 @@ def set_status(frb):
         if len(mrs) > 0:
             mr_max = np.max(mrs)
 
-            # Check host candidate magnitudes
+            # Use PATH host magnitudes
     
     # #########################################################
     # Good Spectrum
@@ -130,7 +136,7 @@ def set_status(frb):
             transient=frb,
             success=True,
             mode__in=['longslit','mask']).exists():
-        frb.status = TransientStatus.objects.get(name='GoodSpectrum') 
+        frb.status = TransientStatus.objects.get(name='GoodSpectrum')
         frb.save()
         return
 
@@ -141,7 +147,7 @@ def set_status(frb):
     if FRBFollowUpRequest.objects.filter(
             transient=frb,
             mode__in=['longslit','mask']).exists():
-        frb.status = TransientStatus.objects.get(name='SpectrumPending') 
+        frb.status = TransientStatus.objects.get(name='SpectrumPending')
         frb.save()
         return
 
@@ -191,18 +197,21 @@ def set_status(frb):
     # Run Public PATH
     # #########################################################
 
-    tag_names = [frb_tag.name for frb_tag in frb.frb_tags.all()]
-    for tag in tag_names:
-        if tag in run_public_path:
-            frb.status = TransientStatus.objects.get(name='RunPublicPATH') 
-            frb.save()
-            return
+    if frb.P_Ux is None:
+        tag_names = [frb_tag.name for frb_tag in frb.frb_tags.all()]
+        for tag in tag_names:
+            if tag in run_public_path:
+                frb.status = TransientStatus.objects.get(name='RunPublicPATH') 
+                frb.save()
+                return
 
 
     # #########################################################
     # Unassigned
     # #########################################################
 
-    frb.status = TransientStatus.objects.get(name='Unassigned') 
+    # If you get to here, you are unassigned
+
+    frb.status = TransientStatus.objects.get(name='Unassigned')
     frb.save()
     return
