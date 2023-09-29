@@ -96,6 +96,18 @@ class FRBGalaxy(BaseModel):
             return '%.2f'%(self.P_Ox)
 
     @property
+    def path_mag(self):
+        """ Magnitude used for PATH analysis """
+        path = yse_models.Path.objects.filter(galaxy=self)
+        if len(path) == 1:
+            band = path[0].band
+            phot = yse_models.GalaxyPhotData.objects.filter(
+                photometry__galaxy=self,band=band)
+            return phot[0].mag
+        else:
+            return None
+
+    @property
     def P_Ox(self):
         """ Grab the P_Ox from the PATH table, if it exists
 

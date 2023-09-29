@@ -81,7 +81,7 @@ def calc_airmasses(frb_fu, gd_frbs,
     return min_AM
 
 def target_table_from_frbs(frbs, mode:str):
-    """ Generate a pandas table from a list or QuerySet of FRBs
+    """ Generate a pandas table of targets from a list or QuerySet of FRBs
 
     Args:
         frbs (QuerySet): List of FRBTransient objects
@@ -89,6 +89,7 @@ def target_table_from_frbs(frbs, mode:str):
 
     Returns:
         pandas.DataFrame: table of FRBTransient properties
+        and candidates useful for targets
     """
 
 
@@ -201,10 +202,20 @@ def grab_targets_by_mode(frb_fu, frbs):
     if frb_fu.num_targ_longslit > 0:
         longslit_frbs = frbs.filter(
             status=TransientStatus.objects.get(name='NeedSpectrum'))
+
+        # Cut on P_Ox?
         if frb_fu.min_POx:
             gd_ids = []
             for frb in longslit_frbs:
                 if frb.host.P_Ox is not None and frb.host.P_Ox > frb_fu.min_POx:
+                    gd_ids.append(frb.id)
+            longslit_frbs = longslit_frbs.filter(id__in=gd_ids)
+
+        # Cut on magnitude? -- bright
+        if frb_fu.min_mag:
+            gd_ids = []
+            for frb in longslit_frbs:
+                if frb.host.path_mag is not None and frb.host.path_mag > frb_fu.min_mag:
                     gd_ids.append(frb.id)
             longslit_frbs = longslit_frbs.filter(id__in=gd_ids)
 

@@ -58,6 +58,10 @@ class FRBFollowUpResource(BaseModel):
     frb_tags = models.CharField(max_length=64, null=True, blank=True)
     frb_statuses = models.CharField(max_length=64, null=True, blank=True)
 
+    # Magnitude limit(s)
+    min_mag = models.FloatField(null=True, blank=True)
+    max_mag = models.FloatField(null=True, blank=True)
+
     slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
 
     def __str__(self):
