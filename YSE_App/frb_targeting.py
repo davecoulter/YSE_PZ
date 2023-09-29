@@ -219,6 +219,14 @@ def grab_targets_by_mode(frb_fu, frbs):
                     gd_ids.append(frb.id)
             longslit_frbs = longslit_frbs.filter(id__in=gd_ids)
 
+        # Cut on magnitude? -- faint
+        if frb_fu.max_mag:
+            gd_ids = []
+            for frb in longslit_frbs:
+                if frb.host.path_mag is not None and frb.host.path_mag < frb_fu.max_mag:
+                    gd_ids.append(frb.id)
+            longslit_frbs = longslit_frbs.filter(id__in=gd_ids)
+
     # Mask -- Not yet implemented
     mask_frbs = FRBTransient.objects.none()
 
