@@ -1738,6 +1738,8 @@ class FRBTransientTable(tables.Table):
                                verbose_name='Host')
     host_pox_string = tables.Column(accessor='HostPOxString',
                                verbose_name='Host P(O|x)')
+    host_mag_string = tables.Column(accessor='HostMagString',
+                               verbose_name='Host mag')
     frb_survey_string = tables.Column(accessor='FRBSurveyString',
                                verbose_name='FRB Survey',orderable=True,order_by='frb_survey')
     status_string = tables.Column(accessor='StatusString',
@@ -1775,7 +1777,8 @@ class FRBTransientTable(tables.Table):
         model = FRBTransient
         fields = ('name_string','ra_string','dec_string',
                   'dm_string', 'frb_survey_string', 'tags_string',
-                  'status_string', 'host_string', 'host_pox_string')
+                  'status_string', 'host_string', 'host_pox_string',
+                  'host_mag_string')
 
         template_name='YSE_App/django-tables2/bootstrap.html'
         attrs = {

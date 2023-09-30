@@ -133,6 +133,12 @@ class FRBTransient(BaseModel):
         else:
             return ''
 
+    def HostMagString(self):
+        if self.host:
+            return self.host.MagString()
+        else:
+            return ''
+
     def FRBSurveyString(self):
         return self.frb_survey.name
     

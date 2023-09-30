@@ -95,6 +95,15 @@ class FRBGalaxy(BaseModel):
         else:
             return '%.2f'%(self.P_Ox)
 
+    def MagString(self):
+        """ Return the path_mag for the galaxy as a string (for viewing)
+        """
+        if self.P_Ox is None:
+            return ''
+        else:
+            return '%.1f'%(self.path_mag)
+
+
     @property
     def path_mag(self):
         """ Magnitude used for PATH analysis """
