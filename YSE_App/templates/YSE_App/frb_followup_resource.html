@@ -11,8 +11,82 @@
         {{ frb_fu.NameString }}
     </h2>
     <h1>
-        TODO: Add a summary of the Resource here
+        Summary
     </h1>
+    <div class="box-body">
+        <div class="row">
+            <div class="col-xs-3">
+              <strong>Instrument</strong>
+              <p class="text-muted">
+              {{ frb_fu.InstrString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>Start</strong>
+              <p class="text-muted">
+              {{ frb_fu.StartString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>Stop</strong>
+              <p class="text-muted">
+              {{ frb_fu.StopString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>FRB Surveys</strong>
+              <p class="text-muted">
+              {{ frb_fu.SurveyString }}
+              </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-3">
+              <strong>Max AM</strong>
+              <p class="text-muted">
+              {{ frb_fu.MaxAMString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>Min P(O|x)</strong>
+              <p class="text-muted">
+              {{ frb_fu.MinPOxString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>Min mag</strong>
+              <p class="text-muted">
+              {{ frb_fu.MinMagString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>Min mag</strong>
+              <p class="text-muted">
+              {{ frb_fu.MaxMagString }}
+              </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-3">
+              <strong>N Image</strong>
+              <p class="text-muted">
+              {{ frb_fu.NImgString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>N Long</strong>
+              <p class="text-muted">
+              {{ frb_fu.NLongString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>N Mask</strong>
+              <p class="text-muted">
+              {{ frb_fu.NMaskString }}
+              </p>
+            </div>
+        </div>
+    </div>
     <ol class="breadcrumb">
         <li><i class="fa fa-dashboard"></i> Home</li>
     </ol>

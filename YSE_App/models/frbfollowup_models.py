@@ -41,7 +41,6 @@ class FRBFollowUpResource(BaseModel):
     #  all is an allowed value
     frb_surveys = models.CharField(max_length=64)
 
-
     # Optional
 
     # Classical, ToO, Queue 
@@ -82,6 +81,29 @@ class FRBFollowUpResource(BaseModel):
     def StopString(self):
         return self.valid_stop.strftime('%Y-%b-%d')
 
+    def SurveyString(self):
+        return self.frb_surveys
+
+    def MaxAMString(self):
+        return f'{self.max_AM}'
+
+    def MinPOxString(self):
+        return f'{self.min_POx}'
+
+    def MinMagString(self):
+        return f'{self.min_mag}'
+
+    def MaxMagString(self):
+        return f'{self.max_mag}'
+
+    def NImgString(self):
+        return f'{self.num_targ_img}'
+
+    def NLongString(self):
+        return f'{self.num_targ_longslit}'
+
+    def NMaskString(self):
+        return f'{self.num_targ_mask}'
 
     def get_frbs_by_mode(self):
         """ Generate a dict of valid FRBs for targeting by observing mode
@@ -203,6 +225,9 @@ class FRBFollowUpObservation(BaseModel):
 
     def TransientString(self):
         return self.transient.name
+
+    def ResourceName(self):
+        return f'{self.resource.name}'
 
     def InstrString(self):
         return self.resource.InstrString()

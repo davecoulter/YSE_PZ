@@ -1765,11 +1765,16 @@ def frb_transient_detail(request, slug):
         #assigned_transient_tags = transient_obj.tags.all().select_related()
 
         # Get associated Observations
-        followups = FRBFollowUpRequest.objects.filter(transient__pk=transient_id)
-        if len(followups) == 0:
+        fu_req = FRBFollowUpRequest.objects.filter(transient__pk=transient_id)
+        fu_obs = FRBFollowUpObservation.objects.filter(transient__pk=transient_id)
+        fu_names = []
+        fu_names += [item.ResourceName() for item in fu_req]
+        fu_names += [item.ResourceName() for item in fu_obs]
+
+        if len(fu_names) == 0:
             followup_names = 'None'
         else:
-            followup_names = ','.join([item.ResourceName() for item in followups])
+            followup_names = ','.join(np.unique(fu_names))
 
         hostdata = FRBGalaxy.objects.filter(pk=transient_obj.host_id).select_related()
         if hostdata:
