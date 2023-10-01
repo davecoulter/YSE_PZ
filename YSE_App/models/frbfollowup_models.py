@@ -81,6 +81,12 @@ class FRBFollowUpResource(BaseModel):
     def StopString(self):
         return self.valid_stop.strftime('%Y-%b-%d')
 
+    def FullStartString(self):
+        return f'{self.valid_start}'
+
+    def FullStopString(self):
+        return f'{self.valid_stop}'
+
     def SurveyString(self):
         return self.frb_surveys
 
