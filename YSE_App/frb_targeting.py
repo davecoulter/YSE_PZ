@@ -254,13 +254,13 @@ def select_with_priority(frb_fu, frbs_by_mode:dict):
     selected_frbs = {}
 
     # Loop on all the modes
-    for mode, num_targ in zip(['imaging', 'longslit', 'mask'], 
-                              [frb_fu.num_targ_img, frb_fu.num_targ_longslit, 
+    for mode, num_targ in zip(['imaging', 'longslit', 'mask'],
+                              [frb_fu.num_targ_img, frb_fu.num_targ_longslit,
                                frb_fu.num_targ_mask]):
         # Do we want any?
         if num_targ > 0:
             # Do we not have enough?
-            if frb_fu.num_targ_img >= len(frbs_by_mode[mode]):
+            if num_targ >= len(frbs_by_mode[mode]):
                 selected_frbs[mode] = frbs_by_mode[mode]
             else:    
                 # Assign priorities
