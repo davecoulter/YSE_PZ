@@ -29,7 +29,7 @@ def init_kko(clean:bool=True):
 
     # Load up the table
     csv_file = os.path.join(
-        resource_filename('YSE_App', 'chime'), 'chime_kko_tests.csv')
+        resource_filename('YSE_App', 'chime'), 'chime_kko_sep2023.csv')
     df_frbs = pandas.read_csv(csv_file)
 
     # Add CHIME Observation Group?
