@@ -3,6 +3,14 @@
 from YSE_App.chime import tags as chime_tags
 
 def find_tags(frb):
+    """ Grab possible tags for an FRB instance
+
+    Args:
+        frb (FRBTransient): FRBTransient instance
+
+    Returns:
+        list: list of tags
+    """
 
     # CHIME?
     if frb.frb_survey.name == 'CHIME/FRB':
@@ -11,6 +19,16 @@ def find_tags(frb):
     return []
 
 def values_from_tags(frb, key:str):
+    """ Grab a list of values for a given key from the tags
+      of a given FRB
+
+    Args:
+        frb (FRBTransient): FRBTransient instance
+        key (str): key to grab
+
+    Returns:
+        list: list of values for the key;  can be empty
+    """
 
     # Prep
     tag_names = [frb_tag.name for frb_tag in frb.frb_tags.all()]

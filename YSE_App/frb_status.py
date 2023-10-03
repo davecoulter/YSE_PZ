@@ -29,9 +29,8 @@ all_status = [\
         # FRB appears in FRBFollowUpRequest with mode='longslit','mask'
     'GoodSpectrum', # Observed with spectroscopy successfully
     'TooFaint', # Host is too faint for spectroscopy
-        # r-magnitude (or equivalent) of the top *two* host candidates
-        #   are fainter than mr_max for the sample/survey
-        # And
+        # r-magnitude (or equivalent; we use the PATH band) of the top host candidate
+        #   is fainter than the maximum(mr_max) for the sample/surveys
     'AmbiguousHost',  # Host is consideed too ambiguous for further follow-up
         # At least one of the frb_tags has a min_POx value
         #  and the sum of the top two P(O|x) is less than the minimum of those
@@ -53,6 +52,13 @@ run_public_path += [sample['name'] for sample in chime_tags.all_samples]
 # Add all of the chime
 
 def set_status(frb):
+    """ Set the status of an FRB transient 
+
+    The frb is modified and saved
+
+    Args:
+        frb (FRBTransient): FRBTransient instance
+    """
 
     # Hide here for circular imports
     from YSE_App.models import TransientStatus
@@ -120,13 +126,15 @@ def set_status(frb):
     # #########################################################
 
     if frb.host is not None:
-        # 
         mrs = frb_tags.values_from_tags(frb, 'mr_max')
         # Find mr_max (if it exists)
         if len(mrs) > 0:
             mr_max = np.max(mrs)
-
             # Use PATH host magnitudes
+            if frb.host.path_mag > mr_max:
+                frb.status = TransientStatus.objects.get(name='TooFaint')
+                frb.save()
+                return
     
     # #########################################################
     # Good Spectrum
@@ -189,7 +197,7 @@ def set_status(frb):
         PUx_maxs = frb_tags.values_from_tags(frb, 'max_P_Ux')
         if (len(PUx_maxs) == 0) or (
             frb.P_Ux > np.min(PUx_maxs)):
-            frb.status = TransientStatus.objects.get(name='NeedImage') 
+            frb.status = TransientStatus.objects.get(name='NeedImage')
             frb.save()
             return
 
@@ -201,7 +209,7 @@ def set_status(frb):
         tag_names = [frb_tag.name for frb_tag in frb.frb_tags.all()]
         for tag in tag_names:
             if tag in run_public_path:
-                frb.status = TransientStatus.objects.get(name='RunPublicPATH') 
+                frb.status = TransientStatus.objects.get(name='RunPublicPATH')
                 frb.save()
                 return
 

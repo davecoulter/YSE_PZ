@@ -106,7 +106,12 @@ class FRBGalaxy(BaseModel):
 
     @property
     def path_mag(self):
-        """ Magnitude used for PATH analysis """
+        """ Magnitude used for PATH analysis 
+
+        Returns:
+            float or None: PATH magnitude or None
+
+        """
         path = yse_models.Path.objects.filter(galaxy=self)
         if len(path) == 1:
             band = path[0].band

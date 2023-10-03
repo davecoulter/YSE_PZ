@@ -219,10 +219,7 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 
         # Galactic E(B-V) -- Needs to come before tagging
         c = SkyCoord(ra=instance.ra, dec=instance.dec, unit='deg')
-        # TODO 
-        #  PUT THIS BACK!!
-        #instance.mw_ebv = irsa_dust.IrsaDust.get_query_table(c)['ext SandF mean'][0]
-        instance.mw_ebv = 0.
+        instance.mw_ebv = irsa_dust.IrsaDust.get_query_table(c)['ext SandF mean'][0]
 
         # CHIME FRB items
         tags = frb_tags.find_tags(instance)
@@ -235,13 +232,6 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
                     FRBTag, dict(name=tag_name), {}, instance.created_by)
                 # Record
                 instance.frb_tags.add(frb_tag)
-            
-            ## Set status to PublicPATH unless we are only CHIME-Unknown
-            #tag_names = [tag.name for tag in instance.frb_tags.all()]
-            #if len(tag_names) == 1 and tag_names[0] == 'CHIME-Unknown':
-            #    pass
-            #else:
-            #    instance.status = TransientStatus.objects.get(name='PublicPATH')
 
         # Set status
         frb_status.set_status(instance)
