@@ -216,10 +216,8 @@ def ingest_z(z_tbl:pandas.DataFrame, user):
             galaxy.redshift_quality = row['Quality']
             galaxy.save()
 
-        
-
-        # Update transient status
-        frb_status.set_status(transient)
+            # Update transient status
+            frb_status.set_status(transient)
 
     return 200, "All good"
     
