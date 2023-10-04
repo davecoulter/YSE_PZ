@@ -173,10 +173,10 @@
                                                 <p class="text-muted">
                                                     {% if transient.host %}
                                                         {% if transient.host.redshift %}
-                                                            {{ transient.host.redshift }}
+                                                            {{ transient.host.zString }}
 
-                                                            {% if transient.host.redshift_err %}
-                                                                +/- {{ transient.host.redshift_err }}
+                                                            {% if transient.host.redshift_quality %}
+                                                                [Q={{ transient.host.redshift_quality }} ]
                                                             {% endif %}
                                                         {% endif %}
                                                     {% else %}

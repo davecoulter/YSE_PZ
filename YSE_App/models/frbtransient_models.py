@@ -139,6 +139,14 @@ class FRBTransient(BaseModel):
         else:
             return ''
 
+    def HostzString(self):
+        """ Redshift """
+        if self.host:
+            return self.host.zString()
+        else:
+            return ''
+
+
     def FRBSurveyString(self):
         return self.frb_survey.name
     

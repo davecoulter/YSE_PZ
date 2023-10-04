@@ -107,6 +107,21 @@ class FRBGalaxy(BaseModel):
         else:
             return '%.1f'%(self.path_mag)
 
+    def zString(self):
+        """ Return the redshift for the galaxy as a string (for viewing)
+        """
+        if self.redshift is None:
+            return 'None'
+        else:
+            return '%.4f'%(self.redshift)
+
+    def zQualString(self):
+        """ Return the redshift quality for the galaxy as a string (for viewing)
+        """
+        if self.redshift_quality is None:
+            return 'None'
+        else:
+            return f'{self.redshift_quality}'
 
     @property
     def path_mag(self):
