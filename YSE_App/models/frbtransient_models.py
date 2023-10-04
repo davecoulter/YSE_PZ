@@ -146,10 +146,6 @@ class FRBTransient(BaseModel):
         else:
             return ''
 
-
-    def FRBSurveyString(self):
-        return self.frb_survey.name
-    
     def FRBFollowUpResourcesString(self):
         resources = FRBFollowUpResource.objects.filter(transient=self)
         if resources.count() > 0:
