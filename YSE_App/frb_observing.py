@@ -5,6 +5,7 @@ from django.utils import timezone as du_timezone
 from YSE_App.models import FRBFollowUpRequest
 from YSE_App.models import FRBFollowUpResource
 from YSE_App.models import FRBFollowUpObservation
+from YSE_App.models import FRBGalaxy
 from YSE_App.models import TransientStatus
 from YSE_App.models import FRBTransient
 
@@ -156,6 +157,66 @@ def ingest_obslog(obslog:pandas.DataFrame, user, override:bool=False):
             pending.delete()
             # Update status
             frb_status.set_status(transient)
+
+        # Update transient status
+        frb_status.set_status(transient)
+
+    return 200, "All good"
+    
+def ingest_z(z_tbl:pandas.DataFrame, user):
+    """ Ingest a table of redshifts into FFFF-PZ
+
+    This updates the transient status 
+
+    Args:
+        z_tbl (pandas.DataFrame): table of redshifts
+            TNS (str) -- TNS of the FRB that has this galaxy as its preferred host
+            Galaxy (str) -- JNAME *matching* that in FFFF-PZ
+            Resource (str) -- Name of the FRB Followup Resource
+            Redshift (float) -- Redshift of the galaxy (float)
+            Quality (int) -- Quality of the redshift (int)
+        user (_type_): _description_
+
+    Returns:
+        tuple: (status, message) (int,str) 
+    """
+
+    # TODO
+    # Scrub previous entries with the named resource?
+    
+    # Loop on rows
+    for _, row in z_tbl.iterrows():
+
+        # Grab the transient
+        try:
+            transient=FRBTransient.objects.get(name=row['TNS'])
+        except:
+            return 401, f"FRB {row['TNS']} not in DB"
+
+        # Grab the galaxy
+        try:
+            galaxy=FRBGalaxy.objects.get(name=row['Galaxy'])
+        except:
+            return 401, f"Galaxy {row['Galaxy']} not in DB"
+
+        # Grab the resource
+        try:
+            resource=FRBFollowUpResource.objects.get(name=row['Resource'])
+        except:
+            return 405, f"Resource {row['Resource']} not in DB"
+
+        # Check the FRB was observed by this Resource
+        obs = FRBFollowUpObservation.objects.filter(resource=resource, transient=transient)
+        if len(obs) == 0:
+            return 406, f"FRB {row['TNS']} not observed by {row['Resource']}"
+
+        # Update the Galaxy
+        if galaxy.redshift is None:
+            galaxy.redshift = row['Redshift']
+            galaxy.redshift_quality = row['Quality']
+            galaxy.save()
+
+        
 
         # Update transient status
         frb_status.set_status(transient)
