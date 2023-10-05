@@ -15,7 +15,7 @@ from YSE_App import frb_status
 import pandas
 
 def ingest_obsplan(obsplan:pandas.DataFrame, user,
-                   override:bool=True):
+                   override:bool=False):
     """ Ingest an observing plan into the DB
 
     It will first remove all pending observations for the
