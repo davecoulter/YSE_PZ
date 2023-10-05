@@ -15,26 +15,39 @@ from YSE_App import frb_status
 import pandas
 
 def ingest_obsplan(obsplan:pandas.DataFrame, user,
-                   scrub_previous_resource:bool=True):
+                   override:bool=True):
     """ Ingest an observing plan into the DB
+
+    It will first remove all pending observations for the
+    named resource.  Then it will add the new ones.
 
     This updates the transient status and adds to FRBFollowUpRequest
 
     Args:
         obsplan (pandas.DataFrame): _description_
         user (_type_): _description_
-        scrub_previous_resource (bool, optional): If True, remove all 
-        entries to the named resource from FRBFollowUpRequest.
-          THIS OPTION IS NOT YET IMPLEMENTED
+        override (bool, optional): If True, allow several of the
+            checks to be over-ridden.
 
     Returns:
         tuple: (status, message) (int,str) 
     """
 
-    # TODO
-    # Scrub previous entries with the named resource?
+    # Scrub previous entries with the same named resource
+    try:
+        resource=FRBFollowUpResource.objects.get(name=obsplan['Resource'].values[0])
+    except:
+        return 409, f"Resource {obsplan['Resource'].values[0]} not in DB"
+    all_pending = FRBFollowUpRequest.objects.filter(
+        resource=resource)
+    for pending in all_pending:
+        transient = pending.transient
+        # Delete
+        pending.delete()
+        # Update status
+        frb_status.set_status(transient)
     
-    # Loop on rows
+    # Loop on rows to add
     for _, row in obsplan.iterrows():
 
         # Grab the transient
@@ -45,10 +58,10 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
 
         # Check if the transient status is OK
         if row['mode'] in ['imaging']:
-            if transient.status.name != 'NeedImage':
+            if transient.status.name != 'NeedImage' and not override:
                 return 402, f"FRB {row['TNS']} not in NeedImage status" 
         elif row['mode'] in ['longslit', 'mask']:
-            if transient.status.name != 'NeedSpectrum':
+            if transient.status.name != 'NeedSpectrum' and not override:
                 return 403, f"FRB {row['TNS']} not in NeedSpectrum status" 
         else:
             return 406, f"Mode {row['mode']} not allowed"
@@ -67,15 +80,6 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
                                    
         # Update transient status
         frb_status.set_status(transient)
-        '''
-        if row['mode'] in ['imaging']:
-            transient.status = TransientStatus.objects.get(name='ImagePending') 
-        elif row['mode'] in ['longslit', 'mask']:
-            transient.status = TransientStatus.objects.get(name='SpectrumPending') 
-
-        # Save
-        transient.save()
-        '''
 
     return 200, "All good"
     
