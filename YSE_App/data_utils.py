@@ -1526,6 +1526,7 @@ def ingest_path(request):
       - obs_group (str): name of the instrument; must be present in the
         ObservationGroup table
       - P_Ux (float): Unseen posterior;  added to the transient
+      - bright_star (int): 1 if the transient is near a bright star
 
     Args:
         request (requests.request): 
@@ -1557,7 +1558,8 @@ def ingest_path(request):
             data['F'], 
             data['instrument'], data['obs_group'],
             data['P_Ux'], user,
-            remove_previous=True) # May wish to make this optional
+            remove_previous=True,
+            bright_star=data['bright_star']) # May wish to make this optional
     except:
         print("Ingestion failed")
         return JsonResponse({"message":f"Ingestion failed 2x!"}, status=405)

@@ -119,6 +119,30 @@
                                             </div>
                                         </div>
                                         </div>
+                                           <div class="row">
+                                        <div class="col-xs-4">
+                                            <div class="form-group">
+                                                <strong>Bright star?</strong>
+                                                <p class="text-muted">
+                                                {% if transient.bright_star %}
+                                                    {{ transient.bright_star }}
+                                                {% else %}
+                                                    Unknown
+                                                {% endif %}
+                                                </p>
+                                                <br>
+                                            </div>
+                                        </div> 
+                                        <div class="col-xs-4">
+                                            <div class="form-group">
+                                                <strong>E(B-V)</strong>
+                                                <p class="text-muted">
+                                                {{ transient.mw_ebv }}
+                                                </p>
+                                                <br>
+                                            </div>
+                                        </div> 
+                                        </div> 
                                     </div>
                                 </div>
                                     <div class="box box-primary">
@@ -176,7 +200,8 @@
                                                             {{ transient.host.zString }}
 
                                                             {% if transient.host.redshift_quality %}
-                                                                [Q={{ transient.host.redshift_quality }} ]
+                                                                [Q={{ transient.host.redshift_quality }}]<br>
+                                                                source={{ transient.host.redshift_source }}
                                                             {% endif %}
                                                         {% endif %}
                                                     {% else %}

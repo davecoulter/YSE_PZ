@@ -86,6 +86,9 @@ class FRBTransient(BaseModel):
     # Galactic E(B-V) -- taken from Irsa at creation
     mw_ebv = models.FloatField(null=True, blank=True)
 
+    # Near bright star?
+    bright_star = models.BooleanField(default=False, blank=True)
+
     # Redshift, derived from host
     redshift = models.FloatField(null=True, blank=True)
     redshift_err = models.FloatField(null=True, blank=True)
