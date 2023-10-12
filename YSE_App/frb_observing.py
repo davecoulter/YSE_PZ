@@ -163,10 +163,12 @@ def ingest_obslog(obslog:pandas.DataFrame, user, override:bool=False):
 
     return 200, "All good"
     
-def ingest_z(z_tbl:pandas.DataFrame, user):
+def ingest_z(z_tbl:pandas.DataFrame):
     """ Ingest a table of redshifts into FFFF-PZ
 
-    This updates the transient status 
+    The values are added to the FRBGalaxy object(s)
+
+    This also updates the FRBTransient status 
 
     Args:
         z_tbl (pandas.DataFrame): table of redshifts
@@ -175,7 +177,6 @@ def ingest_z(z_tbl:pandas.DataFrame, user):
             Resource (str) -- Name of the FRB Followup Resource
             Redshift (float) -- Redshift of the galaxy (float)
             Quality (int) -- Quality of the redshift (int)
-        user (_type_): _description_
 
     Returns:
         tuple: (status, message) (int,str) 
@@ -206,18 +207,19 @@ def ingest_z(z_tbl:pandas.DataFrame, user):
             return 405, f"Resource {row['Resource']} not in DB"
 
         # Check the FRB was observed by this Resource
-        obs = FRBFollowUpObservation.objects.filter(resource=resource, transient=transient)
+        obs = FRBFollowUpObservation.objects.filter(
+            resource=resource, transient=transient)
         if len(obs) == 0:
             return 406, f"FRB {row['TNS']} not observed by {row['Resource']}"
 
         # Update the Galaxy
-        if galaxy.redshift is None:
-            galaxy.redshift = row['Redshift']
-            galaxy.redshift_quality = row['Quality']
-            galaxy.save()
+        galaxy.redshift = row['Redshift']
+        galaxy.redshift_quality = row['Quality']
+        galaxy.redshift_source = row['Resource']
+        galaxy.save()
 
-            # Update transient status
-            frb_status.set_status(transient)
+        # Update transient status
+        frb_status.set_status(transient)
 
     return 200, "All good"
     

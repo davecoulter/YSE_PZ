@@ -36,10 +36,14 @@ class FRBGalaxy(BaseModel):
     # Qualty of the redshift
     #   1: 100% secure
     redshift_quality = models.IntegerField(null=True, blank=True)
-
     # Source of the redshift
     #   private,SDSS,DESI, etc.
-    #redshift_source = models.CharField(max_length=64, blank=True)
+    redshift_source = models.CharField(max_length=64, blank=True)
+
+    photoz = models.FloatField(null=True, blank=True)
+    photoz_err = models.FloatField(null=True, blank=True)
+    photoz_source = models.CharField(max_length=64, blank=True)
+
 
     # Angular size (in arcsec; typically half-light radius)
     ang_size = models.FloatField(null=True, blank=True)

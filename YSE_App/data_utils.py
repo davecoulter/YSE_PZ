@@ -1740,6 +1740,8 @@ def ingest_z(request):
     """
     Ingest a table of Redshifts
 
+    For now, these are spectroscopic only
+
     The request must include the following items
      in its data (all in JSON, of course; 
      data types are for after parsing the JSON):
@@ -1748,8 +1750,8 @@ def ingest_z(request):
             TNS (str) -- TNS of the FRB that has this galaxy as its preferred host
             Galaxy (str) -- JNAME *matching* that in FFFF-PZ
             Resource (str) -- Name of the FRB Followup Resource
-            Redshift (float) -- Redshift of the galaxy (float)
-            Quality (int) -- Quality of the redshift (int)
+            Redshift (float) -- Redshift of the galaxy 
+            Quality (int) -- Quality of the redshift 
 
     Args:
         request (requests.request): 
@@ -1772,7 +1774,7 @@ def ingest_z(request):
     z_tbl = pandas.read_json(data['table'])
 
     # Run
-    code, msg = frb_observing.ingest_z(z_tbl, user)
+    code, msg = frb_observing.ingest_z(z_tbl)
 
     # Return
     return JsonResponse({"message":f"{msg}"}, status=code)
