@@ -31,7 +31,7 @@ all_status = [\
     'TooFaint', # Host is too faint for spectroscopy
         # r-magnitude (or equivalent; we use the PATH band) of the top host candidate
         #   is fainter than the maximum(mr_max) for the sample/surveys
-    'AmbiguousHost',  # Host is consideed too ambiguous for further follow-up
+    'AmbiguousHost',  # Host is considered too ambiguous for further follow-up
         # At least one of the frb_tags has a min_POx value
         #  and the sum of the top two P(O|x) is less than the minimum of those
     'UnseenHost',  # Even with deep imaging, no compelling host was found
@@ -44,7 +44,7 @@ all_status = [\
 # List of telescope+instruments that are considered Deep
 deep_telinstr = []
 
-# List of frb_rags where one should run a public PATH
+# List of frb_tags where one should run a public PATH
 run_public_path = []
 # Include all of the CHIME samples
 run_public_path += [sample['name'] for sample in chime_tags.all_samples]
