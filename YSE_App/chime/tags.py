@@ -10,7 +10,7 @@ blind_sample = dict(
     dec_rngs=[[-10, 10]],
     max_EBV=0.3,
     mr_max=24.5,     # Faintest magnitude to try spectroscopy
-    max_P_Ux=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
+    max_P_Ux=0.5,    # Host is considered unseen if P(U|x) is greater than this
     min_POx=0.0,    # Minimum P(O|x) to consider (of top 2)
     end_date='2030-12-31', # Not implemented yet
     prob=0.3,
@@ -23,7 +23,7 @@ highDM_sample = dict(
     version='0.1',
     max_EBV=0.3,
     min_DM=1000.,
-    max_P_Ux=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
+    max_P_Ux=0.5,    # Host is considered unseen if P(U|x) is greater than this
     mr_max=24.5,   # Faintest magnitude to try spectroscopy
     prob=0.8,
     )
@@ -40,10 +40,10 @@ repeater_sample = dict(
 kko_sample = dict(
     name='CHIME-KKO',
     version='0.1',
-    max_EBV=0.3,
-    mr_max=23.,      # Faintest magnitude to try spectroscopy
+    max_EBV=0.3,     # Not implemented!
+    mr_max=23.,      # Faintest magnitude to try spectroscopy -- not implemented
     min_POx=0.9,     # Minimum P(O|x) to consider (of top 2)
-    max_P_Ux=0.5,    # Host is consdiered unseen if P(U|x) is greater than this
+    max_P_Ux=0.5,    # Host is considered unseen if P(U|x) is greater than this
     prob=0.8,
     )
 

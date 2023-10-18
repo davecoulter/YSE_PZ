@@ -19,7 +19,7 @@ all_status = [\
         # No successful Image taken
         # No Image pending
     'NeedSpectrum', # Needs spectroscopy for redshift
-        # P(O|x) of top 2 > P_Ux_max
+        # P(O|x) of top 2 > P_Ox_min
         # No pending spectrum
         # No succesfully observed spectrum
     'RunDeepPATH', # Needs PATH run on deeper (typically private) imaging
