@@ -81,7 +81,7 @@ def calc_airmasses(frb_fu, gd_frbs,
     return min_AM
 
 def target_table_from_frbs(frbs, mode:str):
-    """ Generate a pandas table from a list or QuerySet of FRBs
+    """ Generate a pandas table of targets from a list or QuerySet of FRBs
 
     Args:
         frbs (QuerySet): List of FRBTransient objects
@@ -89,6 +89,7 @@ def target_table_from_frbs(frbs, mode:str):
 
     Returns:
         pandas.DataFrame: table of FRBTransient properties
+        and candidates useful for targets
     """
 
 
@@ -163,7 +164,7 @@ def targetfrbs_for_fu(frb_fu):
     else:
         gd_frbs = gd_frbs.filter(
             status__in=TransientStatus.objects.filter(
-                name__in=['Image', 'Spectrum']))
+                name__in=['NeedImage', 'NeedSpectrum']))
 
     # Tags? aka samples
     if frb_fu.frb_tags:
@@ -192,7 +193,7 @@ def grab_targets_by_mode(frb_fu, frbs):
     if frb_fu.num_targ_img > 0:
         #imaging_frbs = frbs.filter(host__isnull=True)
         imaging_frbs = frbs.filter(
-            status=TransientStatus.objects.get(name='Image'))
+            status=TransientStatus.objects.get(name='NeedImage'))
     else:
         imaging_frbs = FRBTransient.objects.none()
 
@@ -200,11 +201,29 @@ def grab_targets_by_mode(frb_fu, frbs):
     # Longslit
     if frb_fu.num_targ_longslit > 0:
         longslit_frbs = frbs.filter(
-            status=TransientStatus.objects.get(name='Spectrum'))
+            status=TransientStatus.objects.get(name='NeedSpectrum'))
+
+        # Cut on P_Ox?
         if frb_fu.min_POx:
             gd_ids = []
             for frb in longslit_frbs:
                 if frb.host.P_Ox is not None and frb.host.P_Ox > frb_fu.min_POx:
+                    gd_ids.append(frb.id)
+            longslit_frbs = longslit_frbs.filter(id__in=gd_ids)
+
+        # Cut on magnitude? -- bright
+        if frb_fu.min_mag:
+            gd_ids = []
+            for frb in longslit_frbs:
+                if frb.host.path_mag is not None and frb.host.path_mag > frb_fu.min_mag:
+                    gd_ids.append(frb.id)
+            longslit_frbs = longslit_frbs.filter(id__in=gd_ids)
+
+        # Cut on magnitude? -- faint
+        if frb_fu.max_mag:
+            gd_ids = []
+            for frb in longslit_frbs:
+                if frb.host.path_mag is not None and frb.host.path_mag < frb_fu.max_mag:
                     gd_ids.append(frb.id)
             longslit_frbs = longslit_frbs.filter(id__in=gd_ids)
 
@@ -235,13 +254,13 @@ def select_with_priority(frb_fu, frbs_by_mode:dict):
     selected_frbs = {}
 
     # Loop on all the modes
-    for mode, num_targ in zip(['imaging', 'longslit', 'mask'], 
-                              [frb_fu.num_targ_img, frb_fu.num_targ_longslit, 
+    for mode, num_targ in zip(['imaging', 'longslit', 'mask'],
+                              [frb_fu.num_targ_img, frb_fu.num_targ_longslit,
                                frb_fu.num_targ_mask]):
         # Do we want any?
         if num_targ > 0:
             # Do we not have enough?
-            if frb_fu.num_targ_img >= len(frbs_by_mode[mode]):
+            if num_targ >= len(frbs_by_mode[mode]):
                 selected_frbs[mode] = frbs_by_mode[mode]
             else:    
                 # Assign priorities

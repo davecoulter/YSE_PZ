@@ -41,7 +41,6 @@ class FRBFollowUpResource(BaseModel):
     #  all is an allowed value
     frb_surveys = models.CharField(max_length=64)
 
-
     # Optional
 
     # Classical, ToO, Queue 
@@ -57,6 +56,10 @@ class FRBFollowUpResource(BaseModel):
     min_POx = models.FloatField(null=True, blank=True)
     frb_tags = models.CharField(max_length=64, null=True, blank=True)
     frb_statuses = models.CharField(max_length=64, null=True, blank=True)
+
+    # Magnitude limit(s)
+    min_mag = models.FloatField(null=True, blank=True)
+    max_mag = models.FloatField(null=True, blank=True)
 
     slug = AutoSlugField(null=True, default=None, unique=True, populate_from='name')
 
@@ -78,6 +81,35 @@ class FRBFollowUpResource(BaseModel):
     def StopString(self):
         return self.valid_stop.strftime('%Y-%b-%d')
 
+    def FullStartString(self):
+        return f'{self.valid_start}'
+
+    def FullStopString(self):
+        return f'{self.valid_stop}'
+
+    def SurveyString(self):
+        return self.frb_surveys
+
+    def MaxAMString(self):
+        return f'{self.max_AM}'
+
+    def MinPOxString(self):
+        return f'{self.min_POx}'
+
+    def MinMagString(self):
+        return f'{self.min_mag}'
+
+    def MaxMagString(self):
+        return f'{self.max_mag}'
+
+    def NImgString(self):
+        return f'{self.num_targ_img}'
+
+    def NLongString(self):
+        return f'{self.num_targ_longslit}'
+
+    def NMaskString(self):
+        return f'{self.num_targ_mask}'
 
     def get_frbs_by_mode(self):
         """ Generate a dict of valid FRBs for targeting by observing mode
@@ -157,6 +189,18 @@ class FRBFollowUpRequest(BaseModel):
     def ResourceName(self):
         return f'{self.resource.name}'
 
+    def check_for_observation(self, transient, mode:str):
+        """ Check for an observation of this FRB
+
+        Returns:
+            bool: True if an observation exists
+        """
+        # Check
+        if FRBFollowUpObservation.objects.filter(transient=transient).exists():
+            return True
+        else:
+            return False
+
 class FRBFollowUpObservation(BaseModel):
     """ FRBFollowUpObservation model
 
@@ -184,3 +228,24 @@ class FRBFollowUpObservation(BaseModel):
 
     def __str__(self):
         return f'Resource: {self.resource.name} FRB: {self.transient.name} mode: {self.mode}'
+
+    def TransientString(self):
+        return self.transient.name
+
+    def ResourceName(self):
+        return f'{self.resource.name}'
+
+    def InstrString(self):
+        return self.resource.InstrString()
+
+    def ModeString(self):
+        return self.mode
+
+    def TexpString(self):
+        return f'{self.texp}'
+
+    def DateString(self):
+        return f'{self.date}'
+
+    def SuccessString(self):
+        return f'{self.success}'

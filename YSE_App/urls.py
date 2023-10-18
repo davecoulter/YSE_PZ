@@ -47,6 +47,7 @@ urlpatterns = [
     re_path(r'^targets_from_frb_followup_resource/', data_utils.targets_from_frb_followup_resource, name='targets_from_frb_followup_resource'),
     re_path(r'^ingest_obsplan/', data_utils.ingest_obsplan, name='ingest_obsplan'),
     re_path(r'^ingest_obslog/', data_utils.ingest_obslog, name='ingest_obslog'),
+    re_path(r'^add_frb_resource/', data_utils.add_frb_followup_resource, name='add_frb_followup_resource'),
     # ##############################################################
 
     # Test pages

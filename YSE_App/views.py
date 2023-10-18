@@ -47,6 +47,7 @@ from .common.utilities import getRADecBox
 
 from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable,ToOFollowupTable
 from .table_utils import FRBFollowupResourceTable
+from .table_utils import FRBFollowupObservationsTable
 from .table_utils import FRBTransientFilter, FRBTransientTable
 from .table_utils import CandidatesTable, CandidatesFilter
 from .queries.yse_python_queries import *
@@ -1682,11 +1683,11 @@ def frb_dashboard(request):
                                   'Observed',
                                   'Completed'],
                                 [['Unassigned'], 
-                                 ['PublicPATH', 'DeepPATH'],
-                                 ['Image','Spectrum'],
-                                 ['PendingImage', 'PendingSpectrum'],
-                                 ['ObsImage', 'ObsSpectrum'],
-                                 ['Completed'],
+                                 ['RunPublicPATH', 'RunDeepPATH'],
+                                 ['NeedImage','NeedSpectrum'],
+                                 ['ImagePending', 'SpectrumPending'],
+                                 ['GoodSpectrum'],
+                                 ['TooFaint', 'AmbiguousHost', 'UnseenHost', 'Redshift'],
                                  ]):
         transients = FRBTransient.objects.filter(status__in=TransientStatus.objects.filter(
             name__in=statusnames))
@@ -1710,6 +1711,11 @@ def frb_dashboard(request):
     followups = FRBFollowUpResource.objects.filter(
         valid_stop__gt=du_timezone.now())
     ftable = FRBFollowupResourceTable(followups)
+
+    # Old ones
+    old_followups = FRBFollowUpResource.objects.filter(
+        valid_stop__lt=du_timezone.now())
+    old_ftable = FRBFollowupResourceTable(old_followups)
     
     if request.META['QUERY_STRING']:
         anchor = request.META['QUERY_STRING'].split('-')[0]
@@ -1718,6 +1724,7 @@ def frb_dashboard(request):
         'transient_categories':transient_categories,
         'all_transient_statuses':TransientStatus.objects.order_by('name'),
         'followup_table':ftable,
+        'old_followup_table':old_ftable,
         'anchor':anchor,
     }
 
@@ -1758,11 +1765,16 @@ def frb_transient_detail(request, slug):
         #assigned_transient_tags = transient_obj.tags.all().select_related()
 
         # Get associated Observations
-        followups = FRBFollowUpRequest.objects.filter(transient__pk=transient_id)
-        if len(followups) == 0:
+        fu_req = FRBFollowUpRequest.objects.filter(transient__pk=transient_id)
+        fu_obs = FRBFollowUpObservation.objects.filter(transient__pk=transient_id)
+        fu_names = []
+        fu_names += [item.ResourceName() for item in fu_req]
+        fu_names += [item.ResourceName() for item in fu_obs]
+
+        if len(fu_names) == 0:
             followup_names = 'None'
         else:
-            followup_names = ','.join([item.ResourceName() for item in followups])
+            followup_names = ','.join(np.unique(fu_names))
 
         hostdata = FRBGalaxy.objects.filter(pk=transient_obj.host_id).select_related()
         if hostdata:
@@ -1876,6 +1888,7 @@ def frb_transient_detail(request, slug):
 def frb_followup_resource(request, slug):
 
     frb_fu = FRBFollowUpResource.objects.get(slug=slug)
+    is_old = frb_fu.valid_stop < du_timezone.now()
 
     
     if request.META['QUERY_STRING']:
@@ -1887,16 +1900,27 @@ def frb_followup_resource(request, slug):
         'anchor':anchor,
     }
 
-    # Valid FRBs for observing
-    frbs_by_mode = frb_fu.get_frbs_by_mode()
-    # Build the tables
-    for key in frbs_by_mode.keys():
-        context[f'{key}_table'] = FRBTransientTable(frbs_by_mode[key])
+    if not is_old:
+        # Valid FRBs for observing
+        frbs_by_mode = frb_fu.get_frbs_by_mode()
+        # Build the tables
+        for key in frbs_by_mode.keys():
+            context[f'{key}_table'] = FRBTransientTable(frbs_by_mode[key])
 
     # Pending FRBs
     fu_requested = FRBFollowUpRequest.objects.filter(resource=frb_fu)
     frb_ids = [x.transient.id for x in fu_requested]
     pending_frbs = FRBTransient.objects.filter(id__in=frb_ids)
     context['pending_table'] = FRBTransientTable(pending_frbs)
+
+    # Observed
+    fu_obs = FRBFollowUpObservation.objects.filter(resource=frb_fu)
+    if len(fu_obs) > 0:
+        frb_ids = [x.transient.id for x in fu_obs]
+        obs_frbs = FRBTransient.objects.filter(id__in=frb_ids)
+        context['obs_table'] = FRBTransientTable(obs_frbs)
+
+        # Obs log
+        context['obslog_table'] = FRBFollowupObservationsTable(fu_obs)
 
     return render(request, 'YSE_App/frb_followup_resource.html', context)

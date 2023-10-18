@@ -14,6 +14,10 @@ from YSE_App.chime import tags as chime_tags
 from YSE_App.common.utilities import GetSexigesimalString, getSeparation
 from YSE_App.models.frbgalaxy_models import FRBGalaxy
 
+from YSE_App import frb_tags
+from YSE_App import frb_status
+from YSE_App import frb_utils
+
 from astropy.coordinates import SkyCoord
 from astroquery import irsa_dust
 
@@ -48,6 +52,12 @@ class FRBTransient(BaseModel):
     ra_err = models.FloatField(null=True, blank=True)
     # Error in Dec in deg
     dec_err = models.FloatField(null=True, blank=True)
+    # Error in ellipse in deg
+    a_err = models.FloatField(null=True, blank=True)
+    # Error in ellipse in deg
+    b_err = models.FloatField(null=True, blank=True)
+    # PA of the ellipse
+    theta = models.FloatField(null=True, blank=True)
     # Localization file
     localization_file = models.CharField(max_length=64, null=True, blank=True)
 
@@ -123,6 +133,12 @@ class FRBTransient(BaseModel):
         else:
             return ''
 
+    def HostMagString(self):
+        if self.host:
+            return self.host.MagString()
+        else:
+            return ''
+
     def FRBSurveyString(self):
         return self.frb_survey.name
     
@@ -161,6 +177,25 @@ class FRBTransient(BaseModel):
         return path_values, galaxies
 
     @property
+    def sum_top_two_PATH(self):
+        """ Add the top two PATH P(O|x) values for the transient 
+
+        Returns:
+            float: 0. if there is no PATH analysis
+
+        """
+        path_values, _ = self.get_Path_values()
+        if len(path_values) == 0:
+            return 0.
+        elif len(path_values) == 1:
+            return path_values[0]
+        else:
+            path_values = np.array(path_values)
+            argsrt = np.argsort(path_values)
+            path_values = path_values[argsrt]
+            return np.sum(path_values[-2:])
+
+    @property
     def best_Path_galaxy(self):
         """ Return the galaxy with the highest P(O|x) value
 
@@ -179,6 +214,7 @@ auditlog.register(FRBTransient)
 @receiver(models.signals.post_save, sender=FRBTransient)
 def execute_after_save(sender, instance, created, *args, **kwargs):
 
+    # Add a few bits and pieces including tags
     if created:
 
         # Galactic E(B-V) -- Needs to come before tagging
@@ -186,29 +222,19 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
         instance.mw_ebv = irsa_dust.IrsaDust.get_query_table(c)['ext SandF mean'][0]
 
         # CHIME FRB items
-        if instance.frb_survey.name == 'CHIME/FRB':
+        tags = frb_tags.find_tags(instance)
+        if len(tags) > 0:
 
             # Add tags
-            tags = chime_tags.set_from_instance(instance)
-            frb_tags = [ftag.name for ftag in FRBTag.objects.all()]
             for tag_name in tags:
                 # Add the tag if it doesn't exist
-                if tag_name not in frb_tags:
-                    new_tag = FRBTag(name=tag_name, 
-                                     created_by_id=instance.created_by_id,
-                                     modified_by_id=instance.modified_by_id)
-                    new_tag.save()
+                frb_tag = frb_utils.add_or_grab_obj(
+                    FRBTag, dict(name=tag_name), {}, instance.created_by)
                 # Record
-                frb_tag = FRBTag.objects.get(name=tag_name)
                 instance.frb_tags.add(frb_tag)
-                print(f"Added FRB tag: {tag_name}")
-            
-            # Set status to PublicPATH unless we are only CHIME-Unknown
-            tag_names = [tag.name for tag in instance.frb_tags.all()]
-            if len(tag_names) == 1 and tag_names[0] == 'CHIME-Unknown':
-                pass
-            else:
-                instance.status = TransientStatus.objects.get(name='PublicPATH')
+
+        # Set status
+        frb_status.set_status(instance)
 
         # Save
         instance.save()
@@ -219,7 +245,7 @@ class Path(BaseModel):
     Each PATH posterior value P(O|x) is for an FRB-Galaxy pairing
     which are required properties
 
-    Requires an FRBTansient and FRBGalaxy pairing
+    Requires an FRBTransient and FRBGalaxy pairing
 
     """
 
@@ -233,7 +259,12 @@ class Path(BaseModel):
     # Candidate name
     galaxy = models.ForeignKey(FRBGalaxy, on_delete=models.CASCADE)
 
+    band = models.ForeignKey(PhotometricBand, blank=True, null=True,
+        on_delete=models.SET_NULL)
+
     # Optional
+    # Filter used -- useful for FRB status
+    #  Added as optional but should always be present
 
     # Vetted? If true, a human has confirmed the results are valid
     vetted = models.BooleanField(default=False, blank=True)

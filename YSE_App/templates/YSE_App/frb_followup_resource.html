@@ -11,8 +11,82 @@
         {{ frb_fu.NameString }}
     </h2>
     <h1>
-        TODO: Add a summary of the Resource here
+        Summary
     </h1>
+    <div class="box-body">
+        <div class="row">
+            <div class="col-xs-3">
+              <strong>Instrument</strong>
+              <p class="text-muted">
+              {{ frb_fu.InstrString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>Start (UT)</strong>
+              <p class="text-muted">
+              {{ frb_fu.FullStartString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>Stop (UT)</strong>
+              <p class="text-muted">
+              {{ frb_fu.FullStopString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>FRB Surveys</strong>
+              <p class="text-muted">
+              {{ frb_fu.SurveyString }}
+              </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-3">
+              <strong>Max AM</strong>
+              <p class="text-muted">
+              {{ frb_fu.MaxAMString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>Min P(O|x)</strong>
+              <p class="text-muted">
+              {{ frb_fu.MinPOxString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>Min mag</strong>
+              <p class="text-muted">
+              {{ frb_fu.MinMagString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>Max mag</strong>
+              <p class="text-muted">
+              {{ frb_fu.MaxMagString }}
+              </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-3">
+              <strong>N Image</strong>
+              <p class="text-muted">
+              {{ frb_fu.NImgString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>N Long</strong>
+              <p class="text-muted">
+              {{ frb_fu.NLongString }}
+              </p>
+            </div>
+            <div class="col-xs-3">
+              <strong>N Mask</strong>
+              <p class="text-muted">
+              {{ frb_fu.NMaskString }}
+              </p>
+            </div>
+        </div>
+    </div>
     <ol class="breadcrumb">
         <li><i class="fa fa-dashboard"></i> Home</li>
     </ol>
@@ -28,35 +102,57 @@
     <h3>
         Pending FRBs
     </h3>
-
     <div class="box-body">
       {% render_table pending_table %}
     </div>
   
+    {% if obs_table %}
     <h3>
-        Valid FRBs for Imaging
+        Observed FRBs
     </h3>
-
     <div class="box-body">
-      {% render_table imaging_table %}
+      {% render_table obs_table %}
     </div>
+    
+    <h3>
+        Obs Log
+    </h3>
+    <div class="box-body">
+      {% render_table obslog_table %}
+    </div>
+
+    {% endif %}
   
-    <h3>
-        Valid FRBs for Longslit
-    </h3>
+    {% if imaging_table %}
+        <h3>
+            Valid FRBs for Imaging
+        </h3>
 
-    <div class="box-body">
-      {% render_table longslit_table %}
-    </div>
+        <div class="box-body">
+            {% render_table imaging_table %}
+        </div>
+    {% endif %}
 
-    <h3>
-        Valid FRBs for Masks
-    </h3>
+    {% if longslit_table %}
+        <h3>
+            Valid FRBs for Longslit
+        </h3>
 
-    <div class="box-body">
-      {% render_table mask_table %}
+        <div class="box-body">
+            {% render_table longslit_table %}
+        </div>
+    {% endif %}
 
-    </div>
+    {% if mask_table %}
+        <h3>
+            Valid FRBs for Masks
+        </h3>
+
+        <div class="box-body">
+        {% render_table mask_table %}
+
+        </div>
+    {% endif %}
   
 {% endblock %}
 

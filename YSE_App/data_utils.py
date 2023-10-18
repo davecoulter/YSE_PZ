@@ -1429,37 +1429,6 @@ def getRADecBox(ra,dec,size=None,dec_size=None):
             ramax+=360.0
     return(ramin,ramax,decmin,decmax)
 
-def add_or_grab_obj(iclass, uni_fields:dict, extra_fields:dict, user=None):
-    """ Convenience utility to add/grab an object in the DB
-
-    Args:
-        iclass (django model): Model to add/grab
-        uni_fields (dict): 
-            dict of fields that uniquely identify the object
-        extra_fields (dict): 
-            dict of additional fields to add to the object if it is created
-        user (django user object, optional): user object. Defaults to None.
-
-    Returns:
-        django instance: Object either grabbed or added to the DB
-    """
-    try:
-        obj = iclass.objects.get(**uni_fields)
-    except ObjectDoesNotExist:
-        # Merge
-        all_fields = uni_fields.copy()
-        all_fields.update(extra_fields)
-        # Add user?
-        if user is not None:
-            all_fields['created_by'] = user
-            all_fields['modified_by'] = user
-        obj = iclass(**all_fields)
-        obj.save()
-        print("Object created")
-    else:
-        print("Object existed, returning it")
-    # Return
-    return obj
 
 
 # FRB items
@@ -1557,7 +1526,6 @@ def ingest_path(request):
       - obs_group (str): name of the instrument; must be present in the
         ObservationGroup table
       - P_Ux (float): Unseen posterior;  added to the transient
-      - deeper (bool): Is a deeper image required?
 
     Args:
         request (requests.request): 
@@ -1589,7 +1557,6 @@ def ingest_path(request):
             data['F'], 
             data['instrument'], data['obs_group'],
             data['P_Ux'], user,
-            data['deeper'],
             remove_previous=True) # May wish to make this optional
     except:
         print("Ingestion failed")
@@ -1658,6 +1625,7 @@ def ingest_obsplan(request):
         -- TNS: TNS name
         -- Resource: Resource name
         -- mode: observing mode ['image', 'longslit', 'mask']
+      - override (bool): if True, will override existing entries
 
     Args:
         request (requests.request): 
@@ -1680,7 +1648,8 @@ def ingest_obsplan(request):
     obs_tbl = pandas.read_json(data['table'])
 
     # Run
-    code, msg = frb_observing.ingest_obsplan(obs_tbl, user)
+    code, msg = frb_observing.ingest_obsplan(obs_tbl, user,
+                                            override=data['override'])
 
     # Return
     return JsonResponse({"message":f"{msg}"}, status=code)
@@ -1703,6 +1672,7 @@ def ingest_obslog(request):
             -- texp (float)
             -- date (timestamp)
             -- success (bool)
+       - override (bool): if True, will override existing entries
 
     Args:
         request (requests.request): 
@@ -1725,7 +1695,43 @@ def ingest_obslog(request):
     obs_tbl = pandas.read_json(data['table'])
 
     # Run
-    code, msg = frb_observing.ingest_obslog(obs_tbl, user)
+    code, msg = frb_observing.ingest_obslog(obs_tbl, user,
+                                            override=data['override'])
 
     # Return
     return JsonResponse({"message":f"{msg}"}, status=code)
+
+
+@csrf_exempt
+@login_or_basic_auth_required
+def add_frb_followup_resource(request):
+    """ Add an FRBFollowUpResource to the DB from an 
+    outside request
+
+    This is mainly intended for recovering from a "problem"
+
+    Args:
+        request (_type_): _description_
+
+    Returns:
+        JsonResponse: _description_
+    """
+    
+    data = JSONParser().parse(request)
+
+    # Authenticate
+    # TODO -- SHOULD RESTRICT TO ADMIN
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    # Use Serializer
+    serializer = FRBFollowUpResourceSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        print(f"Generated FRBFollowUpResource: {data['name']}")
+    else:
+        print(f"Not valid!")
+
+    return JsonResponse(serializer.data, status=201)

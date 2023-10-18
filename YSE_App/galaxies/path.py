@@ -7,13 +7,15 @@ import datetime
 from astropy.coordinates import SkyCoord
 
 from YSE_App.common.utilities import getGalaxyname
-from YSE_App import data_utils
 from YSE_App.models import FRBGalaxy, GalaxyPhotData 
 from YSE_App.models import GalaxyPhotometry, PhotometricBand
 from YSE_App.models import FRBTransient, Path
 from YSE_App.models import TransientStatus
 from YSE_App.models.instrument_models import Instrument
 from YSE_App.models.enum_models import ObservationGroup
+
+from YSE_App import frb_utils
+from YSE_App import frb_status
 
 from IPython import embed
 
@@ -26,12 +28,11 @@ chime_priors['survey'] = 'Pan-STARRS'
 chime_priors['scale'] = 0.5
 
 def ingest_path_results(itransient:FRBTransient,
-                        candidates:pandas.DataFrame, 
+                        candidates:pandas.DataFrame,
                         Filter:str,
                         inst_name:str,
                         obs_group:str,
                         P_Ux:float, user,
-                        deeper:bool,
                         remove_previous:bool=True):
     """ Method to ingest a table of PATH results into the DB
 
@@ -50,7 +51,6 @@ def ingest_path_results(itransient:FRBTransient,
         obs_group (str): Name of the observation group
         P_Ux (float): PATH unseen probability P(U|x)
         user (django user object): user 
-        deeper (bool): If True, request deeper photometry
         remove_previous (bool, optional): If True, remove any previous
             entries related to PATH from the DB. Defaults to True.
 
@@ -82,20 +82,21 @@ def ingest_path_results(itransient:FRBTransient,
         print(f"ss: {ss}, ra: {icand.ra}, dec: {icand.dec}")
         # Add or grab the host candidates
         name = getGalaxyname(icand.ra, icand.dec)
-        galaxy = data_utils.add_or_grab_obj(
+        galaxy = frb_utils.add_or_grab_obj(
             FRBGalaxy, dict(name=name), dict(ra=icand.ra, dec=icand.dec, 
                        ang_size=icand.ang_size), user=user)
 
         # Photometry
-        gp = data_utils.add_or_grab_obj(
+        gp = frb_utils.add_or_grab_obj(
             GalaxyPhotometry, 
             dict(galaxy=galaxy, instrument=Instrument.objects.get(name=inst_name), 
                  obs_group=ObservationGroup.objects.get(name=obs_group)),
                  {}, user=user)
-        gpd = data_utils.add_or_grab_obj(
+        band=PhotometricBand.objects.filter(instrument__name=inst_name).get(name=Filter)
+        gpd = frb_utils.add_or_grab_obj(
             GalaxyPhotData, 
             dict(photometry=gp,
-                 band=PhotometricBand.objects.filter(instrument__name=inst_name).get(name=Filter)),
+                 band=band),
             dict(mag=icand.mag, 
                  obs_date=datetime.datetime.now()),
             user=user)
@@ -107,6 +108,7 @@ def ingest_path_results(itransient:FRBTransient,
         ipath = Path(transient=itransient, 
                      galaxy=galaxy, P_Ox=icand.P_Ox,
                      created_by_id=user.id, modified_by_id=user.id)
+        ipath.band = band
         ipath.save()
 
     # PATH P(U|x)
@@ -116,13 +118,8 @@ def ingest_path_results(itransient:FRBTransient,
     itransient.host = itransient.best_Path_galaxy
 
     # Set status
-    if deeper:
-        itransient.status = TransientStatus.objects.get(name='Image')
-    else:
-        itransient.status = TransientStatus.objects.get(name='Spectrum')
+    frb_status.set_status(itransient)
 
-    # Save to DB
-    itransient.save()
 
     # Return (mainly for testing)
     return str(gp.instrument)

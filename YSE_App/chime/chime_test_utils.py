@@ -4,7 +4,7 @@ import pandas
 
 from django.db.models import ForeignKey
 
-from YSE_App.models import FRBTransient
+from YSE_App.models import *
 
 def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
     """ Add a pandas DataFrame of FRBs to the database
@@ -76,3 +76,24 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
 
     # Return
     return dbtransients
+
+def clean_all(skip_resources:bool=False):
+    """ Wipe clean the DB """
+
+    print("Removing Path objects")
+    for ipath in Path.objects.all():
+        ipath.delete()
+
+    print("Removing FRBGalaxy objects")
+    for galaxy in FRBGalaxy.objects.all():
+        galaxy.delete()
+
+    # FRBFollowUpResource
+    if not skip_resources:
+        print("Removing FRBFollowUpResource objects")
+        for frb_fu in FRBFollowUpResource.objects.all():
+            frb_fu.delete()
+
+    print("Removing FRBTransient objects")
+    for itransient in FRBTransient.objects.all():
+        itransient.delete()

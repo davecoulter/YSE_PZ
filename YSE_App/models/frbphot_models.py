@@ -24,7 +24,7 @@ class GalaxyPhotometry(Photometry):
         unique_together = ['galaxy', 'instrument', 'obs_group']
 
     def __str__(self):
-        return 'Galaxy Phot: %s ' % (self.galaxy.HostString())
+        return 'Galaxy Phot: %s ' % (self.galaxy.GalaxyString())
 
     def natural_key(self):
         return '%s - %s' % (self.obs_group.name,self.instrument.name)
