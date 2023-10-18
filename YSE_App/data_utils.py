@@ -1627,6 +1627,7 @@ def ingest_obsplan(request):
         -- TNS: TNS name
         -- Resource: Resource name
         -- mode: observing mode ['image', 'longslit', 'mask']
+      - override (bool): if True, will override existing entries
 
     Args:
         request (requests.request): 
@@ -1649,7 +1650,8 @@ def ingest_obsplan(request):
     obs_tbl = pandas.read_json(data['table'])
 
     # Run
-    code, msg = frb_observing.ingest_obsplan(obs_tbl, user)
+    code, msg = frb_observing.ingest_obsplan(obs_tbl, user,
+                                            override=data['override'])
 
     # Return
     return JsonResponse({"message":f"{msg}"}, status=code)
@@ -1672,6 +1674,7 @@ def ingest_obslog(request):
             -- texp (float)
             -- date (timestamp)
             -- success (bool)
+       - override (bool): if True, will override existing entries
 
     Args:
         request (requests.request): 
