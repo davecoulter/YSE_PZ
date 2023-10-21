@@ -1687,7 +1687,7 @@ def frb_dashboard(request):
                                  ['NeedImage','NeedSpectrum'],
                                  ['ImagePending', 'SpectrumPending'],
                                  ['GoodSpectrum'],
-                                 ['Redshift', 'TooFaint', 'AmbiguousHost', 'UnseenHost'],
+                                 ['Redshift', 'TooFaint', 'AmbiguousHost', 'UnseenHost', 'TooDusty'],
                                  ]):
         transients = FRBTransient.objects.filter(status__in=TransientStatus.objects.filter(
             name__in=statusnames))
