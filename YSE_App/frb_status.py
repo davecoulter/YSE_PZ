@@ -28,6 +28,7 @@ all_status = [\
     'SpectrumPending', # Pending spectroscopy with an FRBFollowUp
         # FRB appears in FRBFollowUpRequest with mode='longslit','mask'
     'GoodSpectrum', # Observed with spectroscopy successfully
+    'TooDusty', # Sightline exceeds E(B-V) threshold
     'TooFaint', # Host is too faint for spectroscopy
         # r-magnitude (or equivalent; we use the PATH band) of the top host candidate
         #   is fainter than the maximum(mr_max) for the sample/surveys
@@ -75,6 +76,18 @@ def set_status(frb):
         frb.status = TransientStatus.objects.get(name='Redshift')
         frb.save()
         return
+
+    # #########################################################
+    # #########################################################
+    # Too Dusty??
+    # #########################################################
+    if frb.mw_ebv is not None:
+        ebv_maxs = frb_tags.values_from_tags(frb, 'max_EBV')
+        if len(ebv_maxs) > 0:
+            if frb.mw_ebv > np.min(ebv_maxs):
+                frb.status = TransientStatus.objects.get(name='TooDusty')
+                frb.save()
+                return
 
     # #########################################################
     # Unseen host

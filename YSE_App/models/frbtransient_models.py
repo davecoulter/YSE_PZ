@@ -277,4 +277,4 @@ class Path(BaseModel):
     vetted = models.BooleanField(default=False, blank=True)
 
     def __str__(self):
-        return f'Path: {self.transient.name}, {self.galaxy.name}, {self.P_Ox}, {self.vetted}'   
+        return f'Path: {self.transient.name}, {self.galaxy.name}, {self.P_Ox}, {self.vetted}'

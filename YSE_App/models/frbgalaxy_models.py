@@ -80,6 +80,9 @@ class FRBGalaxy(BaseModel):
 
         First preference is given to 'r/R' band
         Then, anything goes..
+
+        Returns:
+            str, str: filter and magnitude for the galaxy
         """
         pdict = self.phot_dict
         if len(pdict) == 0:
@@ -88,12 +91,12 @@ class FRBGalaxy(BaseModel):
         for inst_key in pdict.keys():
             for ifilter in pdict[inst_key].keys():
                 if ifilter[-1] in ['r', 'R']:
-                    return ifilter, '%.2f'%(pdict[inst_key][ifilter])
+                    return f'{inst_key}-{ifilter}', '%.2f'%(pdict[inst_key][ifilter])
 
         # Take the first one we have
         inst_key = list(pdict.keys())[0]
         ifilter = pdict[inst_key].keys()[0]
-        return ifilter, '%.2f'%(pdict[inst_key][ifilter])
+        return f'{inst_key}-{ifilter}', '%.2f'%(pdict[inst_key][ifilter])
 
     def POxString(self):
         """ Return the P_Ox for the galaxy as a string (for viewing)
