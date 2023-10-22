@@ -48,9 +48,9 @@ class FRBTransient(BaseModel):
     DM = models.FloatField()
 
     # Optional
-    # Error in RA in deg
+    # Error in RA in deg (NOT USED)
     ra_err = models.FloatField(null=True, blank=True)
-    # Error in Dec in deg
+    # Error in Dec in deg (NOT USED)
     dec_err = models.FloatField(null=True, blank=True)
     # Error in ellipse in deg
     a_err = models.FloatField(null=True, blank=True)
@@ -85,6 +85,10 @@ class FRBTransient(BaseModel):
 
     # Galactic E(B-V) -- taken from Irsa at creation
     mw_ebv = models.FloatField(null=True, blank=True)
+
+    # TODO - Turn this on in next branch
+    # Galactic DM
+    #DM_ISM = models.FloatField(null=True, blank=True)
 
     # Near bright star?
     bright_star = models.BooleanField(default=False, blank=True)
@@ -228,6 +232,7 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
         c = SkyCoord(ra=instance.ra, dec=instance.dec, unit='deg')
         instance.mw_ebv = irsa_dust.IrsaDust.get_query_table(c)['ext SandF mean'][0]
 
+        '''
         # CHIME FRB items
         tags = frb_tags.find_tags(instance)
         if len(tags) > 0:
@@ -239,6 +244,7 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
                     FRBTag, dict(name=tag_name), {}, instance.created_by)
                 # Record
                 instance.frb_tags.add(frb_tag)
+        '''
 
         # Set status
         frb_status.set_status(instance)

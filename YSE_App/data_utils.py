@@ -1805,6 +1805,7 @@ def ingest_frbs(request):
             theta (float) -- Position angle of the FRB; E from N
             DM (float) -- Dispersion Measure of the FRB
             tags (str, optional) -- Tag(s) for the FRB.  comma separated
+      - delete (bool): Delete FRBs first?
 
     Args:
         request (requests.request): 
@@ -1827,7 +1828,8 @@ def ingest_frbs(request):
     frb_tbl = pandas.read_json(data['table'])
 
     # Run
-    code, msg = frb_init.add_df_to_db(frb_tbl, user)
+    code, msg = frb_init.add_df_to_db(frb_tbl, user,
+                                      delete_existing=data['delete'])
 
     # Return
     return JsonResponse({"message":f"{msg}"}, status=code)

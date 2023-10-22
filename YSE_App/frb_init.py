@@ -39,7 +39,8 @@ def init_statuses(user):
                         dict(name=status), {}, user)
 
 
-def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
+def add_df_to_db(df_frbs:pandas.DataFrame, user, 
+                 delete_existing:bool=False):
     """ Add a pandas DataFrame of FRBs to the database
 
     Args:
@@ -101,6 +102,12 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
         # Build it
         dbtransient = FRBTransient(**transientdict)
 
+        # Set null status
+        dbtransient.status = TransientStatus.objects.get(name='Unassigned')
+
+        # Save me!
+        dbtransient.save()
+
         # Tags
         if 'tags' in transient.keys():
             # Remove previous
@@ -111,11 +118,15 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user, delete_existing:bool=False):
                     FRBTag, dict(name=tag_name), {}, user)
                 dbtransient.frb_tags.add(tag)
 
+            # Set status
+            frb_status.set_status(dbtransient)
+
+            # Save me!
+            dbtransient.save()
+
         # Add to list
         dbtransients.append(dbtransient)
 
-        # Save me!
-        dbtransient.save()
 
     # Return
-    return dbtransients                    
+    return 200, 'All clear!'
