@@ -4,6 +4,7 @@ import pandas
 
 from YSE_App.models import TransientStatus
 from YSE_App.models import ObservationGroup
+from YSE_App.models import FRBSurvey
 from YSE_App.frb_utils import add_or_grab_obj
 from django.db.models import ForeignKey
 
@@ -37,6 +38,21 @@ def init_statuses(user):
     for status in frb_status.all_status:
         _ = add_or_grab_obj(TransientStatus,
                         dict(name=status), {}, user)
+
+def init_surveys(user):
+    """ Initialize the FRBSurvey table 
+
+    Args:
+        user (): user
+    """
+
+    # Delete all existing
+    FRBSurvey.objects.all().delete()
+
+    # Add into DB
+    for survey in ['CHIME/FRB']:
+        _ = add_or_grab_obj(FRBSurvey,
+                        dict(name=survey), {}, user)
 
 
 def add_df_to_db(df_frbs:pandas.DataFrame, user, 
@@ -97,7 +113,7 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user,
                 try:
                     transientdict[transientkey] = fk[0]
                 except:
-                    import pdb; pdb.set_trace()
+                    print(f'Bad key: {transientkey}')
 
         # Build it
         dbtransient = FRBTransient(**transientdict)
