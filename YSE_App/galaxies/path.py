@@ -33,6 +33,7 @@ def ingest_path_results(itransient:FRBTransient,
                         inst_name:str,
                         obs_group:str,
                         P_Ux:float, user,
+                        bright_star:bool=None,
                         remove_previous:bool=True):
     """ Method to ingest a table of PATH results into the DB
 
@@ -50,6 +51,8 @@ def ingest_path_results(itransient:FRBTransient,
         inst_name (str): Name of the instrument
         obs_group (str): Name of the observation group
         P_Ux (float): PATH unseen probability P(U|x)
+        bright_star (int, optional): 1=a bright star near the FRB 
+            If not None, add to FRBTransient
         user (django user object): user 
         remove_previous (bool, optional): If True, remove any previous
             entries related to PATH from the DB. Defaults to True.
@@ -86,6 +89,21 @@ def ingest_path_results(itransient:FRBTransient,
             FRBGalaxy, dict(name=name), dict(ra=icand.ra, dec=icand.dec, 
                        ang_size=icand.ang_size), user=user)
 
+        # Add redshifts
+        if icand.redshift_type == 'spectro-z':
+            galaxy.redshift = icand.redshift
+            galaxy.redshift_err = icand.redshift_err
+            galaxy.redshift_source = icand.redshift_source
+            galaxy.redshift_quality = 1
+        elif icand.redshift_type == 'photo-z':
+            galaxy.photoz = icand.redshift
+            galaxy.photoz_err = icand.redshift_err
+            galaxy.photoz_source = icand.redshift_source
+        else:
+            pass
+        galaxy.save()
+
+
         # Photometry
         gp = frb_utils.add_or_grab_obj(
             GalaxyPhotometry, 
@@ -113,6 +131,10 @@ def ingest_path_results(itransient:FRBTransient,
 
     # PATH P(U|x)
     itransient.P_Ux = P_Ux
+
+    # Bright star?
+    if bright_star is not None:
+        itransient.bright_star = bool(bright_star)
 
     # Set host from highest P_Ox
     itransient.host = itransient.best_Path_galaxy

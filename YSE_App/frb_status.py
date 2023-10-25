@@ -19,7 +19,7 @@ all_status = [\
         # No successful Image taken
         # No Image pending
     'NeedSpectrum', # Needs spectroscopy for redshift
-        # P(O|x) of top 2 > P_Ux_max
+        # P(O|x) of top 2 > P_Ox_min
         # No pending spectrum
         # No succesfully observed spectrum
     'RunDeepPATH', # Needs PATH run on deeper (typically private) imaging
@@ -28,10 +28,11 @@ all_status = [\
     'SpectrumPending', # Pending spectroscopy with an FRBFollowUp
         # FRB appears in FRBFollowUpRequest with mode='longslit','mask'
     'GoodSpectrum', # Observed with spectroscopy successfully
+    'TooDusty', # Sightline exceeds E(B-V) threshold
     'TooFaint', # Host is too faint for spectroscopy
         # r-magnitude (or equivalent; we use the PATH band) of the top host candidate
         #   is fainter than the maximum(mr_max) for the sample/surveys
-    'AmbiguousHost',  # Host is consideed too ambiguous for further follow-up
+    'AmbiguousHost',  # Host is considered too ambiguous for further follow-up
         # At least one of the frb_tags has a min_POx value
         #  and the sum of the top two P(O|x) is less than the minimum of those
     'UnseenHost',  # Even with deep imaging, no compelling host was found
@@ -44,7 +45,7 @@ all_status = [\
 # List of telescope+instruments that are considered Deep
 deep_telinstr = []
 
-# List of frb_rags where one should run a public PATH
+# List of frb_tags where one should run a public PATH
 run_public_path = []
 # Include all of the CHIME samples
 run_public_path += [sample['name'] for sample in chime_tags.all_samples]
@@ -75,6 +76,18 @@ def set_status(frb):
         frb.status = TransientStatus.objects.get(name='Redshift')
         frb.save()
         return
+
+    # #########################################################
+    # #########################################################
+    # Too Dusty??
+    # #########################################################
+    if frb.mw_ebv is not None:
+        ebv_maxs = frb_tags.values_from_tags(frb, 'max_EBV')
+        if len(ebv_maxs) > 0:
+            if frb.mw_ebv > np.min(ebv_maxs):
+                frb.status = TransientStatus.objects.get(name='TooDusty')
+                frb.save()
+                return
 
     # #########################################################
     # Unseen host
