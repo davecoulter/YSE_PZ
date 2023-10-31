@@ -1626,6 +1626,10 @@ class CandidatesTable(tables.Table):
                                verbose_name='Mag',orderable=False)
     POx_string = tables.Column(accessor='POxString',
                                verbose_name='P(O|x)',orderable=False)
+    z_string = tables.Column(accessor='zString',
+                               verbose_name='z',orderable=False)
+    zQ_string = tables.Column(accessor='zQualString',
+                               verbose_name='zQ',orderable=False)
     #disc_date_string = tables.Column(accessor='disc_date_string',
     #                                 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
     #recent_mag = tables.Column(accessor='recent_mag',
@@ -1664,7 +1668,7 @@ class CandidatesTable(tables.Table):
     class Meta:
         model = FRBGalaxy
         fields = ('name_string','ra_string','dec_string','filter_string',
-                  'mag_string')
+                  'mag_string', 'POx_string', 'z_string', 'zQ_string') 
 
         template_name='YSE_App/django-tables2/bootstrap.html'
         attrs = {
@@ -1738,6 +1742,8 @@ class FRBTransientTable(tables.Table):
                                verbose_name='Host')
     host_pox_string = tables.Column(accessor='HostPOxString',
                                verbose_name='Host P(O|x)')
+    host_z_string = tables.Column(accessor='HostzString',
+                               verbose_name='z')
     host_mag_string = tables.Column(accessor='HostMagString',
                                verbose_name='Host mag')
     frb_survey_string = tables.Column(accessor='FRBSurveyString',
@@ -1778,7 +1784,7 @@ class FRBTransientTable(tables.Table):
         fields = ('name_string','ra_string','dec_string',
                   'dm_string', 'frb_survey_string', 'tags_string',
                   'status_string', 'host_string', 'host_pox_string',
-                  'host_mag_string')
+                  'host_mag_string', 'host_z_string')
 
         template_name='YSE_App/django-tables2/bootstrap.html'
         attrs = {

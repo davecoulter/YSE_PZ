@@ -30,6 +30,12 @@ def init_kko(clean:bool=True):
     # Observing Groups
     frb_init.init_obsgroups(user)
 
+    # Surveys
+    frb_init.init_surveys(user)
+
+
+    return
+
     # Load up the table
     csv_file = os.path.join(
         resource_filename('YSE_App', 'chime'), 'chime_kko_sep2023.csv')
