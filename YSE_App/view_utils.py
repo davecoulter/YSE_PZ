@@ -1842,6 +1842,38 @@ def get_hst_image(request,transient_id):
 
     return(JsonResponse(jpegurldict))
 
+def get_jwst_image(request,transient_id):
+    try:
+        t = Transient.objects.get(pk=transient_id)
+    except t.DoesNotExist:
+        raise Http404("Transient id does not exist")
+
+    startTime = datetime.datetime.now()
+    from . import common
+    jwst=common.mast_query.jwstImages(t.ra,t.dec,'Object')
+    jwst.getObstable()
+    jwst.getJPGurl()
+    print("I found",jwst.Nimages,"JWST images of",jwst.object,"located at coordinates",jwst.ra,jwst.dec)
+    print("The cut out images have the following URLs:")
+    fitsurllist = list(jwst.obstable['instrument_name'].data)
+
+    print("Run time was: ",(datetime.datetime.now() - startTime).total_seconds(),"seconds")
+
+    if len(jwst.jpglist):
+        jpegurldict = {"jpegurl":jwst.jpglist,
+                       "fitsurl":fitsurllist,
+                       "obsdate":list(Time(jwst.obstable["t_min"],format='mjd').iso), #,out_subfmt='date'
+                       "filters":list(jwst.obstable["filters"]),
+                       "inst":list(jwst.obstable["instrument_name"])}
+    else:
+        jpegurldict = {"jpegurl":[],
+                       "fitsurl":[],
+                       "obsdate":[],
+                       "filters":[],
+                       "inst":[]}
+
+    return(JsonResponse(jpegurldict))
+
 def get_chandra_image(request,transient_id):
     
     try:

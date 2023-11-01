@@ -226,6 +226,14 @@ class processTNS:
                 has_hst = False
         except: has_hst = None
         try:
+            jwst=mast_query.jwstImages(sc.ra.deg,sc.dec.deg,'Object')
+            jwst.getObstable()
+            if jwst.Nimages > 0:
+                has_jwst = True
+            else:
+                has_jwst = False
+        except: has_jwst = None
+        try:
             chr=chandra_query.chandraImages(sc.ra.deg,sc.dec.deg,'Object')
             chr.search_chandra_database()
             if chr.n_obsid > 0:
@@ -250,6 +258,7 @@ class processTNS:
                          'status':status,
                          'point_source_probability':ps_prob,
                          'has_hst':has_hst,
+                         'has_jwst':has_jwst,
                          'has_chandra':has_chandra,
                          'has_spitzer':has_spitzer,
                          'tags':[]}
