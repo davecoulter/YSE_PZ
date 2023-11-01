@@ -1,62 +1,61 @@
-from django.db.models.query import EmptyQuerySet
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse, HttpResponseNotFound
-from django.conf import settings as djangoSettings
-from django.template import loader
-from django.views import generic
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
-from django.urls import reverse_lazy
-from django.db.models import Q
-from rest_framework.renderers import JSONRenderer
-import requests
-from django.template.defaulttags import register
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models.functions import Lower
-from django.db import connection,connections
-from django.shortcuts import redirect
-from django.db.models import Count, Value, Max, Min
+import os
+import json
+import time
 import zipfile
 from io import BytesIO
-from YSE_App.yse_utils.yse_pa import yse_pa
-from django.utils.decorators import method_decorator
+from urllib.parse import unquote
 
+from astropy.time import Time
 from astropy.utils import iers
 iers.conf.auto_download = True
 from astropy.utils.iers import conf
 conf.auto_max_age = None
+from astroplan import moon_illumination
+import datetime
+from datetime import timedelta
+import dateutil.parser
 
+from django.conf import settings as djangoSettings
+from django.core import serializers
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db import connection,connections
+from django.db.models import Q, Count, Value, Max, Min
+from django.db.models.query import EmptyQuerySet
+from django.db.models.functions import Lower
+from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse, HttpResponseNotFound
+from django.shortcuts import redirect, render, get_object_or_404
+from django.template import loader, RequestContext
+from django.template.defaulttags import register
+from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
+from django.views import generic
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic.list import ListView
+import django_tables2 as tables
+from django_tables2 import RequestConfig
+
+from rest_framework.renderers import JSONRenderer
+import requests
+
+from YSE_App.yse_utils.yse_pa import yse_pa
 from .models import *
 from .forms import *
 from .common import utilities
 from . import view_utils
-import datetime
-from datetime import timedelta
-import pytz
-from pytz import timezone
 from .serializers import *
-from django.core import serializers
-import os
 from .data import PhotometryService, SpectraService, ObservingResourceService
-import json
-import time
-import dateutil.parser
-from astroplan import moon_illumination
-from astropy.time import Time
-from .common.utilities import getRADecBox
-
 from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable,ToOFollowupTable
 from .queries.yse_python_queries import *
 from .queries import yse_python_queries
-import django_tables2 as tables
-from django_tables2 import RequestConfig
 from .basicauth import *
-from django.views.decorators.csrf import csrf_exempt
-from django.template import RequestContext
-from urllib.parse import unquote
+from .common.utilities import date_to_mjd, mjd_to_date, getRADecBox
 
-from .common.utilities import date_to_mjd, mjd_to_date
-from django.views.generic.list import ListView
+import pytz
+from pytz import timezone
+
+
 
 # Create your views here.
 
