@@ -161,7 +161,7 @@
                                                 <strong>MW E(B-V)</strong>
                                                 <p class="text-muted">
                                                     {% if transient.mw_ebv %}
-                                                        {{ transient.mw_ebv }}
+                                                        {{ transient.mw_ebv|floatformat:3 }}
                                                         {% if transient.mw_ebv >= 0.2 %}
                                                             &nbsp;<b class="text-red">(warning!)</b>
                                                         {% endif %}
