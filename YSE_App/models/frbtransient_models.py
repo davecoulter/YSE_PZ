@@ -256,20 +256,6 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
         # DM ISM
         instance.DM_ISM = instance.calc_DM_ISM()
 
-        '''
-        # CHIME FRB items
-        tags = frb_tags.find_tags(instance)
-        if len(tags) > 0:
-
-            # Add tags
-            for tag_name in tags:
-                # Add the tag if it doesn't exist
-                frb_tag = frb_utils.add_or_grab_obj(
-                    FRBTag, dict(name=tag_name), {}, instance.created_by)
-                # Record
-                instance.frb_tags.add(frb_tag)
-        '''
-
         # Set status
         frb_status.set_status(instance)
 
