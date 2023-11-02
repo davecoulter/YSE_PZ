@@ -12,6 +12,7 @@ from YSE_App import frb_status
 from YSE_App import frb_utils
 from YSE_App.models import FRBTransient, FRBTag
 
+
 def init_obsgroups(user):
     """ Initialize the transient status table
 

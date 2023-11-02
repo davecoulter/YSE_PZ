@@ -21,6 +21,9 @@ from YSE_App import frb_utils
 from astropy.coordinates import SkyCoord
 from astroquery import irsa_dust
 
+# FRB items
+from ne2001 import density
+
 class FRBTransient(BaseModel):
     """ FRBTransient model
 
@@ -86,9 +89,8 @@ class FRBTransient(BaseModel):
     # Galactic E(B-V) -- taken from Irsa at creation
     mw_ebv = models.FloatField(null=True, blank=True)
 
-    # TODO - Turn this on in next branch
     # Galactic DM
-    #DM_ISM = models.FloatField(null=True, blank=True)
+    DM_ISM = models.FloatField(null=True, blank=True)
 
     # Near bright star?
     bright_star = models.BooleanField(default=False, blank=True)
@@ -173,6 +175,25 @@ class FRBTransient(BaseModel):
     def natural_key(self):
         return self.name
 
+
+    def calc_DM_ISM(self):
+        """ Calcualte DM_ISM from NE2001
+
+        Returns:
+            float: DM_ISM in pc/cm^3
+        """
+
+        coord = SkyCoord(ra=self.ra, dec=self.dec,
+                        unit='deg')
+        gcoord = coord.transform_to('galactic')
+        l, b = gcoord.l.value, gcoord.b.value
+        
+        ne = density.ElectronDensity()#**PARAMS)
+        ismDM = ne.DM(l, b, 100.)
+
+        return ismDM.value
+
+
     def get_Path_values(self):
         """ Grab lists of the PATH values and candidate galaxies
 
@@ -231,6 +252,9 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
         # Galactic E(B-V) -- Needs to come before tagging
         c = SkyCoord(ra=instance.ra, dec=instance.dec, unit='deg')
         instance.mw_ebv = irsa_dust.IrsaDust.get_query_table(c)['ext SandF mean'][0]
+
+        # DM ISM
+        instance.DM_ISM = instance.calc_DM_ISM()
 
         '''
         # CHIME FRB items
