@@ -2,10 +2,16 @@ version: '3.8'
 services:
     web:
         container_name: ysepz_web_container
-        image: "ghcr.io/davecoulter/yse_pz:latest"
+        build:
+          context: ""
+          dockerfile: Dockerfile.web.dev
+        #image: "ghcr.io/davecoulter/yse_pz:latest"
+        image: "ghcr.io/frbs/ffff_pz:0.0.1"
+        #image: "local/ffff_pz_web:dev"
         platform: linux/amd64
         volumes:
             - ${VOL}:/app
+            - ${PATH_FILES}:/PATH_FILES
             # X tinkering
             #- ./entrypoints:/app/Entrypoints
         links:
