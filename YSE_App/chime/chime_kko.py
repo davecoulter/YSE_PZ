@@ -38,6 +38,7 @@ def init_kko(clean:bool=True):
 
 
 def init_DMISM():
+    """ Stop gap to add DM_ISM to the KKO objects """
 
     for frb in FRBTransient.objects.all():
         if frb.DM_ISM is None:
