@@ -49,7 +49,7 @@ kko_sample = dict(
 
 # Bright FRBs
 kko_sample = dict(
-    name='CHIME-BRIGHT',
+    name='CHIME-Bright',
     version='0.1',
     max_EBV=0.3,     # 
     mr_max=22.,      # Faintest magnitude to try spectroscopy -- not implemented
