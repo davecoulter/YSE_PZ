@@ -70,14 +70,6 @@ def set_status(frb):
     # Run in reverse order of completion
 
     # #########################################################
-    # Redshift?
-    # #########################################################
-    if frb.host is not None and frb.host.redshift is not None:
-        frb.status = TransientStatus.objects.get(name='Redshift')
-        frb.save()
-        return
-
-    # #########################################################
     # #########################################################
     # Too Dusty??
     # #########################################################
@@ -88,6 +80,20 @@ def set_status(frb):
                 frb.status = TransientStatus.objects.get(name='TooDusty')
                 frb.save()
                 return
+
+    # #########################################################
+    # Ambiguous host
+    # #########################################################
+
+    if frb.host is not None:
+        # Require top 2 P(O|x) > min(P_Ox_min)
+        POx_mins = frb_tags.values_from_tags(frb, 'min_POx')
+        if len(POx_mins) > 0 and (
+            frb.sum_top_two_PATH < np.min(POx_mins)):
+            frb.status = TransientStatus.objects.get(name='AmbiguousHost') 
+            frb.save()
+            return
+
 
     # #########################################################
     # Unseen host
@@ -122,17 +128,12 @@ def set_status(frb):
                     return
 
     # #########################################################
-    # Ambiguous host
+    # Redshift?
     # #########################################################
-
-    if frb.host is not None:
-        # Require top 2 P(O|x) > min(P_Ox_min)
-        POx_mins = frb_tags.values_from_tags(frb, 'min_POx')
-        if len(POx_mins) > 0 and (
-            frb.sum_top_two_PATH < np.min(POx_mins)):
-            frb.status = TransientStatus.objects.get(name='AmbiguousHost') 
-            frb.save()
-            return
+    if frb.host is not None and frb.host.redshift is not None:
+        frb.status = TransientStatus.objects.get(name='Redshift')
+        frb.save()
+        return
  
     # #########################################################
     # Too Faint?
