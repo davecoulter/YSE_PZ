@@ -1676,19 +1676,23 @@ job_submitted=%s"""%(log_file_name,datetime.datetime.utcnow().isoformat())
 def frb_dashboard(request):
 
     transient_categories = []
-    for title,statusnames in zip(['Unassigned FRBs',
-                                  'PATH Needed',
-                                  'Followup Needed',
-                                  'Followup Pending',
-                                  'Observed',
-                                  'Completed'],
-                                [['Unassigned'], 
-                                 ['RunPublicPATH', 'RunDeepPATH'],
-                                 ['NeedImage','NeedSpectrum'],
-                                 ['ImagePending', 'SpectrumPending'],
-                                 ['GoodSpectrum'],
-                                 ['Redshift', 'TooFaint', 'AmbiguousHost', 'UnseenHost', 'TooDusty'],
-                                 ]):
+    for title,statusnames in zip(
+        [
+         'Completed',
+         'PATH Needed',
+         'Followup Needed',
+         'Followup Pending',
+         'Observed',
+         'Unassigned FRBs',
+         ],
+        [
+         ['Redshift', 'TooFaint', 'AmbiguousHost', 'UnseenHost', 'TooDusty'],
+         ['RunPublicPATH', 'RunDeepPATH'],
+         ['NeedImage','NeedSpectrum'],
+         ['ImagePending', 'SpectrumPending'],
+         ['GoodSpectrum'],
+         ['Unassigned'], 
+         ]):
         transients = FRBTransient.objects.filter(status__in=TransientStatus.objects.filter(
             name__in=statusnames))
         #status = TransientStatus.objects.filter(name__in=statusnames).order_by('-modified_date')
