@@ -36,12 +36,23 @@ repeater_sample = dict(
     mr_max=24.5,   # Faintest magnitude to try spectroscopy
     )
 
-# High DM (notional)
+# KKO
 kko_sample = dict(
     name='CHIME-KKO',
     version='0.1',
     max_EBV=0.3,     # 
     mr_max=23.,      # Faintest magnitude to try spectroscopy -- not implemented
+    min_POx=0.9,     # Minimum P(O|x) to consider (of top 2)
+    max_P_Ux=0.5,    # Host is considered unseen if P(U|x) is greater than this
+    prob=0.8,
+    )
+
+# Bright FRBs
+kko_sample = dict(
+    name='CHIME-Bright',
+    version='0.1',
+    max_EBV=0.3,     # 
+    mr_max=22.,      # Faintest magnitude to try spectroscopy -- not implemented
     min_POx=0.9,     # Minimum P(O|x) to consider (of top 2)
     max_P_Ux=0.5,    # Host is considered unseen if P(U|x) is greater than this
     prob=0.8,
