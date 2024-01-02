@@ -33,7 +33,7 @@ def ingest_path_results(itransient:FRBTransient,
                         inst_name:str,
                         obs_group:str,
                         P_Ux:float, user,
-                        bright_star:bool=None,
+                        bright_star:int=None,
                         remove_previous:bool=True):
     """ Method to ingest a table of PATH results into the DB
 
@@ -134,10 +134,12 @@ def ingest_path_results(itransient:FRBTransient,
     itransient.P_Ux = P_Ux
 
     # Bright star?
+    print(f"Bright star")
     if bright_star is not None:
         itransient.bright_star = bool(bright_star)
 
     # Set host from highest P_Ox
+    print(f"P_Ox")
     itransient.host = itransient.best_Path_galaxy
 
     # Set status
