@@ -40,7 +40,10 @@ def values_from_tags(frb, key:str):
     if frb.frb_survey.name == 'CHIME/FRB':
         # Loop through 
         for sample in chime_tags.all_samples:
-            if sample['name'] in tag_names and key in sample.keys():
+            if key == 'min_POx':
+                print(f"{sample['name']} {list(sample.keys())}")
+                
+            if sample['name'] in tag_names and key in list(sample.keys()):
                 values.append(sample[key])
 
     return values
