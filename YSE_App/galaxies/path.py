@@ -129,7 +129,7 @@ def ingest_path_results(itransient:FRBTransient,
         ipath.band = band
         ipath.save()
 
-    print(f"Done with candidates.  Now P_Ux")
+    print(f"Done with candidates.  Now P_Ux: {P_Ux}, {bright_star}")
     # PATH P(U|x)
     itransient.P_Ux = P_Ux
 
