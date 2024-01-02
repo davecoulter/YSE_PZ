@@ -32,7 +32,7 @@ def values_from_tags(frb, key:str):
 
     # Prep
     tag_names = [frb_tag.name for frb_tag in frb.frb_tags.all()]
-    print(f"tag_names = {tag_names} for {frb.name}")
+    print(f"tag_names = {tag_names} for {frb.name} and key {key}")
 
     # Get all of the values in a list
     values = []
