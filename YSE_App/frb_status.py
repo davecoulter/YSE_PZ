@@ -85,9 +85,11 @@ def set_status(frb):
     # Ambiguous host
     # #########################################################
 
+    print("Entering Ambiguous host")
     if frb.host is not None:
         # Require top 2 P(O|x) > min(P_Ox_min)
         POx_mins = frb_tags.values_from_tags(frb, 'min_POx')
+        print(f"POx_mins = {POx_mins}, {frb.sum_top_two_PATH}")
         if len(POx_mins) > 0 and (
             frb.sum_top_two_PATH < np.min(POx_mins)):
             frb.status = TransientStatus.objects.get(name='AmbiguousHost') 
