@@ -105,7 +105,6 @@ def ingest_path_results(itransient:FRBTransient,
 
 
         # Photometry
-        print(f"Updating photometry")
         gp = frb_utils.add_or_grab_obj(
             GalaxyPhotometry, 
             dict(galaxy=galaxy, instrument=Instrument.objects.get(name=inst_name), 
@@ -130,10 +129,12 @@ def ingest_path_results(itransient:FRBTransient,
         ipath.band = band
         ipath.save()
 
+    print(f"Done with candidates.  Now P_Ux")
     # PATH P(U|x)
     itransient.P_Ux = P_Ux
 
     # Bright star?
+    print(f"Bright star")
     if bright_star is not None:
         itransient.bright_star = bool(bright_star)
 
