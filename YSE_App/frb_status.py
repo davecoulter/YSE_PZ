@@ -141,11 +141,12 @@ def set_status(frb):
 
     if frb.host is not None:
         mrs = frb_tags.values_from_tags(frb, 'mr_max')
+
         # Find mr_max (if it exists)
         if len(mrs) > 0:
             mr_max = np.max(mrs)
             # Use PATH host magnitudes
-            if frb.host.path_mag > mr_max:
+            if frb.mag_top_two_PATH > mr_max:
                 frb.status = TransientStatus.objects.get(name='TooFaint')
                 frb.save()
                 return
