@@ -139,6 +139,7 @@ def set_status(frb):
     # Too Faint?
     # #########################################################
 
+    '''
     if frb.host is not None:
         mrs = frb_tags.values_from_tags(frb, 'mr_max')
 
@@ -150,6 +151,7 @@ def set_status(frb):
                 frb.status = TransientStatus.objects.get(name='TooFaint')
                 frb.save()
                 return
+    '''
     
     # #########################################################
     # Good Spectrum
