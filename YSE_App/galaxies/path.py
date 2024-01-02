@@ -134,7 +134,6 @@ def ingest_path_results(itransient:FRBTransient,
     itransient.P_Ux = P_Ux
 
     # Bright star?
-    print(f"Bright star")
     if bright_star is not None:
         itransient.bright_star = bool(bright_star)
 
