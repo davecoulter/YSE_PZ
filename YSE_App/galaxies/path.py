@@ -134,19 +134,13 @@ def ingest_path_results(itransient:FRBTransient,
     itransient.P_Ux = P_Ux
 
     # Bright star?
-    print(f"Bright star")
     if bright_star is not None:
         itransient.bright_star = bool(bright_star)
 
     # Set host from highest P_Ox
-    print(f"P_Ox")
     itransient.host = itransient.best_Path_galaxy
 
     # Set status
-    print(f"Updating status")
-    print(f"Updating status")
-    print(f"Updating status")
-    print(f"Updating status")
     print(f"Updating status")
     frb_status.set_status(itransient)
 

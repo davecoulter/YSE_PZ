@@ -259,7 +259,7 @@ class FRBTransient(BaseModel):
         Returns:
             FRBGalaxy: Galaxy with the highest P(O|x) value or None
         """
-        path_values, galaxies = self.get_Path_values()
+        path_values, galaxies, _ = self.get_Path_values()
         if len(galaxies) > 0:
             imax = np.argmax(path_values)
             return galaxies[imax]
