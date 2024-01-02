@@ -105,6 +105,7 @@ def ingest_path_results(itransient:FRBTransient,
 
 
         # Photometry
+        print(f"Updating photometry")
         gp = frb_utils.add_or_grab_obj(
             GalaxyPhotometry, 
             dict(galaxy=galaxy, instrument=Instrument.objects.get(name=inst_name), 
@@ -140,6 +141,7 @@ def ingest_path_results(itransient:FRBTransient,
     itransient.host = itransient.best_Path_galaxy
 
     # Set status
+    print(f"Updating status")
     frb_status.set_status(itransient)
 
 
