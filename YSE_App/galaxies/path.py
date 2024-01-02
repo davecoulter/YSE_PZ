@@ -90,12 +90,12 @@ def ingest_path_results(itransient:FRBTransient,
                        ang_size=icand.ang_size), user=user)
 
         # Add redshifts (these need not exist)
-        if hasattr('redshift_type',icand) and icand.redshift_type == 'spectro-z':
+        if hasattr(icand, 'redshift_type') and icand.redshift_type == 'spectro-z':
             galaxy.redshift = icand.redshift
             galaxy.redshift_err = icand.redshift_err
             galaxy.redshift_source = icand.redshift_source
             galaxy.redshift_quality = 1
-        elif hasattr('redshift_type',icand) and icand.redshift_type == 'photo-z':
+        elif hasattr(icand,'redshift_type') and icand.redshift_type == 'photo-z':
             galaxy.photoz = icand.redshift
             galaxy.photoz_err = icand.redshift_err
             galaxy.photoz_source = icand.redshift_source
