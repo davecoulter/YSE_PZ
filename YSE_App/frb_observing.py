@@ -186,8 +186,7 @@ def ingest_z(z_tbl:pandas.DataFrame):
         tuple: (status, message) (int,str) 
     """
 
-    # TODO
-    # Scrub previous entries with the named resource?
+    # TODO -- Scrub previous entries with the named resource?
     
     # Loop on rows
     for _, row in z_tbl.iterrows():
