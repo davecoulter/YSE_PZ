@@ -5,8 +5,6 @@ services:
         build:
           context: ""
           dockerfile: Dockerfile.web.dev
-        #image: "local/yse_pz_web:dev"
-        #image: "local/yse_pz_web:dev"
         image: "local/ffff_pz:dev"
         volumes:
             - ${VOL}:/app
