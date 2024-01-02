@@ -11,7 +11,7 @@ services:
         platform: linux/amd64
         volumes:
             - ${VOL}:/app
-            - ${PATH_FILES}:/PATH_FILES
+            #- ${PATH_FILES}:/PATH_FILES
             # X tinkering
             #- ./entrypoints:/app/Entrypoints
         links:
