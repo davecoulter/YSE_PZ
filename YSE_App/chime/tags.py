@@ -48,7 +48,7 @@ kko_sample = dict(
     )
 
 # Bright FRBs
-kko_sample = dict(
+bright_sample = dict(
     name='CHIME-Bright',
     version='0.1',
     max_EBV=0.3,     # 
@@ -58,7 +58,7 @@ kko_sample = dict(
     prob=0.8,
     )
 
-all_samples = [blind_sample, highDM_sample, repeater_sample, kko_sample]
+all_samples = [blind_sample, highDM_sample, repeater_sample, kko_sample, bright_sample]
 
 
 def set_from_instance(instance):

@@ -18,7 +18,7 @@ def find_tags(frb):
 
     return []
 
-def values_from_tags(frb, key:str):
+def values_from_tags(frb, key:str, debug:bool=False):
     """ Grab a list of values for a given key from the tags
       of a given FRB
 
@@ -32,7 +32,8 @@ def values_from_tags(frb, key:str):
 
     # Prep
     tag_names = [frb_tag.name for frb_tag in frb.frb_tags.all()]
-    print(f"tag_names = {tag_names} for {frb.name} and key {key}")
+    if debug:
+        print(f"tag_names = {tag_names} for {frb.name} and key {key}")
 
     # Get all of the values in a list
     values = []
@@ -40,7 +41,7 @@ def values_from_tags(frb, key:str):
     if frb.frb_survey.name == 'CHIME/FRB':
         # Loop through 
         for sample in chime_tags.all_samples:
-            if key == 'min_POx':
+            if debug and key == 'min_POx':
                 print(f"{sample['name']} {list(sample.keys())}")
                 
             if sample['name'] in tag_names and key in list(sample.keys()):
