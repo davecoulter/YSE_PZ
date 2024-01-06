@@ -67,6 +67,9 @@ def set_from_instance(instance):
     Eventually this will loop through all of the
     possible CHIME tags and set them
 
+    Actually, this is likely to be deprecated and the user
+    will be forced to set the Tag at ingestion
+
     Args:
         instance (FRBTransient): FRBTransient instance
 
