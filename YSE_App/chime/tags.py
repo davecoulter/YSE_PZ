@@ -1,6 +1,11 @@
 """ This module will specify the tags 
 to be used for CHIME/FRB transients.  This 
-code may move to chime_ffff_pz """
+code may move to chime_ffff_pz 
+
+Better -- it should become part of the database
+ and therefore a Django model
+
+"""
 
 # "Unbiased" sample
 blind_sample = dict(
