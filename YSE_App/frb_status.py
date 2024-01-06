@@ -85,7 +85,6 @@ def set_status(frb):
     # Ambiguous host
     # #########################################################
 
-    print("Entering Ambiguous host")
     if frb.host is not None:
         # Require top 2 P(O|x) > min(P_Ox_min)
         POx_mins = frb_tags.values_from_tags(frb, 'min_POx')
@@ -140,8 +139,6 @@ def set_status(frb):
     # #########################################################
     # Too Faint?
     # #########################################################
-
-    '''
     if frb.host is not None:
         mrs = frb_tags.values_from_tags(frb, 'mr_max')
 
@@ -153,7 +150,6 @@ def set_status(frb):
                 frb.status = TransientStatus.objects.get(name='TooFaint')
                 frb.save()
                 return
-    '''
     
     # #########################################################
     # Good Spectrum
