@@ -63,7 +63,7 @@ ipython-genutils==0.2.0
 itypes==1.1.0
 jedi==0.18.0
 jeepney==0.6.0
-Jinja2==2.10
+Jinja2==3.1.3
 joblib==1.0.1
 joypy==0.2.5
 Keras==2.4.3
