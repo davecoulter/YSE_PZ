@@ -16,6 +16,7 @@ from YSE_App import frb_status
 import pandas
 
 def ingest_obsplan(obsplan:pandas.DataFrame, user,
+                   iresource:str,
                    override:bool=False):
     """ Ingest an observing plan into the DB
 
@@ -26,7 +27,8 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
 
     Args:
         obsplan (pandas.DataFrame): _description_
-        user (_type_): _description_
+        user (_type_): User who is ingesting the plan
+        iresource (str): Name of the FRB Followup Resource
         override (bool, optional): If True, allow several of the
             checks to be over-ridden.
 
@@ -36,7 +38,7 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
 
     # Scrub previous entries with the same named resource
     try:
-        resource=FRBFollowUpResource.objects.get(name=obsplan['Resource'].values[0])
+        resource=FRBFollowUpResource.objects.get(name=iresource)
     except:
         return 409, f"Resource {obsplan['Resource'].values[0]} not in DB"
     all_pending = FRBFollowUpRequest.objects.filter(

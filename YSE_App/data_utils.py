@@ -1653,6 +1653,7 @@ def ingest_obsplan(request):
 
     # Run
     code, msg = frb_observing.ingest_obsplan(obs_tbl, user,
+                                            data['resource'],
                                             override=data['override'])
 
     # Return
