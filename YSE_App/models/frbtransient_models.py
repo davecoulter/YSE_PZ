@@ -249,6 +249,7 @@ class FRBTransient(BaseModel):
             path_values = np.array(path_values)
             argsrt = np.argsort(path_values)
             mags = np.array([obj.path_mag for obj in galaxies])
+            # Sort em
             mags = mags[argsrt]
             return np.min(mags)
 
