@@ -49,6 +49,9 @@ def ingest_obsplan(obsplan:pandas.DataFrame, user,
         frb_status.set_status(transient)
     
     # Loop on rows to add
+    if len(obsplan) == 0:
+        return 200, "All good"
+        
     for _, row in obsplan.iterrows():
 
         # Grab the transient

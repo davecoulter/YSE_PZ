@@ -1628,7 +1628,8 @@ def ingest_obsplan(request):
         -- TNS: TNS name
         -- Resource: Resource name
         -- mode: observing mode ['image', 'longslit', 'mask']
-      - override (bool): if True, will override existing entries
+      - override (bool): if True, will override several of the
+        checks
 
     Args:
         request (requests.request): 
