@@ -199,14 +199,16 @@ class FRBTransient(BaseModel):
 
         Returns:
             tuple: (list, list) of PATH values and candidate galaxies
+                (FRBGalaxy objects) and PATH objects (Path)
         """
-        path_values, galaxies = [], []
+        path_values, galaxies, path_objs = [], [], []
         # Loop on the filtered table
         if Path.objects.filter(transient=self).count() > 0:
             for p in Path.objects.filter(transient=self):
                 path_values.append(p.P_Ox)
                 galaxies.append(p.galaxy)
-        return path_values, galaxies
+                path_objs.append(p)
+        return path_values, galaxies, path_objs
 
     @property
     def sum_top_two_PATH(self):
@@ -216,7 +218,7 @@ class FRBTransient(BaseModel):
             float: 0. if there is no PATH analysis
 
         """
-        path_values, _ = self.get_Path_values()
+        path_values, _, _ = self.get_Path_values()
         if len(path_values) == 0:
             return 0.
         elif len(path_values) == 1:
@@ -228,13 +230,37 @@ class FRBTransient(BaseModel):
             return np.sum(path_values[-2:])
 
     @property
+    def mag_top_two_PATH(self):
+        """ PATH mag for the top two PATH P(O|x) values for the transient 
+
+        If there are more than 1, take the top two and 
+        return the *brightest* magnitude
+
+        Returns:
+            float: 99. if there is no PATH analysis
+
+        """
+        path_values, galaxies, path_objs = self.get_Path_values()
+        if len(path_values) == 0:
+            return 99.
+        elif len(path_values) == 1:
+            return galaxies[0].path_mag
+        else:
+            path_values = np.array(path_values)
+            argsrt = np.argsort(path_values)
+            mags = np.array([obj.path_mag for obj in galaxies])
+            # Sort em
+            mags = mags[argsrt]
+            return np.min(mags)
+
+    @property
     def best_Path_galaxy(self):
         """ Return the galaxy with the highest P(O|x) value
 
         Returns:
             FRBGalaxy: Galaxy with the highest P(O|x) value or None
         """
-        path_values, galaxies = self.get_Path_values()
+        path_values, galaxies, _ = self.get_Path_values()
         if len(galaxies) > 0:
             imax = np.argmax(path_values)
             return galaxies[imax]

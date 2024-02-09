@@ -1628,7 +1628,8 @@ def ingest_obsplan(request):
         -- TNS: TNS name
         -- Resource: Resource name
         -- mode: observing mode ['image', 'longslit', 'mask']
-      - override (bool): if True, will override existing entries
+      - override (bool): if True, will override several of the
+        checks
 
     Args:
         request (requests.request): 
@@ -1652,6 +1653,7 @@ def ingest_obsplan(request):
 
     # Run
     code, msg = frb_observing.ingest_obsplan(obs_tbl, user,
+                                            data['resource'],
                                             override=data['override'])
 
     # Return

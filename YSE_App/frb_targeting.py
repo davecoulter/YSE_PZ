@@ -106,7 +106,7 @@ def target_table_from_frbs(frbs, mode:str):
 
         # Host candidates?
         if Path.objects.filter(transient=itransient).count() > 0:
-            path_values, galaxies = itransient.get_Path_values()
+            path_values, galaxies, _ = itransient.get_Path_values()
             srt = np.argsort(path_values)[::-1]
 
             for kk in range(min(2,len(path_values))):

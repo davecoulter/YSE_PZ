@@ -88,6 +88,7 @@ def set_status(frb):
     if frb.host is not None:
         # Require top 2 P(O|x) > min(P_Ox_min)
         POx_mins = frb_tags.values_from_tags(frb, 'min_POx')
+        print(f"POx_mins = {POx_mins}, {frb.sum_top_two_PATH}")
         if len(POx_mins) > 0 and (
             frb.sum_top_two_PATH < np.min(POx_mins)):
             frb.status = TransientStatus.objects.get(name='AmbiguousHost') 
@@ -138,14 +139,14 @@ def set_status(frb):
     # #########################################################
     # Too Faint?
     # #########################################################
-
     if frb.host is not None:
         mrs = frb_tags.values_from_tags(frb, 'mr_max')
+
         # Find mr_max (if it exists)
         if len(mrs) > 0:
             mr_max = np.max(mrs)
             # Use PATH host magnitudes
-            if frb.host.path_mag > mr_max:
+            if frb.mag_top_two_PATH > mr_max:
                 frb.status = TransientStatus.objects.get(name='TooFaint')
                 frb.save()
                 return

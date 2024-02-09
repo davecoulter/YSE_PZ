@@ -33,7 +33,7 @@ def ingest_path_results(itransient:FRBTransient,
                         inst_name:str,
                         obs_group:str,
                         P_Ux:float, user,
-                        bright_star:bool=None,
+                        bright_star:int=None,
                         remove_previous:bool=True):
     """ Method to ingest a table of PATH results into the DB
 
@@ -89,13 +89,13 @@ def ingest_path_results(itransient:FRBTransient,
             FRBGalaxy, dict(name=name), dict(ra=icand.ra, dec=icand.dec, 
                        ang_size=icand.ang_size), user=user)
 
-        # Add redshifts
-        if icand.redshift_type == 'spectro-z':
+        # Add redshifts (these need not exist)
+        if hasattr(icand, 'redshift_type') and icand.redshift_type == 'spectro-z':
             galaxy.redshift = icand.redshift
             galaxy.redshift_err = icand.redshift_err
             galaxy.redshift_source = icand.redshift_source
             galaxy.redshift_quality = 1
-        elif icand.redshift_type == 'photo-z':
+        elif hasattr(icand,'redshift_type') and icand.redshift_type == 'photo-z':
             galaxy.photoz = icand.redshift
             galaxy.photoz_err = icand.redshift_err
             galaxy.photoz_source = icand.redshift_source
@@ -129,6 +129,7 @@ def ingest_path_results(itransient:FRBTransient,
         ipath.band = band
         ipath.save()
 
+    print(f"Done with candidates.  Now P_Ux: {P_Ux}, {bright_star}")
     # PATH P(U|x)
     itransient.P_Ux = P_Ux
 
@@ -140,6 +141,7 @@ def ingest_path_results(itransient:FRBTransient,
     itransient.host = itransient.best_Path_galaxy
 
     # Set status
+    print(f"Updating status")
     frb_status.set_status(itransient)
 
 

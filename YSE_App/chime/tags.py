@@ -1,6 +1,11 @@
 """ This module will specify the tags 
 to be used for CHIME/FRB transients.  This 
-code may move to chime_ffff_pz """
+code may move to chime_ffff_pz 
+
+Better -- it should become part of the database
+ and therefore a Django model
+
+"""
 
 # "Unbiased" sample
 blind_sample = dict(
@@ -40,7 +45,7 @@ repeater_sample = dict(
 kko_sample = dict(
     name='CHIME-KKO',
     version='0.1',
-    max_EBV=0.3,     # 
+    max_EBV=0.3,     #
     mr_max=23.,      # Faintest magnitude to try spectroscopy -- not implemented
     min_POx=0.9,     # Minimum P(O|x) to consider (of top 2)
     max_P_Ux=0.5,    # Host is considered unseen if P(U|x) is greater than this
@@ -48,17 +53,17 @@ kko_sample = dict(
     )
 
 # Bright FRBs
-kko_sample = dict(
+bright_sample = dict(
     name='CHIME-Bright',
     version='0.1',
-    max_EBV=0.3,     # 
+    max_EBV=0.3,     #
     mr_max=22.,      # Faintest magnitude to try spectroscopy -- not implemented
     min_POx=0.9,     # Minimum P(O|x) to consider (of top 2)
     max_P_Ux=0.5,    # Host is considered unseen if P(U|x) is greater than this
     prob=0.8,
     )
 
-all_samples = [blind_sample, highDM_sample, repeater_sample, kko_sample]
+all_samples = [blind_sample, highDM_sample, repeater_sample, kko_sample, bright_sample]
 
 
 def set_from_instance(instance):
@@ -66,6 +71,9 @@ def set_from_instance(instance):
 
     Eventually this will loop through all of the
     possible CHIME tags and set them
+
+    Actually, this is likely to be deprecated and the user
+    will be forced to set the Tag at ingestion
 
     Args:
         instance (FRBTransient): FRBTransient instance
