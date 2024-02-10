@@ -24,3 +24,4 @@ from YSE_App.models.frbtransient_models import *
 from YSE_App.models.frbgalaxy_models import *
 from YSE_App.models.frbphot_models import *
 from YSE_App.models.frbfollowup_models import *
+from YSE_App.models.frbsample_models import *

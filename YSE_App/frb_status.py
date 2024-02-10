@@ -221,12 +221,11 @@ def set_status(frb):
     # #########################################################
 
     if frb.P_Ux is None:
-        tag_names = [frb_tag.name for frb_tag in frb.frb_tags.all()]
-        for tag in tag_names:
-            if tag in run_public_path:
-                frb.status = TransientStatus.objects.get(name='RunPublicPATH')
-                frb.save()
-                return
+        path_flags = frb_tags.values_from_tags(frb, 'run_public_path')
+        if np.any(path_flags):
+            frb.status = TransientStatus.objects.get(name='RunPublicPATH')
+            frb.save()
+            return
 
 
     # #########################################################
