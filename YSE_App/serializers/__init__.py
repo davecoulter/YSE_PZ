@@ -24,3 +24,4 @@ from YSE_App.serializers.surveyfield_serializers import *
 # FRB
 from YSE_App.serializers.frbtransient_serializers import *
 from YSE_App.serializers.frbfollowup_serializers import *
+from YSE_App.serializers.frbsample_serializers import *

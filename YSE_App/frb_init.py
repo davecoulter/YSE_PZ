@@ -11,6 +11,9 @@ from django.db.models import ForeignKey
 from YSE_App import frb_status
 from YSE_App import frb_utils
 from YSE_App.models import FRBTransient, FRBTag
+from YSE_App.models import FRBSampleCriteria
+
+from YSE_App.serializers import FRBSampleCriteriaSerializer
 
 
 def init_obsgroups(user):
@@ -147,3 +150,4 @@ def add_df_to_db(df_frbs:pandas.DataFrame, user,
 
     # Return
     return 200, 'All clear!'
+

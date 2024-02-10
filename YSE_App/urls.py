@@ -282,6 +282,7 @@ router.register(r'paths', api_views.PathViewSet)
 router.register(r'frbrequests', api_views.FRBFollowUpRequestViewSet)
 router.register(r'frbresources', api_views.FRBFollowUpResourceViewSet)
 router.register(r'frbobservations', api_views.FRBFollowUpObservationViewSet)
+router.register(r'frbsamplecriteria', api_views.FRBSampleCriteriaViewSet)
 
 # Login/Logout
 api_url_patterns = [re_path(r'^api/', include(router.urls)),
