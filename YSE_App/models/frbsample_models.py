@@ -1,17 +1,11 @@
 """ Models for FRB Samples (also known, unfortunately, as tags)"""
-from autoslug import AutoSlugField
-from auditlog.registry import auditlog
 
 from django.db import models
-from django.dispatch import receiver
 
-import numpy as np
 import pandas
 
 from YSE_App.models.base import BaseModel
 from YSE_App.models.frbtransient_models import *
-from YSE_App.models.instrument_models import *
-from YSE_App.models.principal_investigator_models import *
 from YSE_App import frb_targeting
 
 

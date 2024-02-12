@@ -2,7 +2,6 @@
 
 #from YSE_App.chime import tags as chime_tags
 
-from YSE_App.models import FRBSampleCriteria
 
 #def find_tags(frb):
 #    """ Grab possible tags for an FRB instance
@@ -32,6 +31,8 @@ def values_from_tags(frb, key:str, debug:bool=False):
     Returns:
         list: list of values for the key;  can be empty
     """
+    # Hiding here to avoid circular import (I hope)
+    from YSE_App.models import FRBSampleCriteria
 
     # Prep
     tag_names = [frb_tag.name for frb_tag in frb.frb_tags.all()]
