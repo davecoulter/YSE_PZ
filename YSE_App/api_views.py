@@ -534,6 +534,6 @@ class FRBFollowUpObservationViewSet(custom_viewsets.ListCreateRetrieveUpdateView
     permission_classes = (permissions.IsAuthenticated,)
 
 class FRBSampleCriteriaViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
-    queryset = FRBSampleCriteriaViewSet.objects.all()
+    queryset = FRBSampleCriteria.objects.all()
     serializer_class = FRBSampleCriteriaSerializer
     permission_classes = (permissions.IsAuthenticated,)
