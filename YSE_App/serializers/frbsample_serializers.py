@@ -6,9 +6,9 @@ from django.contrib.auth.models import User
 class FRBSampleCriteriaSerializer(serializers.HyperlinkedModelSerializer):
     """ Serializer for the FRBSampleCriteria table
     """
-    instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail', lookup_field="id")
+    #instrument = serializers.HyperlinkedRelatedField(queryset=Instrument.objects.all(), view_name='instrument-detail', lookup_field="id")
 
     class Meta:
-        model = FRBFollowUpResource
+        model = FRBSampleCriteria
         fields = "__all__"
         
