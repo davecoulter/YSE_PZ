@@ -51,6 +51,7 @@ urlpatterns = [
     re_path(r'^ingest_z/', data_utils.ingest_z, name='ingest_z'),
     re_path(r'^ingest_frbs/', data_utils.ingest_frbs, name='ingest_frbs'),
     re_path(r'^addmodify_criteria/', data_utils.addmodify_criteria, name='addmodify_criteria'),
+    re_path(r'^frb_status/', data_utils.frb_status, name='frb_status'),
     # ##############################################################
 
     # Test pages
