@@ -64,7 +64,7 @@ class FRBTransient(BaseModel):
     # Localization file
     localization_file = models.CharField(max_length=64, null=True, blank=True)
     # Event ID
-    event_id = models.IntegerField(null=True, blank=True)
+    event_id = models.IntegerField(null=True, blank=True, unique=True)
 
     # Repeater?
     repeater = models.BooleanField(default=False, blank=True)

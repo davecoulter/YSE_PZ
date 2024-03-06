@@ -35,7 +35,7 @@ class FRBSampleCriteria(BaseModel):
     # max mr (faint) for selection
     max_mr = models.FloatField()
 
-    # Place in Run Public PATH as the default?
+    # Run Public PATH as the default?
     run_public_path = models.BooleanField()
     
     # #########################################################

@@ -68,12 +68,12 @@
                                         </div>
                                         <div class="col-xs-3">
                                             <div style="margin-top:10px;" class="form-group">
-                                                <strong>Disc. Date (UTC)</strong>
+                                                <strong>Event ID</strong>
                                                 <p class="text-muted">
-                                                    {% if transient.disc_date %}
-                                                        {{ transient.disc_date }}
+                                                    {% if transient.event_id %}
+                                                        {{ transient.event_id }}
                                                     {% else %}
-                                                        Unknown
+                                                        ?
                                                     {% endif %}
                                                 </p>
                                                 <br>

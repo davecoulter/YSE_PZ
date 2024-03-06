@@ -73,6 +73,6 @@ def addmodify_obj(iclass, data:dict, user):
             setattr(obj,key,data[key])
         except:
             return 400, f'Bad value for key: {key}'
-    iclass.save()
+    obj.save()
     # Return 
     return 200, 'Modified object'

@@ -45,13 +45,8 @@ all_status = [\
 # List of telescope+instruments that are considered Deep
 deep_telinstr = []
 
-# List of frb_tags where one should run a public PATH
-run_public_path = []
-# Include all of the CHIME samples
-run_public_path += [sample['name'] for sample in chime_tags.all_samples]
 
 # Add all of the chime
-
 def set_status(frb):
     """ Set the status of an FRB transient 
 
