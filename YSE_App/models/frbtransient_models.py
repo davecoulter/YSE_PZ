@@ -63,6 +63,8 @@ class FRBTransient(BaseModel):
     theta = models.FloatField(null=True, blank=True)
     # Localization file
     localization_file = models.CharField(max_length=64, null=True, blank=True)
+    # Event ID
+    event_id = models.IntegerField(null=True, blank=True)
 
     # Repeater?
     repeater = models.BooleanField(default=False, blank=True)

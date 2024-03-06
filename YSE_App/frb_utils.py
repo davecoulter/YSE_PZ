@@ -41,7 +41,7 @@ def add_or_grab_obj(iclass, uni_fields:dict, extra_fields:dict, user=None):
 def addmodify_obj(iclass, data:dict, user): 
 
     # Grab the meta keys of the class
-    keys = iclass._meta.fields
+    keys = [item.name for item in iclass._meta.fields]
 
     # Resolve any Foreign Keys
     for key in data.keys():
@@ -73,6 +73,6 @@ def addmodify_obj(iclass, data:dict, user):
             setattr(obj,key,data[key])
         except:
             return 400, f'Bad value for key: {key}'
-    critiera.save()
+    iclass.save()
     # Return 
     return 200, 'Modified object'
