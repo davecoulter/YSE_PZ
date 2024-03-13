@@ -1,11 +1,10 @@
 """ Utilities related to FFFF-PZ """
 
 import pandas
+import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
-
-
-
+from django.db.models import ForeignKey
 
 def add_or_grab_obj(iclass, uni_fields:dict, extra_fields:dict, user=None):
     """ Convenience utility to add/grab an object in the DB
@@ -38,3 +37,53 @@ def add_or_grab_obj(iclass, uni_fields:dict, extra_fields:dict, user=None):
         print("Object existed, returning it")
     # Return
     return obj
+
+def addmodify_obj(iclass, data:dict, user): 
+    """
+    Add or modify an object of the specified class.
+
+    Args:
+        iclass (class): The class of the object to add or modify.
+        data (dict): A dictionary containing the data for the object.
+        user (str): The user performing the operation.
+
+    Returns:
+        tuple: A tuple containing the status code and a message indicating the result of the operation.
+    """
+
+    # Grab the meta keys of the class
+    keys = [item.name for item in iclass._meta.fields]
+
+    # Resolve any Foreign Keys
+    for key in data.keys():
+        if key not in keys:
+            return 400, f'Bad key: {key}'
+        if isinstance(iclass._meta.get_field(key), ForeignKey):
+            fkmodel = iclass._meta.get_field(key).remote_field.model
+            # Grab it
+            fk = fkmodel.objects.filter(name=data[key])
+            data[key] = fk[0]
+
+    # Check if the object already exists
+    try:
+        obj=iclass.objects.get(name=data['name'])
+    except ObjectDoesNotExist:
+        # It does not exist; go forth and add it!
+        add_or_grab_obj(iclass, data, {}, user)
+        return 200, 'Added new object'
+    
+    # ############################
+    # Modify
+    data['modified_by'] = user
+    # TODO -- do we need this?
+    #data['modified_date'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    for key in data.keys():
+        if key in ['name', 'created_by', 'created_date']:
+            continue
+        try:
+            setattr(obj,key,data[key])
+        except:
+            return 400, f'Bad value for key: {key}'
+    obj.save()
+    # Return 
+    return 200, 'Modified object'

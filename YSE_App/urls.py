@@ -50,6 +50,7 @@ urlpatterns = [
     re_path(r'^add_frb_resource/', data_utils.add_frb_followup_resource, name='add_frb_followup_resource'),
     re_path(r'^ingest_z/', data_utils.ingest_z, name='ingest_z'),
     re_path(r'^ingest_frbs/', data_utils.ingest_frbs, name='ingest_frbs'),
+    re_path(r'^addmodify_criteria/', data_utils.addmodify_criteria, name='addmodify_criteria'),
     # ##############################################################
 
     # Test pages
@@ -282,6 +283,7 @@ router.register(r'paths', api_views.PathViewSet)
 router.register(r'frbrequests', api_views.FRBFollowUpRequestViewSet)
 router.register(r'frbresources', api_views.FRBFollowUpResourceViewSet)
 router.register(r'frbobservations', api_views.FRBFollowUpObservationViewSet)
+router.register(r'frbsamplecriteria', api_views.FRBSampleCriteriaViewSet)
 
 # Login/Logout
 api_url_patterns = [re_path(r'^api/', include(router.urls)),

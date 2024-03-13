@@ -1,23 +1,5 @@
 """ Code related to FRB tags """
 
-from YSE_App.chime import tags as chime_tags
-
-def find_tags(frb):
-    """ Grab possible tags for an FRB instance
-
-    Args:
-        frb (FRBTransient): FRBTransient instance
-
-    Returns:
-        list: list of tags
-    """
-
-    # CHIME?
-    if frb.frb_survey.name == 'CHIME/FRB':
-        return chime_tags.set_from_instance(frb)
-
-    return []
-
 def values_from_tags(frb, key:str, debug:bool=False):
     """ Grab a list of values for a given key from the tags
       of a given FRB
@@ -25,26 +7,27 @@ def values_from_tags(frb, key:str, debug:bool=False):
     Args:
         frb (FRBTransient): FRBTransient instance
         key (str): key to grab
+        debug (bool, optional): Debug flag. Defaults to False.
 
     Returns:
         list: list of values for the key;  can be empty
     """
+    # Hiding here to avoid circular import (I hope)
+    from YSE_App.models import FRBSampleCriteria
 
     # Prep
     tag_names = [frb_tag.name for frb_tag in frb.frb_tags.all()]
     if debug:
         print(f"tag_names = {tag_names} for {frb.name} and key {key}")
 
-    # Get all of the values in a list
-    values = []
+    # Get all samples with the frb survey
+    samples = FRBSampleCriteria.objects.filter(
+        frb_survey=frb.frb_survey)
 
-    if frb.frb_survey.name == 'CHIME/FRB':
-        # Loop through 
-        for sample in chime_tags.all_samples:
-            if debug and key == 'min_POx':
-                print(f"{sample['name']} {list(sample.keys())}")
-                
-            if sample['name'] in tag_names and key in list(sample.keys()):
-                values.append(sample[key])
+    # Loop through 
+    values = []
+    for sample in samples:
+        if sample.name in tag_names and getattr(sample,key) is not None:
+            values.append(getattr(sample,key))
 
     return values
