@@ -1554,6 +1554,7 @@ def ingest_path(request):
     # Prep 
     tbl = pandas.read_json(data['table'])
 
+    print("Got here")
     try:
         path.ingest_path_results(
             itransient, tbl, 

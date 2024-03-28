@@ -3,7 +3,7 @@ services:
     web:
         container_name: ysepz_web_container
         build:
-          context: ""
+          context: "."
           dockerfile: Dockerfile.web.dev
         #image: "ghcr.io/davecoulter/yse_pz:latest"
         image: "ghcr.io/frbs/ffff_pz:latest"
