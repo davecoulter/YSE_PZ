@@ -135,7 +135,7 @@ def set_status(frb):
     # Too Faint?
     # #########################################################
     if frb.host is not None:
-        mrs = frb_tags.values_from_tags(frb, 'mr_max')
+        mrs = frb_tags.values_from_tags(frb, 'max_mr')
 
         # Find mr_max (if it exists)
         if len(mrs) > 0:
@@ -184,6 +184,7 @@ def set_status(frb):
 
         # Require top 2 P(O|x) > min(P_Ox_min)
         POx_mins = frb_tags.values_from_tags(frb, 'min_POx')
+        print(f"Need spec :POx_mins = {POx_mins}, {frb.sum_top_two_PATH}")
         if (len(POx_mins) == 0) or (
             frb.sum_top_two_PATH > np.min(POx_mins)):
             frb.status = TransientStatus.objects.get(name='NeedSpectrum') 
