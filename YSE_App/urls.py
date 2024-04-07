@@ -50,6 +50,7 @@ urlpatterns = [
     re_path(r'^add_frb_resource/', data_utils.add_frb_followup_resource, name='add_frb_followup_resource'),
     re_path(r'^ingest_z/', data_utils.ingest_z, name='ingest_z'),
     re_path(r'^ingest_frbs/', data_utils.ingest_frbs, name='ingest_frbs'),
+    re_path(r'^rm_frb/', data_utils.rm_frb, name='rm_frb'),
     re_path(r'^addmodify_criteria/', data_utils.addmodify_criteria, name='addmodify_criteria'),
     # ##############################################################
 

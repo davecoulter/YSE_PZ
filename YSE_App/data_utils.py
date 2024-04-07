@@ -1,7 +1,6 @@
 import django
 from django.http import HttpResponse,JsonResponse
 from django.shortcuts import render, get_object_or_404
-from .models import *
 from django.db import models
 from astropy.coordinates import get_moon, SkyCoord
 from django.core.exceptions import ObjectDoesNotExist
@@ -39,6 +38,8 @@ from YSE_App.galaxies import path
 from YSE_App import frb_observing
 from YSE_App import frb_init
 from YSE_App import frb_utils
+
+from .models import *
 
 @csrf_exempt
 @login_or_basic_auth_required
@@ -1874,3 +1875,35 @@ def addmodify_criteria(request):
     # Return
     return JsonResponse({"message":f"{msg}"}, status=code)
 
+@csrf_exempt
+@login_or_basic_auth_required
+def rm_frb(request):
+    """ Remove an FRBTransient from the DB
+    via an outside request
+
+    This is mainly intended for testing
+
+    Args:
+        request (_type_): _description_
+
+    Returns:
+        JsonResponse: _description_
+    """
+    
+    data = JSONParser().parse(request)
+
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    # Grab it
+    try:
+        obj = FRBTransient.objects.get(name=data['name'])
+    except ObjectDoesNotExist:
+        pass
+    else:
+        obj.delete()
+        print(f"Deleted {data['name']}")
+
+    return JsonResponse(data, status=201)
