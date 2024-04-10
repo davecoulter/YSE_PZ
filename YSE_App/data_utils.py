@@ -1901,9 +1901,11 @@ def rm_frb(request):
     try:
         obj = FRBTransient.objects.get(name=data['name'])
     except ObjectDoesNotExist:
-        return JsonResponse('FRB does not exist!', status=202)
+        msg = "FRB does not exist!"
+        return JsonResponse({"message":f"m{msg}"}, status=202)
     else:
         obj.delete()
         print(f"Deleted {data['name']}")
+        msg = 'FRB removed!'
 
-    return JsonResponse('FRB removed!', status=200)
+    return JsonResponse({"message":f"m{msg}"}, status=200)
