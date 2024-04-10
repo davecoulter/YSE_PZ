@@ -1899,7 +1899,8 @@ def rm_frb(request):
 
     # Check on root
     if username != 'root':
-        return JsonResponse('Not authorized!', status=401)
+        msg = 'Not authorized!'
+        return JsonResponse({"message":f"m{msg}"}, status=401)
     user = auth.authenticate(username=username, password=password)
 
     # Grab it
@@ -1911,6 +1912,6 @@ def rm_frb(request):
     else:
         obj.delete()
         print(f"Deleted {data['name']}")
-        msg = 'FRB removed!'
 
+    msg = 'FRB removed!'
     return JsonResponse({"message":f"m{msg}"}, status=200)
