@@ -1881,7 +1881,8 @@ def rm_frb(request):
     """ Remove an FRBTransient from the DB
     via an outside request
 
-    This is mainly intended for testing
+    Input data includes:
+        - name (str): TNS Name of the FRBTransient
 
     Args:
         request (_type_): _description_
@@ -1895,6 +1896,10 @@ def rm_frb(request):
     auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
     credentials = base64.b64decode(credentials.strip()).decode('utf-8')
     username, password = credentials.split(':', 1)
+
+    # Check on root
+    if username != 'root':
+        return JsonResponse('Not authorized!', status=401)
     user = auth.authenticate(username=username, password=password)
 
     # Grab it
