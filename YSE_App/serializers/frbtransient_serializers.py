@@ -25,6 +25,10 @@ class FRBGalaxySerializer(serializers.HyperlinkedModelSerializer):
 class PathSerializer(serializers.HyperlinkedModelSerializer):
     """ Serializer for the PATH table
     """
+    band = serializers.HyperlinkedRelatedField(
+        queryset=PhotometricBand.objects.all(), 
+        view_name='photometricband-detail', 
+        lookup_field="id")
 
     # We use ingest_path() to create new entries
     class Meta:
