@@ -1919,7 +1919,7 @@ def rm_frb(request):
 
 @csrf_exempt
 @login_or_basic_auth_required
-def update_status(request):
+def frb_update_status(request):
     """
     Update the status for one or more FRBs
 
