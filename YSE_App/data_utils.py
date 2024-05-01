@@ -38,6 +38,7 @@ from YSE_App.galaxies import path
 from YSE_App import frb_observing
 from YSE_App import frb_init
 from YSE_App import frb_utils
+from YSE_App import frb_status
 
 from .models import *
 
@@ -1915,3 +1916,38 @@ def rm_frb(request):
 
     msg = 'FRB removed!'
     return JsonResponse({"message":f"m{msg}"}, status=200)
+
+@csrf_exempt
+@login_or_basic_auth_required
+def update_status(request):
+    """
+    Update the status for one or more FRBs
+
+    Args:
+        request (requests.request): 
+            Request from outside FFFF-PZ
+
+    Returns:
+        JsonResponse: 
+    """
+    
+    # Parse the data into a dict
+    data = JSONParser().parse(request)
+
+    # Deal with credentials
+    auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+    credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+    username, password = credentials.split(':', 1)
+    user = auth.authenticate(username=username, password=password)
+
+    # Run
+    for name in data['names']:
+        # Grab the FRB
+        try:
+            frb=FRBTransient.objects.get(name=name)
+        except ObjectDoesNotExist:
+            return JsonResponse({"message": f'FRB {name} not in DB'}, status=401)
+        frb_status.set_status(frb)
+
+    # Return
+    return JsonResponse({"message": "All good!"}, status=200)
