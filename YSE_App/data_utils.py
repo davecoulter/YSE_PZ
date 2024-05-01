@@ -1803,11 +1803,11 @@ def ingest_frbs(request):
       - table (str): a table of the request with columns 
             TNS (str) -- TNS of the FRB 
             frb_survey (str) -- TNS of the FRB 
-            ra (float) -- RA of the FRB (centroid)
-            dec (float) -- Dec of the FRB (centroid)
-            a_err (float) -- Semi-major localization error of the FRB
-            b_err (float) -- Semi-minor localization error of the FRB
-            theta (float) -- Position angle of the FRB; E from N
+            ra (float) -- RA of the FRB (centroid) [deg]
+            dec (float) -- Dec of the FRB (centroid) [deg]
+            a_err (float) -- Semi-major localization error of the FRB [deg]
+            b_err (float) -- Semi-minor localization error of the FRB [deg]
+            theta (float) -- Position angle of the FRB; E from N [deg]
             DM (float) -- Dispersion Measure of the FRB
             tags (str, optional) -- Tag(s) for the FRB.  comma separated
       - delete (bool): Delete FRBs first?
