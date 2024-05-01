@@ -127,9 +127,26 @@ def set_status(frb):
     # Redshift?
     # #########################################################
     if frb.host is not None and frb.host.redshift is not None:
-        frb.status = TransientStatus.objects.get(name='Redshift')
-        frb.save()
-        return
+        set_redshift = False
+        # Check whether the primary host has P(O|x) > min_POx
+        POx_mins = frb_tags.values_from_tags(frb, 'min_POx')
+        if len(POx_mins) > 0:
+            POx_min = np.min(POx_mins)
+            if frb.host.P_Ox > POx_min:
+                set_redshift = True
+            else: # check whether the top two have redshifts
+                path_values, galaxies, _ = frb.get_Path_values()
+                argsrt = np.argsort(path_values)
+                for idx in argsrt[-2:]:
+                    gal = galaxies[idx]
+                    # TODO -- consider checking the redshift_quality
+                    if gal.redshift is None:
+                        set_redshift = False
+        # Do it?
+        if set_redshift:
+            frb.status = TransientStatus.objects.get(name='Redshift')
+            frb.save()
+            return
  
     # #########################################################
     # Too Faint?
