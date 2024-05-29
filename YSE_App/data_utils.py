@@ -1986,15 +1986,13 @@ def get_frb_table(request):
     # Get it started
     all_frbs = FRBTransient.objects.all()
     all_tns = [frb.name for frb in all_frbs]
-    # Sort
-    isrt = np.argsort(all_tns)
     frbs = pandas.DataFrame()
-    frbs['TNS'] = np.array(all_tns)[isrt]
+    frbs['TNS'] = all_tns
 
     # Add basic columns
     cols = ['ra', 'dec', 'a_err', 'b_err', 'theta', 'DM']
     for col in cols:
-        frbs[col] = [getattr(all_frbs[ii], col) for ii in isrt]
+        frbs[col] = [getattr(frb, col) for frb in all_frbs]
 
     # Return
     return JsonResponse(frbs.to_dict(), status=201)
