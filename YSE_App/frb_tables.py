@@ -47,6 +47,7 @@ def summary_table():
 
     z_src = [frb.host.redshift_source if frb.host else '' for frb in all_frbs]
     z_src = ['' if item is None else item for item in z_src]
+    embed(header='50 of frb_tables.py')
     frbs['z_src'] = z_src
 
 
