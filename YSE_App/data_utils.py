@@ -1999,5 +1999,9 @@ def get_frb_table(request):
     for key in fkeys:
         frbs[key] = [str(getattr(frb, key)) for frb in all_frbs]
 
+    # Host
+    for key in ['HostString']:
+        frbs[key] = [getattr(frb, key)() for frb in all_frbs]
+
     # Return
     return JsonResponse(frbs.to_dict(), status=201)
