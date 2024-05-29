@@ -33,29 +33,22 @@ def summary_table():
 
     # Host 
     mags = [frb.host.path_mag if frb.host else np.nan for frb in all_frbs]
+    frbs['Host_mag'] = mags
     POx = [frb.host.P_Ox if frb.host else np.nan for frb in all_frbs]
+    frbs['POx'] = POx
 
     # Redshifts
     z = [frb.host.redshift if frb.host else np.nan for frb in all_frbs]
-    z_qual = [frb.host.redshift_quality if frb.host else -1 for frb in all_frbs]
-
-    # Replace None's
-    #for ilist, replace in zip([mags, POx, z, z_qual], [-1., -1., -1., -1]):
-    #    ilist = [replace if item is None else item for item in ilist]
-    #embed(header='43 of frb_table.py')
-
-    # Assign
-    frbs['Host_mag'] = mags
-    #POx = [-1. if item is None else item for item in POx]
-    frbs['POx'] = POx
-
-    #z = [-1. if item is None else item for item in z]
     frbs['z'] = z
-    #z_qual = [-1 if item is None else item for item in z_qual]
+
+    z_qual = [frb.host.redshift_quality if frb.host else -1 for frb in all_frbs]
+    z_qual = [-1 if item is None else item for item in z_qual]
     frbs['z_qual'] = z_qual
 
     z_src = [frb.host.redshift_source if frb.host else '' for frb in all_frbs]
+    z_src = ['' if item is None else item for item in z_src]
     frbs['z_src'] = z_src
+
 
     # Return
     return frbs
