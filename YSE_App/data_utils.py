@@ -2005,8 +2005,10 @@ def get_frb_table(request):
         frbs[col] = [getattr(frb, key)() for frb in all_frbs]
 
     # More redshift info
-    z_qual = [frb.host.redshift_quality if frb.host else 0 for frb in all_frbs]
+    z_qual = [int(frb.host.redshift_quality) if frb.host else -1 for frb in all_frbs]
     frbs['z_qual'] = z_qual
+    z_src = [frb.host.redshift_source if frb.host else '' for frb in all_frbs]
+    frbs['z_src'] = z_src
 
     # Return
     return JsonResponse(frbs.to_dict(), status=201)
