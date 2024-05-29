@@ -28,10 +28,11 @@ def summary_table():
         frbs[col] = [getattr(frb, key)() for frb in all_frbs]
 
     # More redshift info
+    embed(header='31 of frb_table.py')
     z_qual = [int(frb.host.redshift_quality) if frb.host else -1 for frb in all_frbs]
     frbs['z_qual'] = z_qual
     z_src = [frb.host.redshift_source if frb.host else '' for frb in all_frbs]
     frbs['z_src'] = z_src
 
     # Return
-    frbs
+    return frbs
