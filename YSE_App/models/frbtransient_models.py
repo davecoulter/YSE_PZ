@@ -159,6 +159,7 @@ class FRBTransient(BaseModel):
 
     def FRBFollowUpResourcesString(self):
         """ Generate a comma-separated list of the FRBFollowUpResources for this transient"""
+        from YSE_App.models.frbfollowup_models import FRBFollowUpResource
         resources = FRBFollowUpResource.objects.filter(transient=self)
         if resources.count() > 0:
             resouce_list = [r.name for r in resources]
