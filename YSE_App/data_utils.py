@@ -1990,9 +1990,11 @@ def get_frb_table(request):
     frbs['TNS'] = all_tns
 
     # Add basic columns
-    cols = ['ra', 'dec', 'a_err', 'b_err', 'theta', 'DM']
+    cols = ['ra', 'dec', 'a_err', 'b_err', 'theta', 'DM', 'frb_survey', 'status']
     for col in cols:
         frbs[col] = [getattr(frb, col) for frb in all_frbs]
+
+    # 
 
     # Return
     return JsonResponse(frbs.to_dict(), status=201)
