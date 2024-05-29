@@ -33,7 +33,10 @@ def summary_table():
 
     # Host floats
     mags = [frb.host.path_mag if frb.host else -1. for frb in all_frbs]
-    mags = [-1. if item is None else item for item in mags]
+
+    for ilist, replace in zip([mags], [-1.]):
+        ilist = [replace if item is None else item for item in ilist]
+
     frbs['Host_mag'] = mags
     POx = [frb.host.P_Ox if frb.host else -1. for frb in all_frbs]
     POx = [-1. if item is None else item for item in POx]
