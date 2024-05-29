@@ -1951,3 +1951,48 @@ def frb_update_status(request):
 
     # Return
     return JsonResponse({"message": "All good!"}, status=200)
+
+
+@csrf_exempt
+@login_or_basic_auth_required
+def get_frb_table(request):
+    """
+    Grab and return a table of all FRBs in FFFF-PZ
+
+    The request must include the following items
+     in its data (all in JSON, of course; 
+     data types refer to those after parsing the JSON):
+
+    Args:
+        request (requests.request): 
+            Request from outside FFFF-PZ
+
+    Returns:
+        JsonResponse:  Table of information
+    """
+    
+    # Parse the data into a dict
+    data = JSONParser().parse(request)
+
+    # Deal with credentials
+    try:
+        auth_method, credentials = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+        credentials = base64.b64decode(credentials.strip()).decode('utf-8')
+        username, password = credentials.split(':', 1)
+        user = auth.authenticate(username=username, password=password)
+    except:
+        return JsonResponse({"message":f"Bad user authentication in DB"}, status=401)
+
+    # Get it started
+    all_frbs = FRBTransient.objects.all()
+    all_tns = [frb.name for frb in all_frbs]
+    frbs = pandas.DataFrame()
+    frbs['TNS'] = all_tns
+
+    # Add basic columns
+    cols = ['ra', 'dec', 'a_err', 'b_err', 'theta', 'DM']
+    for col in cols:
+        frbs[col] = [getattr(frb, col) for frb in all_frbs]
+
+    # Return
+    return JsonResponse(frbs.to_dict(), status=201)
