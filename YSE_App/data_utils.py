@@ -2000,8 +2000,13 @@ def get_frb_table(request):
         frbs[key] = [str(getattr(frb, key)) for frb in all_frbs]
 
     # Host
-    for key in ['HostString']:
-        frbs[key] = [getattr(frb, key)() for frb in all_frbs]
+    for col, key in zip(['Host', 'Host_POx', 'z', 'Host_mag'],
+                        ['HostString', 'HostPOxString', 'HostzString', 'HostMagString']):
+        frbs[col] = [getattr(frb, key)() for frb in all_frbs]
+
+    # More redshift info
+    z_qual = [frb.host.redshift_quality if frb.host else 0 for frb in all_frbs]
+    frbs['z_qual'] = z_qual
 
     # Return
     return JsonResponse(frbs.to_dict(), status=201)
