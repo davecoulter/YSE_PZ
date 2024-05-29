@@ -24,18 +24,20 @@ def summary_table():
         frbs[key] = [str(getattr(frb, key)) for frb in all_frbs]
 
     # Host and other Strings
-    for col, key in zip(['Tags', 'Resources', 
-                         'Host', 'Host_POx', 'Host_mag'],
+    for col, key in zip(['Tags', 'Resources', 'Host']
                         ['FRBTagsString', 
                          'FRBFollowUpResourcesString',
-                         'HostString', 'HostPOxString', 
-                         'HostMagString',
+                         'HostString', 
                          ]):
         frbs[col] = [getattr(frb, key)() for frb in all_frbs]
 
-    # Fix a few
-    embed(header='37 of frb_tables.py')
-    frbs['Host_POx'] = np.array([item if item not in ['','None'] else -1. for item in frbs['Host_POx']])
+    # Host floats
+    mags = [frb.host.path_mag if frb.host else -1. for frb in all_frbs]
+    mags = [-1. if item is None else item for item in mags]
+    frbs['Host_mag'] = mags
+    POx = [frb.host.P_Ox if frb.host else -1. for frb in all_frbs]
+    POx = [-1. if item is None else item for item in POx]
+    frbs['POx'] = POx
 
     # Redshifts
     z = [frb.host.redshift if frb.host else -1. for frb in all_frbs]
