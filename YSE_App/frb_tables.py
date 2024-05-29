@@ -22,14 +22,16 @@ def summary_table():
     for key in fkeys:
         frbs[key] = [str(getattr(frb, key)) for frb in all_frbs]
 
-    # Host
-    for col, key in zip(['Host', 'Host_POx', 'z', 'Host_mag'],
-                        ['HostString', 'HostPOxString', 'HostzString', 'HostMagString']):
+    # Host and other Strings
+    for col, key in zip(['Tags', 'Host', 'Host_POx', 'z', 'Host_mag', 'Resources'],
+                        ['FRBTagsString', 'HostString', 'HostPOxString', 
+                         'HostzString', 'HostMagString',
+                         'FRBFollowUpResourcesString']):
         frbs[col] = [getattr(frb, key)() for frb in all_frbs]
 
     # More redshift info
-    embed(header='31 of frb_table.py')
-    z_qual = [int(frb.host.redshift_quality) if frb.host else -1 for frb in all_frbs]
+    z_qual = [frb.host.redshift_quality if frb.host else -1 for frb in all_frbs]
+    z_qual = [-1 if item is None else item for item in z_qual]
     frbs['z_qual'] = z_qual
     z_src = [frb.host.redshift_source if frb.host else '' for frb in all_frbs]
     frbs['z_src'] = z_src

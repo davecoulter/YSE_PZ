@@ -158,10 +158,10 @@ class FRBTransient(BaseModel):
             return ''
 
     def FRBFollowUpResourcesString(self):
+        """ Generate a comma-separated list of the FRBFollowUpResources for this transient"""
         resources = FRBFollowUpResource.objects.filter(transient=self)
         if resources.count() > 0:
             resouce_list = [r.name for r in resources]
-            # TODO -- Turn this into URLs
             resouce_names = ','.join(resouce_list)
             return resouce_names
         else:
