@@ -39,6 +39,7 @@ from YSE_App import frb_observing
 from YSE_App import frb_init
 from YSE_App import frb_utils
 from YSE_App import frb_status
+from YSE_App import frb_tables
 
 from .models import *
 
@@ -1983,32 +1984,8 @@ def get_frb_table(request):
     except:
         return JsonResponse({"message":f"Bad user authentication in DB"}, status=401)
 
-    # Get it started
-    all_frbs = FRBTransient.objects.all()
-    all_tns = [frb.name for frb in all_frbs]
-    frbs = pandas.DataFrame()
-    frbs['TNS'] = all_tns
-
-    # Add basic columns
-    cols = ['ra', 'dec', 'a_err', 'b_err', 'theta', 'DM']
-    for col in cols:
-        frbs[col] = [getattr(frb, col) for frb in all_frbs]
-
-    # Foreign keys
-    fkeys = ['frb_survey', 'status']
-    for key in fkeys:
-        frbs[key] = [str(getattr(frb, key)) for frb in all_frbs]
-
-    # Host
-    for col, key in zip(['Host', 'Host_POx', 'z', 'Host_mag'],
-                        ['HostString', 'HostPOxString', 'HostzString', 'HostMagString']):
-        frbs[col] = [getattr(frb, key)() for frb in all_frbs]
-
-    # More redshift info
-    z_qual = [int(frb.host.redshift_quality) if frb.host else -1 for frb in all_frbs]
-    frbs['z_qual'] = z_qual
-    z_src = [frb.host.redshift_source if frb.host else '' for frb in all_frbs]
-    frbs['z_src'] = z_src
-
+    # Grab
+    frbs = frb_tables.summary_table()
+    
     # Return
     return JsonResponse(frbs.to_dict(), status=201)
