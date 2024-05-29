@@ -1,3 +1,4 @@
+import numpy as np
 import pandas 
 
 from YSE_App.models import FRBTransient
@@ -23,13 +24,23 @@ def summary_table():
         frbs[key] = [str(getattr(frb, key)) for frb in all_frbs]
 
     # Host and other Strings
-    for col, key in zip(['Tags', 'Host', 'Host_POx', 'z', 'Host_mag', 'Resources'],
-                        ['FRBTagsString', 'HostString', 'HostPOxString', 
-                         'HostzString', 'HostMagString',
-                         'FRBFollowUpResourcesString']):
+    for col, key in zip(['Tags', 'Resources', 
+                         'Host', 'Host_POx', 'Host_mag'],
+                        ['FRBTagsString', 
+                         'FRBFollowUpResourcesString',
+                         'HostString', 'HostPOxString', 
+                         'HostMagString',
+                         ]):
         frbs[col] = [getattr(frb, key)() for frb in all_frbs]
 
-    # More redshift info
+    # Fix a few
+    embed(header='37 of frb_tables.py')
+    frbs['Host_POx'] = np.array([item if item not in ['','None'] else -1. for item in frbs['Host_POx']])
+
+    # Redshifts
+    z = [frb.host.redshift if frb.host else -1. for frb in all_frbs]
+    z = [-1. if item is None else item for item in z]
+    frbs['z'] = z
     z_qual = [frb.host.redshift_quality if frb.host else -1 for frb in all_frbs]
     z_qual = [-1 if item is None else item for item in z_qual]
     frbs['z_qual'] = z_qual
