@@ -24,7 +24,7 @@ def summary_table():
         frbs[key] = [str(getattr(frb, key)) for frb in all_frbs]
 
     # Host and other Strings
-    for col, key in zip(['Tags', 'Resources', 'Host']
+    for col, key in zip(['Tags', 'Resources', 'Host'],
                         ['FRBTagsString', 
                          'FRBFollowUpResourcesString',
                          'HostString', 
