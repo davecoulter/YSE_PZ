@@ -39,9 +39,12 @@ def summary_table():
     z = [frb.host.redshift if frb.host else -1. for frb in all_frbs]
     z_qual = [frb.host.redshift_quality if frb.host else -1 for frb in all_frbs]
 
+    # Replace None's
+    embed(header='43 of frb_table.py')
     for ilist, replace in zip([mags, POx, z, z_qual], [-1., -1., -1., -1]):
         ilist = [replace if item is None else item for item in ilist]
 
+    # Assign
     frbs['Host_mag'] = mags
     #POx = [-1. if item is None else item for item in POx]
     frbs['POx'] = POx
