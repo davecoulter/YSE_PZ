@@ -858,7 +858,7 @@ class processTNS:
 
                 ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False, GHOSTpath=self.ghost_path)
                 if is_photoz:
-                    ghost_hosts = calc_photoz(ghost_hosts)[1]
+                    ghost_hosts = calc_photoz(ghost_hosts)
                 os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
             except:
                 print('GHOST timeout!')
