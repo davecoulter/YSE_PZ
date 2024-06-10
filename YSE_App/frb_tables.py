@@ -7,6 +7,12 @@ from IPython import embed
 
 
 def summary_table():
+    """
+    Generate a summary table of FRB transients.
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing the summary information of FRB transients.
+    """
     # Get it started
     all_frbs = FRBTransient.objects.all()
     all_tns = [frb.name for frb in all_frbs]
