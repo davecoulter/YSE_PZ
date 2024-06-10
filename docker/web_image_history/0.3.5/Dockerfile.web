@@ -1,0 +1,21 @@
+FROM ghcr.io/davecoulter/yse_pz:0.3.4
+LABEL description="Ubuntu image for YSEPZ v0.3.5"
+LABEL maintainer="Dave Coulter (dcoulter@stsci.edu)"
+
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update --fix-missing && \
+pip install --upgrade pip
+
+WORKDIR /app
+
+COPY requirements/ /app/requirements/
+COPY ./pip_installer.sh /app/pip_installer.sh
+
+RUN chmod +x pip_installer.sh
+RUN ./pip_installer.sh
+
+RUN rm -rfv /app/requirements/ && rm -fv ./pip_installer.sh
+
+RUN apt-get clean && \
+rm -rf /var/lib/apt/lists/*
