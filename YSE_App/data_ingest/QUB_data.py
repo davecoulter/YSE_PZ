@@ -597,10 +597,10 @@ class YSE(CronJobBase):
         nsn = 0
         #for yselink_summary, yselink_lc, namecol in zip([self.options.yselink_summary,self.options.yselink_genericsummary],
         #                                                [self.options.yselink_lc,self.options.yselink_genericlc],
-        #                                                [‘ps1_designation’,‘local_designation’]):
+        #                                                ['ps1_designation','local_designation']):
         for yselink_summary, yselink_lc, namecol in zip([self.options.yselink_genericsummary],
                                                         [self.options.yselink_genericlc],
-                                                        [‘local_designation’]):
+                                                        ['local_designation']):
             
             # grab CSV files
             r = requests.get(url=yselink_summary,
