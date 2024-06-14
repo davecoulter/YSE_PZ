@@ -1744,6 +1744,8 @@ class FRBTransientTable(tables.Table):
                                verbose_name='Host P(O|x)')
     host_z_string = tables.Column(accessor='HostzString',
                                verbose_name='z')
+    host_z_source = tables.Column(accessor='HostzSource',
+                               verbose_name='z_source')
     host_mag_string = tables.Column(accessor='HostMagString',
                                verbose_name='Host mag')
     frb_survey_string = tables.Column(accessor='FRBSurveyString',
