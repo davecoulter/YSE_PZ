@@ -1784,7 +1784,7 @@ class FRBTransientTable(tables.Table):
         fields = ('name_string','ra_string','dec_string',
                   'dm_string', 'frb_survey_string', 'tags_string',
                   'status_string', 'host_string', 'host_pox_string',
-                  'host_mag_string', 'host_z_string')
+                  'host_mag_string', 'host_z_string', 'host_z_source')
 
         template_name='YSE_App/django-tables2/bootstrap.html'
         attrs = {

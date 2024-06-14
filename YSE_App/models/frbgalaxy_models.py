@@ -122,6 +122,14 @@ class FRBGalaxy(BaseModel):
         else:
             return '%.4f'%(self.redshift)
 
+    def zSource(self):
+        """ Return the redshift source for the galaxy as a string (for viewing)
+        """
+        if self.redshift_source is None:
+            return 'None'
+        else:
+            return self.redshift_source
+
     def zQualString(self):
         """ Return the redshift quality for the galaxy as a string (for viewing)
         """

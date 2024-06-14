@@ -157,6 +157,14 @@ class FRBTransient(BaseModel):
         else:
             return ''
 
+    def HostzSource(self):
+        """ Redshift source """
+        if self.host:
+            return self.host.zSource()
+        else:
+            return ''
+
+
     def FRBFollowUpResourcesString(self):
         """ Generate a comma-separated list of the FRBFollowUpResources for this transient"""
         from YSE_App.models.frbfollowup_models import FRBFollowUpRequest, FRBFollowUpObservation
