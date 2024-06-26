@@ -39,7 +39,7 @@ django-filter==2.4.0
 django-sql-explorer==1.1.2
 django-tables2==2.4.0
 django-widget-tweaks==1.4.1
-djangorestframework==3.7.3
+djangorestframework==3.15.2
 dustmaps==1.0.8
 extinction==0.4.0
 flatbuffers==1.12
