@@ -13,7 +13,7 @@ django-jsonfield==1.4.1
 django-rest-framework==0.1.0
 django-sql-explorer==2.3
 django-widget-tweaks==1.4.9
-djangorestframework==3.13.1
+djangorestframework==3.15.2
 extinction==0.4.5
 importlib-metadata==4.10.0
 jsonfield==3.1.0
