@@ -138,7 +138,7 @@ def personaldashboard(request):
             try:
                 if 'yse_app_transient' not in q.query.sql.lower(): continue
                 if 'name' not in q.query.sql.lower(): continue
-                if not q.query.sql.lower().startswith('select'): continue
+                #if not q.query.sql.lower().startswith('select'): continue
 
                 cursor = connections['explorer'].cursor()
                 cursor.execute(q.query.sql.replace('%','%%'), ())
