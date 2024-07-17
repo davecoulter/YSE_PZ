@@ -1748,33 +1748,12 @@ class FRBTransientTable(tables.Table):
                                verbose_name='z_source')
     host_mag_string = tables.Column(accessor='HostMagString',
                                verbose_name='Host mag')
+    resource_string = tables.Column(accessor='FRBFollowUpResourcesString',
+                               verbose_name='Resource(s)')
     frb_survey_string = tables.Column(accessor='FRBSurveyString',
                                verbose_name='FRB Survey',orderable=True,order_by='frb_survey')
     status_string = tables.Column(accessor='StatusString',
                                verbose_name='Status')
-    #disc_date_string = tables.Column(accessor='disc_date_string',
-    #                                 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
-    #recent_mag = tables.Column(accessor='recent_mag',
-    #                           verbose_name='Last Mag',orderable=True)
-    #recent_magdate = tables.Column(accessor='recent_magdate',
-    #                           verbose_name='Last Obs. Date',orderable=True)
-    #best_redshift = tables.Column(accessor='z_or_hostz',
-    #                              verbose_name='Redshift',orderable=True,order_by='host__redshift')
-    #ps_score = tables.Column(accessor='point_source_probability',
-    #                         verbose_name='PS Score',orderable=True)
-#
-    #mw_ebv = tables.Column(accessor='mw_ebv',
-    #						   verbose_name='MW E(B-V)',orderable=True)
-    #mw_ebv = tables.TemplateColumn("""{% if record.mw_ebv %}
-#{% if record.mw_ebv >= 0.2 %}
-#&nbsp;<b class="text-red">{{ record.mw_ebv }}</b>
-#{% else %}
-#{{ record.mw_ebv }}
-#{% endif %}
-#{% else %}
-#-
-#{% endif %}""",
-#                                   verbose_name='MW E(B-V)',orderable=True,order_by='mw_ebv')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1785,7 +1764,8 @@ class FRBTransientTable(tables.Table):
         model = FRBTransient
         fields = ('name_string','ra_string','dec_string',
                   'dm_string', 'frb_survey_string', 'tags_string',
-                  'status_string', 'host_string', 'host_pox_string',
+                  'status_string', 'resource_string',
+                  'host_string', 'host_pox_string',
                   'host_mag_string', 'host_z_string', 'host_z_source')
 
         template_name='YSE_App/django-tables2/bootstrap.html'
