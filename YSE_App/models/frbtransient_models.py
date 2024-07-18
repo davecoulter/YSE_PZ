@@ -157,15 +157,28 @@ class FRBTransient(BaseModel):
         else:
             return ''
 
-    def FRBFollowUpResourcesString(self):
-        resources = FRBFollowUpResource.objects.filter(transient=self)
-        if resources.count() > 0:
-            resouce_list = [r.name for r in resources]
-            # TODO -- Turn this into URLs
-            resouce_names = ','.join(resouce_list)
-            return resouce_names
+    def HostzSource(self):
+        """ Redshift source """
+        if self.host:
+            return self.host.zSource()
         else:
             return ''
+
+
+    def FRBFollowUpResourcesString(self):
+        """ Generate a comma-separated list of the FRBFollowUpResources for this transient"""
+        from YSE_App.models.frbfollowup_models import FRBFollowUpRequest, FRBFollowUpObservation
+        fu_req = FRBFollowUpRequest.objects.filter(transient=self)
+        fu_obs = FRBFollowUpObservation.objects.filter(transient=self)
+        fu_names = []
+        fu_names += [item.ResourceName() for item in fu_req]
+        fu_names += [item.ResourceName() for item in fu_obs]
+
+        if len(fu_names) == 0:
+            followup_names = 'None'
+        else:
+            followup_names = ','.join(np.unique(fu_names))
+        return followup_names
 
     def Separation(self):
         host = FRBGalaxy.objects.get(pk=self.host_id)
