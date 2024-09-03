@@ -5,7 +5,7 @@ astropy==5.0
 astroquery==0.4.3
 backports.zoneinfo==0.2.1
 bokeh==2.4.2
-Django==4.0
+Django==3.2.25
 # django-auditlog==1.0a1.post20+ge2913da
 django-auditlog==1.0.0
 django-bootstrap3==21.1
