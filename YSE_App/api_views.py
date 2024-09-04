@@ -537,3 +537,22 @@ class FRBSampleCriteriaViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = FRBSampleCriteria.objects.all()
     serializer_class = FRBSampleCriteriaSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+class CombinedViewSet_frbobs_and_frb_pending(viewsets.ViewSet):
+    """
+    Combined viewset to assist grabbing FRBs in ASAP
+    """
+
+    permission_classes = (permissions.IsAuthenticated,)
+    def list(self, request):
+        queryset1 = FRBFollowUpRequest.objects.all()
+        queryset2 = FRBFollowUpObservation.objects.all()
+
+        serializer1 = FRBFollowUpRequestSerializer(queryset1, many=True, context={'request': request})
+        serializer2 = FRBFollowUpObservationSerializer(queryset2, many=True, context={'request': request})
+
+        return Response({
+            'frbfollowuprequests': serializer1.data,
+            'frbfollowupobservations': serializer2.data
+        })
+    

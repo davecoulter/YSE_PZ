@@ -287,7 +287,7 @@ router.register(r'frbrequests', api_views.FRBFollowUpRequestViewSet)
 router.register(r'frbresources', api_views.FRBFollowUpResourceViewSet)
 router.register(r'frbobservations', api_views.FRBFollowUpObservationViewSet)
 router.register(r'frbsamplecriteria', api_views.FRBSampleCriteriaViewSet)
-
+router.register(r'frbobs_and_pending', api_views.CombinedViewSet_frbobs_and_frb_pending, basename='frbobs_and_pending')
 # Login/Logout
 api_url_patterns = [re_path(r'^api/', include(router.urls)),
                     re_path(r'^api/schema/$', schema_view),
