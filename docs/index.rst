@@ -16,6 +16,7 @@ The modern study of astrophysical transients has been transformed by an exponent
    dashboards
    observing
    status_tags
+   data_quality
    detail
    triage
    adding_data
