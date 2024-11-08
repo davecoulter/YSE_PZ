@@ -143,8 +143,14 @@ def set_status(frb):
                     if gal.redshift is None:
                         set_redshift = False
 
+        # Require redshift come fro mour measurement or was vetted
+        source_ok = False
+        for gd_source in ['FFFF', 'Keck', 'Lick', 'Gemini']:
+            if gd_source in frb.host.redshift_source:
+                source_ok = True
+
         # Do it?
-        if set_redshift:
+        if set_redshift and source_ok:
             frb.status = TransientStatus.objects.get(name='Redshift')
             frb.save()
             return
