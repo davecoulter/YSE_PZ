@@ -146,7 +146,9 @@ def set_status(frb):
         # Require redshift come fro mour measurement or was vetted
         source_ok = False
         for gd_source in ['FFFF', 'Keck', 'Lick', 'Gemini']:
+            print(f"Checking source: {gd_source}")
             if gd_source in frb.host.redshift_source:
+                print(f"Source is OK: {gd_source}")
                 source_ok = True
 
         # Do it?
