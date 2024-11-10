@@ -126,7 +126,9 @@ def set_status(frb):
     # #########################################################
     # Redshift?
     # #########################################################
+    print("Checking redshift")
     if frb.host is not None and frb.host.redshift is not None:
+        print("Inside redshift")
         set_redshift = True
         # Check whether the primary host has P(O|x) > min_POx
         POx_mins = frb_tags.values_from_tags(frb, 'min_POx')
