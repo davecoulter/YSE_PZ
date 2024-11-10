@@ -1943,6 +1943,7 @@ def frb_update_status(request):
 
     # Run
     for name in data['names']:
+        print(f"Working on status of: {name}")
         # Grab the FRB
         try:
             frb=FRBTransient.objects.get(name=name)
