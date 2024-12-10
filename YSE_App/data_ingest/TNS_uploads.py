@@ -858,7 +858,11 @@ class processTNS:
 
                 ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False, GHOSTpath=self.ghost_path)
                 if is_photoz:
-                    ghost_hosts = calc_photoz(ghost_hosts)[1]
+                    iNorth = ghost_hosts['decMean'] > -30
+                    iSouth = ghost_hosts['decMean'] <= -30
+                    ghost_zphot = calc_photoz(ghost_hosts[iNorth])
+                    ghost_hosts = pd.concat([ghost_zphot,ghost_hosts[iSouth]])
+                    
                 os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
             except:
                 print('GHOST timeout!')
@@ -1625,7 +1629,11 @@ class UpdateGHOST(CronJobBase):
 
         ghost_hosts = getTransientHosts(names, scall, verbose=True, starcut='gentle', ascentMatch=False, GHOSTpath=djangoSettings.ghost_path)
         if is_photoz:
-            ghost_hosts = calc_photoz(ghost_hosts)[1]
+            iNorth = ghost_hosts['decMean'] > -30
+            iSouth = ghost_hosts['decMean'] <= -30
+            ghost_zphot = calc_photoz(ghost_hosts[iNorth])
+            ghost_hosts = pd.concat([ghost_zphot,ghost_hosts[iSouth]])
+
         os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
 
         for i in ghost_hosts.index:
