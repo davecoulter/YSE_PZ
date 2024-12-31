@@ -45,6 +45,7 @@ from django.conf import settings as djangoSettings
 import argparse, configparser
 import signal
 from astro_ghost.ghostHelperFunctions import *
+
 try:
     from astro_ghost.photoz_helper import calc_photoz
     is_photoz = True
@@ -700,10 +701,11 @@ class processTNS:
             time.sleep(60)
             response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
             count += 1
+
         json_data = format_to_json(response.text)
 
         objs,ras,decs = [],[],[]
-        for jd in json_data['data']['reply']:
+        for jd in json_data['data']:
             TNSGetSingle = [("objname",jd['objname']),
                             ("photometry","0"),
                             ("spectra","0")]
@@ -716,9 +718,9 @@ class processTNS:
 
             json_data_single = format_to_json(response_single.text)
 
-            objs.append(json_data_single['data']['reply']['objname'])
-            ras.append(json_data_single['data']['reply']['ra'])
-            decs.append(json_data_single['data']['reply']['dec'])
+            objs.append(json_data_single['data']['objname'])
+            ras.append(json_data_single['data']['ra'])
+            decs.append(json_data_single['data']['dec'])
         if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=self.redohost,doEBV=self.redohost,doTNS=doTNS)
         else: nsn = 0
         return nsn
@@ -737,7 +739,7 @@ class processTNS:
         json_data = format_to_json(response.text)
 
         objs,ras,decs = [],[],[]
-        for jd in json_data['data']['reply']:
+        for jd in json_data['data']:
             if len(Transient.objects.filter(name=jd['objname'])): continue
             TNSGetSingle = [("objname",jd['objname']),
                              ("photometry","1"),
@@ -751,9 +753,9 @@ class processTNS:
                 response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
 
             json_data_single = format_to_json(response_single.text)
-            objs.append(json_data_single['data']['reply']['objname'])
-            ras.append(json_data_single['data']['reply']['ra'])
-            decs.append(json_data_single['data']['reply']['dec'])
+            objs.append(json_data_single['data']['objname'])
+            ras.append(json_data_single['data']['ra'])
+            decs.append(json_data_single['data']['dec'])
 
         if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=self.redohost,doEBV=self.redohost,doTNS=doTNS)
         else: nsn = 0
@@ -990,8 +992,8 @@ class processTNS:
             ########################################################
 
             if jd is not None:
-                if type(jd['data']['reply']['objname']) == str:
-                    jd = jd['data']['reply']
+                if type(jd['data']['objname']) == str:
+                    jd = jd['data']
                 else:
                     jd = None
 
@@ -1173,6 +1175,7 @@ def get(url,json_list,api_key,tns_bot_id,tns_bot_name):
     # get obj using request module
     response=requests.post(get_url, headers=headers, data=get_data)
     # return response
+    
     return response
   except Exception as e:
     return [None,'Error message : \n'+str(e)]
