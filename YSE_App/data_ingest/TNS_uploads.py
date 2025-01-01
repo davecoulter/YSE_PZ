@@ -45,7 +45,6 @@ from django.conf import settings as djangoSettings
 import argparse, configparser
 import signal
 from astro_ghost.ghostHelperFunctions import *
-
 try:
     from astro_ghost.photoz_helper import calc_photoz
     is_photoz = True
@@ -693,7 +692,7 @@ class processTNS:
         datemin = (datetime.now() - timedelta(days=ndays)).isoformat() #strftime(date_format)
         search_obj=[("ra",""), ("dec",""), ("radius",""), ("units",""),
                     ("objname",""), ("internal_name",""),("public_timestamp",datemin)]
-        
+
         response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
         count = 0
         while response.status_code == 429 and count < 5:
@@ -701,10 +700,11 @@ class processTNS:
             time.sleep(60)
             response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
             count += 1
-
         json_data = format_to_json(response.text)
 
         objs,ras,decs = [],[],[]
+        if 'data' not in json_data.keys():
+            return 0
         for jd in json_data['data']:
             TNSGetSingle = [("objname",jd['objname']),
                             ("photometry","0"),
@@ -1175,7 +1175,6 @@ def get(url,json_list,api_key,tns_bot_id,tns_bot_name):
     # get obj using request module
     response=requests.post(get_url, headers=headers, data=get_data)
     # return response
-    
     return response
   except Exception as e:
     return [None,'Error message : \n'+str(e)]
