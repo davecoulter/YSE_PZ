@@ -164,8 +164,9 @@ class jwstImages():
                 for val in data_url]
             self.obstable['dataURL']=np.array(newdata)
 
-            inst_name = [inst.replace('/IMAGE','') for inst in self.obstable['instrument_name']]
-            self.obstable['instrument_name']=inst_name
+            # Rename to remove /IMAGE in instrument names
+            inst_names = [inst.replace('/IMAGE','') for inst in self.obstable['instrument_name']]
+            self.obstable['instrument_name']=inst_names
 
     def getJPGurl(self):
         if len(self.obstable) == 0:
@@ -190,14 +191,14 @@ if __name__=='__main__':
     jwst.getObstable()
     jwst.getJPGurl()
 
-    fitsurllist = list(jwst.obstable['instrument_name'].data)
-    
+    fitsurllist = list(jwst.obstable['dataURL'].data)
+
+    # Create same object from view_utils.py
     jpegurldict = {"jpegurl":jwst.jpglist,
-                    "fitsurl":fitsurllist,
-                    "obsdate":list(Time(jwst.obstable["t_min"],format='mjd').iso), #,out_subfmt='date'
-                    "filters":list(jwst.obstable["filters"]),
-                    "inst":list(jwst.obstable["instrument_name"])}
+                   "fitsurl":fitsurllist,
+                   "obsdate":list(Time(jwst.obstable["t_min"],format='mjd').iso), #,out_subfmt='date'
+                   "filters":list(jwst.obstable["filters"]),
+                   "inst":list(jwst.obstable["instrument_name"])}
 
     print(jpegurldict)
-
     print("I found",jwst.Nimages,"JWST images of",jwst.object,"located at coordinates",jwst.ra,jwst.dec)

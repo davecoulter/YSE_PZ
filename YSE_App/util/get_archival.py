@@ -8,7 +8,6 @@ def main():
     transients = Transient.objects.filter(has_hst__isnull=True).filter(name__startswith='2019').filter(TNS_spec_class__isnull=False)
     
     for t in transients:
-        #if not t.name.startswith('2019'): continue
         try:
             if t.has_hst is None:
                 hst=mast_query.hstImages(t.ra,t.dec,'Object')
@@ -40,8 +39,7 @@ def main():
                 else:
                     t.has_chandra = False
                 t.save()
-        except:
-            pass
+        except: pass
 
         try:
             if t.has_spitzer is None:
@@ -51,8 +49,6 @@ def main():
                     t.has_spitzer = False
                 t.save()
         except: pass
-        #import pdb; pdb.set_trace()
 
-            
 if __name__ == "__main__":
     main()

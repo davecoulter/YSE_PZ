@@ -1855,7 +1855,8 @@ def get_jwst_image(request,transient_id):
     jwst.getJPGurl()
     print("I found",jwst.Nimages,"JWST images of",jwst.object,"located at coordinates",jwst.ra,jwst.dec)
     print("The cut out images have the following URLs:")
-    fitsurllist = list(jwst.obstable['instrument_name'].data)
+
+    fitsurllist = list(jwst.obstable['dataURL'].data)
 
     print("Run time was: ",(datetime.datetime.now() - startTime).total_seconds(),"seconds")
 
