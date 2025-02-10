@@ -692,7 +692,7 @@ class processTNS:
         datemin = (datetime.now() - timedelta(days=ndays)).isoformat() #strftime(date_format)
         search_obj=[("ra",""), ("dec",""), ("radius",""), ("units",""),
                     ("objname",""), ("internal_name",""),("public_timestamp",datemin)]
-        
+
         response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
         count = 0
         while response.status_code == 429 and count < 5:
@@ -703,7 +703,9 @@ class processTNS:
         json_data = format_to_json(response.text)
 
         objs,ras,decs = [],[],[]
-        for jd in json_data['data']['reply']:
+        if 'data' not in json_data.keys():
+            return 0
+        for jd in json_data['data']:
             TNSGetSingle = [("objname",jd['objname']),
                             ("photometry","0"),
                             ("spectra","0")]
@@ -716,9 +718,9 @@ class processTNS:
 
             json_data_single = format_to_json(response_single.text)
 
-            objs.append(json_data_single['data']['reply']['objname'])
-            ras.append(json_data_single['data']['reply']['ra'])
-            decs.append(json_data_single['data']['reply']['dec'])
+            objs.append(json_data_single['data']['objname'])
+            ras.append(json_data_single['data']['ra'])
+            decs.append(json_data_single['data']['dec'])
         if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=self.redohost,doEBV=self.redohost,doTNS=doTNS)
         else: nsn = 0
         return nsn
@@ -737,7 +739,7 @@ class processTNS:
         json_data = format_to_json(response.text)
 
         objs,ras,decs = [],[],[]
-        for jd in json_data['data']['reply']:
+        for jd in json_data['data']:
             if len(Transient.objects.filter(name=jd['objname'])): continue
             TNSGetSingle = [("objname",jd['objname']),
                              ("photometry","1"),
@@ -751,9 +753,9 @@ class processTNS:
                 response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
 
             json_data_single = format_to_json(response_single.text)
-            objs.append(json_data_single['data']['reply']['objname'])
-            ras.append(json_data_single['data']['reply']['ra'])
-            decs.append(json_data_single['data']['reply']['dec'])
+            objs.append(json_data_single['data']['objname'])
+            ras.append(json_data_single['data']['ra'])
+            decs.append(json_data_single['data']['dec'])
 
         if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=self.redohost,doEBV=self.redohost,doTNS=doTNS)
         else: nsn = 0
@@ -990,8 +992,8 @@ class processTNS:
             ########################################################
 
             if jd is not None:
-                if type(jd['data']['reply']['objname']) == str:
-                    jd = jd['data']['reply']
+                if type(jd['data']['objname']) == str:
+                    jd = jd['data']
                 else:
                     jd = None
 
