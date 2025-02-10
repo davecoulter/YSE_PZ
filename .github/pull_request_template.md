@@ -14,6 +14,7 @@ Please check all that apply to your proposed changes
 - [ ] Added data
 - [ ] Changed django model
 - [ ] Documentation change
+- [ ] DevOps change
 
 ### **Additional context**
 <!-- Add any other context or additional information about the problem here.-->
