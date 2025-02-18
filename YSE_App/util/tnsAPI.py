@@ -14,11 +14,11 @@ AT_REPORT_FORM = "bulk-report"
 AT_REPORT_REPLY = "bulk-report-reply"
 TNS_ARCHIVE = {'OTHER': '0', 'SDSS': '1', 'DSS': '2'}
 
-httpErrors = {
+HTTP_ERRORS = {
     304: 'Error 304: Not Modified: There was no new data to return.',
     400: 'Error 400: Bad Request: The request was invalid. An accompanying error message will explain why.',
     403: 'Error 403: Forbidden: The request is understood, but it has been refused. An accompanying error message will explain why',
-    404: 'Error 404: Not Found: The URI requested is invalid or the resource requested, such as a category, does not exists.',
+    404: 'Error 404: Not Found: The URI requested is invalid or the resource requested, such as a category, does not exist.',
     500: 'Error 500: Internal Server Error: Something is broken.',
     502: 'Error 502: Bad Gateway Error.',
     503: 'Error 503: Service Unavailable.'
@@ -27,23 +27,13 @@ httpErrors = {
 class TNSClient(object):
     """Send Bulk TNS Request."""
 
-    def __init__(self, baseURL, data = {}, header = None):
-        """
-        Constructor. 
-
-        :param baseURL: Base URL of the TNS API
-        :param data:  (Default value = {})
-        :param header:  Header information - e.g. authentication parameters (Default value = None)
-
-        """
-        
-        #self.baseAPIUrl = TNS_BASE_URL_SANDBOX
+    def __init__(self, baseURL, data=None, header=None):
         self.baseAPIUrl = baseURL
-        self.inputData = data
+        self.inputData = data or {}
         self.header = None
         if header is not None:
             self.header = header
-
+        
     def buildUrl(self, resource):
         """
         Build the full URL
@@ -54,7 +44,7 @@ class TNSClient(object):
         """
         return self.baseAPIUrl + resource
 
-    def buildParameters(self, parameters = {}):
+    def buildParameters(self, parameters = None):
         """
         Merge the input parameters with the default parameters created when
         the class is constructed.
@@ -64,7 +54,8 @@ class TNSClient(object):
 
         """
         p = self.inputData.copy()
-        p.update(parameters)
+        if parameters:
+            p.update(parameters)
         return p
 
     def jsonResponse(self, r):
@@ -84,15 +75,10 @@ class TNSClient(object):
         if status != 200:
             try:
                 message = r.json()['data']['feedback']['at_report'][0]
-            except:
-                try:
-                    message = httpErrors[status]
-                except ValueError as e:
-                    message = 'Error %d: Undocumented error' % status
-                except KeyError as e:
-                    message = 'Error %d: Undocumented error' % status
+            except KeyError:
+                message = HTTP_ERRORS.get(status, f'Error {status}: Undocumented error')
 
-        if message is not None:
+        if message:
             logger.warn(message)
             return message
         
@@ -104,16 +90,13 @@ class TNSClient(object):
             d = {}
             return d
 
-
-        # If so, what error messages if any did we get?
-
         logger.info(json.dumps(d, indent=4, sort_keys=True))
 
-        if 'id_code' in d.keys() and 'id_message' in d.keys() and d['id_code'] != 200:
+        if 'id_code' in d and 'id_message' in d and d['id_code'] != 200:
             logger.error("Bad response: code = %d as error = '%s'" % (d['id_code'], d['id_message']))
-        return d
 
-
+        return d    
+    
     def sendBulkReport(self, data):
         """
         Send the JSON TNS request
@@ -142,14 +125,13 @@ class TNSClient(object):
 
         """
         feed_url = self.buildUrl(AT_REPORT_REPLY);
-        feed_parameters = self.buildParameters(data);
+        feed_parameters = self.buildParameters(data)
 
-        r = requests.post(feed_url, data = feed_parameters, timeout = 300, headers = self.header)
-
+        r = requests.post(feed_url, data=feed_parameters, timeout=300, headers=self.header)
         return self.jsonResponse(r)
 
 
-def addBulkReport(report, tnsBaseURL, tnsApiKey, botId = None, botName = None):
+def addBulkReport(report, tnsBaseURL, tnsApiKey, botId=None, botName=None):
     """
     Send the report to the TNS
 
@@ -161,12 +143,11 @@ def addBulkReport(report, tnsBaseURL, tnsApiKey, botId = None, botName = None):
     :return reportId: TNS report ID
 
     """
-
     header = None
     if botId is not None and botName is not None:
         header = {'User-Agent': 'tns_marker' + json.dumps({'tns_id': botId, 'type': 'bot', 'name': botName})}
-    
-    feed_handler = TNSClient(tnsBaseURL, {'api_key': tnsApiKey}, header = header)
+
+    feed_handler = TNSClient(tnsBaseURL, {'api_key': tnsApiKey}, header=header)
     reply = feed_handler.sendBulkReport(report)
 
     reportId = None

@@ -2,14 +2,12 @@ from django.shortcuts import render, get_object_or_404
 from .table_utils import FieldTransientTable,AdjustFieldTransientTable,RisingTransientFilter
 from .queries.yse_python_queries import *
 from .queries import yse_python_queries
-#import django_tables2 as tables
 from django.contrib.auth.decorators import login_required
 from django_tables2 import RequestConfig
-from django.db.models import Count, Value, Max, Min
+from django.db.models import Count, Value, Max, Min, Q, F, Avg
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import redirect
 from YSE_App.yse_utils import yse_tables, yse_forms
-from django.db.models import Q, F, Avg
 from YSE_App.table_utils import *
 from urllib.parse import unquote
 from django.utils import timezone
@@ -20,23 +18,26 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonRespons
 @login_required
 def select_yse_fields(request):
 
-    all_yse_gpc1_fields = SurveyFieldMSB.objects.filter(survey_fields__obs_group__name='YSE').filter(survey_fields__instrument__name='GPC1').distinct().order_by('name')
-    active_yse_gpc1_fields = SurveyFieldMSB.objects.filter(survey_fields__obs_group__name='YSE').filter(survey_fields__instrument__name='GPC1').filter(active=True).distinct().order_by('name')
-    all_yse_gpc2_fields = SurveyFieldMSB.objects.filter(survey_fields__obs_group__name='YSE').filter(survey_fields__instrument__name='GPC2').distinct().order_by('name')
-    active_yse_gpc2_fields = SurveyFieldMSB.objects.filter(survey_fields__obs_group__name='YSE').filter(survey_fields__instrument__name='GPC2').filter(active=True).distinct().order_by('name')
+    all_yse_gpc1_fields = SurveyFieldMSB.objects.filter(Q(survey_fields__obs_group__name='YSE') & Q(survey_fields__instrument__name='GPC1')).prefetch_related('survey_fields').distinct().order_by('name')
+    active_yse_gpc1_fields = yse_gpc1_fields.filter(active=True)distinct().order_by('name')
+    all_yse_gpc2_fields = SurveyFieldMSB.objects.filter(Q(survey_fields__obs_group__name='YSE') & Q(survey_fields__instrument__name='GPC2')).prefetch_related('survey_fields').distinct().order_by('name')
+    active_yse_gpc2_fields = yse_gpc2_fields.filter(active=True)distinct().order_by('name')
 
     active_gpc1_names = active_yse_gpc1_fields.values_list('name',flat=True)
     active_gpc2_names = active_yse_gpc2_fields.values_list('name',flat=True)
     
     current_mjd = Time.now().mjd
 
+
     # GPC1 fields
     yse_gpc1_field_data = ()
+    yse_gpc1_field_data = sorted(yse_gpc1_field_data, key=lambda x: last_obs_list.index(x[2]) if x[2] is not None else 1000)
+
     last_obs_list = []
     for a in all_yse_gpc1_fields:
         if a.name in active_gpc1_names: continue
         obs = SurveyObservation.objects.filter(survey_field=a.survey_fields.all()[0]).filter(obs_mjd__isnull=False).order_by('-obs_mjd')
-        if len(obs):
+        if obs.exists():
             last_obs_date = obs[0].obs_mjd
             days_since_obs = current_mjd - last_obs_date
         else:
@@ -57,7 +58,7 @@ def select_yse_fields(request):
     for a in all_yse_gpc2_fields:
         if a.name in active_gpc2_names: continue
         obs = SurveyObservation.objects.filter(survey_field=a.survey_fields.all()[0]).filter(obs_mjd__isnull=False).order_by('-obs_mjd')
-        if len(obs):
+        if obs.exists():
             last_obs_date = obs[0].obs_mjd
             days_since_obs = current_mjd - last_obs_date
         else:
@@ -78,7 +79,7 @@ def select_yse_fields(request):
     for a in active_yse_gpc1_fields:
         obs = SurveyObservation.objects.filter(survey_field=a.survey_fields.all()[0]).filter(obs_mjd__isnull=False).order_by('-obs_mjd')
         obs_mjd = np.sort(np.array([om for om in obs.values_list('obs_mjd',flat=True)]))
-        if len(obs_mjd):
+        if obs_mjd.exists():
 
             if len(obs_mjd[:-1][obs_mjd[1:]-obs_mjd[:-1] > 60]):
                 first_obs = obs_mjd[1:][obs_mjd[1:]-obs_mjd[:-1] > 60][0]
@@ -88,7 +89,7 @@ def select_yse_fields(request):
             first_obs = None
 
         obs_mjd = obs.values_list('obs_mjd',flat=True)
-        if len(obs):
+        if obs.exists():
 
             last_obs_date = obs[0].obs_mjd
             days_since_obs = current_mjd - first_obs
@@ -110,7 +111,7 @@ def select_yse_fields(request):
     for a in active_yse_gpc2_fields:
         obs = SurveyObservation.objects.filter(survey_field=a.survey_fields.all()[0]).filter(obs_mjd__isnull=False).order_by('-obs_mjd')
         obs_mjd = np.sort(np.array([om for om in obs.values_list('obs_mjd',flat=True)]))
-        if len(obs_mjd):
+        if obs_mjd.exists():
 
             if len(obs_mjd[:-1][obs_mjd[1:]-obs_mjd[:-1] > 60]):
                 first_obs = obs_mjd[1:][obs_mjd[1:]-obs_mjd[:-1] > 60][0]
@@ -120,7 +121,7 @@ def select_yse_fields(request):
             first_obs = None
 
         obs_mjd = obs.values_list('obs_mjd',flat=True)
-        if len(obs):
+        if obs.exists():
 
             last_obs_date = obs[0].obs_mjd
             days_since_obs = current_mjd - first_obs
@@ -204,7 +205,7 @@ def yse_sky(request):
         if ((not fovQuery) or
             (fovQuery.latest('created').canvas_x_grid_size != 500)):
 
-            field_names = SurveyFieldMSB.objects.values_list('survey_fields__field_id')
+            field_names = SurveyFieldMSB.objects.values_list('survey_fields__field_id', flat=True)
             fields = SurveyField.objects.filter(field_id__in=field_names).filter(active=True)
 
             fov = CanvasFOV()
@@ -254,7 +255,7 @@ def yse_sky(request):
         query_name = request.POST['query_name']
         query = Query.objects.filter(title=unquote(query_name))
         title = unquote(query_name)
-        if len(query):
+        if query.exists():
             try:
                 query = query[0]
                 if 'yse_app_transient' not in query.sql.lower(): return Http404('Invalid Query')
@@ -269,7 +270,7 @@ def yse_sky(request):
                 pass
         else:
             query = UserQuery.objects.filter(python_query = unquote(query_name))
-            if not len(query):
+            if not query.exists():
                 return HttpResponseNotFound("Invalid Query")
             query = query[0]
             transients = getattr(yse_python_queries, query.python_query)()
@@ -291,13 +292,13 @@ SELECT pd.mag
      )
 """
 
-    if len(transients) > 0:
+    if transients.exists():
         transients = transients.annotate(recent_mag=RawSQL(recent_mag_raw_query,()))
 
     days_from_disc_query = """SELECT DATEDIFF(curdate(), t.disc_date) as days_since_disc
 FROM YSE_App_transient t WHERE YSE_App_transient.id = t.id"""
 
-    if len(transients) > 0:
+    if transients.exists():
         transients = transients.annotate(days_since_disc=RawSQL(days_from_disc_query,())).order_by('-days_since_disc')
 
     #	nearbytransientfilter = RisingTransientFilter(request.GET, queryset=nearby_transients,prefix='ysenearby')
@@ -430,7 +431,7 @@ def yse_msb_change(request,field_to_drop,field_to_add,snid,ra_to_add,dec_to_add)
                 'field_id':field_to_add}
 
     add_field = SurveyField.objects.filter(field_id=field_to_add)
-    if not len(add_field):
+    if not add_field.exists():
         add_field = SurveyField.objects.create(**add_dict)
     else: add_field = add_field[0]
 
@@ -451,7 +452,7 @@ def yse_fields(request,ra_min_hour,ra_max_hour,min_mag):
     survey_tables = []
     for s in ztfsurveyfields:
         surveyfields = SurveyField.objects.filter(ztf_field_id=s[0])
-        if not len(surveyfields): continue
+        if not surveyfields.exits(): continue
 
         qs_list = []
         for sf in surveyfields:
@@ -471,22 +472,17 @@ def yse_fields(request,ra_min_hour,ra_max_hour,min_mag):
         qs_final = qs.filter(query_full)
 
 
-        recent_mag_raw_query = """
-SELECT pd.mag
-   FROM YSE_App_transient t, YSE_App_transientphotdata pd, YSE_App_transientphotometry p
-   WHERE pd.photometry_id = p.id AND
-   YSE_App_transient.id = t.id AND
-   pd.id = (
-         SELECT pd2.id FROM YSE_App_transientphotdata pd2, YSE_App_transientphotometry p2
-         WHERE pd2.photometry_id = p2.id AND p2.transient_id = t.id
-         ORDER BY pd2.obs_date DESC
-         LIMIT 1
-     )
-"""
-        qs_final = qs_final.annotate(recent_mag=RawSQL(recent_mag_raw_query,()))
-        qs_final = qs_final.annotate(min_mag=Min('transientphotometry__transientphotdata__mag'))
-        qs_final = qs_final.filter(min_mag__lt=float(min_mag))
-        
+        recent_mag_subquery = TransientPhotData.objects.filter(
+            photometry__transient=OuterRef('id')
+        ).order_by('-obs_date').values('mag')[:1]
+
+        min_mag = Transient.objects.aggregate(min_mag=Min('transientphotometry__transientphotdata__mag'))['min_mag']
+
+        qs_final = qs_final.annotate(
+            recent_mag=Subquery(recent_mag_subquery),
+            min_mag=F('transientphotometry__transientphotdata__mag')
+        ).filter(min_mag__lt=min_mag)
+                
         days_from_disc_query = """SELECT DATEDIFF(curdate(), t.disc_date) as days_since_disc
 FROM YSE_App_transient t WHERE YSE_App_transient.id = t.id"""
         qs_final = qs_final.annotate(days_since_disc=RawSQL(days_from_disc_query,()))
