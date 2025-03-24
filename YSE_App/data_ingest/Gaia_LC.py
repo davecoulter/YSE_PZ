@@ -102,7 +102,7 @@ class GaiaLC(CronJobBase):
                       html_msg%(e,exc_tb.tb_lineno),
                       options.SMTP_LOGIN, options.dbpassword, smtpserver)
 
-        print('Gaia -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
+        print('Gaia -> YSE_PZ took %.1f seconds for'%(time.time()-tstart))
 
     def add_options(self, parser=None, usage=None, config=None):
         import argparse

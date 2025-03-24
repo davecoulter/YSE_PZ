@@ -289,7 +289,8 @@ class QUB(CronJobBase):
             self.send_data(transientdict)
             self.copy_stamps(transientdict)
             nsn += 25
-    
+        return nsn
+
     def parse_data(self,summary,lc,transient_idx=0,max_transients=None):
         # today's date
         nowmjd = Time.now().mjd
