@@ -95,6 +95,16 @@ You use this to log into the YSE_PZ website and the django admin dashboard.
 
 This is the django and yse_pz superuser email that will be created on startup.
 
+* :code:`VOL_DB_LOG`
+
+The local path to map the mysql log files for debug purposes.
+It is recommended to put this at the same level (but in a different directory) as :code:`VOL_DB`
+
+* :code:`VOL_GHOST`
+
+The directory for the GHOST plugin to serialize its working log. It is recommended to put this in a different directory
+to :code:`VOL` to prevent Git issues.
+
 An example of a minimum working .env file would be
 
 .. code:: none
@@ -108,6 +118,8 @@ An example of a minimum working .env file would be
     DJANGO_SUPERUSER_PASSWORD = password123
     DJANGO_SUPERUSER_USERNAME = admin123
     DJANGO_SUPERUSER_EMAIL = test@gamil.com
+    VOL_DB_LOG= ../databaes_logs/
+    VOL_GHOST= ../ghost_logs/
 
 To get a minimum working .env file simply copy and rename the :code:`docker/public.env`
 From the base YSE_PZ directory run
@@ -179,8 +191,8 @@ Native
 ******
 
 .. warning::
-	The following native install instructions are here for archival purposes
-	only. We strongly discourage you from using these instructions.
+    The following native install instructions are here for archival purposes
+    only. We strongly discourage you from using these instructions.
 
 This is a easy guide to performing a local installation of :code:`YSE_PZ`.
 
