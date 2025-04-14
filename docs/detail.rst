@@ -30,7 +30,7 @@ currently functional.
 .. image:: _static/yse_pz_summary.png
 
 .. _detailview:
-	   
+       
 Transient Detail View
 =====================
 
@@ -88,12 +88,12 @@ on a given resource as a function of time.
 
 .. image:: _static/yse_pz_detailresources.png
 
-HST/Chandra Tabs
+HST/Chandra/JWST Tabs
 ----------------
 
-For transients with archival HST or Chandra data at the transient
-location, YSE-PZ will display those data and allow FITS images to
-be downloaded.
+For transients with archival HST, Chandra, or JWST data at the
+transient location, YSE-PZ will display those data and allow FITS
+images to be downloaded.
 
 .. image:: _static/yse_pz_detailarchival.png
 

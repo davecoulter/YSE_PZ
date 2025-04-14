@@ -8,6 +8,7 @@ from astropy.time import Time
 
 # Uses references to astroquery.mast fields: https://mast.stsci.edu/api/v0/_c_a_o_mfields.html
 instrument_defaults = {
+    'hst': {
         'radius': 1 * u.arcsec,
         'jpg': 'https://hla.stsci.edu/cgi-bin/fitscut.cgi?red={id}'+\
             '&amp;RA={ra}&amp;DEC={dec}&amp;size=256&amp;format=jpg'+\
@@ -30,7 +31,16 @@ instrument_defaults = {
                       'F390N','F437N','F439W','F450W','F569W','F588N','F622W',
                       'F631N','F673N','F675W','F702W','F785LP','F791W','F953N',
                       'F1042M','F502N']
-                }
+         }
+    },
+    'jwst': {
+        'radius': 1 * u.arcsec,
+        'data_base': 'https://mast.stsci.edu/portal/Download/file/',
+        'mask': {'instrument_name': ['MIRI/IMAGE','NIRCAM/IMAGE'],
+                 't_exptime': 40,
+                 'obs_collection': ['JWST'],
+        }
+    }
 }
 
 class hstImages():
@@ -47,7 +57,7 @@ class hstImages():
         self.radius=0.001
 
         ## Selection criteria
-        self.options = instrument_defaults
+        self.options = instrument_defaults['hst']
 
         self.Nimages = 0
         self.jpglist = []
@@ -98,10 +108,97 @@ class hstImages():
                 dec=self.coord.dec.degree)
             self.jpglist.append(url)
 
+class jwstImages():
+    def __init__(self,ra,dec,obj):
+        # Transient information/search criteria
+        if (':' in str(ra) and ':' in str(dec)):
+            self.coord = SkyCoord(ra, dec, unit = (u.hour, u.deg))
+        else:
+            self.coord = SkyCoord(ra, dec, unit = (u.deg, u.deg))
+        self.ra=self.coord.ra.degree
+        self.dec=self.coord.dec.degree
+        self.obstable = None
+        self.object=obj
+        self.radius=0.001
+
+        ## Selection criteria
+        self.options = instrument_defaults['jwst']
+
+        self.Nimages = 0
+        self.jpglist = []
+
+    def getObstable(self):
+        options = self.options
+        table=Observations.query_region(self.coord,
+            radius=self.options['radius'])
+
+        # JWST-specific masks
+        expmask = table['t_exptime'] > options['mask']['t_exptime']
+        obsmask = [table['obs_collection'] == good
+            for good in options['mask']['obs_collection']]
+        obsmask = [any(l) for l in list(map(list,zip(*obsmask)))]
+        detmask = [table['instrument_name'] == good
+            for good in options['mask']['instrument_name']]
+        detmask = [any(l) for l in list(map(list,zip(*detmask)))]
+
+        # Construct and apply mask
+        mask = [all(l) for l in zip(expmask,obsmask,detmask)]
+        self.obstable = table[mask]
+
+        self.Nimages=0
+        if self.obstable:
+          if len(self.obstable)>0:
+
+            self.obstable['t_min']=np.around(self.obstable['t_min'], decimals=4)
+            self.obstable['t_max']=np.around(self.obstable['t_max'], decimals=4)
+
+            self.obstable.sort('obs_collection')
+
+            self.obstable = unique(self.obstable, keys=['t_min'], keep='last')
+            self.obstable = unique(self.obstable, keys=['t_max'], keep='last')
+
+            self.Nimages=len(self.obstable)
+
+            data_url=self.obstable['dataURL']
+            newdata = [val.replace('mast:',self.options['data_base'])
+                for val in data_url]
+            self.obstable['dataURL']=np.array(newdata)
+
+            # Rename to remove /IMAGE in instrument names
+            inst_names = [inst.replace('/IMAGE','') for inst in self.obstable['instrument_name']]
+            self.obstable['instrument_name']=inst_names
+
+    def getJPGurl(self):
+        if len(self.obstable) == 0:
+            print('There are no JWST images!!!')
+            return(0)
+
+        base_url = self.options['data_base']
+        for jpg in self.obstable['jpegURL']:
+            url = jpg.replace('mast:',base_url)
+            self.jpglist.append(url)
+
 ## TEST TEST TEST
 if __name__=='__main__':
     startTime = datetime.now()
-    hst=hstImages(199.8674542,-13.7236833,'Object')
-    hst.getObstable()
-    hst.getJPGurl()
-    print("I found",hst.Nimages,"HST images of",hst.object,"located at coordinates",hst.ra,hst.dec)
+    #hst=hstImages(202.52133,+47.16967,'Object')
+    #hst.getObstable()
+    #hst.getJPGurl()
+    #print("I found",hst.Nimages,"HST images of",hst.object,"located at coordinates",hst.ra,hst.dec)
+
+    startTime = datetime.now()
+    jwst=jwstImages(338.9895833,33.9599083,'Object')
+    jwst.getObstable()
+    jwst.getJPGurl()
+
+    fitsurllist = list(jwst.obstable['dataURL'].data)
+
+    # Create same object from view_utils.py
+    jpegurldict = {"jpegurl":jwst.jpglist,
+                   "fitsurl":fitsurllist,
+                   "obsdate":list(Time(jwst.obstable["t_min"],format='mjd').iso), #,out_subfmt='date'
+                   "filters":list(jwst.obstable["filters"]),
+                   "inst":list(jwst.obstable["instrument_name"])}
+
+    print(jpegurldict)
+    print("I found",jwst.Nimages,"JWST images of",jwst.object,"located at coordinates",jwst.ra,jwst.dec)

@@ -162,6 +162,8 @@ urlpatterns = [
         view_utils.get_ps1_image, name='get_ps1_image'),
     re_path(r'^get_hst_image/(?P<transient_id>[0-9]+)',
         view_utils.get_hst_image, name='get_hst_image'),
+    re_path(r'^get_jwst_image/(?P<transient_id>[0-9]+)',
+        view_utils.get_jwst_image, name='get_jwst_image'),
     re_path(r'^get_chandra_image/(?P<transient_id>[0-9]+)',
         view_utils.get_chandra_image, name='get_chandra_image'),
     re_path(r'^get_legacy_image/(?P<transient_id>[0-9]+)',

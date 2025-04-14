@@ -627,6 +627,7 @@ class Migration(migrations.Migration):
                 ('slug', autoslug.fields.AutoSlugField(default=None, editable=False, null=True, populate_from='name', unique=True)),
                 ('real_bogus_score', models.FloatField(blank=True, null=True)),
                 ('has_hst', models.BooleanField(blank=True, null=True)),
+                ('has_jwst', models.BooleanField(blank=True, null=True)),
                 ('has_spitzer', models.BooleanField(blank=True, null=True)),
                 ('has_chandra', models.BooleanField(blank=True, null=True)),
                 ('abs_mag_peak_band', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='YSE_App.photometricband')),

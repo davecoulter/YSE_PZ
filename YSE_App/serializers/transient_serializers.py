@@ -80,6 +80,7 @@ class TransientSerializer(serializers.HyperlinkedModelSerializer):
         instance.TNS_spec_class = validated_data.get('TNS_spec_class', instance.TNS_spec_class)
 
         instance.has_hst = validated_data.get('has_hst', instance.has_hst)
+        instance.has_jwst = validated_data.get('has_jwst', instance.has_jwst)
         instance.has_chandra = validated_data.get('has_chandra', instance.has_chandra)
         instance.has_spitzer = validated_data.get('has_spitzer', instance.has_spitzer)
 
