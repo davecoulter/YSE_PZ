@@ -1093,9 +1093,9 @@ class YSE_Stack(CronJobBase):
         nsn = 0
         
         # grab CSV files
-        for summarylink,lclink,naming in zip([self.options.yselink_stacksummary,self.options.yselink_agnsummary],
-                                             [self.options.yselink_stacklc,self.options.yselink_agnlc],
-                                             ['stack','agn']):
+        for summarylink,lclink,naming in zip([self.options.yselink_agnsummary],
+                                             [self.options.yselink_agnlc],
+                                             ['agn']):
 
             if naming == 'stack':
                 latest_stacked_transients = Transient.objects.filter(tags__name='YSE Stack').order_by('-created_date')
