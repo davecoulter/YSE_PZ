@@ -200,6 +200,7 @@ and :code:`YSE_PZ` should be running.
    saying something like ProgrammingError at /transient_detail/20XXabc/
    (1146, "Table 'YSE.YSE_App_transientphotdata_data_quality' doesn't exist")
    you may need to perform migrations with ::
+
        docker exec -it ysepz_web_container bash -c 'python3 manage.py migrate'
 
 
@@ -215,19 +216,22 @@ the following steps must be taken.
    add `- path/to/YSE_transient_inserts.sql:/docker-entrypoint-initdb.d/7.sql`
    after the mount at `- ./db_init/YSE_create_users.sql:/docker-entrypoint-initdb.d/6.sql`.
 #. Make the following edits to the YSE_transient_inserts.sql file:
+
    a. add "USE YSE;" to the top of the file.
    b. Remove the 94 drop and create table commands.
       These are already included in the other db_init files.
       While many of the table shchema are unchanged, there is a failure mode where a
       constraint is not dropped and the new table can't be created.
       The drop and create commands for Table `x` have the following form::
+
           --
           -- Table structure for table `x`
           --
 
           DROP TABLE IF EXISTS `x`;
           ...
-          /\*!40101 SET character_set_client = @saved_cs_client \*/;
+          /*!40101 SET character_set_client = @saved_cs_client */;
+
       My vim macro for deleting them was `/Table structure<ENTER>kV}}d`.
    c. Find the lines starting with `INSERT INTO \`YSE_App_host\``
       and replace all `)` characters with `,NULL)`.
@@ -246,6 +250,7 @@ the following steps must be taken.
       `- ./db_init/YSE_followupstatus_insert.sql:/docker-entrypoint-initdb.d/3.sql`
       in docker/docker-compose.yml.
    g. Repeat step e to delete the inserts for the following tables:
+
       - `auth_group`
       - `auth_user`
       - `django_content_type`
@@ -267,6 +272,7 @@ the following steps must be taken.
       - `YSE_App_transienttag`
       - `YSE_App_unit`
       - `YSE_App_webappcolor`
+
       It seems like it should be possible to leave those in and delete/comment out
       `- ./db_init/YSE_rest_of_tables_insert.sql:/docker-entrypoint-initdb.d/4.sql`
       in docker/docker-compose.yml, but it leads to the transient_detail pages hanging.
