@@ -636,12 +636,11 @@ class processTNS:
 
     
     def getProstHosts(self,jd,sc,prost_host):
-
-        if prost_host['host_name'][0]:
-            host_name = prost_host['host_name'][0]
+        if prost_host['host_name'].to_numpy()[0]:
+            host_name = prost_host['host_name'].to_numpy()[0]
         else:
-            host_name = str(prost_host['host_objID'][0])
-        
+            host_name = str(prost_host['host_objID'].to_numpy()[0])
+
         hostdict = {}; hostcoords = ''
         hostdict = {'name':host_name,
                     'ra':prost_host['host_ra'].to_numpy()[0],
@@ -1668,16 +1667,16 @@ class TNS_recent_realtime(CronJobBase):
             sys.exit(1)
 
 
-        if try:
-            tnsproc.noupdatestatus = True
-            nsn = tnsproc.GetRecentEvents(ndays=tnsproc.tns_fastupdates_nminutes/60./24.)
-        except Exception as e:
-            print("Sending error email")
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            nsn = 0
-            sendemail(from_addr, options.dbemail, subject,
-                      html_msg%(e,exc_tb.tb_lineno),
-                      options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
+        #try:
+        tnsproc.noupdatestatus = True
+        nsn = tnsproc.GetRecentEvents(ndays=tnsproc.tns_fastupdates_nminutes/60./24.)
+        #except Exception as e:
+        #    print("Sending error email")
+        #    exc_type, exc_obj, exc_tb = sys.exc_info()
+        #    nsn = 0
+        #    sendemail(from_addr, options.dbemail, subject,
+        #              html_msg%(e,exc_tb.tb_lineno),
+        #              options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
 
         print('TNS -> YSE_PZ took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
