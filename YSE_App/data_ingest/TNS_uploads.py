@@ -44,14 +44,14 @@ from django_cron import CronJobBase, Schedule
 from django.conf import settings as djangoSettings
 import argparse, configparser
 import signal
-from astro_ghost.ghostHelperFunctions import *
-try:
-    from astro_ghost.photoz_helper import calc_photoz
-    is_photoz = True
-except:
-    print('warning: can\'t import tensorflow')
-    is_photoz = False
-    pass
+
+from shutil import rmtree
+import pandas as pd
+from scipy.stats import gamma, halfnorm, uniform
+from astro_prost.helpers import SnRateAbsmag
+from astro_prost.associate import associate_sample
+
+
 import os
 from tendo import singleton
 
@@ -548,21 +548,113 @@ class processTNS:
 
         return SpecDictAll
 
-    def getGHOSTData(self,jd,sc,ghost_host):
+    def getProstData(
+            self,
+            objs,
+            transient_positions,
+            transient_redshift=None
+    ):
+        """
+        Finds the information about the host galaxy given the position of the supernova.
+        Parameters
+        ----------
+        :position : :class:`~astropy.coordinates.SkyCoord`
+        On Sky position of the source to be matched.
+        :name : str, default='No name'
+        Name of the the object.
+        Returns
+        -------
+        :host_information : ~astropy.coordinates.SkyCoord`
+        Host position
+        """
+
+        # Define and create output file root directory
+        output_dir = os.path.join(self.ghost_path, objs[0])
+        os.makedirs(output_dir, exist_ok=True)
+
+        # define priors for properties
+        priorfunc_z = halfnorm(loc=0.0001, scale=0.5)
+        priorfunc_offset = uniform(loc=0, scale=5)
+        priorfunc_absmag = uniform(loc=-30, scale=20)
+
+
+        likefunc_offset = gamma(a=0.75)
+        likefunc_absmag = SnRateAbsmag(a=-25, b=20)
+
+        priors = {
+            "offset": priorfunc_offset,
+            "absmag": priorfunc_absmag
+        }
+        likes = {
+            "offset": likefunc_offset,
+            "absmag": likefunc_absmag
+        }
+
+        transient_catalog = pd.DataFrame(
+            {'IAUID': objs,
+             'RA': [t.ra.deg for t in transient_positions],
+             'Dec': [t.dec.deg for t in transient_positions]
+             }
+        )
+
+        # add the redshift info from the transient if it exists
+        if transient_redshift is not None:
+            priors['redshift'] = priorfunc_z
+            transient_catalog['redshift'] = transient_redshift
+
+        catalogs = ["glade", "decals", "panstarrs", "skymapper"]
+        transient_coord_cols = ("RA", "Dec")
+        # transient_name_col = "IAUID"
+        parallel = False
+        save = True
+        progress_bar = False
+        cat_cols = False
+
+        try:
+            hosts = associate_sample(
+                transient_catalog,
+                coord_cols=transient_coord_cols,
+                priors=priors,
+                likes=likes,
+                catalogs=catalogs,
+                parallel=parallel,
+                save=save,
+                save_path=output_dir,
+                progress_bar=progress_bar,
+                cat_cols=cat_cols,
+                verbose=0,
+            )
+        finally:
+            # Cleanup Prost file cache
+            # TODO: Over time we may accumulate Prost temp files that are not deleted
+            #       due to processes aborted before this block is executed. More robust
+            #       garbage collection may be necessary, such as a periodic task triggered
+            #       by Celery Beat.
+            rmtree(self.ghost_path, ignore_errors=True)
+
+        return hosts
+
+    
+    def getProstHosts(self,jd,sc,prost_host):
+
+        if prost_host['host_name'][0]:
+            host_name = prost_host['host_name'][0]
+        else:
+            host_name = str(prost_host['host_objID'][0])
+        
         hostdict = {}; hostcoords = ''
-        hostdict = {'name':str(ghost_host['objName'].to_numpy()[0]),
-                    'ra':ghost_host['raMean'].to_numpy()[0],
-                    'dec':ghost_host['decMean'].to_numpy()[0]}
+        hostdict = {'name':host_name,
+                    'ra':prost_host['host_ra'].to_numpy()[0],
+                    'dec':prost_host['host_dec'].to_numpy()[0]}
 
-        hostcoords = f"ra={hostdict['ra']:.7f}, dec={hostdict['dec']:.7f}\n"
-        if 'photo_z' in ghost_host.keys():
-            hostdict['photo_z_internal'] = ghost_host['photo_z'].to_numpy()[0]
-        if 'NED_redshift' in ghost_host.keys() and ghost_host['NED_redshift'].to_numpy()[0] == ghost_host['NED_redshift'].to_numpy()[0]:
-            hostdict['redshift'] = ghost_host['NED_redshift'].to_numpy()[0]
 
-        if 'photo_z_internal' in hostdict.keys():
-            if hostdict['photo_z_internal'] != hostdict['photo_z_internal']:
-                hostdict['photo_z_internal'] = None
+        # a weird issue with photo-z that really seem like spec-z.  Let's trust accurate zphot.
+        if 'host_redshift_info' in prost_host.keys() and prost_host['host_redshift_info'].to_numpy()[0] == 'SPEC':
+            hostdict['redshift'] = prost_host['host_redshift_mean'].to_numpy()[0]
+            hostdict['redshift_err'] = prost_host['host_redshift_std'].to_numpy()[0]
+        else:
+            hostdict['photo_z_internal'] = prost_host['host_redshift_mean'].to_numpy()[0]
+            hostdict['photo_z_err_internal'] = prost_host['host_redshift_std'].to_numpy()[0]
 
         return hostdict,hostcoords
         
@@ -683,11 +775,12 @@ class processTNS:
                 objs.append(transient['name'])
                 ras.append(transient['ra'])
                 decs.append(transient['dec'])
-        if self.redohost: nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=True,doEBV=True,doTNS=doTNS)
-        else: nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=False,doEBV=False,doTNS=doTNS)
+        if self.redohost: nsn = self.GetAndUploadAllData(objs,ras,decs,doProst=True,doEBV=True,doTNS=doTNS)
+        else: nsn = self.GetAndUploadAllData(objs,ras,decs,doProst=False,doEBV=False,doTNS=doTNS)
         return nsn
 
     def GetRecentEvents(self,ndays=None,doTNS=True):
+
         #date_format = '%Y-%m-%d'
         datemin = (datetime.now() - timedelta(days=ndays)).isoformat() #strftime(date_format)
         search_obj=[("ra",""), ("dec",""), ("radius",""), ("units",""),
@@ -705,6 +798,7 @@ class processTNS:
         objs,ras,decs = [],[],[]
         if 'data' not in json_data.keys():
             return 0
+
         for jd in json_data['data']:
             TNSGetSingle = [("objname",jd['objname']),
                             ("photometry","0"),
@@ -721,7 +815,7 @@ class processTNS:
             objs.append(json_data_single['data']['objname'])
             ras.append(json_data_single['data']['ra'])
             decs.append(json_data_single['data']['dec'])
-        if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=self.redohost,doEBV=self.redohost,doTNS=doTNS)
+        if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doProst=self.redohost,doEBV=self.redohost,doTNS=doTNS)
         else: nsn = 0
         return nsn
 
@@ -757,7 +851,7 @@ class processTNS:
             ras.append(json_data_single['data']['ra'])
             decs.append(json_data_single['data']['dec'])
 
-        if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doGHOST=self.redohost,doEBV=self.redohost,doTNS=doTNS)
+        if len(objs): nsn = self.GetAndUploadAllData(objs,ras,decs,doProst=self.redohost,doEBV=self.redohost,doTNS=doTNS)
         else: nsn = 0
         return nsn
 
@@ -831,26 +925,27 @@ class processTNS:
         else: nsn = 0
         return nsn
 
-    def GetAndUploadAllData(self,objs,ras,decs,doGHOST=True,doEBV=True,doTNS=True): #doNED=True
+    def GetAndUploadAllData(self,objs,ras,decs,doProst=True,doEBV=True,doTNS=True): #doNED=True
         TransientUploadDict = {}
         assert len(ras) == len(decs)
 
         ebvall,nedtables = [],[]
         ebvtstart = time.time()
         ebv_timeout,ned_timeout = False,False
-        if doGHOST:
+        if doProst:
 
-            if not os.path.exists(f'{self.ghost_path}/database/GHOST.csv'):
-                try:
-                    getGHOST(real=True, verbose=True, installpath=self.ghost_path)
-                except:
-                    pass
+            #if not os.path.exists(f'{self.ghost_path}/database/GHOST.csv'):
+            #    try:
+            #        getGHOST(real=True, verbose=True, installpath=self.ghost_path)
+            #    except:
+            #        pass
                 
             def handler(signum, frame):
                 raise Exception("timeout!")
                 
             signal.signal(signal.SIGALRM, handler)
-            ghost_hosts = None
+            prost_hosts = None
+
             try:
                 signal.alarm(600)
                 if type(ras[0]) == float:
@@ -858,16 +953,10 @@ class processTNS:
                 else:
                     scall = [SkyCoord(r,d,unit=(u.hourangle,u.deg)) for r,d in zip(ras,decs)]
 
-                ghost_hosts = getTransientHosts(objs, scall, verbose=True, starcut='gentle', ascentMatch=False, GHOSTpath=self.ghost_path)
-                if is_photoz:
-                    iNorth = ghost_hosts['decMean'] > -30
-                    iSouth = ghost_hosts['decMean'] <= -30
-                    ghost_zphot = calc_photoz(ghost_hosts[iNorth])
-                    ghost_hosts = pd.concat([ghost_zphot,ghost_hosts[iSouth]])
-                    
-                os.system(f"rm -r transients_{datetime.utcnow().isoformat().split('T')[0].replace('-','')}*")
+                prost_hosts = self.getProstData(objs, scall)
+                
             except:
-                print('GHOST timeout!')
+                print('Prost timeout!')
                 ned_timeout = True
 
             if type(ras[0]) == float:
@@ -884,10 +973,10 @@ class processTNS:
                 ebv_timeout = True
 
                         
-            print('E(B-V)/GHOST time: %.1f seconds'%(time.time()-ebvtstart))
+            print('E(B-V)/Prost time: %.1f seconds'%(time.time()-ebvtstart))
             signal.alarm(0)
 
-        if doEBV and not doGHOST:
+        if doEBV and not doProst:
             if type(ras[0]) == float:
                 scall = SkyCoord(ras,decs,frame="fk5",unit=u.deg)
             else:
@@ -973,11 +1062,11 @@ class processTNS:
             else:
                 ebv = None
 
-            if doGHOST and ghost_hosts is not None:
-                ghost_host = ghost_hosts[ghost_hosts['TransientName'] == objs[j]]
-                if not len(ghost_host): ghost_host = None
+            if doProst and prost_hosts is not None:
+                prost_host = prost_hosts[prost_hosts['IAUID'] == objs[j]]
+                if not len(prost_host): prost_host = None
             else:
-                ghost_host = None
+                prost_host = None
                 
             #if doNED:
             #    if not ned_timeout:
@@ -1017,27 +1106,12 @@ class processTNS:
                 elif photdict is not None: transientdict['transientphotometry'] = photdict
             except Exception as e: pass
 
-            #exc_type, exc_obj, exc_tb = sys.exc_info()
-            #raise RuntimeError('error %s at line number %s'%(e,exc_tb.tb_lineno))
 
-            #try:
-            #    if doNED:
-            #        hostdict,hostcoords = self.getNEDData(jd,sc,nedtable)
-            #        transientdict['host'] = hostdict
-            #        transientdict['candidate_hosts'] = hostcoords
-            #except: pass
-
-            if ghost_host is not None:
-                hostdict,hostcoords = self.getGHOSTData(jd,sc,ghost_host)
+            if prost_host is not None:
+                hostdict,hostcoords = self.getProstHosts(jd,sc,prost_host)
                 transientdict['host'] = hostdict
                 transientdict['candidate_hosts'] = hostcoords
             
-            #try:
-            #   phot_ps1dr2 = self.get_PS_DR2_data(sc)
-            #   if phot_ps1dr2 is not None:
-            #       transientdict['transientphotometry']['PS1DR2'] = phot_ps1dr2
-            #except:
-            #   pass
 
             TransientUploadDict[obj] = transientdict
             if not j % 10:
@@ -1593,7 +1667,8 @@ class TNS_recent_realtime(CronJobBase):
                       options.SMTP_LOGIN, options.dbemailpassword, smtpserver)
             sys.exit(1)
 
-        try:
+
+        if try:
             tnsproc.noupdatestatus = True
             nsn = tnsproc.GetRecentEvents(ndays=tnsproc.tns_fastupdates_nminutes/60./24.)
         except Exception as e:
