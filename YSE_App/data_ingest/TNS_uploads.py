@@ -623,6 +623,7 @@ class processTNS:
                 progress_bar=progress_bar,
                 cat_cols=cat_cols,
                 verbose=0,
+                best_redshift=True
             )
         finally:
             # Cleanup Prost file cache
