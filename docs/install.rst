@@ -14,6 +14,9 @@ You could attempt to install :code:`YSE_PZ` natively (instructions at the bottom
 of this page for archival reasons) but this will likely be an order of magnitude
 harder than using docker.
 
+In either case, you should clone the YSE_PZ repo::
+
+   git clone https://github.com/Young-Supernova-Experiment/YSE_PZ.git
 
 Install the Docker desktop app
 -------------------------------
@@ -30,6 +33,7 @@ docker resources required to run :code:`YSE_PZ` are:
 
 These requirements can be set in the docker desktop app
 (Preferences > Resources).
+
 
 Settings file
 -------------
@@ -71,7 +75,7 @@ The root database password
 
 The path YSE_PZ app's static directory
 
-* :code:`LOCAL_DB_HOST`
+* :code:`LOCAL_DB_PORT`
 
 Configurable - this should be set to whatever port you want docker forwarding
 it’s database container port 3306 on.
@@ -116,6 +120,15 @@ From the base YSE_PZ directory run
 
     cp docker/public.env docker/.env
 
+.. note::
+    The `mysql` user in the docker container will need access to the `VOL_DB`
+    directory specified in the .env file.
+    If spinning up the docker container prints out errors saying the
+    ysepz_db_container `Could not open file '/var/log/mysql/mysql_error.log'
+    for error logging: Permission denied` You need to manage the directory
+    permissions. While not recommended, `chmod 777 path/to/VOL_DB` suffices.
+    If VOL_DB_LOG and VOL_GHOST are defined in the .env file, those may also
+    need permissions adjusted.
 
 Running the docker containers
 -----------------------------
@@ -174,6 +187,96 @@ Viewing webpages
 Whilst the docker container stack is running go to
 `http://0.0.0.0/login/ <http://0.0.0.0/login/>`_ in your web browser
 and :code:`YSE_PZ` should be running.
+
+.. note::
+   The ysepz_web_container's gunicorn agent may report that it's
+   "Listening at: http://0.0.0.0:8000 (14)", but the port forwarding may vary across
+   system architectures. If `http://0.0.0.0/login/ <http://0.0.0.0/login/>`_ fails, try
+   `http://127.0.0.1/login/ <http://127.0.0.1/login/>`_ or
+   `http://localhost/login/ <http://localhost/login/>`_
+
+.. warning::
+   If you attempt to access a transient_detail page and find a Django debug screen
+   saying something like ProgrammingError at /transient_detail/20XXabc/
+   (1146, "Table 'YSE.YSE_App_transientphotdata_data_quality' doesn't exist")
+   you may need to perform migrations with ::
+       docker exec -it ysepz_web_container bash -c 'python3 manage.py migrate'
+
+
+Importing a Database
+--------------------
+If interested in importing some data, a public sql dump can be found at this
+`Dropbox link <https://www.dropbox.com/s/fc6fnmrelds92nq/YSE_db_public_20210208.sql.tgz?dl=0>`_.
+Working off of commit `58f3e6a <https://github.com/Young-Supernova-Experiment/YSE_PZ/commit/58f3e6a1622ec5755e5322aee2d00f3941510749>`_,
+the following steps must be taken.
+
+#. Untar the downloaded tgz file and copy it to something like YSE_transient_inserts.sql.
+#. In the docker/docker_compose.yml, under the yse_db service, under volumes,
+   add `- path/to/YSE_transient_inserts.sql:/docker-entrypoint-initdb.d/7.sql`
+   after the mount at `- ./db_init/YSE_create_users.sql:/docker-entrypoint-initdb.d/6.sql`.
+#. Make the following edits to the YSE_transient_inserts.sql file:
+
+   a. add "USE YSE;" to the top of the file.
+   b. Remove the 94 drop and create table commands.
+      These are already included in the other db_init files.
+      While many of the table shchema are unchanged, there is a failure mode where a
+      constraint is not dropped and the new table can't be created.
+      The drop and create commands for Table `x` have the following form::
+
+          --
+          -- Table structure for table `x`
+          --
+
+          DROP TABLE IF EXISTS `x`;
+          ...
+          /*!40101 SET character_set_client = @saved_cs_client */;
+
+      My vim macro for deleting them was `/Table structure<ENTER>kV}}d`.
+   c. Find the lines starting with `INSERT INTO \`YSE_App_host\``
+      and replace all `)` characters with `,NULL)`.
+      This is required because the dumped db does not include the
+      nullable panstarrs_objid bigint field in the `YSE_App_host` table.
+      In vim I went to the first INSERT and did `V}:s/)/,NULL)/g` T
+   d. Repeat the previous step for lines starting with `INSERT INTO \`YSE_App_transient\``.
+      This is required because the dumped db does not include the
+      nullable varchar(64) alt_status field in the `YSE_App_transient` table.
+   e. Delete the inserts in the `django_migrations` table.
+      These are already inserted by docker/db_init/YSE_django_migrations_insert.sql.
+      Using the migrations in the dumped db will make Django raise an
+      `InconsistentMigrationHistory` when trying to make migrations or migrate.
+   f. Either repeat step e to delete the `YSE_App_followupstatus` inserts,
+      or delete/comment out the line
+      `- ./db_init/YSE_followupstatus_insert.sql:/docker-entrypoint-initdb.d/3.sql`
+      in docker/docker-compose.yml.
+   g. Repeat step e to delete the inserts for the following tables:
+
+      - `auth_group`
+      - `auth_user`
+      - `django_content_type`
+      - `YSE_App_classicalnighttype`
+      - `YSE_App_configelement`
+      - `YSE_App_configelement_instrument_config`
+      - `YSE_App_dataquality`
+      - `YSE_App_instrument`
+      - `YSE_App_instrumentconfig`
+      - `YSE_App_internalsurvey`
+      - `YSE_App_observatory`
+      - `YSE_App_observationgroup`
+      - `YSE_App_photometricband`
+      - `YSE_App_principalinvestigator`
+      - `YSE_App_taskstatus`
+      - `YSE_App_telescope`
+      - `YSE_App_transientclass`
+      - `YSE_App_transientstatus`
+      - `YSE_App_transienttag`
+      - `YSE_App_unit`
+      - `YSE_App_webappcolor`
+
+      It seems like it should be possible to leave those in and delete/comment out
+      `- ./db_init/YSE_rest_of_tables_insert.sql:/docker-entrypoint-initdb.d/4.sql`
+      in docker/docker-compose.yml, but it leads to the transient_detail pages hanging.
+      Furthermore, `YSE_rest_of_tables_insert.sql` contain more up-to-date data.
+
 
 Native
 ******
@@ -244,7 +347,7 @@ Installing the YSE_PZ Code
 
 Should be straightforward::
 
-   git clone https://github.com/davecoulter/YSE_PZ.git
+   git clone https://github.com/Young-Supernova-Experiment/YSE_PZ.git
    cd YSE_PZ
    conda env create -f yse_pz.yml
    conda activate yse_pz
@@ -255,7 +358,7 @@ directory (**not** the main repository directory, the directory
 with the same name one level down).
 
 Please note that sometimes the extinction module is buggy.
-It is needed for some functionality but I would 
+It is needed for some functionality but I would
 recommend trying to install it last.
 
 Alternatively, I haven't tried this myself, but - the latest YSE_PZ conda environment from my mac
@@ -264,7 +367,7 @@ much as possible you can try::
 
   conda env create -f yse_pz_latest.yml
   conda activate yse_pz
-  
+
 Starting the Web Server
 =======================
 
