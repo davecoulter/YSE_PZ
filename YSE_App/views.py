@@ -18,8 +18,9 @@ from django.shortcuts import redirect
 from django.db.models import Count, Value, Max, Min
 import zipfile
 from io import BytesIO
-from YSE_App.yse_utils.yse_pa import yse_pa
+#from YSE_App.yse_utils.yse_pa import yse_pa
 from django.utils.decorators import method_decorator
+from django.utils import timezone as du_timezone
 
 from astropy.utils import iers
 iers.conf.auto_download = True
@@ -39,13 +40,16 @@ from django.core import serializers
 import os
 from .data import PhotometryService, SpectraService, ObservingResourceService
 import json
-import time
 import dateutil.parser
 from astroplan import moon_illumination
 from astropy.time import Time
 from .common.utilities import getRADecBox
 
 from .table_utils import TransientTable,YSETransientTable,YSEFullTransientTable,YSERisingTransientTable,NewTransientTable,ObsNightFollowupTable,FollowupTable,TransientFilter,FollowupFilter,YSEObsNightTable,ToOFollowupTable
+from .table_utils import FRBFollowupResourceTable
+from .table_utils import FRBFollowupObservationsTable
+from .table_utils import FRBTransientFilter, FRBTransientTable
+from .table_utils import CandidatesTable, CandidatesFilter
 from .queries.yse_python_queries import *
 from .queries import yse_python_queries
 import django_tables2 as tables
@@ -58,14 +62,20 @@ from urllib.parse import unquote
 from .common.utilities import date_to_mjd, mjd_to_date
 from django.views.generic.list import ListView
 
+import re
+from typing import Optional
+import logging
+
 # Create your views here.
+
+
 
 def is_ajax(request):
     return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
 
 def index(request):
     if request.user.is_authenticated:
-        return HttpResponseRedirect(reverse_lazy('dashboard'))
+        return HttpResponseRedirect(reverse_lazy('frb_dashboard'))
     return render(request, 'YSE_App/index.html')
 
 #def add_followup(request,obj):
@@ -89,7 +99,7 @@ def auth_login(request):
         if next_page:
             return HttpResponseRedirect(next_page)
         else:
-            return HttpResponseRedirect('/dashboard/')
+            return HttpResponseRedirect('/frb_dashboard/')
         #render(request,'YSE_App/dashboard.html')
     else:
         return render(request, 'YSE_App/login.html')
@@ -934,6 +944,241 @@ def download_targets_and_finders(request, telescope, obs_date):
     return response
 
 
+
+
+
+log = logging.getLogger(__name__)
+
+def path_cutout_proxy(request, frb_name: str) -> HttpResponse:
+    """
+    Serve the path cutout '<FRBNAME>_PATH.png' from the CHIME path repo.
+
+    Expected format:
+      chime-path/chime_path/<YEAR>/<FRBNAME>/<FRBNAME>_PATH.png
+
+    Django view that proxies a CHIME path cutout image from GitHub.
+
+    Inputs
+    ------
+    request : HttpRequest
+        Incoming Django request (unused except for view signature).
+    frb_name : str
+        FRB identifier (expects format 'FRBYYYYXXXX...'), used to infer
+        the year directory and filename.
+
+    Returns
+    -------
+    HttpResponse
+        Binary image response (PNG/JPEG/GIF) containing the path cutout.
+        Raises Http404 if the FRB name is malformed, the directory/file
+        does not exist, or the GitHub payload cannot be decoded. 
+    """
+
+    OWNER  = "CHIMEFRB"
+    REPO   = "chime-path"
+    PREFIX = "chime_path"  # underscore
+
+    # Extract year from FRB name (expects FRBYYYY...)
+    m = re.search(r"FRB(\d{4})", frb_name or "")
+    if not m:
+        raise Http404("Bad FRB name")
+
+    year = m.group(1)
+    dir_path  = f"{PREFIX}/{year}/{frb_name}"
+    file_name = f"{frb_name}_PATH.png"
+    file_path = f"{dir_path}/{file_name}"
+
+    file_url = f"https://api.github.com/repos/{OWNER}/{REPO}/contents/{file_path}?ref=main"
+    dir_url  = f"https://api.github.com/repos/{OWNER}/{REPO}/contents/{dir_path}?ref=main"
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    tok = getattr(settings, "GITHUB_TOKEN", None)
+    if tok:
+        headers["Authorization"] = f"Bearer {tok}"
+
+    # Ensure directory exists
+    try:
+        r_dir = requests.get(dir_url, headers=headers, timeout=10)
+    except requests.RequestException:
+        raise Http404("Path directory fetch error")
+    if r_dir.status_code != 200:
+        raise Http404("Path directory not found")
+
+
+    try:
+        r_file = requests.get(file_url, headers=headers, timeout=10)
+    except requests.RequestException:
+        raise Http404("Path file fetch error")
+    if r_file.status_code != 200:
+        raise Http404("Path cutout not found")
+
+    data = r_file.json()
+
+    blob = None
+    if data.get("encoding") == "base64" and data.get("content"):
+        try:
+            cleaned = "".join(str(data["content"]).splitlines())
+            blob = base64.b64decode(cleaned)
+        except Exception:
+            blob = None
+
+    if blob is None and data.get("download_url"):
+        try:
+            r_raw = requests.get(data["download_url"], headers=headers, timeout=10)
+            if r_raw.status_code == 200:
+                blob = r_raw.content
+        except requests.RequestException:
+            pass
+
+    if blob is None and data.get("sha"):
+        blob_url = f"https://api.github.com/repos/{OWNER}/{REPO}/git/blobs/{data['sha']}"
+        try:
+            r_blob = requests.get(
+                blob_url,
+                headers={**headers, "Accept": "application/vnd.github.raw"},
+                timeout=10,
+            )
+            if r_blob.status_code == 200:
+                blob = r_blob.content
+        except requests.RequestException:
+            pass
+
+    if not blob:
+        raise Http404("Unexpected payload")
+
+    # Infer content type from filename (default PNG)
+    name = (data.get("name") or "").lower()
+    ctype = "image/png"
+    if name.endswith(".jpg") or name.endswith(".jpeg"):
+        ctype = "image/jpeg"
+    elif name.endswith(".gif"):
+        ctype = "image/gif"
+
+    resp = HttpResponse(blob, content_type=ctype)
+    resp["Cache-Control"] = "public, max-age=3600"
+    return resp
+
+
+def path_cutout_zoomin_proxy(request, frb_name: str) -> HttpResponse:
+    """
+    Serve a 'zoom in' cutout from the CHIME path private repo.
+
+    Inputs
+    ------
+    request : HttpRequest
+        Incoming Django request (unused except for view signature).
+    frb_name : str
+        FRB identifier (expects format 'FRBYYYYXXXX...'), used to infer
+        the year directory and to locate the zoom-in image.
+
+    Returns
+    -------
+    HttpResponse
+        Binary PNG image response containing the zoom-in cutout.
+        Raises Http404 if the FRB name is malformed, no matching zoom-in
+        file is found, or the GitHub payload cannot be decoded.
+
+    """
+    OWNER  = "CHIMEFRB"
+    REPO   = "chime-path"
+    PREFIX = "chime_path"  # underscore, not hyphen
+
+    # Parse year from FRB name (expects FRBYYYY...)
+    m = re.search(r"FRB(\d{4})", frb_name or "")
+    if not m:
+        raise Http404("Bad FRB name")
+
+    year = m.group(1)
+    dir_path = f"{PREFIX}/{year}/{frb_name}"
+    dir_url  = f"https://api.github.com/repos/{OWNER}/{REPO}/contents/{dir_path}?ref=main"
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    tok = getattr(settings, "GITHUB_TOKEN", None)
+    if tok:
+        headers["Authorization"] = f"Bearer {tok}"
+
+
+    try:
+        r_dir = requests.get(dir_url, headers=headers, timeout=10)
+    except requests.RequestException:
+        raise Http404("Zoom-in directory fetch error")
+
+    if r_dir.status_code != 200:
+        raise Http404("Zoom-in directory not found")
+
+    items = r_dir.json()
+    if not isinstance(items, list):
+        raise Http404("Unexpected directory payload")
+
+    matches = [
+        it for it in items
+        if isinstance(it, dict)
+        and it.get("type") == "file"
+        and isinstance(it.get("name"), str)
+        and it["name"].lower().endswith("zoomin.png")
+    ]
+    if not matches:
+        raise Http404("Zoom-in cutout not found")
+
+    matches.sort(key=lambda it: it["name"].lower())
+    file_item = matches[0]
+
+    file_url = file_item.get("url") or f"https://api.github.com/repos/{OWNER}/{REPO}/contents/{file_item['path']}?ref=main"
+    try:
+        r_file = requests.get(file_url, headers=headers, timeout=10)
+    except requests.RequestException:
+        raise Http404("Zoom-in fetch error")
+
+    if r_file.status_code != 200:
+        raise Http404("Zoom-in cutout not found")
+
+    data = r_file.json()
+
+    blob = None
+
+    if data.get("encoding") == "base64" and data.get("content"):
+        try:
+            cleaned = "".join(str(data["content"]).splitlines())
+            blob = base64.b64decode(cleaned)
+        except Exception:
+            blob = None
+
+    if blob is None and data.get("download_url"):
+        try:
+            r_raw = requests.get(data["download_url"], headers=headers, timeout=10)
+            if r_raw.status_code == 200:
+                blob = r_raw.content
+        except requests.RequestException:
+            pass
+
+    if blob is None and data.get("sha"):
+        blob_url = f"https://api.github.com/repos/{OWNER}/{REPO}/git/blobs/{data['sha']}"
+        try:
+            r_blob = requests.get(
+                blob_url,
+                headers={**headers, "Accept": "application/vnd.github.raw"},
+                timeout=10,
+            )
+            if r_blob.status_code == 200:
+                blob = r_blob.content
+        except requests.RequestException:
+            pass
+
+    if not blob:
+        raise Http404("Unexpected payload")
+
+    # 5) Serve PNG with basic caching
+    resp = HttpResponse(blob, content_type="image/png")
+    resp["Cache-Control"] = "public, max-age=3600"
+    return resp
+
+
 @login_required
 def transient_detail(request, slug):
 
@@ -948,6 +1193,7 @@ def transient_detail(request, slug):
         #return redirect('/transient_detail/%s/'%transient[0].slug)
         return HttpResponseRedirect(reverse_lazy('transient_detail',kwargs={'slug':transient[0].slug}))
     logs = Log.objects.filter(transient=transient[0].id)
+
 
     obs = None
     if len(transient) == 1:
@@ -1034,6 +1280,7 @@ def transient_detail(request, slug):
 
         has_new_comment = len(Log.objects.filter(transient=transient_obj).\
                               filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1))) > 0
+
         
         # obsnights,tellist = view_utils.getObsNights(transient[0])
         # too_resources = ToOResource.objects.all()
@@ -1048,7 +1295,20 @@ def transient_detail(request, slug):
 
         date = datetime.datetime.now(tz=pytz.utc)
         date_format='%m/%d/%Y %H:%M:%S'
+
+        # Build GitHub browse link to the directory holding the cutout
+        browse_url = None
+        m = re.search(r"FRB(\d{4})", transient_obj.name or "")
+        if m:
+            year = m.group(1)
+            browse_url = (
+                f"https://github.com/CHIMEFRB/chime-path/tree/main/"
+                f"chime_path/{year}/{transient_obj.name}"
+                )      
+
+        print("browse_url:", browse_url)  # will appear in server logs/stdout
         
+          
         spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True)
         context = {
             'transient':transient_obj,
@@ -1078,7 +1338,8 @@ def transient_detail(request, slug):
             'classical_resource_form':classical_resource_form,
             'too_resource_form':too_resource_form,
             'new_comment':has_new_comment,
-            'transients_near_host':transients_near_host
+            'transients_near_host':transients_near_host,
+            'path_github_browse_url': browse_url,
         }
 
         if transient_followup_form.fields["valid_start"].initial:
@@ -1663,3 +1924,283 @@ job_submitted=%s"""%(log_file_name,datetime.datetime.utcnow().isoformat())
     #response = HttpResponse(context, content_type='text/plain') #JsonResponse(context)
     return JsonResponse(context) #HttpResponse('')
 
+###############################################################################
+# FRB Views
+###############################################################################
+
+@login_required
+def frb_dashboard(request):
+
+    transient_categories = []
+    for title,statusnames in zip(
+        [
+         'Completed',
+         'PATH Needed',
+         'Followup Needed',
+         'Followup Pending',
+         'Observed',
+         'Unassigned FRBs',
+         ],
+        [
+         ['Redshift', 'TooFaint', 'AmbiguousHost', 'UnseenHost', 'TooDusty','BrightStar'],
+         ['RunPublicPATH', 'RunDeepPATH'],
+         ['NeedImage','NeedSpectrum', 'NeedSecondary'],
+         ['ImagePending', 'SpectrumPending'],
+         ['GoodSpectrum'],
+         ['Unassigned'], 
+         ]):
+        transients = FRBTransient.objects.filter(status__in=TransientStatus.objects.filter(
+            name__in=statusnames))
+        #status = TransientStatus.objects.filter(name__in=statusnames).order_by('-modified_date')
+        #if len(status) == 1:
+        #    transients = FRBTransient.objects.filter(status=status[0]).order_by('name')
+        #else:
+        #    transients = FRBTransient.objects.filter(status=None).order_by('name')
+        #transientfilter = FRBTransientFilter(request.GET, queryset=transients,prefix=statusname.lower())
+        #if statusname == 'New': table = NewFRBTransientTable(transientfilter.qs,prefix=statusname.lower())
+        #else: table = FRBTransientTable(transientfilter.qs,prefix=statusname.lower())
+        #table = FRBTransientTable(transientfilter.qs)#,prefix=statusname.lower())
+        table = FRBTransientTable(transients)
+        RequestConfig(request, paginate={'per_page': 10}).configure(table)
+        #transient_categories += [(table,title,statusnames[0].lower(),transientfilter),]
+        transient_categories += [(table,title,statusnames[0].lower(),None),]
+
+    # Show active follow-up resources
+
+    # Cut on active/pending
+    followups = FRBFollowUpResource.objects.filter(
+        valid_stop__gt=du_timezone.now())
+    ftable = FRBFollowupResourceTable(followups)
+
+    # Old ones
+    old_followups = FRBFollowUpResource.objects.filter(
+        valid_stop__lt=du_timezone.now())
+    old_ftable = FRBFollowupResourceTable(old_followups)
+    
+    if request.META['QUERY_STRING']:
+        anchor = request.META['QUERY_STRING'].split('-')[0]
+    else: anchor = ''
+    context = {
+        'transient_categories':transient_categories,
+        'all_transient_statuses':TransientStatus.objects.order_by('name'),
+        'followup_table':ftable,
+        'old_followup_table':old_ftable,
+        'anchor':anchor,
+    }
+
+    return render(request, 'YSE_App/frb_dashboard.html', context)
+
+@login_required
+def frb_transient_detail(request, slug):
+
+    classical_resource_form = ClassicalResourceForm()
+    too_resource_form = ToOResourceForm()
+    #automated_spectrum_form = AutomatedSpectrumRequest()
+    
+    transient = FRBTransient.objects.filter(slug=slug)
+    #alternate_transient = AlternateTransientNames.objects.filter(slug=slug)
+    #if len(alternate_transient) and not len(transient):
+    #    transient = Transient.objects.filter(name=alternate_transient[0].transient.name).select_related()
+    #    #return redirect('/transient_detail/%s/'%transient[0].slug)
+    #    return HttpResponseRedirect(reverse_lazy('transient_detail',kwargs={'slug':transient[0].slug}))
+    logs = Log.objects.filter(transient=transient[0].id)
+
+    obs = None
+    if len(transient) == 1:
+        
+        transient_obj = transient.first() # This should throw an exception if more than one or none are returned
+        transient_id = transient[0].id
+
+        # Status update properties
+        #all_transient_statuses = TransientStatus.objects.all()
+        #transient_status_follow = TransientStatus.objects.get(name="Following")
+        #transient_status_watch = TransientStatus.objects.get(name="Watch")
+        #transient_status_interesting = TransientStatus.objects.get(name="Interesting")
+        #transient_status_ignore = TransientStatus.objects.get(name="Ignore")
+        #transient_comment_form = TransientCommentForm()
+
+        # Transient tag
+        all_colors = WebAppColor.objects.all().select_related()
+        #all_transient_tags = TransientTag.objects.all().select_related()
+        #assigned_transient_tags = transient_obj.tags.all().select_related()
+
+        # Get associated Observations
+        fu_req = FRBFollowUpRequest.objects.filter(transient__pk=transient_id)
+        fu_obs = FRBFollowUpObservation.objects.filter(transient__pk=transient_id)
+        fu_names = []
+        fu_names += [item.ResourceName() for item in fu_req]
+        fu_names += [item.ResourceName() for item in fu_obs]
+
+        if len(fu_names) == 0:
+            followup_names = 'None'
+        else:
+            followup_names = ','.join(np.unique(fu_names))
+
+        hostdata = FRBGalaxy.objects.filter(pk=transient_obj.host_id).select_related()
+        if hostdata:
+            hostphotdata = view_utils.get_recent_phot_for_host(request.user, host_id=hostdata[0].id)
+            transient_obj.hostdata = hostdata[0]
+
+            #ramin,ramax,decmin,decmax = getRADecBox(transient_obj.hostdata.ra,transient_obj.hostdata.dec,size=1/60.)
+            #transients_near_host = Transient.objects.filter(
+            #    Q(ra__gt=ramin) & Q(ra__lt=ramax) &
+            #    Q(dec__gt=decmin) & Q(dec__lt=decmax) & ~Q(name=transient_obj.name)).values_list('name',flat=True)
+            #transients_near_host = ','.join(transients_near_host)
+        else:
+            hostphotdata = None
+            #transients_near_host = None
+
+        if hostphotdata: transient_obj.hostphotdata = hostphotdata
+
+        #has_new_comment = len(Log.objects.filter(transient=transient_obj).\
+        #                      filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1))) > 0
+
+        # https://django-tables2.readthedocs.io/en/latest/pages/tutorial.html
+        # Candidates
+        candidates = FRBGalaxy.objects.filter(frb_candidates=transient_obj.id)
+        if len(candidates) > 0:
+            # Include P_Ox??
+            candidatefilter = CandidatesFilter(
+                request.GET, queryset=candidates)#,prefix=t)
+            candidate_table = CandidatesTable(candidatefilter.qs)
+            RequestConfig(request, paginate={'per_page': 10}).configure(candidate_table)
+            candidate_table_context = (candidate_table,candidates,candidatefilter)
+        else:
+            candidate_table_context = None
+
+        
+        #obsnights = view_utils.get_obs_nights_happening_soon(request.user)
+        #too_resources = view_utils.get_too_resources(request.user)
+
+        date = datetime.datetime.now(tz=pytz.utc)
+        date_format='%m/%d/%Y %H:%M:%S'
+        
+        #spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True)
+        context = {
+            'transient':transient_obj,
+            'followup_names': followup_names,
+            'candidates': candidate_table_context,
+            # 'telescope_list': tellist,
+            #'observing_nights': obsnights,
+            #'too_resource_list': too_resources.select_related(),
+            'nowtime':date.strftime(date_format),
+            #'transient_followup_form': transient_followup_form,
+            #'transient_observation_task_form': transient_observation_task_form,
+            #'transient_status_ignore': transient_status_ignore,
+            #'transient_status_interesting': transient_status_interesting,
+            'logs':logs,
+            #'all_transient_tags': all_transient_tags,
+            #'assigned_transient_tags': assigned_transient_tags,
+            'all_colors': all_colors,
+            #'all_transient_spectra': spectra,
+            #'gw_candidate':gwcand,
+            #'gw_images':gwimages,
+            #'spectrum_upload_form':spectrum_upload_form,
+            #'diff_images':TransientDiffImage.objects.filter(phot_data__photometry__transient__name=transient_obj.name),
+            'classical_resource_form':classical_resource_form,
+            'too_resource_form':too_resource_form,
+            #'new_comment':has_new_comment,
+            #'transients_near_host':transients_near_host
+        }
+
+        #if transient_followup_form.fields["valid_start"].initial:
+        #    context['followup_initial_dates'] = \
+        #        (transient_followup_form.fields["valid_start"].initial.strftime('%m/%d/%Y HH:MM'),
+        #         transient_followup_form.fields["valid_stop"].initial.strftime('%m/%d/%Y HH:MM'))           
+        
+        #if lastphotdata and firstphotdata:
+        #    context['recent_mag'] = lastphotdata.mag
+        #    context['recent_filter'] = lastphotdata.band
+        #    context['recent_magdate'] = lastphotdata.obs_date
+        #    context['first_mag'] = firstphotdata.mag
+        #    context['first_filter'] = firstphotdata.band
+        #    context['first_magdate'] = firstphotdata.obs_date
+        #    context['allphotdata']=allphotdata
+        #if transient_obj.postage_stamp_file:
+        #    context['qub_candidate'] = transient_obj.postage_stamp_file.split('/')[-1].split('_')[0]
+            
+        #context['automated_spectrum_form'] = automated_spectrum_form
+
+
+        # we need to add a submit to TNS button
+        # for transients that don't have TNS names
+        # - for now, this is only DECam transients
+        #tns_submit_logs = logs.filter(comment__startswith='Submitted to TNS')
+        #tns_sandbox_logs = logs.filter(comment__startswith='TNS sandbox')
+        #if not len(tns_submit_logs) and '_cand' in transient_obj.name and \
+        #   'DECAT' in list(assigned_transient_tags.values_list('name',flat=True)):
+        #    submit_to_tns = True
+        #else:
+        #    submit_to_tns = False
+        #context['submit_to_tns'] = submit_to_tns
+        #if len(tns_sandbox_logs):
+        #    context['tns_sandbox_url'] = tns_sandbox_logs[0].comment.split()[2]
+        
+        return render(request,
+            'YSE_App/frb_transient_detail.html',
+            context)
+
+    else:
+        return Http404('FRBTransient not found')
+
+
+@login_required
+def frb_followup_resource(request, slug):
+    """
+    Handles the FRB follow-up resource view.
+    This view retrieves and displays information about a specific FRB (Fast Radio Burst) follow-up resource, 
+    including its validity, associated FRBs, pending follow-up requests, and observations. It also builds 
+    tables for displaying the data in the template.
+    Args:
+        request (HttpRequest): The HTTP request object.
+        slug (str): The unique identifier for the FRB follow-up resource.
+    Returns:
+        HttpResponse: The rendered HTML page displaying the FRB follow-up resource details.
+    Context:
+        frb_fu (FRBFollowUpResource): The FRB follow-up resource object.
+        anchor (str): The anchor extracted from the query string, if present.
+        {key}_table (FRBTransientTable): Tables for valid FRBs by observing mode (if the resource is valid).
+        pending_table (FRBTransientTable): Table of pending FRBs for follow-up.
+        obs_table (FRBTransientTable): Table of observed FRBs (if observations exist).
+        obslog_table (FRBFollowupObservationsTable): Table of follow-up observations (if observations exist).
+    Raises:
+        FRBFollowUpResource.DoesNotExist: If the FRB follow-up resource with the given slug does not exist.
+    """
+
+    frb_fu = FRBFollowUpResource.objects.get(slug=slug)
+    is_old = frb_fu.valid_stop < du_timezone.now()
+
+    
+    if request.META['QUERY_STRING']:
+        anchor = request.META['QUERY_STRING'].split('-')[0]
+    else: anchor = ''
+
+    context = {
+        'frb_fu': frb_fu,
+        'anchor':anchor,
+    }
+
+    if not is_old:
+        # Valid FRBs for observing
+        frbs_by_mode = frb_fu.get_frbs_by_mode()
+        # Build the tables
+        for key in frbs_by_mode.keys():
+            context[f'{key}_table'] = FRBTransientTable(frbs_by_mode[key])
+
+    # Pending FRBs
+    fu_requested = FRBFollowUpRequest.objects.filter(resource=frb_fu)
+    frb_ids = [x.transient.id for x in fu_requested]
+    pending_frbs = FRBTransient.objects.filter(id__in=frb_ids)
+    context['pending_table'] = FRBTransientTable(pending_frbs)
+
+    # Observed
+    fu_obs = FRBFollowUpObservation.objects.filter(resource=frb_fu)
+    if len(fu_obs) > 0:
+        frb_ids = [x.transient.id for x in fu_obs]
+        obs_frbs = FRBTransient.objects.filter(id__in=frb_ids)
+        context['obs_table'] = FRBTransientTable(obs_frbs)
+
+        # Obs log
+        context['obslog_table'] = FRBFollowupObservationsTable(fu_obs)
+
+    return render(request, 'YSE_App/frb_followup_resource.html', context)

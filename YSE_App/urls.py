@@ -16,6 +16,8 @@ from YSE_App.yse_utils import yse_pointings, yse_view_utils
 from YSE_App.views import SearchResultsView
 from YSE_App.util import submit_to_tns
 
+from YSE_App.chime import chime_test_views 
+
 schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
 
 # Wire up our API using automatic URL routing.
@@ -30,6 +32,44 @@ urlpatterns = [
     re_path(r'^followup/$', views.followup, name='followup'),
     re_path(r'^transient_tags/$', views.transient_tags, name='transient_tags'),
     re_path(r'^get_transient_tags/$', views.get_transient_tags, name='get_transient_tags'),
+
+    # ##############################################################
+    # FRBs
+    # Views
+    re_path(r'^frb_dashboard/$', views.frb_dashboard, name='frb_dashboard'),
+    re_path(r'^frb_transient_detail/(?P<slug>.*)/$', views.frb_transient_detail, name='frb_transient_detail'),
+    re_path(r'^frb_followup_resource/(?P<slug>.*)/$', views.frb_followup_resource, name='frb_followup_resource'),
+    re_path(r"^proxy/path-cutout/(?P<frb_name>FRB\d{8}[A-Z]?)/$",views.path_cutout_proxy,name="path_cutout_proxy",),
+    re_path(r"^proxy/path-cutout-zoomin/(?P<frb_name>[^/]+)/$", views.path_cutout_zoomin_proxy, name="path_cutout_zoomin_proxy"),
+
+    # API
+    re_path(r'^add_frb_galaxy/', data_utils.add_frb_galaxy, name='add_frb_galaxy'),
+    re_path(r'^rm_frb_galaxy/', data_utils.rm_frb_galaxy, name='rm_frb_galaxy'),
+    re_path(r'^ingest_path/', data_utils.IngestPathView.as_view(), name='ingest_path'),
+    re_path(r'^debug_request/', data_utils.debug_request, name='debug_request'),
+    re_path(r'^targets_from_frb_followup_resource/', data_utils.targets_from_frb_followup_resource, name='targets_from_frb_followup_resource'),
+    re_path(r'^ingest_obsplan/', data_utils.ingest_obsplan, name='ingest_obsplan'),
+    re_path(r'^ingest_obslog/', data_utils.ingest_obslog, name='ingest_obslog'),
+    re_path(r'^release_pending/', data_utils.release_pending, name='release_pending'),
+    re_path(r'^add_frb_resource/', data_utils.add_frb_followup_resource, name='add_frb_followup_resource'),
+    re_path(r'^ingest_z/', data_utils.ingest_z, name='ingest_z'),
+    re_path(r'^remove_z/', data_utils.remove_z, name='remove_z'),
+    re_path(r'^ingest_frbs/', data_utils.ingest_frbs, name='ingest_frbs'),
+    re_path(r'^modify_frbs/', data_utils.modify_frbs, name='modify_frbs'),
+    re_path(r'^rm_frb/', data_utils.rm_frb, name='rm_frb'),
+    re_path(r'^addmodify_criteria/', data_utils.addmodify_criteria, name='addmodify_criteria'),
+    re_path(r'^add_band/', data_utils.add_band, name='add_band'),
+    re_path(r'^frb_update_status/', data_utils.frb_update_status, name='frb_update_status'),
+    re_path(r'^get_frb_table/', data_utils.get_frb_table, name='get_frb_table'),
+    re_path(r'^get_criteria/', data_utils.get_criteria, name='get_criteria'),
+    re_path(r'^chk_frb/', data_utils.chk_frb, name='chk_frb'),
+    re_path(r'^get_path/', data_utils.get_path, name='get_path'),
+    re_path(r'^update_tags/', data_utils.update_tags, name='update_tags'),
+    # ##############################################################
+
+    # Test pages
+    #re_path(r'^candidates/$', views.CandidatesListView.as_view(), name='candidates'),
+    #re_path(r'^candidates/$', chime_test_views.candidatesview, name='candidates'),
 
     # survey info
     re_path(r'^survey/$', surveypages.survey, name='survey'),
@@ -129,6 +169,7 @@ urlpatterns = [
     re_path(r'^finderchart/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderchart, name='finderchart'),
     re_path(r'^finderim/(?P<transient_id>[0-9]+)/$', view_utils.finder().finderim, name='finderim'),
 
+    # Forms
     re_path(r'^add_transient_followup/', AddTransientFollowupFormView.as_view(), name='add_transient_followup'),
     re_path(r'^add_classical_resource/', AddClassicalResourceFormView.as_view(), name='add_classical_resource'),
     re_path(r'^add_too_resource/', AddToOResourceFormView.as_view(), name='add_too_resource'),
@@ -142,6 +183,10 @@ urlpatterns = [
     re_path(r'^remove_dashboard_query/(?P<pk>[0-9_-]+)/', RemoveDashboardQueryFormView.as_view(), name='remove_dashboard_query'),
     re_path(r'^add_followup_notice/', AddFollowupNoticeFormView.as_view(), name='add_followup_notice'),
     re_path(r'^remove_followup_notice/(?P<pk>[0-9_-]+)/', RemoveFollowupNoticeFormView.as_view(), name='remove_followup_notice'),
+
+    # FRB Forms
+
+    #
     re_path(r'^rise_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',
         view_utils.rise_time, name='rise_time'),
     re_path(r'^set_time/(?P<transient_id>[0-9]+)/(?P<obs_id>[a-zA-Z0-9_-]+)',
@@ -171,6 +216,8 @@ urlpatterns = [
     re_path(r'^explorer/', include('explorer.urls')),
     #url(r'^silk/', include('silk.urls', namespace='silk')),
 ]
+
+# Views into the API
 
 router = DefaultRouter()
 router.register(r'transientwebresources', api_views.TransientWebResourceViewSet)
@@ -240,6 +287,18 @@ router.register(r'transienttags', api_views.TransientTagViewSet)
 router.register(r'gwcandidates', api_views.GWCandidateViewSet)
 router.register(r'gwcandidateimages', api_views.GWCandidateImageViewSet)
 
+# ##############################################################
+# FRB specific
+router.register(r'frbtransients', api_views.FRBTransientViewSet)
+router.register(r'frbsurvey', api_views.FRBSurveyViewSet)
+router.register(r'frbtags', api_views.FRBTagViewSet)
+router.register(r'frbgalaxies', api_views.FRBGalaxyViewSet)
+router.register(r'paths', api_views.PathViewSet)
+router.register(r'frbrequests', api_views.FRBFollowUpRequestViewSet)
+router.register(r'frbresources', api_views.FRBFollowUpResourceViewSet)
+router.register(r'frbobservations', api_views.FRBFollowUpObservationViewSet)
+router.register(r'frbsamplecriteria', api_views.FRBSampleCriteriaViewSet)
+router.register(r'frbobs_and_pending', api_views.CombinedViewSet_frbobs_and_frb_pending, basename='frbobs_and_pending')
 # Login/Logout
 api_url_patterns = [re_path(r'^api/', include(router.urls)),
                     re_path(r'^api/schema/$', schema_view),

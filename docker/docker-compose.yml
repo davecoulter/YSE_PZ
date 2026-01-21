@@ -13,6 +13,7 @@ services:
         ports:
         - "8000:8000"
         environment:
+          GITHUB_TOKEN: ${GITHUB_TOKEN}
           CONDA_DEFAULT_ENV: base
           _: /opt/conda/bin/python
           CONDA_EXE: /opt/conda/bin/conda
@@ -23,6 +24,7 @@ services:
           PROJ_LIB: /opt/conda/share/proj
           CONDA_PREFIX: /opt/conda
           DB_CONFIG: /opt/project/db_configuration
+          
         env_file:
           - ".env"
         depends_on:

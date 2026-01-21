@@ -80,3 +80,13 @@ admin.site.register(SurveyField)
 admin.site.register(SurveyFieldMSB)
 admin.site.register(SurveyObservation)
 admin.site.register(CanvasFOV)
+
+# FRBs
+admin.site.register(FRBTransient)
+admin.site.register(FRBFollowUpResource)
+admin.site.register(FRBFollowUpRequest)
+admin.site.register(FRBFollowUpObservation)
+admin.site.register(FRBSampleCriteria)
+admin.site.register(FRBGalaxy)
+admin.site.register(Path)
+admin.site.register(GalaxyPhotData)

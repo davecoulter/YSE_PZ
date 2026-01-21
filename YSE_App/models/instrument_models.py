@@ -20,6 +20,9 @@ class Instrument(BaseModel):
 	def natural_key(self):
 		return "%s - %s" % (self.telescope.name, self.name)
 
+	def tel_instr(self):
+		return "%s:%s" % (self.telescope.name, self.name)
+
 class InstrumentConfig(BaseModel):
 	### Entity relationships ###
 	# Required

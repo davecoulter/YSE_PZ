@@ -1788,8 +1788,9 @@ def tonight_moon_angle(request,transient_id,too_id):
 
 def get_ps1_image(request,transient_id):
     
+    # TODO -- the following edit breaks the original code
     try:
-        t = Transient.objects.get(pk=transient_id)
+        t = FRBTransient.objects.get(pk=transient_id)
     except t.DoesNotExist:
         raise Http404("Transient id does not exist")
 

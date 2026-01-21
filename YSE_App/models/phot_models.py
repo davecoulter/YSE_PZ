@@ -17,6 +17,8 @@ class Photometry(BaseModel):
     # Required
     instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
     obs_group = models.ForeignKey(ObservationGroup, on_delete=models.CASCADE)
+
+    # Optional
     groups = models.ManyToManyField(Group, blank=True)
     reference = models.CharField(max_length=512, null=True, blank=True)
 
@@ -43,6 +45,9 @@ class HostPhotometry(Photometry):
 
     # Optional
     followup = models.ForeignKey(HostFollowup, null=True, blank=True, on_delete=models.SET_NULL) # Can by null if data is from external source
+
+    class Meta:
+        unique_together = ['host', 'instrument', 'obs_group']
 
     def __str__(self):
         return 'Host Phot: %s ' % (self.host.HostString())

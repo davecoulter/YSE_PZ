@@ -55,6 +55,10 @@ def GetSexigesimalString(ra_decimal, dec_decimal):
 		dec_string = "-00:%02d:%05.2f" % (np.abs(dec[1]),np.abs(dec[2]))
 	return (ra_string, dec_string)
 
+def getGalaxyname(ra_decimal, dec_decimal):
+    ras, decs = GetSexigesimalString(ra_decimal, dec_decimal)
+    return(f'J{ras.replace(":","")}{decs.replace(":","")}')
+
 def get_psstamp_url(request, transient_id, Transient):
 
 	ps1url = ("http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos=%.7f+%.7f&filter=color"%(

@@ -1568,3 +1568,296 @@ def dashboard_tables(request):
     context = {'k2_transients': table}
 
     return render(request, 'YSE_App/dashboard_table.html', context)
+
+
+################################################################
+# FRB Items
+################################################################
+
+class CandidatesFilter(django_filters.FilterSet):
+    """ Filter method for a set of Candidates (i.e. FRBGalaxy's)
+
+    Args:
+        django_filters (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    ex = django_filters.CharFilter(method='filter_ex',label='Search')
+    search_fields = ['transient__name']
+
+    class Meta:
+        model = FRBGalaxy
+        fields = ['ex',]
+
+    def filter_ex(self, qs, name, value):
+        if value:
+            q_parts = value.split()
+
+            list1=self.search_fields
+            list2=q_parts
+            perms = [zip(x,list2) for x in itertools.permutations(list1,len(list2))]
+
+            q_totals = Q()
+            for perm in perms:
+                q_part = Q()
+                for p in perm:
+                    q_part = q_part & Q(**{p[0]+'__icontains': p[1]})
+                q_totals = q_totals | q_part
+
+            qs = qs.filter(q_totals)
+        return qs
+
+
+class CandidatesTable(tables.Table):
+    """ Table for displaying a set of Candidates (i.e. FRBGalaxy's)
+    """
+
+    name_string = tables.Column(accessor='NameString',
+                                        verbose_name='Name',orderable=True,order_by='name')
+    ra_string = tables.Column(accessor='CoordString.0',
+                              verbose_name='RA',orderable=True,order_by='ra')
+    dec_string = tables.Column(accessor='CoordString.1',
+                               verbose_name='DEC',orderable=True,order_by='dec')
+    filter_string = tables.Column(accessor='FilterMagString.0',
+                               verbose_name='Filter',orderable=False)
+    mag_string = tables.Column(accessor='FilterMagString.1',
+                               verbose_name='Mag',orderable=False)
+    POx_string = tables.Column(accessor='POxString',
+                               verbose_name='P(O|x)',orderable=False)
+    z_string = tables.Column(accessor='zString',
+                               verbose_name='z',orderable=False)
+    zQ_string = tables.Column(accessor='zQualString',
+                               verbose_name='zQ',orderable=False)
+    z_source = tables.Column(accessor='zSource',
+                               verbose_name='Source',orderable=False)
+    photoz_string = tables.Column(accessor='photozString',
+                                  verbose_name='Photo z',orderable=False)
+    #disc_date_string = tables.Column(accessor='disc_date_string',
+    #                                 verbose_name='Disc. Date',orderable=True,order_by='disc_date')
+    #recent_mag = tables.Column(accessor='recent_mag',
+    #                           verbose_name='Last Mag',orderable=True)
+    #recent_magdate = tables.Column(accessor='recent_magdate',
+    #                           verbose_name='Last Obs. Date',orderable=True)
+    #best_redshift = tables.Column(accessor='z_or_hostz',
+    #                              verbose_name='Redshift',orderable=True,order_by='host__redshift')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        #self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
+
+#    def order_best_redshift(self, queryset, is_descending):
+#
+#        queryset = queryset.annotate(
+#            best_redshift=Coalesce('redshift', 'host__redshift'),
+#        ).order_by(('-' if is_descending else '') + 'best_redshift')
+#        return (queryset, True)
+
+
+    class Meta:
+        model = FRBGalaxy
+        fields = ('name_string','ra_string','dec_string','filter_string',
+                  'mag_string', 'POx_string', 'z_string', 'zQ_string',
+                  'z_source', 'photoz_string') 
+
+        template_name='YSE_App/django-tables2/bootstrap.html'
+        attrs = {
+            'th' : {
+                '_ordering': {
+                    'orderable': 'sortable', # Instead of `orderable`
+                    'ascending': 'ascend',	 # Instead of `asc`
+                    'descending': 'descend'	 # Instead of `desc`
+                }
+            },
+            'class': 'table table-bordered table-hover',
+            'id': 'k2_transient_tbl',
+            "columnDefs": [
+                {"type":"title-numeric","targets":1},
+                {"type":"title-numeric","targets":2},
+            ],
+            "order": [[ 3, "desc" ]],
+        }
+
+class FRBTransientFilter(django_filters.FilterSet):
+    """ FilterSet for FRBTransients """
+
+
+    #name_string = django_filters.CharFilter(name='name',lookup_expr='icontains',
+    #										label='Name')
+
+    ex = django_filters.CharFilter(method='filter_ex',label='Search')
+    search_fields = ['name','ra','dec','obs_group_name',
+                     'redshift', 'status_name', 'frb_survey_name']
+
+    class Meta:
+        model = FRBTransient
+        fields = ['ex',]
+
+    def filter_ex(self, qs, name, value):
+        if value:
+
+            qs = annotate_with_disc_mag(qs)
+
+            q_parts = value.split()
+
+
+            list1=self.search_fields
+            list2=q_parts
+            perms = [zip(x,list2) for x in itertools.permutations(list1,len(list2))]
+
+            q_totals = Q()
+            for perm in perms:
+                q_part = Q()
+                for p in perm:
+                    q_part = q_part & Q(**{p[0]+'__icontains': p[1]})
+                q_totals = q_totals | q_part
+
+            qs = qs.filter(q_totals)
+        return qs
+
+class FRBTransientTable(tables.Table):
+    """ Table for displaying a set of FRBTransients """
+
+    name_string = tables.TemplateColumn("<a href=\"{% url 'frb_transient_detail' record.slug %}\">{{ record.name }}</a>",
+                                        verbose_name='Name',orderable=True,order_by='name')
+    ra_string = tables.Column(accessor='CoordString.0',
+                              verbose_name='RA',orderable=True,order_by='ra')
+    dec_string = tables.Column(accessor='CoordString.1',
+                               verbose_name='DEC',orderable=True,order_by='dec')
+    dm_string = tables.Column(accessor='DMString',
+                               verbose_name='DM',orderable=True,order_by='DM')
+    tags_string = tables.Column(accessor='FRBTagsString',
+                               verbose_name='Tags',orderable=True,order_by='frb_tags')
+    host_string = tables.Column(accessor='HostString',
+                               verbose_name='Host')
+    host_pox_string = tables.Column(accessor='HostPOxString',
+                               verbose_name='Host P(O|x)')
+    host_z_string = tables.Column(accessor='HostzString',
+                               verbose_name='z')
+    host_z_source = tables.Column(accessor='HostzSource',
+                               verbose_name='z_source')
+    host_mag_string = tables.Column(accessor='HostMagString',
+                               verbose_name='Host mag')
+    resource_string = tables.Column(accessor='FRBFollowUpResourcesString',
+                               verbose_name='Resource(s)')
+    frb_survey_string = tables.Column(accessor='FRBSurveyString',
+                               verbose_name='FRB Survey',orderable=True,order_by='frb_survey')
+    status_string = tables.Column(accessor='StatusString',
+                               verbose_name='Status')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        #self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
+
+    class Meta:
+        model = FRBTransient
+        fields = ('name_string','ra_string','dec_string',
+                  'dm_string', 'frb_survey_string', 'tags_string',
+                  'status_string', 'resource_string',
+                  'host_string', 'host_pox_string',
+                  'host_mag_string', 'host_z_string', 'host_z_source')
+
+        template_name='YSE_App/django-tables2/bootstrap.html'
+        attrs = {
+            'th' : {
+                '_ordering': {
+                    'orderable': 'sortable', # Instead of `orderable`
+                    'ascending': 'ascend',	 # Instead of `asc`
+                    'descending': 'descend'	 # Instead of `desc`
+                }
+            },
+            'class': 'table table-bordered table-hover',
+            'id': 'k2_transient_tbl',
+            "columnDefs": [
+                {"type":"title-numeric","targets":1},
+                {"type":"title-numeric","targets":2},
+            ],
+            "order": [[ 3, "desc" ]],
+        }
+
+class FRBFollowupResourceTable(tables.Table):
+    """ Table for displaying a set of FRBFollowupResources """
+
+    name_string = tables.TemplateColumn("<a href=\"{% url 'frb_followup_resource' record.slug %}\">{{ record.name }}</a>",
+                                        verbose_name='Name',orderable=True,order_by='name')
+    #name_string = tables.Column(accessor='NameString',
+    #                          verbose_name='Name',orderable=True,order_by='Instr')
+    instr_string = tables.Column(accessor='InstrString',
+                              verbose_name='Instr',orderable=True,order_by='Instr')
+    start_string = tables.Column(accessor='StartString',
+                              verbose_name='Start',orderable=True,order_by='Instr')
+    stop_string = tables.Column(accessor='StopString',
+                              verbose_name='Stop',orderable=True,order_by='Instr')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    class Meta:
+        model = FRBTransient
+        fields = ('name_string','instr_string','start_string',
+                  'stop_string')
+
+        template_name='YSE_App/django-tables2/bootstrap.html'
+        attrs = {
+            'th' : {
+                '_ordering': {
+                    'orderable': 'sortable', # Instead of `orderable`
+                    'ascending': 'ascend',	 # Instead of `asc`
+                    'descending': 'descend'	 # Instead of `desc`
+                }
+            },
+            'class': 'table table-bordered table-hover',
+            'id': 'k2_transient_tbl',
+            "columnDefs": [
+                {"type":"title-numeric","targets":1},
+                {"type":"title-numeric","targets":2},
+            ],
+            "order": [[ 3, "desc" ]],
+        }
+
+class FRBFollowupObservationsTable(tables.Table):
+    """ Table for displaying a set of FRBFollowupObservations """
+
+    trans_string = tables.Column(accessor='TransientString',
+                              verbose_name='Transient',orderable=True,order_by='Transient')
+    instr_string = tables.Column(accessor='InstrString',
+                              verbose_name='Instr',orderable=True,order_by='Instr')
+    texp_string = tables.Column(accessor='TexpString',
+                              verbose_name='texp',orderable=True,order_by='texp')
+    mode_string = tables.Column(accessor='ModeString',
+                              verbose_name='Mode',orderable=True,order_by='Mode')
+    date_string = tables.Column(accessor='DateString',
+                              verbose_name='Date',orderable=True,order_by='Date')
+    success_string = tables.Column(accessor='SuccessString',
+                              verbose_name='Success',orderable=True,order_by='Success')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    class Meta:
+        model = FRBTransient
+        fields = ('trans_string', 'date_string', 
+                  'mode_string', 'success_string',
+                  'instr_string',
+                  'texp_string')
+
+        template_name='YSE_App/django-tables2/bootstrap.html'
+        attrs = {
+            'th' : {
+                '_ordering': {
+                    'orderable': 'sortable', # Instead of `orderable`
+                    'ascending': 'ascend',	 # Instead of `asc`
+                    'descending': 'descend'	 # Instead of `desc`
+                }
+            },
+            'class': 'table table-bordered table-hover',
+            'id': 'k2_transient_tbl',
+            "columnDefs": [
+                {"type":"title-numeric","targets":1},
+                {"type":"title-numeric","targets":2},
+            ],
+            "order": [[ 3, "desc" ]],
+        }

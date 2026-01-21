@@ -486,3 +486,73 @@ class GWCandidateImageViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = GWCandidateImage.objects.all()
     serializer_class = GWCandidateImageSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+# #######################################
+# FRB items
+
+class FRBTransientViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBTransient.objects.all()
+    serializer_class = FRBTransientSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    #filter_backends = (DjangoFilterBackend,)
+    #filter_class = TransientFilter
+    #filter_fields = ('status','created_date','modified_date','mw_ebv','status__name')
+
+class FRBSurveyViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = FRBSurvey.objects.all()
+    serializer_class = FRBSurveySerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+class FRBTagViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBTag.objects.all()
+    serializer_class = FRBTagSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+class FRBGalaxyViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBGalaxy.objects.all()
+    serializer_class = FRBGalaxySerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+class PathViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = Path.objects.all()
+    serializer_class = PathSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+class FRBFollowUpRequestViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBFollowUpRequest.objects.all()
+    serializer_class = FRBFollowUpRequestSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+class FRBFollowUpResourceViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBFollowUpResource.objects.all()
+    serializer_class = FRBFollowUpResourceSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+class FRBFollowUpObservationViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBFollowUpObservation.objects.all()
+    serializer_class = FRBFollowUpObservationSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+class FRBSampleCriteriaViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
+    queryset = FRBSampleCriteria.objects.all()
+    serializer_class = FRBSampleCriteriaSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+class CombinedViewSet_frbobs_and_frb_pending(viewsets.ViewSet):
+    """
+    Combined viewset to assist grabbing FRBs in ASAP
+    """
+
+    permission_classes = (permissions.IsAuthenticated,)
+    def list(self, request):
+        queryset1 = FRBFollowUpRequest.objects.all()
+        queryset2 = FRBFollowUpObservation.objects.all()
+
+        serializer1 = FRBFollowUpRequestSerializer(queryset1, many=True, context={'request': request})
+        serializer2 = FRBFollowUpObservationSerializer(queryset2, many=True, context={'request': request})
+
+        return Response({
+            'frbfollowuprequests': serializer1.data,
+            'frbfollowupobservations': serializer2.data
+        })
+    
