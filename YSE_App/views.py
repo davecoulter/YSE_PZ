@@ -646,7 +646,7 @@ def yse_observing_calendar(request):
     tel = Observer(location=location, timezone="UTC")
 
     todaydate = dateutil.parser.parse(datetime.datetime.today().strftime('%Y-%m-%d 00:00:00'))
-    base = todaydate-datetime.timedelta(30)
+    base = todaydate-datetime.timedelta(10)
     date_list = [base + datetime.timedelta(days=x) for x in range(40)]
     obstuple = ()
     colors = ['#dd4b39', 
