@@ -1,91 +1,89 @@
 # utils for generating webpage views
+
 import multiprocessing as mp
 try: mp.set_start_method('fork')
 except: pass
+from multiprocessing import Process, Queue
+
 import django
-from django.http import HttpResponse,JsonResponse
-from django.shortcuts import render, get_object_or_404, render
-import copy
-from .models import *
-#from .common.riseset import rise_func,set_func
-from django.db import models
-from astropy.coordinates import EarthLocation
-from astropy.coordinates import get_moon, SkyCoord, Angle
-from astropy.time import Time
-import astropy.units as u
-import datetime
-import numpy as np
 from django.conf import settings as djangoSettings
-from django.http import HttpResponseRedirect
+from django.contrib.auth.decorators import login_required, permission_required
+from django.db import models, connection, reset_queries
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.shortcuts import render, get_object_or_404, render
 from django.urls import reverse
 from django.views.generic import TemplateView
-import random
+
 import bokeh
-from bokeh.plotting import figure,ColumnDataSource
-from bokeh.resources import CDN
-from bokeh.embed import file_html
-from bokeh.models import Range1d,Span,LinearAxis,Label,Title,HoverTool
 from bokeh.core.properties import FontSizeSpec
-from .data import PhotometryService, SpectraService, ObservingResourceService
-from .serializers import *
-from rest_framework.request import Request
-from django.contrib.auth.decorators import login_required, permission_required
-import matplotlib.image as mpimg
-import calendar
+from bokeh.embed import file_html
+from bokeh.palettes import Dark2_5 as palette
+from bokeh.plotting import figure, ColumnDataSource
+from bokeh.models import Range1d, Span, LinearAxis, Label, Title, HoverTool, Legend
+from bokeh.resources import CDN
+
+from astropy.cosmology import FlatLambdaCDM
+from astropy.coordinates import EarthLocation, get_moon, SkyCoord, Angle
 from astropy.table import Table
-import sncosmo
-from .common.bandpassdict import bandpassdict
-from .common.utilities import date_to_mjd
-import time
-import random
-import django
-import datetime
-from astroplan.plots import plot_airmass
+from astropy.time import Time
 from astropy.utils import iers
 iers.conf.auto_download = True
-from astropy.cosmology import FlatLambdaCDM
-from bokeh.models import Legend
+import astropy.units as u
+from astroplan.plots import plot_airmass
+import calendar
+import datetime
+import sncosmo
 cosmo = FlatLambdaCDM(70,0.3)
+import time
+
+from .models import *
+#from .common.riseset import rise_func,set_func
+from .data import PhotometryService, SpectraService, ObservingResourceService
+from .serializers import *
+from .common.bandpassdict import bandpassdict
+from .common.utilities import date_to_mjd
+
+import copy
+import functools
+import healpy as hp
+import itertools
+import numpy as np
+import random
+import signal
+
+from rest_framework.request import Request
 
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import matplotlib.image as mpimg
+from matplotlib import rcParams
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.dates import DateFormatter
+from matplotlib.figure import Figure
+
+
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
-from matplotlib.dates import DateFormatter
-from matplotlib import rcParams
-import healpy as hp
-import itertools
-from bokeh.palettes import Dark2_5 as palette
+from django.templatetags.static import static
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+from django.shortcuts import render
+from django.views.generic import TemplateView
+from .util import mkFinderChart
+from YSE_App.models import Transient
+from django.conf import settings as djangoSettings
+from django.conf import settings as djangoSettings
 
-from django.db import connection, reset_queries
-import time
-import functools
-import signal
-from multiprocessing import Process, Queue
-Q = Queue()
-
-def query_debugger(func):
-
-    @functools.wraps(func)
-    def inner_func(*args, **kwargs):
-
-        reset_queries()
         
-        start_queries = len(connection.queries)
+        
+        
 
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        end = time.perf_counter()
-
-        end_queries = len(connection.queries)
-
-        print("Function : {}".format(func.__name__))
-        print("Number of Queries : {}".format(end_queries - start_queries))
-        print("Finished in : {:.2f}s".format(end - start))
-        return result
-
-    return inner_func
+Q = Queue()
 
 py2bokeh_symboldict = {"^":"triangle",
                        "+":"cross",
@@ -96,12 +94,29 @@ py2bokeh_symboldict = {"^":"triangle",
                        "o":"circle",
                        "h":"hex"}
 
+def query_debugger(func):
+
+    @functools.wraps(func)
+    def inner_func(*args, **kwargs):
+        reset_queries()
+        
+        start_queries = len(connection.queries)
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        end_queries = len(connection.queries)
+
+        print("Function : {}".format(func.__name__))
+        print("Number of Queries : {}".format(end_queries - start_queries))
+        print("Finished in : {:.2f}s".format(end - start))
+        return result
+
+    return inner_func
+
 def get_recent_phot_for_host(user, host_id=None):
     allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
 
-    photdata = False
-    for p in allowed_phot:
-        photdata = HostPhotData.objects.filter(photometry=p.id).order_by('-obs_date')
+    photdata = HostPhotData.objects.filter(photometry__in=allowed_phot).order_by('-obs_date').first()
     
     if photdata:
         return(photdata[0])
@@ -223,66 +238,40 @@ def getTimeUntilRiseSet(ra,dec,date,lat,lon,elev,utc_off):
 #
 #   return(can_obs)
 
-class finder(TemplateView):
+class Finder(TemplateView):
     template_name = 'YSE_App/finder.html'
-    
-    def __init__(self):
-        pass
+
     def finderchart(self, request, transient_id, clobber=False):
-        import os
-        from .util import mkFinderChart
-
-        from django.templatetags.static import static
-        from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-        from matplotlib.figure import Figure
-    
         transient = Transient.objects.get(pk=transient_id)
-        basedir = "%sYSE_App/images/findercharts"%(djangoSettings.STATIC_ROOT)
-        if not os.path.exists(basedir):
-            os.makedirs(basedir)
+        basedir = os.path.join(djangoSettings.STATIC_ROOT, 'YSE_App/images/findercharts')
+        os.makedirs(basedir, exist_ok=True)
 
-        outputOffsetFileName = '%s/%s/%s.offsetstars.txt'%(
-            basedir,transient.name,transient.name)
-        outputFinderFileName = '%s/%s/%s.finder.png'%(
-            basedir,transient.name,transient.name)
-        if not os.path.exists(os.path.dirname(outputFinderFileName)):
-            os.makedirs(os.path.dirname(outputFinderFileName))
-        #if os.path.exists(outputOffsetFileName) and\
-        #   os.path.exists(outputFinderFileName):
-        #   return HttpResponseRedirect(reverse('transient_detail',
-        #                                       args=(transient.id,)))
+        output_offset_file = os.path.join(basedir, transient.name, f"{transient.name}.offsetstars.txt")
+        output_finder_file = os.path.join(basedir, transient.name, f"{transient.name}.finder.png")
 
         find = mkFinderChart.finder()
         parser = find.add_options(usage='')
-        options,  args = parser.parse_args()
+        options, args = parser.parse_args()
         options.ra = str(transient.ra)
         options.dec = str(transient.dec)
         options.snid = transient.name
-        options.outputOffsetFileName = outputOffsetFileName
-        options.outputFinderFileName = outputFinderFileName
+        options.outputOffsetFileName = output_offset_file
+        options.outputFinderFileName = output_finder_file
         find.options = options
-        import pylab as plt
+        
+        fig, ax = plt.subplots()
+        canvas = FigureCanvas(fig)
 
-        fig=Figure()
-        if not os.path.exists(options.outputFinderFileName) or \
-           not os.path.exists(options.outputOffsetFileName) or \
-           clobber:
-            ax = fig.add_axes([0.2,0.3,0.6,0.6])
-            canvas=FigureCanvas(fig)
-            ax,offdictlist = find.mkChart(options.ra,options.dec,
-                                          options.outputFinderFileName,
-                                          ax=ax,saveImg=False,
-                                          clobber=clobber)
-            fig.savefig(options.outputFinderFileName,dpi=1000)
+        if not (os.path.exists(options.outputFinderFileName) and os.path.exists(options.outputOffsetFileName)) or clobber:
+            ax, offdictlist = find.mkChart(options.ra, options.dec, options.outputFinderFileName, ax=ax, saveImg=False, clobber=clobber)
+            fig.savefig(options.outputFinderFileName, dpi=1000)
         else:
             image = mpimg.imread(options.outputFinderFileName)
-            ax = fig.add_axes([0,0,1,1])
-            ax.set_xticks([]); ax.set_yticks([])
-            canvas=FigureCanvas(fig)
             ax.imshow(image)
+            ax.set_xticks([])
+            ax.set_yticks([])
 
-            offid,ra_str,dec_str,ra_off,dec_off,mag = \
-                np.loadtxt(outputOffsetFileName,dtype='str',unpack=True)
+            offid, ra_str, dec_str, ra_off, dec_off, mag = np.loadtxt(output_offset_file, dtype='str', unpack=True)
             offdictlist = []
             for i in range(len(offid))[1:]:
                 offdict = {'id':offid[i],
@@ -292,37 +281,22 @@ class finder(TemplateView):
                            'dec_off':'%.3f'%float(dec_off[i]),
                            'mag':'%.3f'%float(mag[i])}
                 offdictlist += [offdict]
-            
-        context = {'t':transient,
-                   'offsets':offdictlist}
-        
-        #return response
-        return render(request,'YSE_App/finder.html',
-                      context)
 
+        context = {
+            't': transient,
+            'offsets': offdictlist
+        }
+
+        return render(request, 'YSE_App/finder.html', context)    
+    
     def finderim(self, request, transient_id, clobber=False):
-        import os
-        from .util import mkFinderChart
-        from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-        from matplotlib.figure import Figure
-        import pylab as plt
         transient = Transient.objects.get(pk=transient_id)
-        basedir = "%sYSE_App/images/findercharts"%(djangoSettings.STATIC_ROOT)
-        if not os.path.exists(basedir):
-            os.makedirs(basedir)
-        print(basedir)
-        outputOffsetFileName = '%s/%s/%s.offsetstars.txt'%(
-            basedir,transient.name,transient.name)
-        outputFinderFileName = '%s/%s/%s.finder.png'%(
-            basedir,transient.name,transient.name)
-        if not os.path.exists(os.path.dirname(outputFinderFileName)):
-            os.makedirs(os.path.dirname(outputFinderFileName))
-        #if os.path.exists(outputOffsetFileName) and\
-        #   os.path.exists(outputFinderFileName):
-        #   return HttpResponseRedirect(reverse('transient_detail',
-        #                                       args=(transient.id,)))
+        basedir = os.path.join(djangoSettings.STATIC_ROOT, 'YSE_App/images/findercharts')
+        os.makedirs(basedir, exist_ok=True)
 
-        
+        output_offset_file = os.path.join(basedir, transient.name, f"{transient.name}.offsetstars.txt")
+        output_finder_file = os.path.join(basedir, transient.name, f"{transient.name}.finder.png")
+
         find = mkFinderChart.finder()
         parser = find.add_options(usage='')
         options,  args = parser.parse_args()

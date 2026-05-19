@@ -1,3 +1,13 @@
+# YSE_PZ_chatgpt — archived
+
+> **This repository is archived and read-only.**
+
+Development has moved to **[astrofoley/YSE_PZ](https://github.com/astrofoley/YSE_PZ)** on the **`main`** branch (unified with [davecoulter/YSE_PZ `develop`](https://github.com/davecoulter/YSE_PZ/tree/develop), plus Docker/CI and merged work from this repo).
+
+Do not open pull requests here. Clone and branch from `astrofoley/YSE_PZ` instead.
+
+---
+
 # YSE_PZ
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7278430.svg)](https://doi.org/10.5281/zenodo.7278430)
