@@ -79,16 +79,20 @@ archivePrefix = {arXiv},
 
 ## Fork development (astrofoley/YSE_PZ)
 
-This fork’s **`main`** branch tracks [davecoulter/YSE_PZ `develop`](https://github.com/davecoulter/YSE_PZ/tree/develop), plus local Docker/CI fixes and work merged from [YSE_PZ_chatgpt](https://github.com/astrofoley/YSE_PZ_chatgpt). Day-to-day branches should start from **`main`**.
+This fork’s **`main`** branch tracks [davecoulter/YSE_PZ `develop`](https://github.com/davecoulter/YSE_PZ/tree/develop), plus local Docker/CI fixes and work merged from [YSE_PZ_chatgpt](https://github.com/astrofoley/YSE_PZ_chatgpt) (that repo is **archived**; use this repo only). Day-to-day branches should start from **`main`**.
 
 | Branch | Purpose |
 |--------|---------|
-| `main` | Unified develop-based line (upstream PRs target `davecoulter:develop`) |
+| `main` | Unified develop-based line |
 | `deploy/apache-subpath` | Apache subpath / deploy-only changes (not on `main`) |
 
 **Remotes:** `origin` → davecoulter/YSE_PZ; `astrofoley` → this fork.
 
+**Upstream PR:** When ready, open a cross-fork PR from `astrofoley/main` to `davecoulter/develop` via [compare across forks](https://github.com/davecoulter/YSE_PZ/compare/develop...astrofoley:YSE_PZ:main?expand=1) (not the fork “Contribute” button, which targets simulationstation).
+
 **Local Docker:** see [docker/readme.txt](docker/readme.txt) and `./docker/scripts/yse-docker.sh up`.
 
 For Apache subpath deployments (`URL_PREFIX = /YSE_PZ`), use `deploy/apache-subpath` and [deploy/apache/yse_pz-subpath.conf.example](deploy/apache/yse_pz-subpath.conf.example).
+
+Track open work on [GitHub Issues](https://github.com/astrofoley/YSE_PZ/issues).
 
