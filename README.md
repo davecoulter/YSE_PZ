@@ -90,7 +90,7 @@ This fork’s **`main`** branch tracks [davecoulter/YSE_PZ `develop`](https://gi
 
 **Upstream PR:** When ready, open a cross-fork PR from `astrofoley/main` to `davecoulter/develop` via [compare across forks](https://github.com/davecoulter/YSE_PZ/compare/develop...astrofoley:YSE_PZ:main?expand=1) (not the fork “Contribute” button, which targets simulationstation).
 
-**Local Docker:** see [docker/readme.txt](docker/readme.txt) and `./docker/scripts/yse-docker.sh up`.
+**Local Docker:** see [CONTRIBUTING.md](CONTRIBUTING.md) (setup, pruning, `collectstatic`) and [docker/readme.txt](docker/readme.txt).
 
 For Apache subpath deployments (`URL_PREFIX = /YSE_PZ`), use `deploy/apache-subpath` and [deploy/apache/yse_pz-subpath.conf.example](deploy/apache/yse_pz-subpath.conf.example).
 
