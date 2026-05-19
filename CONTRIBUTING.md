@@ -98,6 +98,17 @@ docker exec ysepz_web_container python3 manage.py test YSE_App.tests --verbosity
 
 CI runs the same flow via [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
+## Secrets (optional)
+
+For production or shared machines, prefer environment variables over committing secrets in `settings.ini`:
+
+| Variable | Purpose |
+|----------|---------|
+| `DJANGO_SECRET_KEY` | Django `SECRET_KEY` |
+| `TNS_API_KEY` | TNS bot API key |
+| `TNS_DECAM_API_KEY` | DECam TNS bot key |
+| `SLACK_BOT_TOKEN` | TNS Slack notifications (`TNS_Bot.py`) |
+
 ## Database
 
 Local Docker uses init SQL under `docker/db_init/` only. Do not import the full production database on a laptop unless you intend to.

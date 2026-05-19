@@ -26,7 +26,13 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'f9zh73k2z&-p*k^fzj!sydk03zwlxdm%*13rd9t$*n0i6*sr6%'
+# Prefer DJANGO_SECRET_KEY env var; optional [site_settings] SECRET_KEY in settings.ini.
+if os.environ.get('DJANGO_SECRET_KEY'):
+    SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
+elif config.has_option('site_settings', 'SECRET_KEY'):
+    SECRET_KEY = config.get('site_settings', 'SECRET_KEY')
+else:
+    SECRET_KEY = 'f9zh73k2z&-p*k^fzj!sydk03zwlxdm%*13rd9t$*n0i6*sr6%'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(config.get('site_settings', 'IS_DEBUG'))
@@ -223,10 +229,10 @@ ZTFPASS = config.get('ztf','ztfforcedphotpass')
 KEPLER_API_ENDPOINT = "http://api.keplerscience.org/is-k2-observing"
 TNSUSER = config.get('main','tns_bot_name')
 TNSID = config.get('main','tns_bot_id')
-TNSAPIKEY = config.get('main','tnsapikey')
+TNSAPIKEY = os.environ.get('TNS_API_KEY') or config.get('main', 'tnsapikey')
 TNSDECAMUSER = config.get('main','tns_decam_bot_name')
 TNSDECAMID = config.get('main','tns_decam_bot_id')
-TNSDECAMAPIKEY = config.get('main','tnsdecamapikey')
+TNSDECAMAPIKEY = os.environ.get('TNS_DECAM_API_KEY') or config.get('main', 'tnsdecamapikey')
 REDYSEFILTER = config.get('yse','red_yse_filter')
 ghost_path = config.get('main','ghost_path')
 

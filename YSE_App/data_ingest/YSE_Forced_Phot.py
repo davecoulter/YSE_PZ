@@ -20,8 +20,6 @@ import tempfile
 import os
 import json
 import sys
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 import smtplib
 import re
 
@@ -126,6 +124,7 @@ default_forcedphot_header['EMAIL']    = 'yse@qub.ac.uk'
 
 from astropy.visualization import PercentileInterval, AsinhStretch
 from tendo import singleton
+from YSE_App.common.alert import sendemail
 
 def get_camera(exp_name):
     if re.match('o[0-9][0-9][0-9][0-9]g[0-9][0-9][0-9][0-9]o',exp_name):
@@ -970,27 +969,6 @@ class ForcedPhotUpdate(CronJobBase):
         print('YSE_PZ Forced Photometry took %.1f seconds for %i transients'%(time.time()-tstart,nsn))
 
         
-def sendemail(from_addr, to_addr,
-              subject, message,
-              login, password, smtpserver, cc_addr=None):
-
-    print("Preparing email")
-
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = from_addr
-    msg['To'] = to_addr
-    payload = MIMEText(message, 'html')
-    msg.attach(payload)
-    
-    with smtplib.SMTP(smtpserver) as server:
-        try:
-            server.starttls()
-            server.login(login, password)
-            resp = server.sendmail(from_addr, [to_addr], msg.as_string())
-            print("Send success")
-        except:
-            print("Send fail")
 
         
 if __name__ == "__main__":
