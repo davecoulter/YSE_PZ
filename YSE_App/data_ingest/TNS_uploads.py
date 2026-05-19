@@ -30,9 +30,6 @@ from requests.auth import HTTPBasicAuth
 import struct
 import threading
 import queue
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import smtplib
 from collections import OrderedDict
 from YSE_App.util.TNS_Synopsis import mastrequests
 from astropy.io import ascii
@@ -40,6 +37,7 @@ from itertools import islice
 from astropy.cosmology import FlatLambdaCDM
 import sys
 from YSE_App.common import mast_query,chandra_query,spitzer_query
+from YSE_App.common.alert import sendemail
 from django_cron import CronJobBase, Schedule
 from django.conf import settings as djangoSettings
 import argparse, configparser
@@ -1112,28 +1110,6 @@ def run_parallel_in_threads(target, args_list):
         t.join()
     return result
 
-
-def sendemail(from_addr, to_addr,
-            subject, message,
-            login, password, smtpserver, cc_addr=None):
-
-    print("Preparing email")
-
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = from_addr
-    msg['To'] = to_addr
-    payload = MIMEText(message, 'html')
-    msg.attach(payload)
-
-    with smtplib.SMTP(smtpserver) as server:
-        try:
-            server.starttls()
-            server.login(login, password)
-            resp = server.sendmail(from_addr, [to_addr], msg.as_string())
-            print("Send success")
-        except Exception as e:
-            print("Send fail; %s"%e)
 
 def format_to_json(source):
     # change data to json format and return

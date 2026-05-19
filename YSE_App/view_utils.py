@@ -494,8 +494,11 @@ def view_yse_fields(request):
     field_pk = survey_obs.values('survey_field').distinct()
     survey_fields_two_nights_ago = SurveyField.objects.filter(pk__in = field_pk).filter(~Q(obs_group__name='ZTF')).select_related()
     
-    mapdata = hp.fitsfunc.read_map(
-        '%s/YSE_metric_map.fits'%djangoSettings.STATIC_ROOT, h=False, verbose=True)
+    metric_map_path = os.path.join(djangoSettings.STATIC_ROOT, 'YSE_metric_map.fits')
+    if os.path.exists(metric_map_path):
+        mapdata = hp.fitsfunc.read_map(metric_map_path, h=False, verbose=True)
+    else:
+        mapdata = np.zeros(hp.nside2npix(128), dtype=np.float64)
 
     npix = hp.nside2npix(128)
     newmap = np.zeros(npix, dtype=np.float32)
@@ -1489,7 +1492,6 @@ def spectrumplot_summary(request, transient_id):
     ax.xaxis.axis_label = r'Wavelength (Angstrom)'
     ax.yaxis.axis_label = 'Flux'
     g = file_html(ax,CDN,"spectrum plot")
-    time.sleep(5)
     return HttpResponse(g.replace('width: 90%','width: 100%'))
 
 

@@ -16,9 +16,6 @@ import argparse
 import configparser
 import os
 import shutil
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import smtplib
 from io import open as iopen
 import datetime
 import dateutil
@@ -33,6 +30,7 @@ from antares_client.search import cone_search
 from string import ascii_lowercase
 import itertools
 from YSE_App.common.utilities import getRADecBox
+from YSE_App.common.alert import sendemail
 
 def iter_all_strings():
     for size in itertools.count(1):
@@ -1584,28 +1582,6 @@ def run_parallel_in_threads(target, args_list):
         t.join()
     return result
 
-
-def sendemail(from_addr, to_addr,
-            subject, message,
-            login, password, smtpserver, cc_addr=None):
-
-    print("Preparing email")
-
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = from_addr
-    msg['To'] = to_addr
-    payload = MIMEText(message, 'html')
-    msg.attach(payload)
-
-    with smtplib.SMTP(smtpserver) as server:
-        try:
-            server.starttls()
-            server.login(login, password)
-            resp = server.sendmail(from_addr, [to_addr], msg.as_string())
-            print("Send success")
-        except:
-            print("Send fail")
 
 def format_to_json(source):
     # change data to json format and return

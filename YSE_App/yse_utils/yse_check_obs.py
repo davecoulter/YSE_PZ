@@ -13,30 +13,8 @@ import datetime
 import numpy as np
 
 import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from YSE_App.common.alert import sendemail
 
-def sendemail(from_addr, to_addr,
-              subject, message,
-              login, password, smtpserver, cc_addr=None):
-
-    print("Preparing email")
-
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = from_addr
-    msg['To'] = to_addr
-    payload = MIMEText(message, 'html')
-    msg.attach(payload)
-
-    with smtplib.SMTP(smtpserver) as server:
-        try:
-            server.starttls()
-            server.login(login, password)
-            resp = server.sendmail(from_addr, [to_addr], msg.as_string())
-            print("Send success")
-        except:
-            print("Send fail")
 
 class check_obs:
     def __init__(self):

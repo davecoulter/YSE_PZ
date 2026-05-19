@@ -24,9 +24,7 @@ import sys
 from astropy.io import fits
 import astropy.table as at
 from YSE_App.util.skycells import getskycell
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import smtplib
+from YSE_App.common.alert import sendemail
 
 try:
   from dustmaps.sfd import SFDQuery
@@ -100,29 +98,6 @@ _allowed_galaxy_catalogs = {'sdss_gals':{'name_key':'Objid','ra_key':'ra','dec_k
 							'nyu_valueadded_gals':{'name_key':'sid','ra_key':'RA','dec_key':'DEC','redshift_key':None,'priority':6}}
 							#'french_post_starburst_gals':{'name_key':'Objid','ra_key':'ra','dec_key':dec,'redshift_key':z,'priority':5}}
 
-def sendemail(from_addr, to_addr,
-			  subject, message,
-			  login, password, smtpserver, cc_addr=None):
-
-	print("Preparing email")
-
-	msg = MIMEMultipart('alternative')
-	msg['Subject'] = subject
-	msg['From'] = from_addr
-	msg['To'] = to_addr
-	payload = MIMEText(message, 'html')
-	msg.attach(payload)
-	
-	with smtplib.SMTP(smtpserver) as server:
-		try:
-			server.starttls()
-			server.login(login, password)
-			resp = server.sendmail(from_addr, [to_addr], msg.as_string())
-			print("Send success")
-		except:
-			print("Send fail")
-
-							
 class AntaresZTF(CronJobBase):
 
 	RUN_EVERY_MINS = 60

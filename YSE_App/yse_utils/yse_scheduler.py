@@ -21,32 +21,10 @@ from astropy.coordinates import get_moon, SkyCoord
 import astropy.units as u
 
 import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from YSE_App.common.alert import sendemail
 
 _ztf_obs_url = "http://skyvision.caltech.edu/ztf/msip/nightly_summary?obsdate=%04i-%02i-%02i"
 
-def sendemail(from_addr, to_addr,
-              subject, message,
-              login, password, smtpserver, cc_addr=None):
-
-    print("Preparing email")
-
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = from_addr
-    msg['To'] = to_addr
-    payload = MIMEText(message, 'html')
-    msg.attach(payload)
-
-    with smtplib.SMTP(smtpserver) as server:
-        try:
-            server.starttls()
-            server.login(login, password)
-            resp = server.sendmail(from_addr, [to_addr], msg.as_string())
-            print("Send success")
-        except:
-            print("Send fail")
 
 def date_to_mjd(date):
     time = Time(date,scale='utc')

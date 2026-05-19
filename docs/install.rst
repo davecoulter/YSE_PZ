@@ -7,7 +7,7 @@ Installation
 Docker
 ******
 
-This pages walks you through running :code:`YSE_PZ` locally. You might want to
+This page walks you through running :code:`YSE_PZ` locally. You might want to
 do this if you want to develop on :code:`YSE_PZ`. The strongly recommended
 (and only supported) way to run :code:`YSE_PZ` locally is to use docker.
 You could attempt to install :code:`YSE_PZ` natively (instructions at the bottom
@@ -318,7 +318,7 @@ this will grab transients uploaded to TNS or updated within the last day.  To ch
 this every three minutes), change the :code:`tns_recent_ndays` parameter in the settings.ini file.
 
 Finally, to get new ZTF or TNS photometry/spectra for objects, the following cron will grab everything for
-transients with the statuses :code:`Watch`, :code:`Interesting`:, :code:`FollowupRequested`, :code:`Following`,
+transients with the statuses :code:`Watch`, :code:`Interesting`, :code:`FollowupRequested`, :code:`Following`,
 or :code:`FollowupFinished`::
 
   python manage.py runcrons YSE_App.data_ingest.TNS_uploads.TNS_updates --force

@@ -323,8 +323,6 @@ def execute_after_save(sender, instance, created, *args, **kwargs):
 				thachertag = TransientTag.objects.get(name='Thacher')
 				instance.tags.add(thachertag)
 			except: pass
-			
-		instance.save()
 		#if is_k2_C19_validated:
 		#	coord_string = GetSexigesimalString(instance.ra, instance.dec)
 		#	coord_string = instance.CoordString()

@@ -3,8 +3,6 @@ import requests
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 from django_cron import CronJobBase, Schedule
 from django.conf import settings as djangoSettings
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 import smtplib
 from io import open as iopen
 import configparser
@@ -45,6 +43,7 @@ except:
 run:
 import dustmaps
 import dustmaps.sfd
+from YSE_App.common.alert import sendemail
 dustmaps.sfd.fetch()""")
 
 def mjd_to_date(obs_mjd):
@@ -77,27 +76,6 @@ def get_ps_score(RA, DEC):
 
     return output
 
-def sendemail(from_addr, to_addr,
-            subject, message,
-            login, password, smtpserver, cc_addr=None):
-
-    print("Preparing email")
-
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = from_addr
-    msg['To'] = to_addr
-    payload = MIMEText(message, 'html')
-    msg.attach(payload)
-
-    with smtplib.SMTP(smtpserver) as server:
-        try:
-            server.starttls()
-            server.login(login, password)
-            resp = server.sendmail(from_addr, [to_addr], msg.as_string())
-            print("Send success")
-        except:
-            print("Send fail")
 
 class DECam(CronJobBase):
 
