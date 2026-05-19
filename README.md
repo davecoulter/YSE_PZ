@@ -77,3 +77,18 @@ archivePrefix = {arXiv},
 }
 ```
 
+## Fork development (astrofoley/YSE_PZ)
+
+This fork’s **`main`** branch tracks [davecoulter/YSE_PZ `develop`](https://github.com/davecoulter/YSE_PZ/tree/develop), plus local Docker/CI fixes and work merged from [YSE_PZ_chatgpt](https://github.com/astrofoley/YSE_PZ_chatgpt). Day-to-day branches should start from **`main`**.
+
+| Branch | Purpose |
+|--------|---------|
+| `main` | Unified develop-based line (upstream PRs target `davecoulter:develop`) |
+| `deploy/apache-subpath` | Apache subpath / deploy-only changes (not on `main`) |
+
+**Remotes:** `origin` → davecoulter/YSE_PZ; `astrofoley` → this fork.
+
+**Local Docker:** see [docker/readme.txt](docker/readme.txt) and `./docker/scripts/yse-docker.sh up`.
+
+For Apache subpath deployments (`URL_PREFIX = /YSE_PZ`), use `deploy/apache-subpath` and [deploy/apache/yse_pz-subpath.conf.example](deploy/apache/yse_pz-subpath.conf.example).
+
