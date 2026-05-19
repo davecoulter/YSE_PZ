@@ -58,12 +58,15 @@ jobs:
         run: |
           for i in $(seq 1 60); do
             if curl -fsS http://localhost:8000/login/ >/dev/null; then
+              echo "Gunicorn ready after attempt $i"
               exit 0
             fi
+            echo "Attempt $i/60: login not ready yet"
+            docker logs ysepz_web_container 2>&1 | tail -40 || true
             sleep 5
           done
           echo "Web service did not become ready in time"
-          docker logs ysepz_web_container || true
+          docker logs ysepz_web_container 2>&1 || true
           exit 1
 
       - name: Django system check

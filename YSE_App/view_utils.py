@@ -397,6 +397,9 @@ class Finder(TemplateView):
 
         return offdict, outputFinderFileName
 
+def finder():
+    return Finder()
+
 
 ## We should refactor this so that it takes:
 # - transient
@@ -792,128 +795,77 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 
 
 def lightcurveplot_detail(request, transient_id, salt2=False):
+    import time
     tstart = time.time()
 
-    transient = get_object_or_404(Transient, pk=transient_id)
-
-    # Fetch photometry data with necessary related fields
-    photdata = (
-        get_all_phot_for_transient(request.user, transient_id)
-        .select_related(
-            "band__instrument__telescope",
-            "created_by",
-            "modified_by",
-        )
-        .order_by("-modified_date")
-    )
-
-    if not photdata.exists():
-        return HttpResponse("")
-
-    # Pre-fetch related band data to avoid repeated lookups
-    band_ids = photdata.values_list("band", flat=True).distinct()
-    band_data = PhotometricBand.objects.filter(pk__in=band_ids).select_related("instrument")
-    band_lookup = {b.pk: b for b in band_data}
-
-    # Extract photometry data efficiently
-    phot_values = photdata.values(
-        "flux",
-        "flux_err",
-        "flux_zero_point",
-        "mag",
-        "mag_err",
-        "discovery_point",
-        "obs_date",
-        "band",
-        "mag_sys__name",
-    )
-
-    # Convert data to NumPy arrays
-    flux = np.array([p["flux"] for p in phot_values], dtype=float)
-    flux_err = np.array([p["flux_err"] for p in phot_values], dtype=float)
-    flux_zero_point = np.array([p["flux_zero_point"] or 27.5 for p in phot_values], dtype=float)
-    mag = np.array([p["mag"] for p in phot_values], dtype=float)
-    mag_err = np.array([p["mag_err"] or 0.01 for p in phot_values], dtype=float)
-    discovery_point = np.array([p["discovery_point"] for p in phot_values], dtype=bool)
-    obs_date = np.array([p["obs_date"] for p in phot_values], dtype="datetime64")
-    mag_sys = np.array([p["mag_sys__name"] or "None" for p in phot_values])
-    band_ids = np.array([p["band"] for p in phot_values], dtype=int)
-
-    # Convert observation dates to MJD
-    mjd = date_to_mjd(obs_date)
-    obs_date_str = [date.strftime("%m/%d/%Y") for date in obs_date]
-
-    # Initialize plot
-    colorlist = ['#8dd3c7', '#bebada', '#fb8072', '#80b1d3', '#fdb462', '#b3de69', '#fccde5', '#d9d9d9']
-    TOOLTIPS = [
-        ("mag", "$y"),
-        ("band", "@band"),
-        ("date", "@date"),
-        ("dq", "@data_quality"),
-        ("magsys", "@magsys"),
-    ]
-
-    ax = figure(plot_width=240, plot_height=240, sizing_mode="scale_width")
+    transient = Transient.objects.get(pk=transient_id)
+    photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
+        'created_by', 'modified_by', 'band', 'unit', 'photometry',
+        'band__instrument','band__instrument__telescope').order_by('-modified_date')
+    if not photdata:
+        return django.http.HttpResponse('')
     
-    # Group by unique bands
-    unique_bands, band_indices = np.unique(band_ids, return_index=True)
+    mjd,salt2mjd,salt2flux,salt2fluxerr,date,mag,magerr,flux,fluxerr,zpsys,salt2band,band,bandstr,bandcolor,bandsym,data_quality,magsys = \
+        np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
+        np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
+        np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),\
+        np.array([]),np.array([])
+    upperlimmjd,upperlimdate,upperlimmag,upperlimband,upperlimbandstr,upperlimbandcolor,upperlimdataquality,upperlimmagsys = \
+        np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+    limmjd = None
 
-    legend_items = []
+    salt2bandpasses = np.array(bandpassdict.keys())
 
-    for count, band_id in enumerate(unique_bands):
-        band_obj = band_lookup[band_id]
-        color = band_obj.disp_color or colorlist[count % len(colorlist)]
-        if band_obj.disp_symbol and band_obj.disp_symbol != 'inverted_triangle':
-            try:
-                plotmethod = getattr(ax, bsym)  # Attempt to get the desired plot method
-            except AttributeError:
-                plotmethod = getattr(ax, 'triangle')  # Fallback to 'triangle' if bsym is invalid
-        else:
-            plotmethod = getattr(ax, 'triangle')  # Default to 'triangle' for 'inverted_triangle' or empty symbols
-        symbol = band_obj.disp_symbol or "triangle"
-        size = 20 if symbol == "asterisk" else 7
+    tstart = time.time()
+    fluxes = np.array(photdata.values_list('flux',flat=True))
+    flux_errs = np.array(photdata.values_list('flux_err',flat=True))
+    flux_zpts = np.array(photdata.values_list('flux_zero_point',flat=True))
+    flux_zpts[flux_zpts == None] = 27.5
+    mags = np.array(photdata.values_list('mag',flat=True))
+    mag_errs = np.array(photdata.values_list('mag_err',flat=True))
+    disc_points = np.array(photdata.values_list('discovery_point',flat=True))
+    obs_dates = np.array(photdata.values_list('obs_date',flat=True))
+    obs_dates_str = np.array([p.strftime('%m/%d/%Y') for p in photdata.values_list('obs_date',flat=True)])
+    mjds = date_to_mjd(obs_dates)
+    data_quality = np.array(['Good' if p is None else ','.join(p.data_quality.values_list('name',flat=True)) for p in photdata])
+    mag_sys = np.array(['None' if p is None else p for p in photdata.values_list('mag_sys__name',flat=True)])
+    band = np.array(photdata.values_list('band',flat=True))
+    band_name = np.array([PhotometricBand.objects.get(pk=b).name for b in band])
+    instrument_name = np.array([PhotometricBand.objects.get(pk=b).instrument.name for b in band])
+    disp_symbol = np.array([PhotometricBand.objects.get(pk=b).disp_symbol for b in band])
+    disp_color = np.array([PhotometricBand.objects.get(pk=b).disp_color for b in band])
+    mag_errs_tmp = mag_errs
+    mag_errs_tmp[mag_errs == None] = 0.01
 
-        # Filter data for this band
-        band_filter = band_ids == band_id
-        band_mjd = mjd[band_filter]
-        band_mag = mag[band_filter]
-        band_mag_err = mag_err[band_filter]
-        band_obs_date_str = np.array(obs_date_str)[band_filter]
-
-        # Apply SALT2 logic if requested
-        if salt2:
-            salt2_flux = flux[band_filter]
-            salt2_mag = -2.5 * np.log10(salt2_flux) + flux_zero_point[band_filter]
-            salt2_mag_err = 1.0857 / (salt2_flux / flux_err[band_filter])
-            band_mag = salt2_mag
-            band_mag_err = salt2_mag_err
-
-        # Plot data
-        source = ColumnDataSource(
-            data=dict(
-                x=band_mjd.tolist(),
-                y=band_mag.tolist(),
-                date=band_obs_date_str.tolist(),
-                data_quality=["Good"] * len(band_mjd),
-                magsys=mag_sys[band_filter].tolist(),
-                band=[f"{band_obj.instrument.name} - {band_obj.name}"] * len(band_mjd),
-            )
-        )
-        plot_func = getattr(ax, symbol, ax.triangle)
-        plot = plot_func("x", "y", source=source, color=color, size=size, muted_alpha=0.2)
-        hover = HoverTool(renderers=[plot], tooltips=TOOLTIPS, toggleable=False)
-        ax.add_tools(hover)
-
-        # Error bars
-        err_xs = [(x, x) for x in band_mjd]
-        err_ys = [(y - yerr, y + yerr) for y, yerr in zip(band_mag, band_mag_err)]
-        ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)
-
-        legend_items.append((f"{band_obj.instrument.name} - {band_obj.name}", [plot]))
-
-
-
+    colorlist = ['#8dd3c7','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9']
+    TOOLTIPS = [
+        ('mag','$y'),
+        ('band','@band'),
+        ('date','@date'),
+        ('dq','@data_quality'),
+        ('magsys','@magsys')]
+    ax=figure(plot_width=240,plot_height=240,sizing_mode='scale_width')#,tooltips=TOOLTIPS)#'stretch_both')
+    bandunq,idx = np.unique(band,return_index=True)
+    count = 0
+    legend_it = []
+    upperlimmag,upperlimmjd = np.array([]),np.array([])
     for bs,bn,b,bc,bsym,inn in zip(
+            bandunq,band_name[idx],band[idx],disp_color[idx],disp_symbol[idx],instrument_name[idx]):
+        if bc != 'None' and bc: color = bc
+        else:
+            coloridx = count % len(np.unique(colorlist))
+            color = colorlist[coloridx]
+            count += 1
+
+        if bsym and bsym != 'inverted_triangle':
+            try:
+                plotmethod = getattr(ax, bsym)
+            except:
+                plotmethod = getattr(ax, 'triangle')
+        else:
+            plotmethod = getattr(ax, 'triangle')
+        if bsym != 'asterisk': size=7
+        else: size=20
 
         if salt2:
             bandkey = 'Band: %s - %s'%(inn,bn)
