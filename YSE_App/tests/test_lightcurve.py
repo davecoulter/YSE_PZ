@@ -7,6 +7,7 @@ from django.utils import timezone
 from YSE_App.models import (
     Instrument,
     ObservationGroup,
+    Observatory,
     PhotometricBand,
     Telescope,
     Transient,
@@ -28,7 +29,20 @@ class LightcurvePlotTests(TestCase):
         cls.obs_group, _ = ObservationGroup.objects.get_or_create(
             name="lc-test-group", defaults=audit
         )
-        cls.telescope = Telescope.objects.create(name="TestTel", **audit)
+        cls.observatory = Observatory.objects.create(
+            name="TestObs",
+            utc_offset=0,
+            tz_name="UTC",
+            **audit,
+        )
+        cls.telescope = Telescope.objects.create(
+            name="TestTel",
+            observatory=cls.observatory,
+            latitude=0.0,
+            longitude=0.0,
+            elevation=0.0,
+            **audit,
+        )
         cls.instrument = Instrument.objects.create(
             name="GPC1", telescope=cls.telescope, **audit
         )
