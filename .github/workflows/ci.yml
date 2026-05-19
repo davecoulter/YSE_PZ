@@ -17,6 +17,13 @@ jobs:
       - name: Configure application settings
         run: cp YSE_PZ/public_settings.ini YSE_PZ/settings.ini
 
+      - name: Python syntax check (app code)
+        run: |
+          find YSE_App YSE_PZ -name '*.py' \
+            ! -path '*/static/*' ! -path '*/bower_components/*' \
+            ! -path '*/common/getGWevents.py' \
+            -exec python3 -m py_compile {} +
+
       - name: Write docker compose environment
         working-directory: docker
         run: |
