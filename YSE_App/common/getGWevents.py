@@ -116,7 +116,7 @@ class GW2YSE:
 			alerts = alerts.swopealertclass()
 		else:
 			error = 'ERROR: PIPE_INSTRUMENT={inst} is not recognized!'
-			raise RuntimeError,error.format(inst=os.environ['PIPE_INSTRUMENT'])
+			raise RuntimeError(error.format(inst=os.environ['PIPE_INSTRUMENT']))
 
 		params = pipeclasses.paramfileclass()
 		params.loadfile(os.getenv('PIPE_PARAMS'))

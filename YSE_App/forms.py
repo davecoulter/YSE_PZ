@@ -37,7 +37,7 @@ class TransientForm(ModelForm):
 class TransientFollowupForm(ModelForm):
     status = forms.ModelChoiceField(
         FollowupStatus.objects.all(),
-        initial=FollowupStatus.objects.filter(name='Requested')[0])
+        initial=FollowupStatus.objects.filter(name='Requested').first())
     qs = ClassicalResource.objects.filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('end_date_valid').select_related()
     if len(qs):
         classical_resource = forms.ModelChoiceField(
@@ -256,9 +256,8 @@ class SpectrumUploadForm(ModelForm):
         'OSIRIS','FLOYDS-N','FLOYDS-S','NIRC2',
         'NIRSPEC','NIRES','KCWI','ESI',
         'DEIMOS','OSIRIS','MOSFIRE','LRIS','LRS2',
-        'HIRES','GMOS','Goodman','KAST','WiFeS',
-        'WFCCD','DIS','Binospec','SpeX','UVES',
-        'GNIRS','FLAMINGOS-2','DOLORES','FAST']
+        'HIRES','GMOS','Goodman','KAST','WiFeS','WFCCD','DIS','Binospec','SpeX','UVES',
+        'GNIRS','FLAMINGOS-2','DOLORES']
     instrument = forms.ModelChoiceField(Instrument.objects.filter(Q(name__in=spec_instruments)))
     #import pdb; pdb.set_trace()
     class Meta:

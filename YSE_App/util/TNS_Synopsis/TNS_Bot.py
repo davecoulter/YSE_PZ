@@ -4,7 +4,7 @@ from slackclient import SlackClient
 import TNS_Synopsis
 
 # constants
-SLACK_BOT_TOKEN="xoxb-122297221971-0W2RXCRa5Sm6yekdDPDeAc4H"
+SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN", "")
 BOT_NAME = "tns_update"
 BOT_ID = "U3L8R6HUK"
 AT_BOT = "<@" + BOT_ID + ">"

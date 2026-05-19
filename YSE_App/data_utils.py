@@ -1397,7 +1397,7 @@ def getRADecBox(ra,dec,size=None,dec_size=None):
         RAboxsize = DECboxsize = size
     else:
         RAboxsize = size
-        DECboxsize = size
+        DECboxsize = dec_size
 
     # get the maximum 1.0/cos(DEC) term: used for RA cut
     minDec = dec-0.5*DECboxsize
