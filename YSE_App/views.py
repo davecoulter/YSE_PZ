@@ -385,7 +385,7 @@ def get_item(dictionary, key):
 
 @login_required
 def calendar(request):
-    all_dates = OnCallDate.objects.all()
+    all_dates = OnCallDate.objects.prefetch_related('user').all()
     colors = ['#dd4b39', 
                 '#f39c12', 
                 '#00c0ef', 
@@ -397,7 +397,10 @@ def calendar(request):
                 '#001f3f']
 
     user_colors = {}
-    for i, u in enumerate(User.objects.all().exclude(username='admin')):
+    calendar_users = User.objects.filter(
+        oncalldate__isnull=False
+    ).exclude(username='admin').distinct()
+    for i, u in enumerate(calendar_users):
         user_colors[u.username] = colors[i % len(colors)]
 
     context = {
