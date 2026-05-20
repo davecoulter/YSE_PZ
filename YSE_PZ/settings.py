@@ -164,7 +164,8 @@ DATABASES = {
         'USER': config.get('database', 'EXPLORER_USER'),
         'PASSWORD': config.get('database', 'EXPLORER_PASSWORD'),
         'HOST': config.get('database', 'DATABASE_HOST'),
-        'PORT': config.get('database', 'DATABASE_PORT')
+        'PORT': config.get('database', 'DATABASE_PORT'),
+        'CONN_MAX_AGE': int(os.environ.get('DJANGO_CONN_MAX_AGE', '60')),
     },
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -173,9 +174,26 @@ DATABASES = {
         'PASSWORD': config.get('database', 'DATABASE_PASSWORD'),
         'HOST': config.get('database', 'DATABASE_HOST'),
         'PORT': config.get('database', 'DATABASE_PORT'),
-		'OPTIONS': {'ssl': {'ssl_disabled': True}}
+		'OPTIONS': {'ssl': {'ssl_disabled': True}},
+        'CONN_MAX_AGE': int(os.environ.get('DJANGO_CONN_MAX_AGE', '60')),
     }
 }
+
+_redis_url = os.environ.get('REDIS_URL', '').strip()
+if _redis_url:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': _redis_url,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'yse-default',
+        }
+    }
 # pymysql.version_info = (1, 4, 2, "final", 0)
 # pymysql.install_as_MySQLdb()
 

@@ -22,6 +22,12 @@ services:
         depends_on:
           yse_db:
             condition: service_healthy
+    yse_redis:
+      container_name: ysepz_redis_container
+      image: redis:7-alpine
+      platform: linux/amd64
+      ports:
+        - "6379:6379"
     yse_db:
       container_name: ysepz_db_container
       image: "mysql:8.0.25"

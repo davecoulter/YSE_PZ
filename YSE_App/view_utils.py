@@ -14,30 +14,11 @@ from django.shortcuts import render, get_object_or_404, render
 from django.urls import reverse
 from django.views.generic import TemplateView
 
-import bokeh
-from bokeh.core.properties import FontSizeSpec
-from bokeh.embed import file_html
-from bokeh.palettes import Dark2_5 as palette
-from bokeh.plotting import figure, ColumnDataSource
-from bokeh.models import Range1d, Span, LinearAxis, Label, Title, HoverTool, Legend
-from bokeh.resources import CDN
-
-from astropy.cosmology import FlatLambdaCDM
-from astropy.coordinates import EarthLocation, get_moon, SkyCoord, Angle
-from astropy.table import Table
-from astropy.time import Time
-from astropy.utils import iers
-iers.conf.auto_download = True
-import astropy.units as u
-from astroplan.plots import plot_airmass
 import calendar
 import datetime
-import sncosmo
-cosmo = FlatLambdaCDM(70,0.3)
 import time
 
 from .models import *
-#from .common.riseset import rise_func,set_func
 from .data import PhotometryService, SpectraService, ObservingResourceService
 from .serializers import *
 from .common.bandpassdict import bandpassdict
@@ -45,39 +26,102 @@ from .common.utilities import date_to_mjd
 
 import copy
 import functools
-import healpy as hp
 import itertools
 import numpy as np
 import random
 import signal
+import os
 
 from rest_framework.request import Request
-
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import matplotlib.image as mpimg
-from matplotlib import rcParams
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.dates import DateFormatter
-from matplotlib.figure import Figure
-
-
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
 from django.templatetags.static import static
-from django.http import HttpResponseRedirect
-from django.urls import reverse
-from django.shortcuts import render
-from django.views.generic import TemplateView
 from .util import mkFinderChart
 from YSE_App.models import Transient
-from django.conf import settings as djangoSettings
-from django.conf import settings as djangoSettings
+
+_HEAVY_PLOT_LOADED = False
+_ASTROPY_COORDS_LOADED = False
+
+# Names populated by _load_heavy_plot_stack() / _load_astropy_coords()
+bokeh = file_html = CDN = palette = figure = ColumnDataSource = None
+Range1d = Span = LinearAxis = Label = Title = HoverTool = Legend = FontSizeSpec = None
+cosmo = hp = plt = cm = mpimg = FigureCanvas = Figure = DateFormatter = rcParams = None
+matplotlib = sncosmo = plot_airmass = None
+Time = SkyCoord = get_moon = u = EarthLocation = Angle = Table = Observer = None
+
+
+def _load_astropy_coords():
+    global _ASTROPY_COORDS_LOADED, Time, SkyCoord, get_moon, u, EarthLocation, Angle, Table, Observer
+    if _ASTROPY_COORDS_LOADED:
+        return
+    from astropy.coordinates import EarthLocation, get_moon, SkyCoord, Angle
+    from astropy.table import Table
+    from astropy.time import Time
+    from astropy.utils import iers
+    import astropy.units as u
+    from astroplan import Observer
+    iers.conf.auto_download = True
+    _ASTROPY_COORDS_LOADED = True
+
+
+def _load_heavy_plot_stack():
+    global _HEAVY_PLOT_LOADED
+    global bokeh, file_html, CDN, palette, figure, ColumnDataSource
+    global Range1d, Span, LinearAxis, Label, Title, HoverTool, Legend, FontSizeSpec
+    global cosmo, hp, plt, cm, mpimg, FigureCanvas, Figure, DateFormatter, rcParams
+    global matplotlib, sncosmo, plot_airmass
+    if _HEAVY_PLOT_LOADED:
+        return
+    _load_astropy_coords()
+    import bokeh as _bokeh
+    from bokeh.core.properties import FontSizeSpec as _FontSizeSpec
+    from bokeh.embed import file_html as _file_html
+    from bokeh.palettes import Dark2_5 as _palette
+    from bokeh.plotting import figure as _figure, ColumnDataSource as _ColumnDataSource
+    from bokeh.models import (
+        Range1d as _Range1d,
+        Span as _Span,
+        LinearAxis as _LinearAxis,
+        Label as _Label,
+        Title as _Title,
+        HoverTool as _HoverTool,
+        Legend as _Legend,
+    )
+    from bokeh.resources import CDN as _CDN
+    from astropy.cosmology import FlatLambdaCDM
+    from astroplan.plots import plot_airmass as _plot_airmass
+    import healpy as _hp
+    import matplotlib as _matplotlib
+    import matplotlib.pyplot as _plt
+    import matplotlib.cm as _cm
+    import matplotlib.image as _mpimg
+    from matplotlib import rcParams as _rcParams
+    from matplotlib.backends.backend_agg import FigureCanvasAgg as _FigureCanvas
+    from matplotlib.dates import DateFormatter as _DateFormatter
+    from matplotlib.figure import Figure as _Figure
+    import sncosmo as _sncosmo
+
+    bokeh = _bokeh
+    FontSizeSpec = _FontSizeSpec
+    file_html = _file_html
+    palette = _palette
+    figure = _figure
+    ColumnDataSource = _ColumnDataSource
+    Range1d, Span, LinearAxis, Label, Title, HoverTool, Legend = (
+        _Range1d, _Span, _LinearAxis, _Label, _Title, _HoverTool, _Legend,
+    )
+    CDN = _CDN
+    cosmo = FlatLambdaCDM(70, 0.3)
+    plot_airmass = _plot_airmass
+    hp = _hp
+    matplotlib = _matplotlib
+    plt = _plt
+    cm = _cm
+    mpimg = _mpimg
+    rcParams = _rcParams
+    FigureCanvas = _FigureCanvas
+    DateFormatter = _DateFormatter
+    Figure = _Figure
+    sncosmo = _sncosmo
+    _HEAVY_PLOT_LOADED = True
 
         
         
@@ -154,6 +198,7 @@ def get_disc_mag_for_transient(user, transient_id=None):
     return get_disc_mag_from_photdata(photdata)
 
 def getMoonAngle(observingdate,telescope,ra,dec):
+    _load_astropy_coords()
     if observingdate:
         obstime = Time(observingdate,scale='utc')
     else:
@@ -176,6 +221,7 @@ def get_too_resources(user):
     return allowed_too_resource
 
 def getTimeUntilRiseSet(ra,dec,date,lat,lon,elev,utc_off):
+    _load_astropy_coords()
     if date:
         time = Time(date)
     else:
@@ -243,6 +289,7 @@ class Finder(TemplateView):
     template_name = 'YSE_App/finder.html'
 
     def finderchart(self, request, transient_id, clobber=False):
+        _load_heavy_plot_stack()
         transient = Transient.objects.get(pk=transient_id)
         basedir = os.path.join(djangoSettings.STATIC_ROOT, 'YSE_App/images/findercharts')
         os.makedirs(basedir, exist_ok=True)
@@ -411,6 +458,7 @@ def finder():
 # client 
     
 def airmassplot(request, transient_id, obs_id, telescope_id):
+    _load_heavy_plot_stack()
     #font = {'family' : 'normal',
     #       'weight' : 'normal',
     #       'size'   : 2}
@@ -466,6 +514,7 @@ def airmassplot(request, transient_id, obs_id, telescope_id):
     return response
 
 def view_yse_fields(request):
+    _load_heavy_plot_stack()
 
     cmap = cm.gray
     cmap.set_bad('grey')
@@ -564,6 +613,7 @@ def salt2fluxplot(request, transient_id, salt2fit):
     return response
 
 def lightcurveplot_summary(request, transient_id, salt2=False):
+    _load_heavy_plot_stack()
 
     transient = get_object_or_404(Transient, pk=transient_id)
 
@@ -806,6 +856,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 
 
 def lightcurveplot_detail(request, transient_id, salt2=False):
+    _load_heavy_plot_stack()
     import time
     tstart = time.time()
 
@@ -1095,6 +1146,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
 
 def lightcurveplot_flux(request, transient_id, salt2=False):
+    _load_heavy_plot_stack()
     import time
     tstart = time.time()
 
@@ -1382,6 +1434,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
     return HttpResponse(g.replace('width: 90%','width: 100%'))
 
 def spectrumplot(request, transient_id):
+    _load_heavy_plot_stack()
     tstart = time.time()
     
     # Fetch data with optimized queries
@@ -1455,6 +1508,7 @@ def spectrumplot(request, transient_id):
     
 
 def spectrumplot_summary(request, transient_id):
+    _load_heavy_plot_stack()
     tstart = time.time()
     transient = Transient.objects.get(pk=transient_id)
     dbspectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True).select_related()
@@ -1567,6 +1621,7 @@ def spectrumplot_summary(request, transient_id):
 #   return HttpResponse(g.replace('width: 90%','width: 100%'))
 
 def spectrumplotsingle(request, transient_id, spec_id):
+    _load_heavy_plot_stack()
     
     #transient_id = request.GET.get('transient_id')
     #spec_id = request.GET.get('spec_id')
@@ -1606,6 +1661,7 @@ def spectrumplotsingle(request, transient_id, spec_id):
     return HttpResponse(g.replace('width: 90%','width: 100%'))
 
 def set_func(coords,obs_date,longitude,latitude,elevation,setdict):
+    _load_astropy_coords()
     tstart = time.time()
 
     #transient = Transient.objects.filter(id=transient_id)[0]
@@ -1634,6 +1690,7 @@ def set_func(coords,obs_date,longitude,latitude,elevation,setdict):
     #setdict['set_time'] = settime
     
 def rise_func(coords,obs_date,longitude,latitude,elevation,risedict):
+    _load_astropy_coords()
     tstart = time.time()
     #transient = Transient.objects.filter(id=transient_id)[0]
     #coords = transient.CoordString()
@@ -1700,6 +1757,7 @@ def set_time(request,transient_id,obs_id):
 
         
 def moon_angle(request,transient_id,obs_id):
+    _load_astropy_coords()
     transient = Transient.objects.filter(id=transient_id)[0]
     coords = transient.CoordString()
 
@@ -1713,6 +1771,7 @@ def moon_angle(request,transient_id,obs_id):
     return JsonResponse(moondict)
 
 def tonight_rise_time(request,transient_id,too_id):
+    _load_astropy_coords()
     transient = Transient.objects.filter(id=transient_id)[0]
     coords = transient.CoordString()
 
@@ -1737,6 +1796,7 @@ def tonight_rise_time(request,transient_id,too_id):
     return JsonResponse(risedict)
 
 def tonight_set_time(request,transient_id,too_id):
+    _load_astropy_coords()
     transient = Transient.objects.filter(id=transient_id)[0]
     coords = transient.CoordString()
 
@@ -1761,6 +1821,7 @@ def tonight_set_time(request,transient_id,too_id):
     return JsonResponse(setdict)
     
 def tonight_moon_angle(request,transient_id,too_id):
+    _load_astropy_coords()
     transient = Transient.objects.filter(id=transient_id)[0]
     coords = transient.CoordString()
 
