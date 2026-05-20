@@ -27,6 +27,8 @@ from YSE_App.tests.fixtures_minimal import (
     create_test_user,
     create_transient_with_synthetic_data,
     seed_dashboard_transients,
+    seed_explorer_query_catalog,
+    seed_personal_dashboard_queries,
 )
 from YSE_App.tests.perf_tracking import LoadTimeRegistry
 
@@ -34,7 +36,15 @@ from YSE_App.tests.perf_tracking import LoadTimeRegistry
 MAX_QUERIES_TRANSIENT_DETAIL_SHELL = 60
 MAX_QUERIES_TRANSIENT_DETAIL_LOADED = 78
 MAX_QUERIES_PERSONAL_DASHBOARD = 40
+MAX_QUERIES_PERSONAL_DASHBOARD_FIVE_QUERIES = 55
 MAX_QUERIES_MAIN_DASHBOARD = 80
+# Explorer index: empty querylog ~6 queries; with logs ~1 + N counts (django-sql-explorer).
+MAX_QUERIES_EXPLORER_INDEX_CATALOG = 15
+MAX_QUERIES_EXPLORER_INDEX_PER_50_WITH_LOGS = 60
+MAX_EXPLORER_CATALOG_SIZE = 50
+
+MAX_SECONDS_PERSONAL_DASHBOARD_FIVE = 5.0
+MAX_SECONDS_EXPLORER_INDEX = 15.0
 
 # Load-time ceilings (seconds).
 MAX_SECONDS_TRANSIENT_DETAIL_SHELL = 8.0
@@ -179,19 +189,88 @@ class PersonalDashboardPerformanceTests(TestCase):
             max_seconds=MAX_SECONDS_PERSONAL_DASHBOARD,
         )
 
-    def test_personaldashboard_with_seed_transients(self):
-        seed_dashboard_transients(self.user, count_per_status=0)
+    def test_personaldashboard_with_five_saved_queries(self):
+        """Like production: five UserQuery SQL selects (cache cleared = cold load)."""
+        from django.core.cache import cache
+
+        seed_personal_dashboard_queries(self.user, n_queries=5)
+        cache.clear()
         url = "/personaldashboard/"
         response, n_queries, elapsed = _profile_get(self.client, url)
         assert_page_load(
             self,
-            page="personaldashboard (seed only)",
+            page="personaldashboard (5 saved queries)",
             url=url,
             response=response,
             n_queries=n_queries,
             elapsed=elapsed,
-            max_queries=MAX_QUERIES_PERSONAL_DASHBOARD,
-            max_seconds=MAX_SECONDS_PERSONAL_DASHBOARD,
+            max_queries=MAX_QUERIES_PERSONAL_DASHBOARD_FIVE_QUERIES,
+            max_seconds=MAX_SECONDS_PERSONAL_DASHBOARD_FIVE,
+        )
+
+
+@override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"])
+class ExplorerIndexPerformanceTests(TestCase):
+    """
+    Query Explorer list (/explorer/): loads all Query rows + N+1 querylog counts.
+
+    Does not execute saved SQL on index; slowness on production is ORM/metadata.
+    Isolated from personaldashboard — other pages do not load the full catalog.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = create_test_user("perf_explorer_user")
+        seed_explorer_query_catalog(
+            cls.user, n_queries=MAX_EXPLORER_CATALOG_SIZE, with_query_logs=False
+        )
+
+    def setUp(self):
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def test_explorer_index_catalog_only(self):
+        """Explorer list without query logs (fast metadata load)."""
+        url = "/explorer/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        assert_page_load(
+            self,
+            page=f"explorer index ({MAX_EXPLORER_CATALOG_SIZE} rows, no logs)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=MAX_QUERIES_EXPLORER_INDEX_CATALOG,
+            max_seconds=MAX_SECONDS_EXPLORER_INDEX,
+        )
+
+    def test_explorer_index_with_query_logs(self):
+        """
+        Catalog rows with QueryLog entries.
+
+        Current django-sql-explorer prefetches querylog_set, so COUNT N+1 may not
+        appear (still ~O(N) Python work building the list). Production slowness
+        with 200+ saved queries is usually this metadata pass, not running all SQL.
+        """
+        user = create_test_user("perf_explorer_n1_user")
+        seed_explorer_query_catalog(
+            user, n_queries=MAX_EXPLORER_CATALOG_SIZE, with_query_logs=True
+        )
+        self.client.force_login(user)
+        url = "/explorer/"
+        max_q = MAX_QUERIES_EXPLORER_INDEX_PER_50_WITH_LOGS * (
+            MAX_EXPLORER_CATALOG_SIZE // 50
+        )
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        assert_page_load(
+            self,
+            page=f"explorer index ({MAX_EXPLORER_CATALOG_SIZE} rows + logs)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=max_q,
+            max_seconds=MAX_SECONDS_EXPLORER_INDEX,
         )
 
 

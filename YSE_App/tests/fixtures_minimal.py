@@ -18,6 +18,7 @@ from YSE_App.models import (
     TransientPhotometry,
     TransientSpectrum,
     TransientStatus,
+    UserQuery,
 )
 
 # Status names used by dashboard and transient_detail views.
@@ -270,3 +271,71 @@ def seed_dashboard_transients(user, count_per_status=1):
             )
             created.append(t)
     return created
+
+
+def seed_personal_dashboard_queries(user, n_queries=5):
+    """
+    Mimic a user's saved dashboard: N explorer SQL queries, each returning one transient.
+
+    Matches production pattern where personaldashboard runs each UserQuery SQL once
+    (cached under user_query_<id> for 1 hour).
+    """
+    from explorer.models import Query
+
+    ensure_transient_statuses(user)
+    audit = audit_fields(user)
+    user_queries = []
+
+    for i in range(n_queries):
+        transient = create_minimal_transient(
+            user,
+            name=f"perf-pdash-q{i}",
+            obs_group_name="perf-pdash-group",
+            ra=10.0 + i * 0.01,
+        )
+        sql = (
+            "SELECT name FROM YSE_App_transient "
+            f"WHERE name = '{transient.name}'"
+        )
+        explorer_query = Query.objects.create(
+            title=f"Perf dashboard query {i}",
+            sql=sql,
+            description="Synthetic personal-dashboard query for perf tests",
+            snapshot=False,
+            created_by_user=user,
+        )
+        user_queries.append(
+            UserQuery.objects.create(
+                user=user, query=explorer_query, **audit
+            )
+        )
+    return user_queries
+
+
+def seed_explorer_query_catalog(user, n_queries=50, *, with_query_logs=False):
+    """
+    Populate django-sql-explorer Query rows for /explorer/ list page tests.
+
+    SQL is not executed on the index view. With with_query_logs=True, also creates
+    QueryLog rows so ListQueryView's per-row querylog_set.count() matches production N+1.
+    """
+    from explorer.models import Query, QueryLog
+
+    catalog = []
+    for i in range(n_queries):
+        q = Query.objects.create(
+            title=f"Perf explorer - query {i}",
+            sql="SELECT name FROM YSE_App_transient WHERE 1=0",
+            description="Synthetic catalog row for explorer index perf tests",
+            snapshot=False,
+            created_by_user=user,
+        )
+        catalog.append(q)
+        if with_query_logs:
+            QueryLog.objects.create(
+                query=q,
+                sql=q.sql,
+                run_by_user=user,
+                duration=0.0,
+            )
+    return catalog

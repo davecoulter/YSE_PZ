@@ -11,6 +11,7 @@ from django.db.models import Q
 from rest_framework.renderers import JSONRenderer
 import requests
 from django.template.defaulttags import register
+from django.core.cache import cache
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models.functions import Lower
 from django.db import connection,connections
@@ -182,7 +183,9 @@ def personaldashboard(request):
     # Build tables for transients (if applicable)
     for q in queries:
         if q.query and q.query.sql.lower().startswith('select'):
-            transient_filter = TransientFilter(request.GET, queryset=paginated_transients, prefix=q.query.title.replace(' ', ''))
+            transient_filter = TransientFilter(
+                request.GET, queryset=transients, prefix=q.query.title.replace(' ', '')
+            )
             table = TransientTable(transient_filter.qs, prefix=q.query.title.replace(' ', ''))
             RequestConfig(request, paginate={'per_page': 10}).configure(table)
             tables.append((table, q.query.title, q.query.title.replace(' ', ''), transient_filter, q.id, len(paginated_transients)))
