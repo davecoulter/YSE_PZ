@@ -969,20 +969,26 @@ def transient_detail(request, slug):
     too_resource_form = ToOResourceForm()
     automated_spectrum_form = AutomatedSpectrumRequest()
     
-    transient = Transient.objects.filter(slug=slug)
-    alternate_transient = AlternateTransientNames.objects.filter(slug=slug)
-    if len(alternate_transient) and not len(transient):
-        transient = Transient.objects.filter(name=alternate_transient[0].transient.name).select_related()
-        #return redirect('/transient_detail/%s/'%transient[0].slug)
-        return HttpResponseRedirect(reverse_lazy('transient_detail',kwargs={'slug':transient[0].slug}))
-    logs = Log.objects.filter(transient=transient[0].id)
+    transient_qs = Transient.objects.filter(slug=slug).select_related(
+        'status', 'obs_group', 'host'
+    ).prefetch_related('tags')
+    alternate_transient = AlternateTransientNames.objects.filter(slug=slug).select_related(
+        'transient'
+    )
+    if alternate_transient.exists() and not transient_qs.exists():
+        alt = alternate_transient.first()
+        return HttpResponseRedirect(
+            reverse_lazy('transient_detail', kwargs={'slug': alt.transient.slug})
+        )
 
+    transient_matches = list(transient_qs[:2])
     obs = None
-    if len(transient) == 1:
+    if len(transient_matches) == 1:
         from django.utils import timezone
-        
-        transient_obj = transient.first() # This should throw an exception if more than one or none are returned
-        transient_id = transient[0].id
+
+        transient_obj = transient_matches[0]
+        transient_id = transient_obj.id
+        logs = Log.objects.filter(transient_id=transient_id)
 
         alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 
@@ -996,17 +1002,18 @@ def transient_detail(request, slug):
 
         spectrum_upload_form = SpectrumUploadForm()
         
-        # Status update properties
-        all_transient_statuses = TransientStatus.objects.all()
-        transient_status_follow = TransientStatus.objects.get(name="Following")
-        transient_status_watch = TransientStatus.objects.get(name="Watch")
-        transient_status_interesting = TransientStatus.objects.get(name="Interesting")
-        transient_status_ignore = TransientStatus.objects.get(name="Ignore")
+        # Status update properties (one query for all statuses)
+        all_transient_statuses = list(TransientStatus.objects.all())
+        status_by_name = {s.name: s for s in all_transient_statuses}
+        transient_status_follow = status_by_name.get("Following")
+        transient_status_watch = status_by_name.get("Watch")
+        transient_status_interesting = status_by_name.get("Interesting")
+        transient_status_ignore = status_by_name.get("Ignore")
         transient_comment_form = TransientCommentForm()
         # Transient tag
         all_colors = WebAppColor.objects.all().select_related()
         all_transient_tags = TransientTag.objects.all().select_related()
-        assigned_transient_tags = transient_obj.tags.all().select_related()
+        assigned_transient_tags = list(transient_obj.tags.all())
 
         # GW Candidate?
         gwcand,gwimages = None,None

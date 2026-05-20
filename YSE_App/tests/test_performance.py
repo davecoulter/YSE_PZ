@@ -21,16 +21,19 @@ from django.test.utils import CaptureQueriesContext
 from YSE_App.tests.fixtures_minimal import (
     create_minimal_transient,
     create_test_user,
+    create_transient_with_synthetic_data,
     seed_dashboard_transients,
 )
 
 # Query ceilings — tighten as views are optimized.
-MAX_QUERIES_TRANSIENT_DETAIL = 60  # baseline ~54 with minimal fixture (2026-05-19)
+MAX_QUERIES_TRANSIENT_DETAIL_SHELL = 60  # no photometry (~54 queries, 2026-05-19)
+MAX_QUERIES_TRANSIENT_DETAIL_LOADED = 78  # synthetic phot/host/spec/log (~72 queries, 2026-05-19)
 MAX_QUERIES_PERSONAL_DASHBOARD = 40
 MAX_QUERIES_MAIN_DASHBOARD = 80
 
 # Wall-time ceilings (seconds) for minimal fixture data on a dev laptop.
-MAX_SECONDS_TRANSIENT_DETAIL = 8.0
+MAX_SECONDS_TRANSIENT_DETAIL_SHELL = 8.0
+MAX_SECONDS_TRANSIENT_DETAIL_LOADED = 12.0
 MAX_SECONDS_PERSONAL_DASHBOARD = 3.0
 MAX_SECONDS_MAIN_DASHBOARD = 6.0
 
@@ -56,27 +59,41 @@ class TransientDetailPagePerformanceTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user = create_test_user("perf_detail_user")
-        cls.transient = create_minimal_transient(cls.user, name="perf-detail-sn")
+        cls.transient_shell = create_minimal_transient(
+            cls.user, name="perf-detail-shell"
+        )
+        cls.transient_loaded = create_transient_with_synthetic_data(
+            cls.user,
+            name="perf-detail-loaded",
+            n_phot_points=12,
+        )
 
     def setUp(self):
         self.client = Client()
         self.client.force_login(self.user)
 
-    def test_transient_detail_returns_200(self):
-        url = f"/transient_detail/{self.transient.slug}/"
+    def test_transient_detail_shell_returns_200(self):
+        """Detail page with transient only (no photometry)."""
+        url = f"/transient_detail/{self.transient_shell.slug}/"
         response, n_queries, elapsed = _profile_get(self.client, url)
         self.assertEqual(response.status_code, 200)
+        self.assertLess(n_queries, MAX_QUERIES_TRANSIENT_DETAIL_SHELL)
+        if not SKIP_TIMING:
+            self.assertLess(elapsed, MAX_SECONDS_TRANSIENT_DETAIL_SHELL)
+
+    def test_transient_detail_with_synthetic_data_returns_200(self):
+        """Detail page with synthetic photometry, host, spectrum, and log."""
+        url = f"/transient_detail/{self.transient_loaded.slug}/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"perf-detail-loaded", response.content)
         self.assertLess(
             n_queries,
-            MAX_QUERIES_TRANSIENT_DETAIL,
-            msg=f"too many SQL queries ({n_queries}) for transient_detail",
+            MAX_QUERIES_TRANSIENT_DETAIL_LOADED,
+            msg=f"too many SQL queries ({n_queries}) for loaded transient_detail",
         )
         if not SKIP_TIMING:
-            self.assertLess(
-                elapsed,
-                MAX_SECONDS_TRANSIENT_DETAIL,
-                msg=f"transient_detail took {elapsed:.2f}s",
-            )
+            self.assertLess(elapsed, MAX_SECONDS_TRANSIENT_DETAIL_LOADED)
 
 @override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"])
 class PersonalDashboardPerformanceTests(TestCase):
