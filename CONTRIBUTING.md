@@ -109,7 +109,7 @@ docker exec ysepz_web_container python3 manage.py test YSE_App.tests.test_perfor
 | `YSE_PERF_SKIP_TIMING=1` | Skip load-time ceiling assertions (queries still checked) |
 | `YSE_PERF_RECORD_PATH=/tmp/yse_perf.json` | Export metrics JSON for CI or local comparison |
 
-Targets: `/transient_detail/<slug>/` (shell + synthetic loaded), `/personaldashboard/`, `/dashboard/`.
+Targets: `/transient_detail/<slug>/` (shell + synthetic loaded), `/personaldashboard/`, `/dashboard/`, `/explorer/` (including 200-row catalog + logs; query count only).
 
 CI runs the same flow via [.github/workflows/ci.yml](.github/workflows/ci.yml).
 

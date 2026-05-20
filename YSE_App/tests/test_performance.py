@@ -17,8 +17,9 @@ import os
 import time
 import unittest
 from typing import Optional
+from unittest.mock import patch
 
-from django.db import connection
+from django.db import connection, connections
 from django.test import Client, TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 
@@ -36,12 +37,18 @@ from YSE_App.tests.perf_tracking import LoadTimeRegistry
 MAX_QUERIES_TRANSIENT_DETAIL_SHELL = 60
 MAX_QUERIES_TRANSIENT_DETAIL_LOADED = 78
 MAX_QUERIES_PERSONAL_DASHBOARD = 40
-MAX_QUERIES_PERSONAL_DASHBOARD_FIVE_QUERIES = 55
-MAX_QUERIES_MAIN_DASHBOARD = 80
+# Cold: five explorer SQL runs + five table builds (heavy; ceiling guards regressions).
+MAX_QUERIES_PERSONAL_DASHBOARD_FIVE_QUERIES_COLD = 28
+# Warm: SQL results cached; exercises second-pass table build only.
+MAX_QUERIES_PERSONAL_DASHBOARD_FIVE_QUERIES_WARM = 23
+MAX_QUERIES_MAIN_DASHBOARD = 55
 # Explorer index: empty querylog ~6 queries; with logs ~1 + N counts (django-sql-explorer).
 MAX_QUERIES_EXPLORER_INDEX_CATALOG = 15
 MAX_QUERIES_EXPLORER_INDEX_PER_50_WITH_LOGS = 60
 MAX_EXPLORER_CATALOG_SIZE = 50
+# Production-scale catalog; wall time not asserted (Python/template bound, not SQL).
+MAX_EXPLORER_CATALOG_SIZE_LARGE = 200
+MAX_QUERIES_EXPLORER_INDEX_200_WITH_LOGS = 15
 
 MAX_SECONDS_PERSONAL_DASHBOARD_FIVE = 5.0
 MAX_SECONDS_EXPLORER_INDEX = 15.0
@@ -189,22 +196,53 @@ class PersonalDashboardPerformanceTests(TestCase):
             max_seconds=MAX_SECONDS_PERSONAL_DASHBOARD,
         )
 
-    def test_personaldashboard_with_five_saved_queries(self):
-        """Like production: five UserQuery SQL selects (cache cleared = cold load)."""
+    def test_personaldashboard_with_five_saved_queries_warm_cache(self):
+        """Five saved queries with cached SQL results (typical repeat visit)."""
+        from django.core.cache import cache
+
+        user_queries = seed_personal_dashboard_queries(self.user, n_queries=5)
+        for i, uq in enumerate(user_queries):
+            cache.set(f"user_query_{uq.id}", [f"perf-pdash-q{i}"], timeout=3600)
+        url = "/personaldashboard/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        assert_page_load(
+            self,
+            page="personaldashboard (5 queries, warm cache)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=MAX_QUERIES_PERSONAL_DASHBOARD_FIVE_QUERIES_WARM,
+            max_seconds=MAX_SECONDS_PERSONAL_DASHBOARD_FIVE,
+        )
+
+    def test_personaldashboard_with_five_saved_queries_cold_cache(self):
+        """Cold load: runs each saved SQL once (explorer DB mocked to default in tests)."""
+        import YSE_App.views as views_module
         from django.core.cache import cache
 
         seed_personal_dashboard_queries(self.user, n_queries=5)
         cache.clear()
         url = "/personaldashboard/"
-        response, n_queries, elapsed = _profile_get(self.client, url)
+        real = connections
+
+        class _ConnectionsForTests:
+            def __getitem__(self, alias):
+                if alias == "explorer":
+                    return real["default"]
+                return real[alias]
+
+        with patch.object(views_module, "connections", _ConnectionsForTests()):
+            response, n_queries, elapsed = _profile_get(self.client, url)
+
         assert_page_load(
             self,
-            page="personaldashboard (5 saved queries)",
+            page="personaldashboard (5 saved queries, cold)",
             url=url,
             response=response,
             n_queries=n_queries,
             elapsed=elapsed,
-            max_queries=MAX_QUERIES_PERSONAL_DASHBOARD_FIVE_QUERIES,
+            max_queries=MAX_QUERIES_PERSONAL_DASHBOARD_FIVE_QUERIES_COLD,
             max_seconds=MAX_SECONDS_PERSONAL_DASHBOARD_FIVE,
         )
 
@@ -273,6 +311,33 @@ class ExplorerIndexPerformanceTests(TestCase):
             max_seconds=MAX_SECONDS_EXPLORER_INDEX,
         )
 
+    def test_explorer_index_200_queries_with_logs_query_count(self):
+        """
+        Production-scale explorer index: ~200 saved queries with QueryLog rows.
+
+        Benchmark (Docker): ~12 SQL queries; wall time is dominated by Python/template
+        work, not DB round-trips. Only query count is gated here (no time ceiling).
+        """
+        user = create_test_user("perf_explorer_200_user")
+        seed_explorer_query_catalog(
+            user,
+            n_queries=MAX_EXPLORER_CATALOG_SIZE_LARGE,
+            with_query_logs=True,
+        )
+        self.client.force_login(user)
+        url = "/explorer/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        assert_page_load(
+            self,
+            page=f"explorer index ({MAX_EXPLORER_CATALOG_SIZE_LARGE} rows + logs)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=MAX_QUERIES_EXPLORER_INDEX_200_WITH_LOGS,
+            max_seconds=None,
+        )
+
 
 @override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"])
 class MainDashboardPerformanceTests(TestCase):
@@ -301,8 +366,8 @@ class MainDashboardPerformanceTests(TestCase):
             max_seconds=MAX_SECONDS_MAIN_DASHBOARD,
         )
 
-    @unittest.skip("Enable after dashboard query optimization PR")
     def test_main_dashboard_query_count_tight(self):
-        with self.assertNumQueries(50):
-            response = self.client.get("/dashboard/")
+        url = "/dashboard/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
         self.assertEqual(response.status_code, 200)
+        self.assertLess(n_queries, MAX_QUERIES_MAIN_DASHBOARD)
