@@ -136,21 +136,22 @@ def get_recent_phot_for_transient(user, transient_id=None):
     else:
         return(None)
 
-def get_disc_mag_for_transient(user, transient_id=None):
-    photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(user, transient_id,
-                                                                                   includeBadData=False)
-
-    if photdata:
-        photdata = photdata.order_by('-obs_date')
-
+def get_disc_mag_from_photdata(photdata_qs):
+    """Discovery / first mag from an existing photdata queryset (avoids duplicate DB fetch)."""
     firstphot = None
-    for ph in photdata:
+    for ph in photdata_qs.order_by('obs_date'):
         if ph.discovery_point:
-            return(ph)
-        elif ph.mag:
+            return ph
+        if ph.mag:
             firstphot = ph
+    return firstphot
 
-    return(firstphot)
+
+def get_disc_mag_for_transient(user, transient_id=None):
+    photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(
+        user, transient_id, includeBadData=False
+    )
+    return get_disc_mag_from_photdata(photdata)
 
 def getMoonAngle(observingdate,telescope,ra,dec):
     if observingdate:

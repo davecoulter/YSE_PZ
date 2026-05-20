@@ -34,14 +34,14 @@ from YSE_App.tests.fixtures_minimal import (
 from YSE_App.tests.perf_tracking import LoadTimeRegistry
 
 # Query ceilings — tighten as views are optimized.
-MAX_QUERIES_TRANSIENT_DETAIL_SHELL = 60
-MAX_QUERIES_TRANSIENT_DETAIL_LOADED = 78
+MAX_QUERIES_TRANSIENT_DETAIL_SHELL = 50
+MAX_QUERIES_TRANSIENT_DETAIL_LOADED = 72
 MAX_QUERIES_PERSONAL_DASHBOARD = 40
 # Cold: five explorer SQL runs + five table builds (heavy; ceiling guards regressions).
 MAX_QUERIES_PERSONAL_DASHBOARD_FIVE_QUERIES_COLD = 28
 # Warm: SQL results cached; exercises second-pass table build only.
 MAX_QUERIES_PERSONAL_DASHBOARD_FIVE_QUERIES_WARM = 23
-MAX_QUERIES_MAIN_DASHBOARD = 55
+MAX_QUERIES_MAIN_DASHBOARD = 25
 # Explorer index: empty querylog ~6 queries; with logs ~1 + N counts (django-sql-explorer).
 MAX_QUERIES_EXPLORER_INDEX_CATALOG = 15
 MAX_QUERIES_EXPLORER_INDEX_PER_50_WITH_LOGS = 60
