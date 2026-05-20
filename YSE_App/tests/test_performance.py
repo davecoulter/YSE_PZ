@@ -1,10 +1,13 @@
 """
 Page-load performance baselines for hot paths.
 
-Metrics:
-  - HTTP 200 on core pages
-  - SQL query count (regression guard via assertNumQueries)
-  - Wall time (soft ceiling; skipped when YSE_PERF_SKIP_TIMING=1)
+Metrics tracked on every run:
+  - HTTP 200
+  - SQL query count (hard ceiling)
+  - Wall-clock load time in ms (recorded always; ceiling unless YSE_PERF_SKIP_TIMING=1)
+
+At end of this module, a summary table is printed. Optional JSON:
+  YSE_PERF_RECORD_PATH=/tmp/yse_perf.json
 
 Run:
   docker exec ysepz_web_container python3 manage.py test YSE_App.tests.test_performance -v2
@@ -13,6 +16,7 @@ Run:
 import os
 import time
 import unittest
+from typing import Optional
 
 from django.db import connection
 from django.test import Client, TestCase, override_settings
@@ -24,20 +28,35 @@ from YSE_App.tests.fixtures_minimal import (
     create_transient_with_synthetic_data,
     seed_dashboard_transients,
 )
+from YSE_App.tests.perf_tracking import LoadTimeRegistry
 
 # Query ceilings — tighten as views are optimized.
-MAX_QUERIES_TRANSIENT_DETAIL_SHELL = 60  # no photometry (~54 queries, 2026-05-19)
-MAX_QUERIES_TRANSIENT_DETAIL_LOADED = 78  # synthetic phot/host/spec/log (~72 queries, 2026-05-19)
+MAX_QUERIES_TRANSIENT_DETAIL_SHELL = 60
+MAX_QUERIES_TRANSIENT_DETAIL_LOADED = 78
 MAX_QUERIES_PERSONAL_DASHBOARD = 40
 MAX_QUERIES_MAIN_DASHBOARD = 80
 
-# Wall-time ceilings (seconds) for minimal fixture data on a dev laptop.
+# Load-time ceilings (seconds).
 MAX_SECONDS_TRANSIENT_DETAIL_SHELL = 8.0
 MAX_SECONDS_TRANSIENT_DETAIL_LOADED = 12.0
 MAX_SECONDS_PERSONAL_DASHBOARD = 3.0
 MAX_SECONDS_MAIN_DASHBOARD = 6.0
 
 SKIP_TIMING = os.environ.get("YSE_PERF_SKIP_TIMING", "").lower() in ("1", "true", "yes")
+
+
+def setUpModule():
+    LoadTimeRegistry.reset()
+
+
+def tearDownModule():
+    print(LoadTimeRegistry.format_summary())
+    try:
+        from YSE_App.tests import perf_tracking
+
+        perf_tracking.export_metrics_if_configured()
+    except OSError as exc:
+        print(f"Warning: could not write YSE_PERF_RECORD_PATH: {exc}")
 
 
 def _profile_get(client, url):
@@ -49,8 +68,40 @@ def _profile_get(client, url):
     return response, len(ctx.captured_queries), elapsed
 
 
+def assert_page_load(
+    test_case,
+    *,
+    page: str,
+    url: str,
+    response,
+    n_queries: int,
+    elapsed: float,
+    max_queries: int,
+    max_seconds: Optional[float] = None,
+):
+    """Assert HTTP/queries, record load time, optionally assert wall-time ceiling."""
+    metric = LoadTimeRegistry.record(page, url, n_queries, elapsed)
+    test_case.assertEqual(response.status_code, 200, msg=f"{page} returned {response.status_code}")
+    test_case.assertLess(
+        n_queries,
+        max_queries,
+        msg=(
+            f"{page}: {n_queries} queries (max {max_queries}); "
+            f"load {metric.load_time_ms:.1f} ms"
+        ),
+    )
+    if max_seconds is not None and not SKIP_TIMING:
+        test_case.assertLess(
+            elapsed,
+            max_seconds,
+            msg=(
+                f"{page}: load {metric.load_time_ms:.1f} ms exceeds "
+                f"{max_seconds * 1000:.0f} ms ceiling"
+            ),
+        )
+
+
 @override_settings(
-    # Avoid hitting remote services where signals might otherwise fire repeatedly.
     PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
 )
 class TransientDetailPagePerformanceTests(TestCase):
@@ -73,56 +124,75 @@ class TransientDetailPagePerformanceTests(TestCase):
         self.client.force_login(self.user)
 
     def test_transient_detail_shell_returns_200(self):
-        """Detail page with transient only (no photometry)."""
         url = f"/transient_detail/{self.transient_shell.slug}/"
         response, n_queries, elapsed = _profile_get(self.client, url)
-        self.assertEqual(response.status_code, 200)
-        self.assertLess(n_queries, MAX_QUERIES_TRANSIENT_DETAIL_SHELL)
-        if not SKIP_TIMING:
-            self.assertLess(elapsed, MAX_SECONDS_TRANSIENT_DETAIL_SHELL)
+        assert_page_load(
+            self,
+            page="transient_detail (shell)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=MAX_QUERIES_TRANSIENT_DETAIL_SHELL,
+            max_seconds=MAX_SECONDS_TRANSIENT_DETAIL_SHELL,
+        )
 
     def test_transient_detail_with_synthetic_data_returns_200(self):
-        """Detail page with synthetic photometry, host, spectrum, and log."""
         url = f"/transient_detail/{self.transient_loaded.slug}/"
         response, n_queries, elapsed = _profile_get(self.client, url)
-        self.assertEqual(response.status_code, 200)
         self.assertIn(b"perf-detail-loaded", response.content)
-        self.assertLess(
-            n_queries,
-            MAX_QUERIES_TRANSIENT_DETAIL_LOADED,
-            msg=f"too many SQL queries ({n_queries}) for loaded transient_detail",
+        assert_page_load(
+            self,
+            page="transient_detail (loaded)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=MAX_QUERIES_TRANSIENT_DETAIL_LOADED,
+            max_seconds=MAX_SECONDS_TRANSIENT_DETAIL_LOADED,
         )
-        if not SKIP_TIMING:
-            self.assertLess(elapsed, MAX_SECONDS_TRANSIENT_DETAIL_LOADED)
+
 
 @override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"])
 class PersonalDashboardPerformanceTests(TestCase):
-    """User personal dashboard: /personaldashboard/ (no saved queries)."""
+    """User personal dashboard: /personaldashboard/"""
 
     @classmethod
     def setUpTestData(cls):
         cls.user = create_test_user("perf_pdash_user")
-        # No UserQuery rows — empty dashboard is the minimal case.
 
     def setUp(self):
         self.client = Client()
         self.client.force_login(self.user)
 
     def test_personaldashboard_empty_returns_200(self):
-        response, n_queries, elapsed = _profile_get(self.client, "/personaldashboard/")
-        self.assertEqual(response.status_code, 200)
-        self.assertLess(n_queries, MAX_QUERIES_PERSONAL_DASHBOARD)
-        if not SKIP_TIMING:
-            self.assertLess(elapsed, MAX_SECONDS_PERSONAL_DASHBOARD)
+        url = "/personaldashboard/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        assert_page_load(
+            self,
+            page="personaldashboard (empty)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=MAX_QUERIES_PERSONAL_DASHBOARD,
+            max_seconds=MAX_SECONDS_PERSONAL_DASHBOARD,
+        )
 
     def test_personaldashboard_with_seed_transients(self):
-        """Dashboard still loads when user has no custom queries (global list empty)."""
         seed_dashboard_transients(self.user, count_per_status=0)
-        response, n_queries, elapsed = _profile_get(self.client, "/personaldashboard/")
-        self.assertEqual(response.status_code, 200)
-        self.assertLess(n_queries, MAX_QUERIES_PERSONAL_DASHBOARD)
-        if not SKIP_TIMING:
-            self.assertLess(elapsed, MAX_SECONDS_PERSONAL_DASHBOARD)
+        url = "/personaldashboard/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        assert_page_load(
+            self,
+            page="personaldashboard (seed only)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=MAX_QUERIES_PERSONAL_DASHBOARD,
+            max_seconds=MAX_SECONDS_PERSONAL_DASHBOARD,
+        )
 
 
 @override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"])
@@ -139,15 +209,18 @@ class MainDashboardPerformanceTests(TestCase):
         self.client.force_login(self.user)
 
     def test_main_dashboard_returns_200(self):
-        response, n_queries, elapsed = _profile_get(self.client, "/dashboard/")
-        self.assertEqual(response.status_code, 200)
-        self.assertLess(
-            n_queries,
-            MAX_QUERIES_MAIN_DASHBOARD,
-            msg=f"too many SQL queries ({n_queries}) for dashboard",
+        url = "/dashboard/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        assert_page_load(
+            self,
+            page="dashboard (main)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=MAX_QUERIES_MAIN_DASHBOARD,
+            max_seconds=MAX_SECONDS_MAIN_DASHBOARD,
         )
-        if not SKIP_TIMING:
-            self.assertLess(elapsed, MAX_SECONDS_MAIN_DASHBOARD)
 
     @unittest.skip("Enable after dashboard query optimization PR")
     def test_main_dashboard_query_count_tight(self):
