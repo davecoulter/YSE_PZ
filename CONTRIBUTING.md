@@ -2,6 +2,8 @@
 
 Development targets **`develop`** on [Young-Supernova-Experiment/YSE_PZ](https://github.com/Young-Supernova-Experiment/YSE_PZ).
 
+**Upstream policy:** Do **not** open pull requests to [davecoulter/YSE_PZ](https://github.com/davecoulter/YSE_PZ) (legacy upstream). Integration work from [astrofoley/YSE_PZ](https://github.com/astrofoley/YSE_PZ) lands here via branches such as `integrate/yse-*` (see open integration PRs).
+
 ## Workflow
 
 1. Branch from current `develop`:

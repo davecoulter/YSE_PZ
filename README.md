@@ -86,9 +86,11 @@ Day-to-day work targets **`develop`** on [Young-Supernova-Experiment/YSE_PZ](htt
 | Remote | URL |
 |--------|-----|
 | `yse` | https://github.com/Young-Supernova-Experiment/YSE_PZ.git |
-| `origin` | optional legacy upstream (davecoulter/YSE_PZ) |
+| `origin` | legacy only (davecoulter/YSE_PZ) — **do not** open PRs here |
 
 **Local Docker:** see [CONTRIBUTING.md](CONTRIBUTING.md) and [docker/readme.txt](docker/readme.txt).
+
+**Integration:** Changes from [astrofoley/YSE_PZ](https://github.com/astrofoley/YSE_PZ) merge via `integrate/yse-*` branches. [YSE_PZ_chatgpt](https://github.com/astrofoley/YSE_PZ_chatgpt) is archived.
 
 **CI:** `.github/workflows/ci.yml` runs `py_compile`, Docker compose, `manage.py check`, and `YSE_App.tests` on push/PR.
 

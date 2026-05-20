@@ -41,7 +41,7 @@ Clone the YSE_PZ git repository
 
 .. code:: none
 
-    git clone https://github.com/davecoulter/YSE_PZ.git
+    git clone https://github.com/Young-Supernova-Experiment/YSE_PZ.git
 
 Once in the YSE_PZ directory, checkout the develop branch.
 
