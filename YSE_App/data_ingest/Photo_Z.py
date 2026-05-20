@@ -1,4 +1,5 @@
 from django_cron import CronJobBase, Schedule
+from YSE_App.models.host_models import Host
 from YSE_App.models.transient_models import *
 from YSE_App.common.alert import sendemail
 from django.conf import settings as djangoSettings
@@ -224,13 +225,17 @@ class YSE(CronJobBase):
                 
             #now I have an ordered list of whats_left, which are indices that can be used to match to hosts, and an ordered list of posteriors, 
             #uncertainties, and their point estimates. place them into the model by looping over.
-            for i,value in enumerate(whats_left):
+            hosts_to_update = []
+            for i, value in enumerate(whats_left):
                 T = transient_dictionary[value]
                 T.host.photo_z_internal = point_estimates[i]
                 T.host.photo_z_err_internal = error[i]
-                #T.host.photo_z_posterior = posterior[i] #Gautham suggested we add it to the host model
-                #T.host.photo_z_source = 'YSE internal'
-                T.host.save() #takes a long time and then my query needs to be reset which is also a long time
+                hosts_to_update.append(T.host)
+            if hosts_to_update:
+                Host.objects.bulk_update(
+                    hosts_to_update,
+                    ['photo_z_internal', 'photo_z_err_internal'],
+                )
             
             print('time taken with upload:', datetime.datetime.utcnow() - nowdate)
             

@@ -612,7 +612,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 
     # Convert observation dates to MJD
     mjd = date_to_mjd(obs_date)
-    obs_date_str = [date.strftime("%m/%d/%Y") for date in obs_date]
+    obs_date_str = [p["obs_date"].strftime("%m/%d/%Y") for p in phot_values]
 
     # Initialize plot
     colorlist = ['#8dd3c7', '#bebada', '#fb8072', '#80b1d3', '#fdb462', '#b3de69', '#fccde5', '#d9d9d9']
@@ -708,7 +708,14 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
         limmjd = None
         mjd_range = (mjd.min() - 10, mjd.max() + 10)
     ax.x_range = Range1d(*mjd_range)
-    ax.y_range = Range1d(np.max(upperlimmag) + 0.25, np.min(mag) - 0.5)
+    if len(upperlimmag):
+        y_hi = float(np.max(upperlimmag)) + 0.25
+    elif len(mag):
+        y_hi = float(np.max(mag)) + 0.5
+    else:
+        y_hi = 20.0
+    y_lo = float(np.min(mag)) - 0.5 if len(mag) else y_hi - 2.0
+    ax.y_range = Range1d(y_hi, y_lo)
 
     majorticks = []
     overridedict = {}
@@ -1092,9 +1099,14 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
     tstart = time.time()
 
     transient = Transient.objects.get(pk=transient_id)
-    photdata = get_all_phot_for_transient(request.user, transient_id).all().select_related(
-        'created_by', 'modified_by', 'band', 'unit', 'photometry',
-        'band__instrument','band__instrument__telescope')
+    photdata = (
+        get_all_phot_for_transient(request.user, transient_id)
+        .select_related(
+            'created_by', 'modified_by', 'band', 'unit', 'photometry',
+            'band__instrument', 'band__instrument__telescope', 'mag_sys',
+        )
+        .prefetch_related('data_quality')
+    )
     if not photdata:
         return django.http.HttpResponse('')
 
@@ -1123,11 +1135,13 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
             if p.mag_sys is None: magsys = np.append(magsys,['None'])
             else: magsys = np.append(magsys,[p.mag_sys])
 
-            dqs = p.data_quality.all()
-            if not len(dqs):
-                data_quality = np.append(data_quality,['Good'])
+            dqs = list(p.data_quality.all())
+            if not dqs:
+                data_quality = np.append(data_quality, ['Good'])
             else:
-                data_quality = np.append(data_quality,[','.join(np.array([pdq.name for pdq in p.data_quality.all()]))])
+                data_quality = np.append(
+                    data_quality, [','.join(pdq.name for pdq in dqs)]
+                )
 
             if not p.flux or not p.flux_err:
                 flux_single = 10**(-0.4*(p.mag-27.5))

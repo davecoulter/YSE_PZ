@@ -58,6 +58,8 @@ MAX_SECONDS_TRANSIENT_DETAIL_SHELL = 8.0
 MAX_SECONDS_TRANSIENT_DETAIL_LOADED = 12.0
 MAX_SECONDS_PERSONAL_DASHBOARD = 3.0
 MAX_SECONDS_MAIN_DASHBOARD = 6.0
+MAX_QUERIES_CALENDAR = 12
+MAX_SECONDS_CALENDAR = 3.0
 
 SKIP_TIMING = os.environ.get("YSE_PERF_SKIP_TIMING", "").lower() in ("1", "true", "yes")
 
@@ -371,3 +373,30 @@ class MainDashboardPerformanceTests(TestCase):
         response, n_queries, elapsed = _profile_get(self.client, url)
         self.assertEqual(response.status_code, 200)
         self.assertLess(n_queries, MAX_QUERIES_MAIN_DASHBOARD)
+
+
+@override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"])
+class CalendarPerformanceTests(TestCase):
+    """On-call calendar: /calendar/"""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = create_test_user("perf_calendar_user")
+
+    def setUp(self):
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def test_calendar_returns_200(self):
+        url = "/calendar/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        assert_page_load(
+            self,
+            page="calendar",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=MAX_QUERIES_CALENDAR,
+            max_seconds=MAX_SECONDS_CALENDAR,
+        )

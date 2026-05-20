@@ -101,16 +101,44 @@ class LightcurvePlotTests(TestCase):
         self.assertGreater(len(response.content), 100)
         self.assertIn(b"plot", response.content.lower())
 
-    def test_lightcurveplot_detail_query_count_bounded(self):
-        """Regression: avoid per-point PhotometricBand.objects.get N+1 queries."""
+    def _assert_query_count_bounded(self, url, max_queries, label):
         from django.db import connection
         from django.test.utils import CaptureQueriesContext
 
         with CaptureQueriesContext(connection) as context:
-            response = self.client.get(f"/lightcurveplot_detail/{self.transient.id}/")
-        self.assertEqual(response.status_code, 200)
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, msg=label)
         self.assertLess(
             len(context.captured_queries),
-            25,
-            msg="too many queries for single-point LC plot",
+            max_queries,
+            msg=f"{label}: {len(context.captured_queries)} queries (max {max_queries})",
         )
+
+    def test_lightcurveplot_detail_query_count_bounded(self):
+        """Regression: avoid per-point PhotometricBand.objects.get N+1 queries."""
+        self._assert_query_count_bounded(
+            f"/lightcurveplot_detail/{self.transient.id}/",
+            max_queries=25,
+            label="lightcurveplot_detail",
+        )
+
+    def test_lightcurveplot_flux_query_count_bounded(self):
+        self._assert_query_count_bounded(
+            f"/lightcurveplot_flux/{self.transient.id}/",
+            max_queries=25,
+            label="lightcurveplot_flux",
+        )
+
+    def test_lightcurveplot_summary_query_count_bounded(self):
+        self._assert_query_count_bounded(
+            f"/lightcurveplot_summary/{self.transient.id}/",
+            max_queries=25,
+            label="lightcurveplot_summary",
+        )
+
+    def test_lightcurveplot_flux_empty_returns_empty_body(self):
+        response = self.client.get(
+            f"/lightcurveplot_flux/{self.transient_empty.id}/"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
