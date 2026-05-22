@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop, astrofoley-patch-1]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  docker-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure application settings
+        run: cp YSE_PZ/public_settings.ini YSE_PZ/settings.ini
+
+      - name: Python syntax check (app code)
+        run: |
+          find YSE_App YSE_PZ -name '*.py' \
+            ! -path '*/static/*' ! -path '*/bower_components/*' \
+            -exec python3 -m py_compile {} +
+
+      - name: Write docker compose environment
+        working-directory: docker
+        run: |
+          printf '%s\n' \
+            "VOL=${{ github.workspace }}" \
+            "VOL_DB=${{ github.workspace }}/database" \
+            "VOL_GHOST=${{ github.workspace }}/ghost_logs" \
+            "STATIC_VOL=${{ github.workspace }}/YSE_PZ/static" \
+            "DB_PWD=password" \
+            "LOCAL_DB_PORT=53306" \
+            "LOCAL_HTTP_PORT=8080" \
+            "DJANGO_SUPERUSER_USERNAME=ci_admin" \
+            "DJANGO_SUPERUSER_PASSWORD=ci_password" \
+            "DJANGO_SUPERUSER_EMAIL=ci@example.com" \
+            > .env
+          grep -q '^VOL=' .env
+          ! grep -q '^[[:space:]]' .env
+
+      - name: Start database and web services
+        working-directory: docker
+        run: |
+          docker compose up -d yse_db web || {
+            docker logs ysepz_db_container 2>&1 || true
+            exit 1
+          }
+
+      - name: Wait for MySQL
+        run: |
+          for i in $(seq 1 60); do
+            if docker exec ysepz_db_container mysqladmin ping -h localhost -ppassword --silent; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "MySQL did not become ready in time"
+          exit 1
+
+      - name: Wait for Gunicorn
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8000/login/ >/dev/null; then
+              echo "Gunicorn ready after attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i/60: login not ready yet"
+            docker logs ysepz_web_container 2>&1 | tail -40 || true
+            sleep 5
+          done
+          echo "Web service did not become ready in time"
+          docker logs ysepz_web_container 2>&1 || true
+          exit 1
+
+      - name: Django system check
+        run: docker exec ysepz_web_container python3 manage.py check
+
+      - name: Run tests
+        run: docker exec ysepz_web_container python3 manage.py test YSE_App.tests --verbosity=2
+
+      - name: Tear down and prune Docker artifacts
+        if: always()
+        working-directory: docker
+        run: |
+          docker compose down -v
+          bash -n scripts/prune-yse-docker.sh
+          bash scripts/prune-yse-docker.sh aggressive

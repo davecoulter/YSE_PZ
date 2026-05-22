@@ -193,6 +193,7 @@ def SendFollowingNotice(transient_id, transient_name, telescope, profile):
 def sendemail(from_addr, to_addr,
 			subject, message,
 			login, password, smtpserver, cc_addr=None):
+	"""Canonical HTML email helper for YSE_PZ (ingest, cron, and web)."""
 
 	print("Preparing email")
 	msg = MIMEMultipart('alternative')

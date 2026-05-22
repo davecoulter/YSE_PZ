@@ -77,3 +77,18 @@ archivePrefix = {arXiv},
 }
 ```
 
+## Development (Young-Supernova-Experiment/YSE_PZ)
+
+Day-to-day work targets **`develop`** on [Young-Supernova-Experiment/YSE_PZ](https://github.com/Young-Supernova-Experiment/YSE_PZ/tree/develop). Branch from `develop`, open PRs into `develop`, and wait for CI.
+
+**Remotes (suggested):**
+
+| Remote | URL |
+|--------|-----|
+| `yse` | https://github.com/Young-Supernova-Experiment/YSE_PZ.git |
+| `origin` | optional legacy upstream (davecoulter/YSE_PZ) |
+
+**Local Docker:** see [CONTRIBUTING.md](CONTRIBUTING.md) and [docker/readme.txt](docker/readme.txt).
+
+**CI:** `.github/workflows/ci.yml` runs `py_compile`, Docker compose, `manage.py check`, and `YSE_App.tests` on push/PR.
+

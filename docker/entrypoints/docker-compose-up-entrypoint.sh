@@ -1,9 +1,12 @@
-#!/bin/env bash
+#!/usr/bin/env bash
+set -e
+cd /app
 
-bash ./Entrypoints/wait-for-it.sh yse_db:3306 --timeout=0 &&
+bash /app/Entrypoints/wait-for-it.sh yse_db:3306 --timeout=120 &&
 echo "**** LET'S GO GAMERS! ****" &&
 gunicorn YSE_PZ.wsgi:application --bind 0.0.0.0:8000 &&
-bash ./Entrypoints/wait-for-it.sh yse_nginx:80 --timeout=0
+#gunicorn /Users/rfoley/YSE_PZ/YSE_PZ.wsgi:application --bind 0.0.0.0:8000 &&
+bash /app/Entrypoints/wait-for-it.sh yse_nginx:80 --timeout=30 || true
 
 #python3 manage.py collectstatic --noinput &&
 

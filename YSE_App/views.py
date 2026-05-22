@@ -128,49 +128,74 @@ def dashboard(request):
 
 @login_required
 def personaldashboard(request):
-
-    queries = UserQuery.objects.filter(user = request.user)
+    # Retrieve all user queries
+    queries = UserQuery.objects.filter(user=request.user)
     tables = []
+    all_transient_names = set()
 
+    # Collect all transient names for valid queries
     for q in queries:
-        transients = []
         if q.query:
             try:
-                if 'yse_app_transient' not in q.query.sql.lower(): continue
-                if 'name' not in q.query.sql.lower(): continue
-                if not q.query.sql.lower().startswith('select'): continue
+                sql = q.query.sql.lower()
+                if 'yse_app_transient' not in sql or 'name' not in sql or not sql.startswith('select'):
+                    continue
 
-                cursor = connections['explorer'].cursor()
-                cursor.execute(q.query.sql.replace('%','%%'), ())
-                transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
-                cursor.close()
+                # Use caching to avoid repeated query execution
+                cache_key = f'user_query_{q.id}'
+                cached_result = cache.get(cache_key)
 
-                transientfilter = TransientFilter(request.GET, queryset=transients, prefix=q.query.title.replace(' ',''))
-                table = TransientTable(transientfilter.qs, prefix=q.query.title.replace(' ',''))
-                RequestConfig(request, paginate={'per_page': 10}).configure(table)
-                tables += [(table, q.query.title, q.query.title.replace(' ', ''), transientfilter, q.id, len(transients))]
-            except:
-                # Query bombed
-                tables += [(Transient.objects.none(), q.query.title + ' [QUERY ID %s IS BROKEN]' % q.query_id, q.query.title.replace(' ', ''), Transient.objects.none(), q.id, len(transients))]
-                pass
+                if not cached_result:
+                    cursor = connections['explorer'].cursor()
+                    cursor.execute(q.query.sql.replace('%', '%%'), ())
+                    cached_result = [row[0] for row in cursor.fetchall()]
+                    cache.set(cache_key, cached_result, timeout=3600)  # Cache for 1 hour
+                    cursor.close()
+
+                all_transient_names.update(cached_result)
+
+            except Exception as e:
+                logger.error(f"Error processing query {q.id}: {e}")
+                tables.append((Transient.objects.none(), f"{q.query.title} [QUERY FAILED]", '', None, q.id, 0))
+                continue
+
         elif q.python_query:
-            transients = getattr(yse_python_queries, q.python_query)()
+            # Process Python queries (assumes `yse_python_queries` module exists)
+            try:
+                transients = getattr(yse_python_queries, q.python_query)()
+                transient_filter = TransientFilter(request.GET, queryset=transients, prefix=q.python_query)
+                table = TransientTable(transient_filter.qs, prefix=q.python_query)
+                RequestConfig(request, paginate={'per_page': 10}).configure(table)
+                tables.append((table, q.python_query, q.python_query, transient_filter, q.id, len(transients)))
+            except Exception as e:
+                logger.error(f"Error processing Python query {q.python_query}: {e}")
+                tables.append((Transient.objects.none(), f"{q.python_query} [PYTHON QUERY FAILED]", '', None, q.id, 0))
 
-            transientfilter = TransientFilter(request.GET, queryset=transients,prefix=q.python_query)
-            table = TransientTable(transientfilter.qs,prefix=q.python_query)
+    # Fetch all transients in a single query
+    transients = Transient.objects.filter(name__in=all_transient_names).order_by('-disc_date')
+
+    # Paginate results (use ORM-level pagination)
+    paginator = Paginator(transients, 10)  # 10 items per page
+    page_number = request.GET.get('page')
+    paginated_transients = paginator.get_page(page_number)
+
+    # Build tables for transients (if applicable)
+    for q in queries:
+        if q.query and q.query.sql.lower().startswith('select'):
+            transient_filter = TransientFilter(request.GET, queryset=paginated_transients, prefix=q.query.title.replace(' ', ''))
+            table = TransientTable(transient_filter.qs, prefix=q.query.title.replace(' ', ''))
             RequestConfig(request, paginate={'per_page': 10}).configure(table)
-            tables += [(table,q.python_query, q.python_query, transientfilter, q.id, len(transients))]
-            
-    if request.META['QUERY_STRING']:
-        anchor = request.META['QUERY_STRING'].split('-')[0]
-    else:
-        anchor = ''
+            tables.append((table, q.query.title, q.query.title.replace(' ', ''), transient_filter, q.id, len(paginated_transients)))
 
+    # Extract anchor from query string
+    anchor = request.META.get('QUERY_STRING', '').split('-')[0] if request.META.get('QUERY_STRING') else ''
+
+    # Context for rendering the template
     context = {
-        'user':request.user,
-        'transient_categories':tables,
-        'all_transient_statuses':TransientStatus.objects.all(),
-        'anchor':anchor,
+        'user': request.user,
+        'transient_categories': tables,
+        'all_transient_statuses': TransientStatus.objects.all(),
+        'anchor': anchor,
         'add_dashboard_query_form': AddDashboardQueryForm(),
         'add_followup_notice_form': AddFollowupNoticeForm(),
         'followup_notices': UserTelescopeToFollow.objects.filter(profile__user=request.user)
@@ -360,7 +385,7 @@ def get_item(dictionary, key):
 
 @login_required
 def calendar(request):
-    all_dates = OnCallDate.objects.all()
+    all_dates = OnCallDate.objects.prefetch_related('user').all()
     colors = ['#dd4b39', 
                 '#f39c12', 
                 '#00c0ef', 
@@ -372,7 +397,10 @@ def calendar(request):
                 '#001f3f']
 
     user_colors = {}
-    for i, u in enumerate(User.objects.all().exclude(username='admin')):
+    calendar_users = User.objects.filter(
+        oncalldate__isnull=False
+    ).exclude(username='admin').distinct()
+    for i, u in enumerate(calendar_users):
         user_colors[u.username] = colors[i % len(colors)]
 
     context = {
