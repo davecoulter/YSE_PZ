@@ -5,7 +5,7 @@ import django_tables2 as tables
 from django_tables2 import RequestConfig
 from django.db.models import F, Q
 from django.db.models.functions import Length, Substr
-from django.db.models import Count, Value, Max, Min
+from django.db.models import Count, OuterRef, Subquery, Value, Max, Min
 from django.db.models.functions import Greatest, Coalesce
 from django_tables2 import A
 from django.db import models
@@ -1399,6 +1399,27 @@ class YSEObsNightTable(tables.Table):
             'class': 'table table-bordered table-hover',
             "order": [[ 2, "desc" ]],
         }
+
+def annotate_dashboard_transient_fields(qs):
+    """
+    Prefetch FKs and annotate recent photometry for dashboard tables.
+
+    Avoids N+1 queries from Transient.recent_mag() / recent_magdate() during render.
+    """
+    recent_phot = TransientPhotData.objects.filter(
+        photometry__transient=OuterRef('pk'),
+    ).exclude(data_quality__isnull=True)
+    recent_mag_sq = (
+        recent_phot.filter(mag__isnull=False)
+        .order_by('-obs_date')
+        .values('mag')[:1]
+    )
+    recent_magdate_sq = recent_phot.order_by('-obs_date').values('obs_date')[:1]
+    return qs.select_related('status', 'host', 'obs_group').annotate(
+        recent_mag=Subquery(recent_mag_sq),
+        recent_magdate=Subquery(recent_magdate_sq),
+    )
+
 
 def annotate_with_disc_mag(qs):
 
