@@ -1,6 +1,22 @@
-import requests,re
+import hashlib
+import re
+
+import requests
+from django.core.cache import cache
+
+_TESS_CACHE_TTL = 60 * 60 * 24 * 7  # 7 days
+
+
+def _tess_cache_key(ra, dec, discovery_jd):
+	raw = f"{round(float(ra), 5)}:{round(float(dec), 5)}:{round(float(discovery_jd), 2)}"
+	return "tess_obs:" + hashlib.sha256(raw.encode()).hexdigest()
+
 
 def tess_obs(ra, dec, discovery_jd):
+	key = _tess_cache_key(ra, dec, discovery_jd)
+	cached = cache.get(key)
+	if cached is not None:
+		return cached
 
 	before_leeway = 10	 # Days of leeway before date
 	after_leeway = 10	 # Days of leeway after date
@@ -37,8 +53,10 @@ def tess_obs(ra, dec, discovery_jd):
 			if int(sector)<len(tess_date):
 				if (discovery_jd > tess_date[int(sector)-1]-before_leeway and
 					discovery_jd < tess_date[int(sector)]+after_leeway):
-					return(True)
-	return(False)
+					cache.set(key, True, _TESS_CACHE_TTL)
+					return True
+	cache.set(key, False, _TESS_CACHE_TTL)
+	return False
 
 # These should be false
 #print("Should be false:")
