@@ -74,7 +74,7 @@ usage() {
 YSE Docker helper (auto-prunes superseded images after success)
 
   yse-docker.sh up       Start stack (docker compose up -d)
-  yse-docker.sh pull     Pull ghcr.io/davecoulter/yse_pz:latest and prune old copies
+  yse-docker.sh pull     Pull published web image (ghcr.io/davecoulter/yse_pz:latest) and prune old copies
   yse-docker.sh rebuild  Build local dev web image, start stack, aggressive prune
   yse-docker.sh prune    Prune only (--aggressive optional second arg)
   yse-docker.sh down     Stop stack (does not delete MySQL volume)

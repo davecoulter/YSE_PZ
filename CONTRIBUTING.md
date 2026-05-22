@@ -2,6 +2,8 @@
 
 This fork’s day-to-day development targets **`main`** on [astrofoley/YSE_PZ](https://github.com/astrofoley/YSE_PZ). Upstream is [davecoulter/YSE_PZ](https://github.com/davecoulter/YSE_PZ) (`develop`); cross-fork PRs come later when that workflow is verified.
 
+**Upstream policy:** Do **not** open pull requests to [davecoulter/YSE_PZ](https://github.com/davecoulter/YSE_PZ) (legacy upstream). Integration work from [astrofoley/YSE_PZ](https://github.com/astrofoley/YSE_PZ) lands here via branches such as `integrate/yse-*` (see open integration PRs).
+
 ## Workflow
 
 1. Branch from current `main`:

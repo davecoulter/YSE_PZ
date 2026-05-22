@@ -90,9 +90,7 @@ This fork’s **`main`** branch tracks [davecoulter/YSE_PZ `develop`](https://gi
 
 **Upstream PR:** When ready, open a cross-fork PR from `astrofoley/main` to `davecoulter/develop` via [compare across forks](https://github.com/davecoulter/YSE_PZ/compare/develop...astrofoley:YSE_PZ:main?expand=1) (not the fork “Contribute” button, which targets simulationstation).
 
-**Local Docker:** see [CONTRIBUTING.md](CONTRIBUTING.md) (setup, pruning, `collectstatic`) and [docker/readme.txt](docker/readme.txt).
+**Integration:** Changes from [astrofoley/YSE_PZ](https://github.com/astrofoley/YSE_PZ) merge via `integrate/yse-*` branches. [YSE_PZ_chatgpt](https://github.com/astrofoley/YSE_PZ_chatgpt) is archived.
 
-For Apache subpath deployments (`URL_PREFIX = /YSE_PZ`), use `deploy/apache-subpath` and [deploy/apache/yse_pz-subpath.conf.example](deploy/apache/yse_pz-subpath.conf.example).
-
-Track open work on [GitHub Issues](https://github.com/astrofoley/YSE_PZ/issues).
+**CI:** `.github/workflows/ci.yml` runs `py_compile`, Docker compose, `manage.py check`, and `YSE_App.tests` on push/PR.
 
