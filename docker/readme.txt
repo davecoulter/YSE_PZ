@@ -21,3 +21,18 @@ Add you requirements file to build a new web image at ./Requirements/. Naming co
 ...
 
 However, you should only need 1 file unless you have conflicting dependencies.
+
+
+LOCAL DOCKER (recommended):
+See CONTRIBUTING.md in the repo root for workflow, pruning, and collectstatic.
+
+Quick reference from the repo root:
+
+    ./docker/scripts/yse-docker.sh up             # start stack, light prune
+    ./docker/scripts/yse-docker.sh collectstatic  # if admin/CSS assets are missing
+    ./docker/scripts/yse-docker.sh pull           # pull web image, aggressive prune
+    ./docker/scripts/yse-docker.sh rebuild        # local dev image build
+    ./docker/scripts/yse-docker.sh prune            # prune only
+    ./docker/scripts/yse-docker.sh down             # stop (keeps DB)
+
+Set YSE_DOCKER_PRUNE=0 to skip pruning for one command.

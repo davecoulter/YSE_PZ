@@ -77,18 +77,22 @@ archivePrefix = {arXiv},
 }
 ```
 
-## Development (Young-Supernova-Experiment/YSE_PZ)
+## Fork development (astrofoley/YSE_PZ)
 
-Day-to-day work targets **`develop`** on [Young-Supernova-Experiment/YSE_PZ](https://github.com/Young-Supernova-Experiment/YSE_PZ/tree/develop). Branch from `develop`, open PRs into `develop`, and wait for CI.
+This fork’s **`main`** branch tracks [davecoulter/YSE_PZ `develop`](https://github.com/davecoulter/YSE_PZ/tree/develop), plus local Docker/CI fixes and work merged from [YSE_PZ_chatgpt](https://github.com/astrofoley/YSE_PZ_chatgpt) (that repo is **archived**; use this repo only). Day-to-day branches should start from **`main`**.
 
-**Remotes (suggested):**
+| Branch | Purpose |
+|--------|---------|
+| `main` | Unified develop-based line |
+| `deploy/apache-subpath` | Apache subpath / deploy-only changes (not on `main`) |
 
-| Remote | URL |
-|--------|-----|
-| `yse` | https://github.com/Young-Supernova-Experiment/YSE_PZ.git |
-| `origin` | optional legacy upstream (davecoulter/YSE_PZ) |
+**Remotes:** `origin` → davecoulter/YSE_PZ; `astrofoley` → this fork.
 
-**Local Docker:** see [CONTRIBUTING.md](CONTRIBUTING.md) and [docker/readme.txt](docker/readme.txt).
+**Upstream PR:** When ready, open a cross-fork PR from `astrofoley/main` to `davecoulter/develop` via [compare across forks](https://github.com/davecoulter/YSE_PZ/compare/develop...astrofoley:YSE_PZ:main?expand=1) (not the fork “Contribute” button, which targets simulationstation).
 
-**CI:** `.github/workflows/ci.yml` runs `py_compile`, Docker compose, `manage.py check`, and `YSE_App.tests` on push/PR.
+**Local Docker:** see [CONTRIBUTING.md](CONTRIBUTING.md) (setup, pruning, `collectstatic`) and [docker/readme.txt](docker/readme.txt).
+
+For Apache subpath deployments (`URL_PREFIX = /YSE_PZ`), use `deploy/apache-subpath` and [deploy/apache/yse_pz-subpath.conf.example](deploy/apache/yse_pz-subpath.conf.example).
+
+Track open work on [GitHub Issues](https://github.com/astrofoley/YSE_PZ/issues).
 
