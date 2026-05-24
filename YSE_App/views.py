@@ -21,8 +21,13 @@ import zipfile
 from io import BytesIO
 from YSE_App.yse_utils.yse_pa import yse_pa
 from django.utils.decorators import method_decorator
+import logging
+import os
 
 from astropy.utils import iers
+
+logger = logging.getLogger(__name__)
+QUERY_CACHE_VERSION = os.environ.get('YSE_QUERY_CACHE_VERSION', '2')
 iers.conf.auto_download = True
 from astropy.utils.iers import conf
 conf.auto_max_age = None
@@ -182,10 +187,10 @@ def personaldashboard(request):
                 if 'yse_app_transient' not in sql or 'name' not in sql or not sql.startswith('select'):
                     continue
 
-                cache_key = f'user_query_{q.id}'
+                cache_key = f'user_query_{QUERY_CACHE_VERSION}_{q.id}'
                 cached_result = cache.get(cache_key)
 
-                if not cached_result:
+                if cached_result is None:
                     cursor = connections['explorer'].cursor()
                     cursor.execute(q.query.sql.replace('%', '%%'), ())
                     cached_result = [row[0] for row in cursor.fetchall()]
@@ -196,6 +201,7 @@ def personaldashboard(request):
                 sql_dashboard_sections.append((q, cached_result))
 
             except Exception as e:
+                cache.delete(f'user_query_{QUERY_CACHE_VERSION}_{q.id}')
                 logger.error(f"Error processing query {q.id}: {e}")
                 tables.append(
                     (

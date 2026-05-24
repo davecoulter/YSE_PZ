@@ -161,11 +161,7 @@ def get_recent_phot_for_host(user, host_id=None):
     allowed_phot = PhotometryService.GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id)
 
     photdata = HostPhotData.objects.filter(photometry__in=allowed_phot).order_by('-obs_date').first()
-    
-    if photdata:
-        return(photdata[0])
-    else:
-        return(None)
+    return photdata
 
 def get_all_phot_for_transient(user, transient_id=None):
     photdata = PhotometryService.GetAuthorizedTransientPhotData_ByUser_ByTransient(
