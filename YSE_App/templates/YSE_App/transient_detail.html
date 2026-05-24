@@ -396,14 +396,14 @@
                                     </div>
                                     <div class="col-xs-4">
                                             <div class="form-group">
-                                                <strong>Photo-z</strong>
+                                                <strong>Photo-z (Pan-STARRS CNN)</strong>
                                                 <p class="text-muted">
                                                     {% if transient.host %}
                                                         {% if transient.host.photo_z_internal %}
                                                             {{ transient.host.photo_z_internal|floatformat:3 }}
 
-                                                            {% if transient.host.photo_z_err_internal %}
-                                                                +/- {{ transient.host.photo_z_err_internal|floatformat:3 }}
+                                                            {% if transient.host.photo_z_err_PSCNN %}
+                                                                +/- {{ transient.host.photo_z_err_PSCNN|floatformat:3 }}
                                                             {% endif %}
                                                         {% endif %}
                                                     {% else %}

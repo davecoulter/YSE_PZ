@@ -19,12 +19,11 @@ def GetAuthorizedTransientPhotometry_ByUser(user):
     return allowed_phot
 
 def GetAuthorizedTransientPhotometry_ByUser_ByTransient(user, transient_id):
-
-    allowed_phot_by_group = GetAuthorizedTransientPhotometry_ByUser(user)
-    transient_query = Q(transient=transient_id)
-    allowed_phot_by_group_by_transient = allowed_phot_by_group.filter(transient_query).distinct()
-
-    return allowed_phot_by_group_by_transient
+    group_query_tuple = GetUserGroupQuery(user)
+    return TransientPhotometry.objects.filter(
+        group_query_tuple[0] | group_query_tuple[1],
+        transient_id=transient_id,
+    ).distinct()
 
 def GetAuthorizedHostPhotometry_ByUser(user):
     host_query_tuple = GetUserGroupQuery(user)
@@ -33,11 +32,11 @@ def GetAuthorizedHostPhotometry_ByUser(user):
     return allowed_phot
 
 def GetAuthorizedHostPhotometry_ByUser_ByHost(user, host_id):
-    allowed_phot_by_group = GetAuthorizedHostPhotometry_ByUser(user)
-    host_query = Q(host=host_id)
-    allowed_phot_by_group_by_host = allowed_phot_by_group.filter(host_query).distinct()
-
-    return allowed_phot_by_group_by_host
+    host_query_tuple = GetUserGroupQuery(user)
+    return HostPhotometry.objects.filter(
+        host_query_tuple[0] | host_query_tuple[1],
+        host_id=host_id,
+    ).distinct()
 
 def GetAuthorizedTransientPhotData_ByUser(user, includeBadData=True):
     allowed_phot = GetAuthorizedTransientPhotometry_ByUser(user)

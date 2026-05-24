@@ -135,9 +135,13 @@ def dashboard(request):
     for title, statusname in _DASHBOARD_STATUS_SECTIONS:
         status = status_by_name.get(statusname)
         if status:
-            transients = Transient.objects.filter(status=status).order_by('-disc_date')
+            transients = annotate_dashboard_transient_fields(
+                Transient.objects.filter(status=status).order_by('-disc_date')
+            )
         else:
-            transients = Transient.objects.filter(status=None).order_by('-disc_date')
+            transients = annotate_dashboard_transient_fields(
+                Transient.objects.filter(status=None).order_by('-disc_date')
+            )
         transientfilter = TransientFilter(
             request.GET, queryset=transients, prefix=statusname.lower()
         )
@@ -1065,7 +1069,9 @@ def transient_detail(request, slug):
 
         transient_obj = transient_matches[0]
         transient_id = transient_obj.id
-        logs = Log.objects.filter(transient_id=transient_id)
+        logs = list(
+            Log.objects.filter(transient_id=transient_id).order_by('-modified_date')
+        )
 
         alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 
@@ -1160,14 +1166,26 @@ def transient_detail(request, slug):
 
         if hostphotdata: transient_obj.hostphotdata = hostphotdata
 
-        lastphotdata = view_utils.get_recent_phot_for_transient(request.user, transient_id=transient_id)
-        firstphotdata = view_utils.get_disc_mag_for_transient(request.user, transient_id=transient_id)
-        allphotdata = view_utils.get_all_phot_for_transient(request.user, transient_id).select_related()
-        #import pdb
-        #pdb.set_trace()
+        allphotdata = (
+            view_utils.get_all_phot_for_transient(request.user, transient_id)
+            .select_related(
+                'band',
+                'photometry',
+                'photometry__instrument',
+                'photometry__instrument__telescope',
+            )
+            .prefetch_related('data_quality')
+        )
+        good_photdata = allphotdata.exclude(data_quality__isnull=False)
+        lastphotdata = (
+            good_photdata.filter(mag__isnull=False).order_by('-obs_date').first()
+        )
+        firstphotdata = view_utils.get_disc_mag_from_photdata(good_photdata)
 
-        has_new_comment = len(Log.objects.filter(transient=transient_obj).\
-                              filter(modified_date__gt=datetime.datetime.now()-datetime.timedelta(1))) > 0
+        comment_cutoff = timezone.now() - datetime.timedelta(1)
+        has_new_comment = any(
+            log.modified_date > comment_cutoff for log in logs
+        )
         
         # obsnights,tellist = view_utils.getObsNights(transient[0])
         # too_resources = ToOResource.objects.all()
@@ -1183,7 +1201,11 @@ def transient_detail(request, slug):
         date = datetime.datetime.now(tz=pytz.utc)
         date_format='%m/%d/%Y %H:%M:%S'
         
-        spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True)
+        spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(
+            request.user, transient_id, includeBadData=True
+        ).select_related('instrument', 'instrument__telescope').prefetch_related(
+            'data_quality'
+        )
         context = {
             'transient':transient_obj,
             'followups':followups,
@@ -1208,7 +1230,13 @@ def transient_detail(request, slug):
             'gw_candidate':gwcand,
             'gw_images':gwimages,
             'spectrum_upload_form':spectrum_upload_form,
-            'diff_images':TransientDiffImage.objects.filter(phot_data__photometry__transient__name=transient_obj.name),
+            'diff_images': TransientDiffImage.objects.filter(
+                phot_data__photometry__transient_id=transient_id
+            ).select_related(
+                'phot_data',
+                'phot_data__photometry',
+                'phot_data__band',
+            ),
             'classical_resource_form':classical_resource_form,
             'too_resource_form':too_resource_form,
             'new_comment':has_new_comment,
@@ -1237,8 +1265,14 @@ def transient_detail(request, slug):
         # we need to add a submit to TNS button
         # for transients that don't have TNS names
         # - for now, this is only DECam transients
-        tns_submit_logs = logs.filter(comment__startswith='Submitted to TNS')
-        tns_sandbox_logs = logs.filter(comment__startswith='TNS sandbox')
+        tns_submit_logs = [
+            log for log in logs
+            if log.comment and log.comment.startswith('Submitted to TNS')
+        ]
+        tns_sandbox_logs = [
+            log for log in logs
+            if log.comment and log.comment.startswith('TNS sandbox')
+        ]
         if not len(tns_submit_logs) and '_cand' in transient_obj.name and \
            'DECAT' in list(assigned_transient_tags.values_list('name',flat=True)):
             submit_to_tns = True

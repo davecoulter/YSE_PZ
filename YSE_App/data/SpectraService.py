@@ -19,12 +19,9 @@ def GetAuthorizedTransientSpectrum_ByUser(user, includeBadData=True):
     return allowed_spec
 
 def GetAuthorizedTransientSpectrum_ByUser_ByTransient(user, transient_id, includeBadData=True):
-
-    allowed_spec_by_group = GetAuthorizedTransientSpectrum_ByUser(user, includeBadData)
-    transient_query = Q(transient=transient_id)
-    allowed_spec_by_group_by_transient = allowed_spec_by_group.filter(transient_query).distinct()
-
-    return allowed_spec_by_group_by_transient
+    group_query_tuple = GetUserGroupQuery(user)
+    query = (group_query_tuple[0] | group_query_tuple[1]) & Q(transient_id=transient_id)
+    return _GetTransientSpectrum(includeBadData, query).distinct()
 
 def GetAuthorizedHostSpectrum_ByUser(user, includeBadData=True):
     host_query_tuple = GetUserGroupQuery(user)
@@ -34,11 +31,9 @@ def GetAuthorizedHostSpectrum_ByUser(user, includeBadData=True):
     return allowed_phot
 
 def GetAuthorizedHostSpectrum_ByUser_ByHost(user, host_id, includeBadData=True):
-    allowed_spec_by_group = GetAuthorizedHostSpectrum_ByUser(user, includeBadData)
-    host_query = Q(host=host_id)
-    allowed_spec_by_group_by_host = allowed_spec_by_group.filter(host_query).distinct()
-
-    return allowed_spec_by_group_by_host
+    host_query_tuple = GetUserGroupQuery(user)
+    query = (host_query_tuple[0] | host_query_tuple[1]) & Q(host_id=host_id)
+    return _GetHostSpectrum(includeBadData, query).distinct()
 
 def GetAuthorizedTransientSpecData_ByUser(user, includeBadData=True):
     allowed_spec = GetAuthorizedTransientSpectrum_ByUser(user, includeBadData)

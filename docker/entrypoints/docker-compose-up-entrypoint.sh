@@ -4,7 +4,8 @@ cd /app
 
 bash /app/Entrypoints/wait-for-it.sh yse_db:3306 --timeout=120 &&
 echo "**** LET'S GO GAMERS! ****" &&
-gunicorn YSE_PZ.wsgi:application --bind 0.0.0.0:8000 &&
+gunicorn YSE_PZ.wsgi:application --bind 0.0.0.0:8000 \
+  --workers "${GUNICORN_WORKERS:-2}" --threads "${GUNICORN_THREADS:-2}" --timeout "${GUNICORN_TIMEOUT:-120}" &&
 #gunicorn /Users/rfoley/YSE_PZ/YSE_PZ.wsgi:application --bind 0.0.0.0:8000 &&
 bash /app/Entrypoints/wait-for-it.sh yse_nginx:80 --timeout=30 || true
 
