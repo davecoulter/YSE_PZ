@@ -9,6 +9,7 @@ import django
 from django.conf import settings as djangoSettings
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db import models, connection, reset_queries
+from django.db.models import Prefetch
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, get_object_or_404, render
 from django.urls import reverse
