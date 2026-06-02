@@ -136,6 +136,14 @@ class LightcurvePlotTests(TestCase):
             label="lightcurveplot_summary",
         )
 
+    def test_lightcurveplot_detail_serves_cached_html_on_second_request(self):
+        url = f"/lightcurveplot_detail/{self.transient.id}/"
+        first = self.client.get(url)
+        second = self.client.get(url)
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.content, second.content)
+
     def test_lightcurveplot_flux_empty_returns_empty_body(self):
         response = self.client.get(
             f"/lightcurveplot_flux/{self.transient_empty.id}/"

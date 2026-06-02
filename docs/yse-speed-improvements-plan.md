@@ -2,7 +2,7 @@
 
 **Branch:** `perf/progressive-loading` (pushed to `yse`; from `develop` @ `d60d5ef0` + merged `fix/spectrumplot-regression` / PR #14 equivalent).
 
-**Commits:** `40dd5528` (harness + PFP), `3e65b01c` (CI on perf branch).
+**Commits:** `40dd5528` (harness + PFP), `3e65b01c` (CI), `ae363b18` (benchmark DB fix), `a3e94e08` (transient PFP + phased follow-up).
 
 ---
 
@@ -20,6 +20,7 @@
 | 4 | Transient detail PFP: slim shell + tab fragments; HST/Chandra status probes + images on tab click |
 | 4b | Follow-up tab phased load: requests → classical → ToO/automated (classical prioritized) |
 | 6 | Main dashboard PFP: “New” sync + `/dashboard/section/<status>/` |
+| 7 | LC/spectrum plot cache, DQ prefetch labels, display downsample |
 
 ### Measured iterations (Docker, fixture DB)
 
@@ -28,6 +29,7 @@
 | `baseline-pre-pfp` (sync) | 150 ms, 19 q | 172 ms, 23 q | 416 ms, 66 q |
 | `personal-pfp` (deferred shells) | 356 ms, 19 q | **136 ms**, 8 q | 363 ms, 229 q |
 | `transient-detail-pfp` | — | — | **176 ms**, 40 q (shell); plots/cutouts async |
+| `plot-optimizations` | — | — | document ~282 ms; LC/spectrum cache + downsample |
 
 Personal shell: **~21% of** sync cold path. Transient document TTFB **~60% lower** than `baseline-pre-pfp` (416 ms → 176 ms).
 
@@ -39,7 +41,6 @@ Personal shell: **~21% of** sync cold path. Transient document TTFB **~60% lower
 
 | Phase | Work |
 |-------|------|
-| 7 | LC/spectrum: DQ/N+1, downsample, plot cache (spectrumplot fix already on branch) |
 | 8 | Infra: Redis, Gunicorn, Apache checklist on `yse_test` |
 | 9 | Production validation on ziggy (real TTFB before/after deploy) |
 
@@ -84,6 +85,9 @@ docker exec ysepz_web_container python3 manage.py record_perf_benchmark --label 
 | `YSE_MAIN_DASHBOARD_DEFER=0` | Legacy full dashboard (performance tests) |
 | `YSE_TRANSIENT_DETAIL_DEFER=0` | Legacy full transient detail (performance tests) |
 | `YSE_VIEW_TIMING=1` | Log per-section ms |
+| `YSE_PLOT_HTML_CACHE=1` | Cache rendered LC/spectrum plot HTML (default on; 900s TTL) |
+| `YSE_LC_PLOT_MAX_POINTS=3000` | Downsample photometry points for LC display |
+| `YSE_SPEC_PLOT_MAX_PIXELS=800` | Cap interpolated spectrum pixels per spectrum |
 
 ---
 

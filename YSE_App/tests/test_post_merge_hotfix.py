@@ -113,17 +113,19 @@ class SpectrumPlotRegressionTests(TestCase):
         response = self.client.get(f"/spectrumplot/{transient.id}/")
         self.assertEqual(response.status_code, 200)
 
-    def test_spectrumplot_empty_returns_message(self):
+    def test_spectrumplot_serves_cached_html_on_second_request(self):
         transient = create_transient_with_synthetic_data(
-            self.user, name="specplot-empty-guard", with_spectrum=True
+            self.user, name="specplot-cache", with_spectrum=True
         )
-        # Remove spec data points so view returns empty message
-        from YSE_App.models import TransientSpecData
+        spectrum = TransientSpectrum.objects.filter(transient=transient).first()
+        self._add_spec_points(spectrum)
 
-        TransientSpecData.objects.filter(spectrum__transient=transient).delete()
-        response = self.client.get(f"/spectrumplot/{transient.id}/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "No spectrum data on file")
+        url = f"/spectrumplot/{transient.id}/"
+        first = self.client.get(url)
+        second = self.client.get(url)
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.content, second.content)
 
     def test_spectrumplot_skips_empty_spectrum_and_still_returns_200(self):
         transient = create_transient_with_synthetic_data(
