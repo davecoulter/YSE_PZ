@@ -1406,9 +1406,10 @@ def annotate_dashboard_transient_fields(qs):
 
     Avoids N+1 queries from Transient.recent_mag() / recent_magdate() during render.
     """
+    # Match PhotometryService / Transient.recent_mag: exclude flagged bad data.
     recent_phot = TransientPhotData.objects.filter(
         photometry__transient=OuterRef('pk'),
-    ).exclude(data_quality__isnull=True)
+    ).exclude(data_quality__isnull=False)
     recent_mag_sq = (
         recent_phot.filter(mag__isnull=False)
         .order_by('-obs_date')
