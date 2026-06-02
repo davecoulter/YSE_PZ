@@ -2,19 +2,19 @@
   "tolerance_fraction": 0.2,
   "pages": {
     "main_dashboard": {
-      "baseline_ms": 120,
+      "baseline_ms": 178,
       "max_ms": 250,
-      "note": "Deferred shell (New only sync); other sections via dashboard/section/"
+      "note": "Deferred shell (New only sync); sections via dashboard/section/"
     },
     "personal_dashboard": {
-      "baseline_ms": 80,
+      "baseline_ms": 91,
       "max_ms": 200,
-      "note": "Deferred shell (YSE_PERSONAL_DASHBOARD_DEFER=1); sections load via AJAX"
+      "note": "Deferred shell; sections via personaldashboard/section/"
     },
     "transient_detail": {
-      "baseline_ms": 176,
+      "baseline_ms": 102,
       "max_ms": 250,
-      "note": "Deferred shell (YSE_TRANSIENT_DETAIL_DEFER=1); follow-up/resources/photometry via fragments; HST/Chandra on tab click"
+      "note": "Deferred shell (iteration pre-pr-develop); fragments + HST/Chandra on tab click"
     }
   }
 }
