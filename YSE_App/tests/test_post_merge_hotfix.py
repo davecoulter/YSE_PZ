@@ -99,6 +99,8 @@ class SpectrumPlotRegressionTests(TestCase):
                 spectrum=spectrum,
                 wavelength=4000 + 10 * i,
                 flux=1.0 + 0.1 * i,
+                created_by=self.user,
+                modified_by=self.user,
             )
 
     def test_spectrumplot_returns_200_with_valid_points(self):
