@@ -1431,7 +1431,6 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 
 def spectrumplot(request, transient_id):
     _load_heavy_plot_stack()
-    tstart = time.time()
     
     # Fetch data with optimized queries
     transient = Transient.objects.get(pk=transient_id)
@@ -1512,7 +1511,6 @@ def spectrumplot(request, transient_id):
 
 def spectrumplot_summary(request, transient_id):
     _load_heavy_plot_stack()
-    tstart = time.time()
     transient = Transient.objects.get(pk=transient_id)
     dbspectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True).select_related()
     spectra = {}
@@ -1629,7 +1627,6 @@ def spectrumplotsingle(request, transient_id, spec_id):
     #transient_id = request.GET.get('transient_id')
     #spec_id = request.GET.get('spec_id')
     
-    tstart = time.time()
     print(transient_id,spec_id)
     transient = Transient.objects.get(pk=transient_id)
     spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True)
