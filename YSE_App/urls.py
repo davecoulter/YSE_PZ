@@ -57,7 +57,6 @@ urlpatterns = [
         views.comments_fragment,
         name='comments_fragment',
     ),
-    re_path(r'^transient_detail/(?P<slug>.*)/$', views.transient_detail, name='transient_detail'),
     re_path(
         r'^transient_detail/(?P<transient_id>[0-9]+)/followup_fragment/$',
         views.transient_detail_followup_fragment,
@@ -74,6 +73,26 @@ urlpatterns = [
         name='transient_detail_followup_rest_fragment',
     ),
     re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/comments_fragment/$',
+        views.transient_detail_comments_fragment,
+        name='transient_detail_comments_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/gw_fragment/$',
+        views.transient_detail_gw_fragment,
+        name='transient_detail_gw_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/spectra_tab_fragment/$',
+        views.transient_detail_spectra_tab_fragment,
+        name='transient_detail_spectra_tab_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/summary_spectra_tools_fragment/$',
+        views.transient_detail_summary_spectra_tools_fragment,
+        name='transient_detail_summary_spectra_tools_fragment',
+    ),
+    re_path(
         r'^transient_detail/(?P<transient_id>[0-9]+)/resources_fragment/$',
         views.transient_detail_resources_fragment,
         name='transient_detail_resources_fragment',
@@ -83,6 +102,7 @@ urlpatterns = [
         views.transient_detail_photometry_fragment,
         name='transient_detail_photometry_fragment',
     ),
+    re_path(r'^transient_detail/(?P<slug>.*)/$', views.transient_detail, name='transient_detail'),
     re_path(r'^submit_to_tns/(?P<transient_name>.*)/$', submit_to_tns.submit_to_tns, name='submit_to_tns'),
     re_path(r'^transient_summary/(?P<status_or_query_name>.*)/$', views.transient_summary, name='transient_summary'),
 

@@ -1276,6 +1276,65 @@ def transient_detail_followup_rest_fragment(request, transient_id):
     )
 
 
+def _authorized_transient_spectra(request, transient_id):
+    return SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(
+        request.user, transient_id, includeBadData=True
+    ).select_related('instrument', 'instrument__telescope')
+
+
+@login_required
+def transient_detail_comments_fragment(request, transient_id):
+    get_object_or_404(Transient, pk=transient_id)
+    logs = list(
+        Log.objects.filter(transient_id=transient_id).order_by('-modified_date')
+    )
+    return render(
+        request,
+        'YSE_App/transient_detail_comments_list.html',
+        {'logs': logs},
+    )
+
+
+@login_required
+def transient_detail_gw_fragment(request, transient_id):
+    transient_obj = get_object_or_404(Transient, pk=transient_id)
+    gwcand = GWCandidate.objects.filter(name=transient_obj.name).first()
+    gwimages = []
+    if gwcand:
+        gwimages = list(
+            GWCandidateImage.objects.filter(gw_candidate__name=gwcand.name).select_related(
+                'image_filter', 'image_filter__instrument'
+            )
+        )
+    return render(
+        request,
+        'YSE_App/transient_detail_gw_tab.html',
+        {'gw_candidate': gwcand, 'gw_images': gwimages},
+    )
+
+
+@login_required
+def transient_detail_spectra_tab_fragment(request, transient_id):
+    transient_obj = get_object_or_404(Transient, pk=transient_id)
+    spectra = _authorized_transient_spectra(request, transient_id)
+    return render(
+        request,
+        'YSE_App/transient_detail_spectra_tab.html',
+        {'transient': transient_obj, 'all_transient_spectra': spectra},
+    )
+
+
+@login_required
+def transient_detail_summary_spectra_tools_fragment(request, transient_id):
+    transient_obj = get_object_or_404(Transient, pk=transient_id)
+    spectra = _authorized_transient_spectra(request, transient_id)
+    return render(
+        request,
+        'YSE_App/transient_detail_summary_spectra_tools.html',
+        {'transient': transient_obj, 'all_transient_spectra': spectra},
+    )
+
+
 @login_required
 def transient_detail_resources_fragment(request, transient_id):
     get_object_or_404(Transient, pk=transient_id)
@@ -1385,14 +1444,18 @@ def transient_detail(request, slug):
         all_colors = WebAppColor.objects.all().select_related()
         all_transient_tags = TransientTag.objects.all().select_related()
         assigned_transient_tags = list(transient_obj.tags.all())
+        has_gw_candidate_tag = any(att.name == 'GW Candidate' for att in assigned_transient_tags)
 
-        # GW Candidate?
-        gwcand,gwimages = None,None
-        for att in assigned_transient_tags:
-            if att.name == 'GW Candidate':
-                gwcand = GWCandidate.objects.filter(name = transient_obj.name)
-                if len(gwcand):
-                    gwimages = GWCandidateImage.objects.filter(gw_candidate__name = gwcand[0].name)
+        # GW data only in shell when not deferring (else gw_fragment on tab click).
+        gwcand, gwimages = None, None
+        if not defer_detail and has_gw_candidate_tag:
+            gwcand = GWCandidate.objects.filter(name=transient_obj.name).first()
+            if gwcand:
+                gwimages = list(
+                    GWCandidateImage.objects.filter(
+                        gw_candidate__name=gwcand.name
+                    ).select_related('image_filter', 'image_filter__instrument')
+                )
 
         followups = [] if defer_detail else _load_transient_followups(transient_id, request.user)
 
@@ -1459,9 +1522,19 @@ def transient_detail(request, slug):
             )
 
         comment_cutoff = timezone.now() - datetime.timedelta(1)
-        has_new_comment = any(
-            log.modified_date > comment_cutoff for log in logs
-        )
+        if defer_detail:
+            logs = []
+            has_new_comment = Log.objects.filter(
+                transient_id=transient_id,
+                modified_date__gt=comment_cutoff,
+            ).exists()
+        else:
+            logs = list(
+                Log.objects.filter(transient_id=transient_id).order_by('-modified_date')
+            )
+            has_new_comment = any(
+                log.modified_date > comment_cutoff for log in logs
+            )
         
         date = datetime.datetime.now(tz=pytz.utc)
         date_format='%m/%d/%Y %H:%M:%S'
@@ -1486,8 +1559,9 @@ def transient_detail(request, slug):
             'assigned_transient_tags': assigned_transient_tags,
             'all_colors': all_colors,
             'all_transient_spectra': spectra,
-            'gw_candidate':gwcand,
-            'gw_images':gwimages,
+            'gw_candidate': gwcand,
+            'gw_images': gwimages,
+            'has_gw_candidate_tag': has_gw_candidate_tag,
             'spectrum_upload_form':spectrum_upload_form,
             'diff_images': diff_images_qs,
             'classical_resource_form':classical_resource_form,
@@ -1523,22 +1597,39 @@ def transient_detail(request, slug):
         # we need to add a submit to TNS button
         # for transients that don't have TNS names
         # - for now, this is only DECam transients
-        tns_submit_logs = [
-            log for log in logs
-            if log.comment and log.comment.startswith('Submitted to TNS')
-        ]
-        tns_sandbox_logs = [
-            log for log in logs
-            if log.comment and log.comment.startswith('TNS sandbox')
-        ]
-        if not len(tns_submit_logs) and '_cand' in transient_obj.name and \
-           'DECAT' in list(assigned_transient_tags.values_list('name',flat=True)):
+        if defer_detail:
+            has_tns_submit = Log.objects.filter(
+                transient_id=transient_id,
+                comment__startswith='Submitted to TNS',
+            ).exists()
+            tns_sandbox_comment = Log.objects.filter(
+                transient_id=transient_id,
+                comment__startswith='TNS sandbox',
+            ).order_by('-modified_date').values_list('comment', flat=True).first()
+        else:
+            has_tns_submit = any(
+                log.comment and log.comment.startswith('Submitted to TNS')
+                for log in logs
+            )
+            tns_sandbox_comment = next(
+                (
+                    log.comment
+                    for log in logs
+                    if log.comment and log.comment.startswith('TNS sandbox')
+                ),
+                None,
+            )
+        if (
+            not has_tns_submit
+            and '_cand' in transient_obj.name
+            and 'DECAT' in [t.name for t in assigned_transient_tags]
+        ):
             submit_to_tns = True
         else:
             submit_to_tns = False
         context['submit_to_tns'] = submit_to_tns
-        if len(tns_sandbox_logs):
-            context['tns_sandbox_url'] = tns_sandbox_logs[0].comment.split()[2]
+        if tns_sandbox_comment:
+            context['tns_sandbox_url'] = tns_sandbox_comment.split()[2]
         
         return render(request,
             'YSE_App/transient_detail.html',

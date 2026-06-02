@@ -37,10 +37,10 @@ git checkout perf/progressive-loading
 | 4b | Main-tab plots + cutouts (parallel AJAX) | **done** | LC, spectrum, PS1, Legacy on `document.ready` |
 | 4c | HST/Chandra status probes + images on tab click | **done** | `get_hst_status`, `get_chandra_status`; full fetch on tab |
 | 4d | Follow-up tab phased load | **done** | requests → **classical** → ToO/automated; background + tab click |
-| 4e | Rare tabs click-to-load only | **partial** | Resources/photometry/follow-up deferred; logs/GW/spectra list TBD |
+| 4e | Rare tabs click-to-load only | **done** | Comments, GW, Spectra tab + summary spectrum tools via fragments |
 | 4f / 7 | LC/spectrum plot optimizations | **done** | DQ prefetch, downsample, HTML cache (`803a5a17`) |
 | 5 | ORM explicit prefetch audit | **partial** | Hot paths in PFP/plots; django-auto-prefetch **deferred** (Django 4.0) |
-| 5c | nplusone / debug-toolbar in CI | **pending** | Optional |
+| 5c | nplusone / debug-toolbar / Silk (local staging) | **optional** | See [Profiling tools](#profiling-tools-debug-toolbar--silk) |
 | 6 | Apache / Gunicorn / Redis infra checklist | **pending** | See [Infra checklist](#infra-checklist-yse_test--ziggy) |
 | 7 | ziggy / `yse_test` validation | **pending** | Before/after TTFB on real deploy |
 
@@ -110,6 +110,10 @@ Personal deferred shell ≈ **21%** of sync cold path. Transient document TTFB *
   - `/transient_detail/<id>/followup_rest_fragment/` — follow-up + obs-task + ToO + automated spectrum forms
   - `/transient_detail/<id>/resources_fragment/` — classical/ToO resource tables
   - `/transient_detail/<id>/photometry_fragment/` — photometry + diff-image tables
+  - `/transient_detail/<id>/comments_fragment/` — comment history (form stays in shell)
+  - `/transient_detail/<id>/gw_fragment/` — GW candidate table (tab shown when `GW Candidate` tag)
+  - `/transient_detail/<id>/spectra_tab_fragment/` — spectra list table
+  - `/transient_detail/<id>/summary_spectra_tools_fragment/` — Summary tab spectrum dropdown (background)
 - **HST/Chandra:** `get_hst_status`, `get_chandra_status` on load; `get_hst_image` / `get_chandra_image` on tab click only
 - **Follow-up load order:** (1) requests → (2) classical → (3) rest; `setTimeout(0)` after main-tab plot XHRs start
 
@@ -123,7 +127,7 @@ Personal deferred shell ≈ **21%** of sync cold path. Transient document TTFB *
 | HST / Chandra (images) | Tab click only | Yes |
 | Follow-up | Phased background; classical before ToO/automated | Yes |
 | Resources, Detailed photometry | Tab click (fragment) | Yes |
-| Logs, GW, Spectra list, … | Click-to-load only | **Not yet** (still in shell or static) |
+| Logs, GW, Spectra list | Click-to-load / background fragment | Yes |
 
 ---
 
@@ -199,9 +203,19 @@ Use `DOCKER_HOST=unix://$HOME/.docker/run/docker.sock`. Empty `DOCKER_CONFIG` if
 
 ## Remaining work
 
-### Phase 4e — Rare transient tabs (click-to-load)
+### Phase 4e — Rare transient tabs (click-to-load) — **done**
 
-Per master plan: **Logs**, **GW**, **Spectra** list UI, planning widgets — no prefetch until `shown.bs.tab` + fragment URL. Not started.
+Fragments: `comments_fragment`, `gw_fragment`, `spectra_tab_fragment`, `summary_spectra_tools_fragment` (background after shell). Deferred shell skips full `Log` list and GW ORM; `new_comment` uses a single `.exists()` query.
+
+### Profiling tools (debug-toolbar / Silk)
+
+| Tool | Helps find improvements? | This repo (Django 4.0) |
+|------|--------------------------|-------------------------|
+| [django-debug-toolbar](https://github.com/django-commons/django-debug-toolbar) | Yes — SQL panel, templates, timing per request | **Latest (6.x) requires Django ≥ 5.2.** Use **4.2.x** locally with `DEBUG=1` only; never on production. |
+| [django-silk](https://github.com/jazzband/django-silk) | Yes — request profiling, SQL analysis, stored history | Compatible with Django 4.x; **staging/local only** (DB overhead, `/silk/` UI). |
+| **Already in tree** | `YSE_VIEW_TIMING`, `test_performance` query ceilings, `record_perf_benchmark`, waterfalls | Preferred for this branch — safe in CI and repeatable. |
+
+Recommendation: use existing perf tests + optional **Silk or debug-toolbar 4.2** on a local/staging container when exploring new N+1s; do not add either to production ziggy without `DEBUG`/access controls.
 
 ### Phase 5 — ORM / tooling
 
@@ -283,7 +297,7 @@ After each future step: `record_perf_benchmark` → review `static/YSE_App/perf/
 | Phot + spectrum plots | Non-blocking; concurrent | Async XHR; plot cache on repeat |
 | HST/Chandra labels | Probe only until tab open | Shipped |
 | Follow-up tab | Background; classical before ToO | Shipped |
-| Rare tabs | Zero cost until clicked | Partial |
+| Rare tabs | Zero cost until clicked | Shipped (comments/GW/spectra fragments) |
 
 Trend PNGs should improve across iterations; CI must not regress past `perf_baselines.json`.
 

@@ -39,7 +39,7 @@
                     <li><a href="#spectra_tab" data-toggle="tab">Spectra</a></li>
                     <li><a href="#hst_tab" data-toggle="tab" id="hst_tab_header">HST Data</a></li>
                     <li><a href="#chandra_tab" data-toggle="tab" id="chandra_tab_header">Chandra Data</a></li>
-                    {% if gw_candidate %}
+                    {% if has_gw_candidate_tag %}
                         <li><a href="#gw_tab" data-toggle="tab" id="gw_tab_header">GW Info</a></li>
                     {% endif %}
                     <li class="hidden">
@@ -152,7 +152,13 @@
 
                     </div>
                     <div class="tab-pane" id="spectra_tab">
-                        <h4>Spectra for {{transient.name}}</h4>
+                        <div id="spectra_tab_content">
+                            {% if transient_detail_defer %}
+                            <p class="text-muted"><i class="fa fa-info-circle"></i> Spectra list loads when you open this tab.</p>
+                            {% else %}
+                            {% include "YSE_App/transient_detail_spectra_tab.html" %}
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="tab-pane" id="hst_tab">
                         <h4>HST Images for {{transient.name}}</h4>
@@ -185,30 +191,13 @@
                         </table>
                     </div>
                     <div class="tab-pane" id="gw_tab">
-                        <h4>GW Candidate Info</h4>
-                        <h4><a href="{{ gw_candidate.websniff_url }}" target="_blank">Websniff URL</a><h4>
-                        <table class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Telescope</th>
-                                    <th>Filter</th>
-                                    <th>DOPHOT Class</th>
-                                    <th>Image</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for gw_image in gw_images %}
-                                <tr>
-                                    <td>{{ gw_image.obs_date }}</td>
-                                    <td>{{ gw_image.image_filter.instrument }}</td>
-                                    <td>{{ gw_image.image_filter }}</td>
-                                    <td>{{ gw_image.dophot_class }}</td>
-                                    <td><img src="{{ gw_image.image_filename }}" style='width:500px' border="0"></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                        <div id="gw_tab_content">
+                            {% if transient_detail_defer %}
+                            <p class="text-muted"><i class="fa fa-info-circle"></i> GW info loads when you open this tab.</p>
+                            {% else %}
+                            {% include "YSE_App/transient_detail_gw_tab.html" %}
+                            {% endif %}
+                        </div>
                     </div>
             </div>
         </div>
@@ -1007,7 +996,8 @@
             });
 
 
-            $('.specPlotChange').on('click', function(event){
+            $(document).on('click', '.specPlotChange', function(event){
+                event.preventDefault();
                 var spec_id = $(this).attr('spec_plot-id')
                 var transient_id = {{transient.id}}
                 if (spec_id == 'all'){
@@ -1759,8 +1749,34 @@
             } else if (target === '#chandra_tab' && !chandraImagesLoaded) {
                 chandraImagesLoaded = true;
                 loadChandraImages();
+            } else if (target === '#comments_tab') {
+                loadTransientDetailFragment(
+                    'comments',
+                    "{% url 'transient_detail_comments_fragment' transient.id %}",
+                    $('#comments_list_slot')
+                );
+            } else if (target === '#gw_tab') {
+                loadTransientDetailFragment(
+                    'gw',
+                    "{% url 'transient_detail_gw_fragment' transient.id %}",
+                    $('#gw_tab_content')
+                );
+            } else if (target === '#spectra_tab') {
+                loadTransientDetailFragment(
+                    'spectra_tab',
+                    "{% url 'transient_detail_spectra_tab_fragment' transient.id %}",
+                    $('#spectra_tab_content')
+                );
             }
         });
+
+        function loadSummarySpectraTools() {
+            return loadTransientDetailFragment(
+                'summary_spectra_tools',
+                "{% url 'transient_detail_summary_spectra_tools_fragment' transient.id %}",
+                $('#summary_spectrum_tools_slot')
+            );
+        }
 
         $.get("{% url 'get_hst_status' transient.id %}").done(function(json) {
             if (!json.has_data) {
@@ -1773,9 +1789,10 @@
             }
         });
 
-        // Background follow-up load after main-tab plot XHRs start (classical before ToO/automated).
+        // Background: follow-up phased load + summary spectrum dropdown tools.
         setTimeout(function() {
             loadFollowupTabPhased();
+            loadSummarySpectraTools();
         }, 0);
 {% else %}
         loadHstImages();

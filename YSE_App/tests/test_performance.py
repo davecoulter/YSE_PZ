@@ -157,7 +157,7 @@ class TransientDetailPagePerformanceTests(TestCase):
         )
 
     def test_transient_detail_deferred_shell_is_fast(self):
-        """Progressive shell skips follow-ups, resource tables, and bulk photometry."""
+        """Progressive shell skips follow-ups, resource tables, bulk photometry, and log/GW lists."""
         url = f"/transient_detail/{self.transient_loaded.slug}/"
         response, n_queries, elapsed = _profile_get(self.client, url)
         self.assertIn(b"perf-detail-loaded", response.content)
@@ -168,9 +168,19 @@ class TransientDetailPagePerformanceTests(TestCase):
             response=response,
             n_queries=n_queries,
             elapsed=elapsed,
-            max_queries=45,
+            max_queries=40,
             max_seconds=6.0,
         )
+
+    def test_transient_detail_rare_tab_fragments_return_200(self):
+        tid = self.transient_loaded.id
+        for path in (
+            f'/transient_detail/{tid}/comments_fragment/',
+            f'/transient_detail/{tid}/spectra_tab_fragment/',
+            f'/transient_detail/{tid}/summary_spectra_tools_fragment/',
+        ):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200, msg=path)
 
     @unittest.mock.patch.dict(os.environ, {"YSE_TRANSIENT_DETAIL_DEFER": "0"})
     def test_transient_detail_with_synthetic_data_returns_200(self):

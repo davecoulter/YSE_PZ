@@ -1,0 +1,28 @@
+{% if all_transient_spectra.count > 1 %}
+<div class="btn-group">
+    <div class="col-xs-12">
+        <div class="col-xs-6">
+            <button style="margin-bottom:5px;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                Show single spectrum<span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                {% for spec in all_transient_spectra %}
+                <li><a spec_plot-id="{{ spec.id }}" class="specPlotChange" href="#">{{ spec }} - {{ spec.instrument.name }}</a></li>
+                {% endfor %}
+                <li><a spec_plot-id="all" class="specPlotChange" href="#">Plot All Spectra</a></li>
+            </ul>
+        </div>
+        <div class="col-xs-6">
+            <button style="margin-bottom:5px" type="button" class="btn btn-block btn-primary" data-toggle="dropdown" onclick="window.open('{% url 'download_spectra' transient.slug %}')">
+                Download {{ all_transient_spectra.count }} Spectra
+            </button>
+        </div>
+    </div>
+</div>
+{% elif all_transient_spectra.count == 1 %}
+<div class="btn-group">
+    <button style="margin-bottom:5px" type="button" class="btn btn-block btn-primary" data-toggle="dropdown" onclick="window.open('{% url 'download_spectra' transient.slug %}')">
+        Download {{ all_transient_spectra.count }} Spectrum
+    </button>
+</div>
+{% endif %}
