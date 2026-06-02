@@ -17,6 +17,8 @@
 | 1 | `docker/scripts/run-baseline-benchmark.sh` |
 | 2 | `YSE_VIEW_TIMING` via `YSE_App/perf/view_timing.py` (personal dashboard shell) |
 | 3 | Personal dashboard PFP: shell + `/personaldashboard/section/<id>/` |
+| 4 | Transient detail PFP: slim shell + tab fragments; HST/Chandra status probes + images on tab click |
+| 4b | Follow-up tab phased load: requests → classical → ToO/automated (classical prioritized) |
 | 6 | Main dashboard PFP: “New” sync + `/dashboard/section/<status>/` |
 
 ### Measured iterations (Docker, fixture DB)
@@ -25,10 +27,11 @@
 |-----------|----------------|-------------------|------------------|
 | `baseline-pre-pfp` (sync) | 150 ms, 19 q | 172 ms, 23 q | 416 ms, 66 q |
 | `personal-pfp` (deferred shells) | 356 ms, 19 q | **136 ms**, 8 q | 363 ms, 229 q |
+| `transient-detail-pfp` | — | — | **176 ms**, 40 q (shell); plots/cutouts async |
 
-Personal shell: **~21% of** sync cold path. Main/transient benchmarks still use full or heavy paths; main deferred shell not re-benchmarked separately yet.
+Personal shell: **~21% of** sync cold path. Transient document TTFB **~60% lower** than `baseline-pre-pfp` (416 ms → 176 ms).
 
-**Regression tests** track deferred shells (`perf_baselines.json`): personal ≤200 ms, main ≤250 ms.
+**Regression tests** track deferred shells (`perf_baselines.json`): personal ≤200 ms, main ≤250 ms, transient ≤250 ms.
 
 ---
 
@@ -36,9 +39,6 @@ Personal shell: **~21% of** sync cold path. Main/transient benchmarks still use 
 
 | Phase | Work |
 |-------|------|
-| 4 | Transient detail: slim shell, main-tab plot AJAX (phot → spectrum → cutouts), rare tabs click-to-load |
-| 4b | HST/Chandra: lightweight status endpoints for tab labels; full images on tab click only |
-| 5 | Follow-up tab: phased background load (requests → classical → rest) |
 | 7 | LC/spectrum: DQ/N+1, downsample, plot cache (spectrumplot fix already on branch) |
 | 8 | Infra: Redis, Gunicorn, Apache checklist on `yse_test` |
 | 9 | Production validation on ziggy (real TTFB before/after deploy) |
@@ -79,8 +79,10 @@ docker exec ysepz_web_container python3 manage.py record_perf_benchmark --label 
 |-----|--------|
 | `YSE_PERSONAL_DASHBOARD_DEFER=1` | Personal shell + AJAX sections |
 | `YSE_MAIN_DASHBOARD_DEFER=1` | Main dashboard: only “New” sync |
+| `YSE_TRANSIENT_DETAIL_DEFER=1` | Transient shell; follow-up/resources/photometry fragments; HST/Chandra on tab click |
 | `YSE_PERSONAL_DASHBOARD_DEFER=0` | Legacy sync path (performance tests) |
 | `YSE_MAIN_DASHBOARD_DEFER=0` | Legacy full dashboard (performance tests) |
+| `YSE_TRANSIENT_DETAIL_DEFER=0` | Legacy full transient detail (performance tests) |
 | `YSE_VIEW_TIMING=1` | Log per-section ms |
 
 ---
@@ -91,6 +93,6 @@ docker exec ysepz_web_container python3 manage.py record_perf_benchmark --label 
 |------|--------|-------------------------------------------|
 | Personal dashboard chrome | &lt; 1.5 s | ~136 ms |
 | Main dashboard chrome | &lt; 1.5 s | TBD (deferred; re-benchmark needed) |
-| Transient detail core | &lt; 1.5 s | Not started (still ~360–420 ms full page) |
+| Transient detail core | &lt; 1.5 s | ~176 ms document TTFB (deferred shell) |
 
 Full design (transient tab matrix, architecture): see Cursor plan `yse_speed_improvements_07b82bf7.plan.md`.

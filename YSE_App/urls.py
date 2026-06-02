@@ -58,6 +58,31 @@ urlpatterns = [
         name='comments_fragment',
     ),
     re_path(r'^transient_detail/(?P<slug>.*)/$', views.transient_detail, name='transient_detail'),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/followup_fragment/$',
+        views.transient_detail_followup_fragment,
+        name='transient_detail_followup_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/followup_classical_fragment/$',
+        views.transient_detail_followup_classical_fragment,
+        name='transient_detail_followup_classical_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/followup_rest_fragment/$',
+        views.transient_detail_followup_rest_fragment,
+        name='transient_detail_followup_rest_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/resources_fragment/$',
+        views.transient_detail_resources_fragment,
+        name='transient_detail_resources_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/photometry_fragment/$',
+        views.transient_detail_photometry_fragment,
+        name='transient_detail_photometry_fragment',
+    ),
     re_path(r'^submit_to_tns/(?P<transient_name>.*)/$', submit_to_tns.submit_to_tns, name='submit_to_tns'),
     re_path(r'^transient_summary/(?P<status_or_query_name>.*)/$', views.transient_summary, name='transient_summary'),
 
@@ -179,8 +204,12 @@ urlpatterns = [
         view_utils.get_ps1_image, name='get_ps1_image'),
     re_path(r'^get_hst_image/(?P<transient_id>[0-9]+)',
         view_utils.get_hst_image, name='get_hst_image'),
+    re_path(r'^get_hst_status/(?P<transient_id>[0-9]+)',
+        view_utils.get_hst_status, name='get_hst_status'),
     re_path(r'^get_chandra_image/(?P<transient_id>[0-9]+)',
         view_utils.get_chandra_image, name='get_chandra_image'),
+    re_path(r'^get_chandra_status/(?P<transient_id>[0-9]+)',
+        view_utils.get_chandra_status, name='get_chandra_status'),
     re_path(r'^get_legacy_image/(?P<transient_id>[0-9]+)',
         view_utils.get_legacy_image, name='get_legacy_image'),
 

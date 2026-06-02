@@ -156,6 +156,23 @@ class TransientDetailPagePerformanceTests(TestCase):
             max_seconds=MAX_SECONDS_TRANSIENT_DETAIL_SHELL,
         )
 
+    def test_transient_detail_deferred_shell_is_fast(self):
+        """Progressive shell skips follow-ups, resource tables, and bulk photometry."""
+        url = f"/transient_detail/{self.transient_loaded.slug}/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        self.assertIn(b"perf-detail-loaded", response.content)
+        assert_page_load(
+            self,
+            page="transient_detail (deferred shell)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=45,
+            max_seconds=6.0,
+        )
+
+    @unittest.mock.patch.dict(os.environ, {"YSE_TRANSIENT_DETAIL_DEFER": "0"})
     def test_transient_detail_with_synthetic_data_returns_200(self):
         url = f"/transient_detail/{self.transient_loaded.slug}/"
         response, n_queries, elapsed = _profile_get(self.client, url)

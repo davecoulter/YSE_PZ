@@ -12,8 +12,9 @@
       "note": "Deferred shell (YSE_PERSONAL_DASHBOARD_DEFER=1); sections load via AJAX"
     },
     "transient_detail": {
-      "baseline_ms": 437.6,
-      "max_ms": 550
+      "baseline_ms": 176,
+      "max_ms": 250,
+      "note": "Deferred shell (YSE_TRANSIENT_DETAIL_DEFER=1); follow-up/resources/photometry via fragments; HST/Chandra on tab click"
     }
   }
 }

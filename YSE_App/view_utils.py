@@ -7,6 +7,7 @@ from multiprocessing import Process, Queue
 
 import django
 from django.conf import settings as djangoSettings
+from django.core.cache import cache
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db import models, connection, reset_queries
 from django.db.models import Prefetch
@@ -1890,6 +1891,52 @@ def get_ps1_image(request,transient_id):
 
     jpegurldict = {"jpegurl":jpegurl,"msg":"success"}
     return(JsonResponse(jpegurldict))
+
+def get_hst_status(request, transient_id):
+    """Lightweight HST availability for tab label (no JPG fetch)."""
+    cache_key = f'hst_status_v1_{transient_id}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return JsonResponse(cached)
+    try:
+        t = Transient.objects.get(pk=transient_id)
+    except Transient.DoesNotExist:
+        raise Http404("Transient id does not exist")
+    try:
+        from . import common
+        hst = common.mast_query.hstImages(t.ra, t.dec, 'Object')
+        hst.getObstable()
+        count = int(getattr(hst, 'Nimages', 0) or 0)
+        if not count and getattr(hst, 'obstable', None) is not None:
+            count = len(hst.obstable)
+        payload = {'has_data': count > 0, 'count': count}
+    except Exception:
+        payload = {'has_data': False, 'count': 0}
+    cache.set(cache_key, payload, timeout=3600)
+    return JsonResponse(payload)
+
+
+def get_chandra_status(request, transient_id):
+    """Lightweight Chandra availability for tab label (no image fetch)."""
+    cache_key = f'chandra_status_v1_{transient_id}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return JsonResponse(cached)
+    try:
+        t = Transient.objects.get(pk=transient_id)
+    except Transient.DoesNotExist:
+        raise Http404("Transient id does not exist")
+    try:
+        from . import common
+        chr = common.chandra_query.chandraImages(t.ra, t.dec, 'Object')
+        chr.search_chandra_database()
+        count = int(getattr(chr, 'n_obsid', 0) or 0)
+        payload = {'has_data': count > 0, 'count': count}
+    except Exception:
+        payload = {'has_data': False, 'count': 0}
+    cache.set(cache_key, payload, timeout=3600)
+    return JsonResponse(payload)
+
 
 def get_hst_image(request,transient_id):
     try:

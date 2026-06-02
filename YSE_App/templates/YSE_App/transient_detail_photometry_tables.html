@@ -1,0 +1,102 @@
+{% load static %}
+{% if diff_images %}
+<div class="col-xs-13">
+    <div class="box box-primary">
+        <div class="box-header">
+            <h3 class="box-title">Forced Photometry and Difference Imaging</h3>
+        </div>
+        <div class="box-body">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Flux</th>
+                        <th>Flux Error</th>
+                        <th>Mag</th>
+                        <th>Mag Error</th>
+                        <th>Mag Lim</th>
+                        <th>Filter</th>
+                        <th>Instrument</th>
+                        <th>Warp</th>
+                        <th>Template</th>
+                        <th>Diff</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for diff in diff_images %}
+                    <tr>
+                        <td>{{diff.phot_data.obs_date|date:"M d, Y H:i:s"}}</td>
+                        <td>{{diff.phot_data.flux|floatformat:3}}</td>
+                        <td>{{diff.phot_data.flux_err|floatformat:3}}</td>
+                        <td>{{diff.phot_data.mag|floatformat:3}}</td>
+                        <td>{{diff.phot_data.mag_err|floatformat:3}}</td>
+                        <td>{{diff.phot_data.mag_lim|floatformat:3}}</td>
+                        <td>{{diff.phot_data.band.name}}</td>
+                        <td>{{diff.phot_data.band.instrument.name}}</td>
+                        <td>
+                         {% if diff.valid_pixels %}
+                            {% with "YSE_App/images/stamps/"|add:diff.postage_stamp_file as stampfile %}
+                            {% with "YSE_App/images/stamps/"|add:diff.postage_stamp_file_fits as stampfitsfile %}
+                            <a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
+                            {% endwith %}
+                            {% endwith %}
+                         {% else %}
+                            No Valid Pixels
+                         {% endif %}
+                        </td>
+                        <td>
+                            {% if diff.valid_pixels %}
+                            {% with "YSE_App/images/stamps/"|add:diff.postage_stamp_ref as stampfile %}
+                            {% with "YSE_App/images/stamps/"|add:diff.postage_stamp_ref_fits as stampfitsfile %}
+                            <a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
+                            {% endwith %}
+                            {% endwith %}
+                            {% else %}
+                            No Valid Pixels
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if diff.valid_pixels %}
+                            {% with "YSE_App/images/stamps/"|add:diff.postage_stamp_diff as stampfile %}
+                            {% with "YSE_App/images/stamps/"|add:diff.postage_stamp_diff_fits as stampfitsfile %}
+                            <a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
+                            {% endwith %}
+                            {% endwith %}
+                            {% else %}
+                            No Valid Pixels
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>MJD</th>
+            <th>Mag</th>
+            <th>Mag Error</th>
+            <th>Filter</th>
+            <th>Instrument</th>
+            <th>DQ</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for allphot in allphotdata %}
+        <tr>
+            <td>{{allphot.obs_date|date:"M d, Y H:i:s"}}</td>
+            <td>{{allphot.date_to_mjd|floatformat:1}}</td>
+            <td>{{allphot.mag}}</td>
+            <td>{{allphot.mag_err}}</td>
+            <td>{{allphot.band.name}}</td>
+            <td>{{allphot.band.instrument.name}}</td>
+            <td>{{ allphot.data_quality.all|join:"," }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

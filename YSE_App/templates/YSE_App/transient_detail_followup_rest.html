@@ -1,0 +1,19 @@
+<div class="row">
+    <div class="col-xs-6">
+        <input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
+        {% include "YSE_App/form_snippets/transient_followup_form.html" with form=transient_followup_form %}
+    </div>
+    <div class="col-xs-6">
+        <input type="hidden" id="followup_pk" />
+        {% include "YSE_App/form_snippets/transient_observation_task_form.html" with form=transient_observation_task_form %}
+    </div>
+</div>
+<div class="row">
+    <div class="col-xs-6">
+        {% include "YSE_App/form_snippets/too_resource_form.html" with form=too_resource_form %}
+    </div>
+    <div class="col-xs-6">
+        <input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
+        {% include "YSE_App/form_snippets/automated_spectrum_form.html" with form=automated_spectrum_form %}
+    </div>
+</div>

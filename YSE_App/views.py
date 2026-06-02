@@ -1156,6 +1156,172 @@ def download_targets_and_finders(request, telescope, obs_date):
     return response
 
 
+def _transient_detail_defer_enabled():
+    """Slim shell: defer follow-ups, resources tables, photometry bulk, heavy MAST on load."""
+    return os.environ.get('YSE_TRANSIENT_DETAIL_DEFER', '1') != '0'
+
+
+def _load_transient_followups(transient_id, user):
+    from YSE_App.services.visibility import filter_transient_followups_for_user
+
+    followups = list(
+        filter_transient_followups_for_user(
+            TransientFollowup.objects.filter(transient__pk=transient_id)
+            .select_related(
+                'status',
+                'classical_resource',
+                'too_resource',
+                'queued_resource',
+                'classical_resource__telescope',
+                'too_resource__telescope',
+                'queued_resource__telescope',
+            )
+            .prefetch_related(
+                Prefetch(
+                    'transientobservationtask_set',
+                    queryset=TransientObservationTask.objects.select_related(
+                        'instrument_config', 'status'
+                    ),
+                )
+            ),
+            user,
+        )
+    )
+    if not followups:
+        return followups
+    followup_ids = [f.id for f in followups]
+    comments_by_followup = {}
+    for log_row in Log.objects.filter(
+        transient_followup_id__in=followup_ids
+    ).values('transient_followup_id', 'comment'):
+        fid = log_row['transient_followup_id']
+        comments_by_followup.setdefault(fid, []).append(log_row['comment'])
+
+    for followup in followups:
+        followup.observation_set = list(followup.transientobservationtask_set.all())
+        if followup.classical_resource:
+            followup.resource = followup.classical_resource
+        elif followup.too_resource:
+            followup.resource = followup.too_resource
+        elif followup.queued_resource:
+            followup.resource = followup.queued_resource
+        comment_list = comments_by_followup.get(followup.id, [])
+        if comment_list:
+            followup.comment = '; '.join(comment_list)
+    return followups
+
+
+def _transient_followup_form_context(request, transient_obj):
+    """Forms and authorized querysets for follow-up tab fragments."""
+    from django.utils import timezone
+
+    transient_followup_form = TransientFollowupForm()
+    valid_after = timezone.now() - datetime.timedelta(days=1)
+    transient_followup_form.fields["too_resource"].queryset = (
+        view_utils.get_authorized_too_resources(request.user)
+        .filter(end_date_valid__gt=valid_after)
+        .order_by('telescope__name')
+    )
+    transient_followup_form.fields["queued_resource"].queryset = (
+        view_utils.get_authorized_queued_resources(request.user)
+        .filter(end_date_valid__gt=valid_after)
+        .order_by('telescope__name')
+    )
+    ctx = {
+        'transient': transient_obj,
+        'transient_followup_form': transient_followup_form,
+        'transient_observation_task_form': TransientObservationTaskForm(),
+        'classical_resource_form': ClassicalResourceForm(),
+        'too_resource_form': ToOResourceForm(),
+        'automated_spectrum_form': AutomatedSpectrumRequest(),
+    }
+    if transient_followup_form.fields["valid_start"].initial:
+        ctx['followup_initial_dates'] = (
+            transient_followup_form.fields["valid_start"].initial.strftime('%m/%d/%Y HH:MM'),
+            transient_followup_form.fields["valid_stop"].initial.strftime('%m/%d/%Y HH:MM'),
+        )
+    return ctx
+
+
+@login_required
+def transient_detail_followup_fragment(request, transient_id):
+    transient_obj = get_object_or_404(Transient, pk=transient_id)
+    followups = _load_transient_followups(transient_id, request.user)
+    return render(
+        request,
+        'YSE_App/transient_detail_followup_boxes.html',
+        {'followups': followups, 'transient': transient_obj},
+    )
+
+
+@login_required
+def transient_detail_followup_classical_fragment(request, transient_id):
+    transient_obj = get_object_or_404(Transient, pk=transient_id)
+    ctx = _transient_followup_form_context(request, transient_obj)
+    return render(
+        request,
+        'YSE_App/transient_detail_followup_classical.html',
+        ctx,
+    )
+
+
+@login_required
+def transient_detail_followup_rest_fragment(request, transient_id):
+    transient_obj = get_object_or_404(Transient, pk=transient_id)
+    ctx = _transient_followup_form_context(request, transient_obj)
+    return render(
+        request,
+        'YSE_App/transient_detail_followup_rest.html',
+        ctx,
+    )
+
+
+@login_required
+def transient_detail_resources_fragment(request, transient_id):
+    get_object_or_404(Transient, pk=transient_id)
+    obsnights = view_utils.get_obs_nights_happening_soon(request.user)
+    too_resources = view_utils.get_too_resources(request.user)
+    return render(
+        request,
+        'YSE_App/transient_detail_resources_tables.html',
+        {
+            'observing_nights': obsnights,
+            'too_resource_list': too_resources.select_related(),
+        },
+    )
+
+
+@login_required
+def transient_detail_photometry_fragment(request, transient_id):
+    transient_obj = get_object_or_404(Transient, pk=transient_id)
+    allphotdata = (
+        view_utils.get_all_phot_for_transient(request.user, transient_id)
+        .select_related(
+            'band',
+            'photometry',
+            'photometry__instrument',
+            'photometry__instrument__telescope',
+        )
+        .prefetch_related('data_quality')
+    )
+    diff_images = TransientDiffImage.objects.filter(
+        phot_data__photometry__transient_id=transient_id
+    ).select_related(
+        'phot_data',
+        'phot_data__photometry',
+        'phot_data__band',
+    )
+    return render(
+        request,
+        'YSE_App/transient_detail_photometry_tables.html',
+        {
+            'transient': transient_obj,
+            'allphotdata': allphotdata,
+            'diff_images': diff_images,
+        },
+    )
+
+
 @login_required
 def transient_detail(request, slug):
 
@@ -1176,6 +1342,7 @@ def transient_detail(request, slug):
         )
 
     transient_matches = list(transient_qs[:2])
+    defer_detail = _transient_detail_defer_enabled()
     obs = None
     if len(transient_matches) == 1:
         from django.utils import timezone
@@ -1183,7 +1350,6 @@ def transient_detail(request, slug):
         transient_obj = transient_matches[0]
         transient_id = transient_obj.id
         from YSE_App.services.comments import transient_comment_queryset
-        from YSE_App.services.visibility import filter_transient_followups_for_user
 
         logs = list(
             transient_comment_queryset(transient_id, user=request.user)
@@ -1191,13 +1357,19 @@ def transient_detail(request, slug):
 
         alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 
-        transient_followup_form = TransientFollowupForm()
-        #transient_followup_form.fields["classical_resource"].queryset = \
-        #       view_utils.get_authorized_classical_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
-        transient_followup_form.fields["too_resource"].queryset = view_utils.get_authorized_too_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
-        transient_followup_form.fields["queued_resource"].queryset = view_utils.get_authorized_queued_resources(request.user).filter(end_date_valid__gt = timezone.now()-timedelta(days=1)).order_by('telescope__name')
-
-        transient_observation_task_form = TransientObservationTaskForm()
+        if defer_detail:
+            transient_followup_form = TransientFollowupForm()
+            transient_observation_task_form = TransientObservationTaskForm()
+            classical_resource_form = ClassicalResourceForm()
+            too_resource_form = ToOResourceForm()
+            automated_spectrum_form = AutomatedSpectrumRequest()
+        else:
+            followup_form_ctx = _transient_followup_form_context(request, transient_obj)
+            transient_followup_form = followup_form_ctx['transient_followup_form']
+            transient_observation_task_form = followup_form_ctx['transient_observation_task_form']
+            classical_resource_form = followup_form_ctx['classical_resource_form']
+            too_resource_form = followup_form_ctx['too_resource_form']
+            automated_spectrum_form = followup_form_ctx['automated_spectrum_form']
 
         spectrum_upload_form = SpectrumUploadForm()
         
@@ -1222,51 +1394,7 @@ def transient_detail(request, slug):
                 if len(gwcand):
                     gwimages = GWCandidateImage.objects.filter(gw_candidate__name = gwcand[0].name)
 
-        followups = list(
-            filter_transient_followups_for_user(
-                TransientFollowup.objects.filter(transient__pk=transient_id)
-                .select_related(
-                    'status',
-                    'classical_resource',
-                    'too_resource',
-                    'queued_resource',
-                    'classical_resource__telescope',
-                    'too_resource__telescope',
-                    'queued_resource__telescope',
-                )
-                .prefetch_related(
-                    Prefetch(
-                        'transientobservationtask_set',
-                        queryset=TransientObservationTask.objects.select_related(
-                            'instrument_config', 'status'
-                        ),
-                    )
-                ),
-                request.user,
-            )
-        )
-        if followups:
-            followup_ids = [f.id for f in followups]
-            comments_by_followup = {}
-            for log_row in Log.objects.filter(
-                transient_followup_id__in=followup_ids
-            ).values('transient_followup_id', 'comment'):
-                fid = log_row['transient_followup_id']
-                comments_by_followup.setdefault(fid, []).append(log_row['comment'])
-
-            for followup in followups:
-                followup.observation_set = list(followup.transientobservationtask_set.all())
-
-                if followup.classical_resource:
-                    followup.resource = followup.classical_resource
-                elif followup.too_resource:
-                    followup.resource = followup.too_resource
-                elif followup.queued_resource:
-                    followup.resource = followup.queued_resource
-
-                comment_list = comments_by_followup.get(followup.id, [])
-                if comment_list:
-                    followup.comment = '; '.join(comment_list)
+        followups = [] if defer_detail else _load_transient_followups(transient_id, request.user)
 
         hostdata = Host.objects.filter(pk=transient_obj.host_id).select_related()
         if hostdata:
@@ -1285,50 +1413,62 @@ def transient_detail(request, slug):
 
         if hostphotdata: transient_obj.hostphotdata = hostphotdata
 
-        allphotdata = (
-            view_utils.get_all_phot_for_transient(request.user, transient_id)
-            .select_related(
-                'band',
-                'photometry',
-                'photometry__instrument',
-                'photometry__instrument__telescope',
+        if defer_detail:
+            from YSE_App.models import TransientPhotData
+
+            good_photdata = TransientPhotData.objects.filter(
+                photometry__transient_id=transient_id,
+                mag__isnull=False,
+            ).exclude(data_quality__isnull=False).select_related('band')
+            lastphotdata = good_photdata.order_by('-obs_date').first()
+            firstphotdata = view_utils.get_disc_mag_from_photdata(good_photdata)
+            allphotdata = None
+            obsnights = []
+            too_resources = ToOResource.objects.none()
+            spectra = TransientSpectrum.objects.none()
+            diff_images_qs = TransientDiffImage.objects.none()
+        else:
+            allphotdata = (
+                view_utils.get_all_phot_for_transient(request.user, transient_id)
+                .select_related(
+                    'band',
+                    'photometry',
+                    'photometry__instrument',
+                    'photometry__instrument__telescope',
+                )
+                .prefetch_related('data_quality')
             )
-            .prefetch_related('data_quality')
-        )
-        good_photdata = allphotdata.exclude(data_quality__isnull=False)
-        lastphotdata = (
-            good_photdata.filter(mag__isnull=False).order_by('-obs_date').first()
-        )
-        firstphotdata = view_utils.get_disc_mag_from_photdata(good_photdata)
+            good_photdata = allphotdata.exclude(data_quality__isnull=False)
+            lastphotdata = (
+                good_photdata.filter(mag__isnull=False).order_by('-obs_date').first()
+            )
+            firstphotdata = view_utils.get_disc_mag_from_photdata(good_photdata)
+            obsnights = view_utils.get_obs_nights_happening_soon(request.user)
+            too_resources = view_utils.get_too_resources(request.user)
+            spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(
+                request.user, transient_id, includeBadData=True
+            ).select_related('instrument', 'instrument__telescope').prefetch_related(
+                'data_quality'
+            )
+            diff_images_qs = TransientDiffImage.objects.filter(
+                phot_data__photometry__transient_id=transient_id
+            ).select_related(
+                'phot_data',
+                'phot_data__photometry',
+                'phot_data__band',
+            )
 
         comment_cutoff = timezone.now() - datetime.timedelta(1)
         has_new_comment = any(
             log.modified_date > comment_cutoff for log in logs
         )
         
-        # obsnights,tellist = view_utils.getObsNights(transient[0])
-        # too_resources = ToOResource.objects.all()
-        #
-        # for i in range(len(too_resources)):
-        #   telescope = too_resources[i].telescope
-        #   too_resources[i].telescope_id = telescope.id
-        #   observatory = Observatory.objects.get(pk=telescope.observatory_id)
-        #   too_resources[i].deltahours = too_resources[i].awarded_too_hours - too_resources[i].used_too_hours
-        obsnights = view_utils.get_obs_nights_happening_soon(request.user)
-        too_resources = view_utils.get_too_resources(request.user)
-
         date = datetime.datetime.now(tz=pytz.utc)
         date_format='%m/%d/%Y %H:%M:%S'
-        
-        spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(
-            request.user, transient_id, includeBadData=True
-        ).select_related('instrument', 'instrument__telescope').prefetch_related(
-            'data_quality'
-        )
+
         context = {
             'transient':transient_obj,
             'followups':followups,
-            # 'telescope_list': tellist,
             'observing_nights': obsnights,
             'too_resource_list': too_resources.select_related(),
             'nowtime':date.strftime(date_format),
@@ -1349,20 +1489,15 @@ def transient_detail(request, slug):
             'gw_candidate':gwcand,
             'gw_images':gwimages,
             'spectrum_upload_form':spectrum_upload_form,
-            'diff_images': TransientDiffImage.objects.filter(
-                phot_data__photometry__transient_id=transient_id
-            ).select_related(
-                'phot_data',
-                'phot_data__photometry',
-                'phot_data__band',
-            ),
+            'diff_images': diff_images_qs,
             'classical_resource_form':classical_resource_form,
             'too_resource_form':too_resource_form,
             'new_comment':has_new_comment,
-            'transients_near_host':transients_near_host
+            'transients_near_host':transients_near_host,
+            'transient_detail_defer': defer_detail,
         }
 
-        if transient_followup_form.fields["valid_start"].initial:
+        if not defer_detail and transient_followup_form.fields["valid_start"].initial:
             context['followup_initial_dates'] = \
                 (transient_followup_form.fields["valid_start"].initial.strftime('%m/%d/%Y HH:MM'),
                  transient_followup_form.fields["valid_stop"].initial.strftime('%m/%d/%Y HH:MM'))           
@@ -1374,7 +1509,8 @@ def transient_detail(request, slug):
             context['first_mag'] = firstphotdata.mag
             context['first_filter'] = firstphotdata.band
             context['first_magdate'] = firstphotdata.obs_date
-            context['allphotdata']=allphotdata
+            if allphotdata is not None:
+                context['allphotdata']=allphotdata
         if transient_obj.postage_stamp_file:
             context['qub_candidate'] = transient_obj.postage_stamp_file.split('/')[-1].split('_')[0]
             
