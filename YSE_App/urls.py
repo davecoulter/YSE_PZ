@@ -25,8 +25,18 @@ urlpatterns = [
     # ex: /yse/
     re_path(r'^$', views.index, name='index'),
     re_path(r'^dashboard/$', views.dashboard, name='dashboard'),
+    re_path(
+        r'^dashboard/section/(?P<status_key>[a-zA-Z]+)/$',
+        views.dashboard_section,
+        name='dashboard_section',
+    ),
     re_path(r'^yse_home/$', views.yse_home, name='yse_home'),
     re_path(r'^personaldashboard/$', views.personaldashboard, name='personaldashboard'),
+    re_path(
+        r'^personaldashboard/section/(?P<user_query_id>[0-9]+)/$',
+        views.personaldashboard_section,
+        name='personaldashboard_section',
+    ),
     re_path(r'^calendar/$', views.calendar, name='calendar'),
     re_path(r'^followup/$', views.followup, name='followup'),
     re_path(r'^transient_tags/$', views.transient_tags, name='transient_tags'),

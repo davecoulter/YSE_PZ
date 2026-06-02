@@ -1,0 +1,19 @@
+{
+  "tolerance_fraction": 0.2,
+  "pages": {
+    "main_dashboard": {
+      "baseline_ms": 120,
+      "max_ms": 250,
+      "note": "Deferred shell (New only sync); other sections via dashboard/section/"
+    },
+    "personal_dashboard": {
+      "baseline_ms": 80,
+      "max_ms": 200,
+      "note": "Deferred shell (YSE_PERSONAL_DASHBOARD_DEFER=1); sections load via AJAX"
+    },
+    "transient_detail": {
+      "baseline_ms": 437.6,
+      "max_ms": 550
+    }
+  }
+}

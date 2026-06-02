@@ -41,8 +41,13 @@
       {% endif %}
     </div>
     <div class="box-body">
+      {% if transient_cat.0 %}
       {% render_table transient_cat.0 %}
-
+      {% elif main_dashboard_defer %}
+      <div class="mdash-section-loading" data-url="{% url 'dashboard_section' transient_cat.2 %}">
+        <p><i class="fa fa-spinner fa-spin"></i> Loading {{ transient_cat.1 }}…</p>
+      </div>
+      {% endif %}
     </div>
     <!-- /.box-body -->
     <div class="box-footer">
@@ -56,6 +61,18 @@
 
 {% block scripts %}
 <script type='text/javascript'>
+{% if main_dashboard_defer %}
+$(document).ready(function() {
+  $('.mdash-section-loading').each(function() {
+    var $slot = $(this);
+    $.get($slot.data('url'), function(html) {
+      $slot.replaceWith(html);
+    }).fail(function() {
+      $slot.html('<p class="text-danger">Failed to load section.</p>');
+    });
+  });
+});
+{% endif %}
 {% if anchor %}
 $(document).ready(function(){
     window.location = '#{{ anchor }}'

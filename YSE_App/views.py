@@ -128,6 +128,32 @@ _DASHBOARD_STATUS_SECTIONS = (
 )
 
 
+def _main_dashboard_defer_enabled():
+    """Load New synchronously; other status sections via AJAX (default on)."""
+    return os.environ.get('YSE_MAIN_DASHBOARD_DEFER', '1') != '0'
+
+
+def _dashboard_section_tuple(request, title, statusname, status_by_name):
+    status = status_by_name.get(statusname)
+    if status:
+        transients = annotate_dashboard_transient_fields(
+            Transient.objects.filter(status=status).order_by('-disc_date')
+        )
+    else:
+        transients = annotate_dashboard_transient_fields(
+            Transient.objects.filter(status=None).order_by('-disc_date')
+        )
+    transientfilter = TransientFilter(
+        request.GET, queryset=transients, prefix=statusname.lower()
+    )
+    if statusname == 'New':
+        table = NewTransientTable(transientfilter.qs, prefix=statusname.lower())
+    else:
+        table = TransientTable(transientfilter.qs, prefix=statusname.lower())
+    RequestConfig(request, paginate={'per_page': 10}).configure(table)
+    return (table, title, statusname.lower(), transientfilter)
+
+
 @login_required
 def dashboard(request):
     status_names = [name for _, name in _DASHBOARD_STATUS_SECTIONS]
@@ -137,26 +163,13 @@ def dashboard(request):
     }
 
     transient_categories = []
+    defer = _main_dashboard_defer_enabled()
     for title, statusname in _DASHBOARD_STATUS_SECTIONS:
-        status = status_by_name.get(statusname)
-        if status:
-            transients = annotate_dashboard_transient_fields(
-                Transient.objects.filter(status=status).order_by('-disc_date', '-pk')
-            )
-        else:
-            transients = annotate_dashboard_transient_fields(
-                Transient.objects.filter(status=None).order_by('-disc_date', '-pk')
-            )
-        transientfilter = TransientFilter(
-            request.GET, queryset=transients, prefix=statusname.lower()
-        )
-        if statusname == 'New':
-            table = NewTransientTable(transientfilter.qs, prefix=statusname.lower())
-        else:
-            table = TransientTable(transientfilter.qs, prefix=statusname.lower())
-        RequestConfig(request, paginate={'per_page': 10}).configure(table)
+        if defer and statusname != 'New':
+            transient_categories.append((None, title, statusname.lower(), None))
+            continue
         transient_categories.append(
-            (table, title, statusname.lower(), transientfilter)
+            _dashboard_section_tuple(request, title, statusname, status_by_name)
         )
 
     if request.META['QUERY_STRING']:
@@ -167,15 +180,101 @@ def dashboard(request):
         'transient_categories': transient_categories,
         'all_transient_statuses': TransientStatus.objects.order_by('name'),
         'anchor': anchor,
+        'main_dashboard_defer': defer,
     }
 
     return render(request, 'YSE_App/dashboard.html', context)
 
+
 @login_required
-def personaldashboard(request):
-    queries = list(
-        UserQuery.objects.filter(user=request.user).select_related('query')
-    )
+def dashboard_section(request, status_key):
+    """AJAX fragment for one main-dashboard status bucket."""
+    status_by_name = {
+        s.name: s
+        for s in TransientStatus.objects.filter(
+            name__in=[name for _, name in _DASHBOARD_STATUS_SECTIONS]
+        )
+    }
+    for title, statusname in _DASHBOARD_STATUS_SECTIONS:
+        if statusname.lower() == status_key.lower() or statusname == status_key:
+            row = _dashboard_section_tuple(request, title, statusname, status_by_name)
+            return render(
+                request,
+                'YSE_App/dashboard_section.html',
+                {'transient_cat': row},
+            )
+    raise Http404(f"Unknown dashboard section: {status_key}")
+
+def _personal_dashboard_defer_enabled():
+    """Progressive first paint: shell HTML then per-section fragments (default on)."""
+    return os.environ.get('YSE_PERSONAL_DASHBOARD_DEFER', '1') != '0'
+
+
+def _personaldashboard_failed_row(q, title):
+    return (Transient.objects.none(), title, '', None, q.id, 0)
+
+
+def _personaldashboard_table_for_user_query(request, q):
+    """Build one dashboard section tuple for a single UserQuery."""
+    if q.query:
+        try:
+            sql = q.query.sql.lower()
+            if 'yse_app_transient' not in sql or 'name' not in sql or not sql.startswith('select'):
+                return None
+            cache_key = f'user_query_{QUERY_CACHE_VERSION}_{q.id}'
+            cached_result = cache.get(cache_key)
+            if cached_result is None:
+                cursor = connections['explorer'].cursor()
+                cursor.execute(q.query.sql.replace('%', '%%'), ())
+                cached_result = [row[0] for row in cursor.fetchall()]
+                cache.set(cache_key, cached_result, timeout=3600)
+                cursor.close()
+            if not cached_result:
+                prefix = q.query.title.replace(' ', '')
+                empty_qs = annotate_dashboard_transient_fields(Transient.objects.none())
+                transient_filter = TransientFilter(request.GET, queryset=empty_qs, prefix=prefix)
+                table = TransientTable(transient_filter.qs, prefix=prefix)
+                RequestConfig(request, paginate={'per_page': 10}).configure(table)
+                return (table, q.query.title, prefix, transient_filter, q.id, 0)
+            base_transients = annotate_dashboard_transient_fields(
+                Transient.objects.filter(name__in=cached_result).order_by('-disc_date')
+            )
+            prefix = q.query.title.replace(' ', '')
+            section_qs = base_transients.filter(name__in=cached_result)
+            transient_filter = TransientFilter(request.GET, queryset=section_qs, prefix=prefix)
+            table = TransientTable(transient_filter.qs, prefix=prefix)
+            RequestConfig(request, paginate={'per_page': 10}).configure(table)
+            return (table, q.query.title, prefix, transient_filter, q.id, len(cached_result))
+        except Exception as e:
+            cache.delete(f'user_query_{QUERY_CACHE_VERSION}_{q.id}')
+            logger.error(f"Error processing query {q.id}: {e}")
+            return _personaldashboard_failed_row(q, f"{q.query.title} [QUERY FAILED]")
+    if q.python_query:
+        try:
+            transients = annotate_dashboard_transient_fields(
+                getattr(yse_python_queries, q.python_query)()
+            )
+            transient_filter = TransientFilter(
+                request.GET, queryset=transients, prefix=q.python_query
+            )
+            table = TransientTable(transient_filter.qs, prefix=q.python_query)
+            RequestConfig(request, paginate={'per_page': 10}).configure(table)
+            return (
+                table,
+                q.python_query,
+                q.python_query,
+                transient_filter,
+                q.id,
+                transients.count(),
+            )
+        except Exception as e:
+            logger.error(f"Error processing Python query {q.python_query}: {e}")
+            return _personaldashboard_failed_row(q, f"{q.python_query} [PYTHON QUERY FAILED]")
+    return None
+
+
+def _personaldashboard_build_all_tables(request, queries):
+    """Synchronous build of all sections (legacy / tests with defer disabled)."""
     tables = []
     all_transient_names = set()
     sql_dashboard_sections = []
@@ -186,67 +285,24 @@ def personaldashboard(request):
                 sql = q.query.sql.lower()
                 if 'yse_app_transient' not in sql or 'name' not in sql or not sql.startswith('select'):
                     continue
-
                 cache_key = f'user_query_{QUERY_CACHE_VERSION}_{q.id}'
                 cached_result = cache.get(cache_key)
-
                 if cached_result is None:
                     cursor = connections['explorer'].cursor()
                     cursor.execute(q.query.sql.replace('%', '%%'), ())
                     cached_result = [row[0] for row in cursor.fetchall()]
                     cache.set(cache_key, cached_result, timeout=3600)
                     cursor.close()
-
                 all_transient_names.update(cached_result)
                 sql_dashboard_sections.append((q, cached_result))
-
             except Exception as e:
                 cache.delete(f'user_query_{QUERY_CACHE_VERSION}_{q.id}')
                 logger.error(f"Error processing query {q.id}: {e}")
-                tables.append(
-                    (
-                        Transient.objects.none(),
-                        f"{q.query.title} [QUERY FAILED]",
-                        '',
-                        None,
-                        q.id,
-                        0,
-                    )
-                )
-                continue
-
+                tables.append(_personaldashboard_failed_row(q, f"{q.query.title} [QUERY FAILED]"))
         elif q.python_query:
-            try:
-                transients = annotate_dashboard_transient_fields(
-                    getattr(yse_python_queries, q.python_query)()
-                )
-                transient_filter = TransientFilter(
-                    request.GET, queryset=transients, prefix=q.python_query
-                )
-                table = TransientTable(transient_filter.qs, prefix=q.python_query)
-                RequestConfig(request, paginate={'per_page': 10}).configure(table)
-                tables.append(
-                    (
-                        table,
-                        q.python_query,
-                        q.python_query,
-                        transient_filter,
-                        q.id,
-                        transients.count(),
-                    )
-                )
-            except Exception as e:
-                logger.error(f"Error processing Python query {q.python_query}: {e}")
-                tables.append(
-                    (
-                        Transient.objects.none(),
-                        f"{q.python_query} [PYTHON QUERY FAILED]",
-                        '',
-                        None,
-                        q.id,
-                        0,
-                    )
-                )
+            row = _personaldashboard_table_for_user_query(request, q)
+            if row:
+                tables.append(row)
 
     if all_transient_names:
         from YSE_App.services.visibility import filter_transients_by_user_access
@@ -263,25 +319,18 @@ def personaldashboard(request):
     for q, transient_names in sql_dashboard_sections:
         prefix = q.query.title.replace(' ', '')
         section_qs = base_transients.filter(name__in=transient_names)
-        transient_filter = TransientFilter(
-            request.GET, queryset=section_qs, prefix=prefix
-        )
+        transient_filter = TransientFilter(request.GET, queryset=section_qs, prefix=prefix)
         table = TransientTable(transient_filter.qs, prefix=prefix)
         RequestConfig(request, paginate={'per_page': 10}).configure(table)
         tables.append(
-            (
-                table,
-                q.query.title,
-                prefix,
-                transient_filter,
-                q.id,
-                len(transient_names),
-            )
+            (table, q.query.title, prefix, transient_filter, q.id, len(transient_names))
         )
+    return tables
 
+
+def _personaldashboard_context(request, tables, *, personal_dashboard_defer=False):
     anchor = request.META.get('QUERY_STRING', '').split('-')[0] if request.META.get('QUERY_STRING') else ''
-
-    context = {
+    return {
         'user': request.user,
         'transient_categories': tables,
         'all_transient_statuses': TransientStatus.objects.order_by('name'),
@@ -291,9 +340,62 @@ def personaldashboard(request):
         'followup_notices': UserTelescopeToFollow.objects.filter(
             profile__user=request.user
         ).select_related('telescope', 'profile'),
+        'personal_dashboard_defer': personal_dashboard_defer,
     }
 
-    return render(request, 'YSE_App/personaldashboard.html', context)
+
+@login_required
+def personaldashboard(request):
+    from YSE_App.perf.view_timing import enabled as timing_enabled, log_sections, section
+
+    queries = list(UserQuery.objects.filter(user=request.user).select_related('query'))
+    timing_sections = []
+
+    if _personal_dashboard_defer_enabled():
+        with section('list_queries', timing_sections):
+            tables = []
+            for q in queries:
+                if q.query:
+                    title = q.query.title
+                elif q.python_query:
+                    title = q.python_query
+                else:
+                    continue
+                tables.append((None, title, '', None, q.id, 0))
+        if timing_enabled():
+            log_sections('personaldashboard_shell', timing_sections)
+        return render(
+            request,
+            'YSE_App/personaldashboard.html',
+            _personaldashboard_context(request, tables, personal_dashboard_defer=True),
+        )
+
+    with section('build_tables', timing_sections):
+        tables = _personaldashboard_build_all_tables(request, queries)
+    if timing_enabled():
+        log_sections('personaldashboard', timing_sections)
+    return render(
+        request,
+        'YSE_App/personaldashboard.html',
+        _personaldashboard_context(request, tables),
+    )
+
+
+@login_required
+def personaldashboard_section(request, user_query_id):
+    """AJAX fragment: one personal dashboard query section."""
+    q = get_object_or_404(UserQuery, id=user_query_id, user=request.user)
+    row = _personaldashboard_table_for_user_query(request, q)
+    if row is None:
+        return HttpResponse(status=204)
+    return render(
+        request,
+        'YSE_App/personaldashboard_section.html',
+        {
+            'transient_cat': row,
+            'all_transient_statuses': TransientStatus.objects.order_by('name'),
+        },
+    )
 
 @login_required
 def transient_summary(request,status_or_query_name,

@@ -1,0 +1,85 @@
+{
+  "runs": [
+    {
+      "iteration": "baseline-pre-pfp",
+      "iteration_index": 0,
+      "commit": "88063188",
+      "branch": "perf/progressive-loading",
+      "timestamp": "2026-06-02T20:33:26Z",
+      "pages": {
+        "main_dashboard": {
+          "url": "/dashboard/",
+          "ttfb_ms": 150.4,
+          "total_ms": 150.4,
+          "sql_count": 19
+        },
+        "personal_dashboard": {
+          "url": "/personaldashboard/",
+          "ttfb_ms": 172.4,
+          "total_ms": 172.4,
+          "sql_count": 23,
+          "note": "5 saved SQL queries, cold cache (fixture DB)"
+        },
+        "transient_detail": {
+          "url": "/transient_detail/perf-detail-loaded/",
+          "ttfb_ms": 415.9,
+          "total_ms": 415.9,
+          "sql_count": 66,
+          "note": "loaded synthetic data fixture"
+        }
+      }
+    },
+    {
+      "iteration": "harness-verify",
+      "iteration_index": 1,
+      "commit": "unknown",
+      "branch": "unknown",
+      "pages": {
+        "main_dashboard": {
+          "url": "/dashboard/",
+          "ttfb_ms": 384.8,
+          "total_ms": 384.8,
+          "sql_count": 19
+        },
+        "personal_dashboard": {
+          "url": "/personaldashboard/",
+          "ttfb_ms": 260.9,
+          "total_ms": 260.9,
+          "sql_count": 23
+        },
+        "transient_detail": {
+          "url": "/transient_detail/perf-benchmark-loaded/",
+          "ttfb_ms": 437.6,
+          "total_ms": 437.6,
+          "sql_count": 214
+        }
+      }
+    },
+    {
+      "iteration": "personal-pfp",
+      "iteration_index": 2,
+      "commit": "unknown",
+      "branch": "unknown",
+      "pages": {
+        "main_dashboard": {
+          "url": "/dashboard/",
+          "ttfb_ms": 355.6,
+          "total_ms": 355.6,
+          "sql_count": 19
+        },
+        "personal_dashboard": {
+          "url": "/personaldashboard/",
+          "ttfb_ms": 135.9,
+          "total_ms": 135.9,
+          "sql_count": 8
+        },
+        "transient_detail": {
+          "url": "/transient_detail/perf-benchmark-loaded/",
+          "ttfb_ms": 362.6,
+          "total_ms": 362.6,
+          "sql_count": 229
+        }
+      }
+    }
+  ]
+}
