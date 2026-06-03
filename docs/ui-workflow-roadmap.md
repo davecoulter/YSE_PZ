@@ -1,0 +1,96 @@
+# YSE UI / workflow roadmap — issue index
+
+Repo: https://github.com/astrofoley/YSE_PZ
+
+| Catalog ID | Issue |
+|------------|-------|
+| P0-1 | [#34](https://github.com/astrofoley/YSE_PZ/issues/34) |
+| P0-2 | [#35](https://github.com/astrofoley/YSE_PZ/issues/35) |
+| P0-3 | [#36](https://github.com/astrofoley/YSE_PZ/issues/36) |
+| P0-4 | [#37](https://github.com/astrofoley/YSE_PZ/issues/37) |
+| P0-5 | [#38](https://github.com/astrofoley/YSE_PZ/issues/38) |
+| P0-6 | [#39](https://github.com/astrofoley/YSE_PZ/issues/39) |
+| P0-7 | [#40](https://github.com/astrofoley/YSE_PZ/issues/40) |
+| T0-1 | [#41](https://github.com/astrofoley/YSE_PZ/issues/41) |
+| P1-1 | [#42](https://github.com/astrofoley/YSE_PZ/issues/42) |
+| P1-2 | [#43](https://github.com/astrofoley/YSE_PZ/issues/43) |
+| P1-3 | [#44](https://github.com/astrofoley/YSE_PZ/issues/44) |
+| P1-4 | [#45](https://github.com/astrofoley/YSE_PZ/issues/45) |
+| P1-5 | [#46](https://github.com/astrofoley/YSE_PZ/issues/46) |
+| P1-6 | [#47](https://github.com/astrofoley/YSE_PZ/issues/47) |
+| P1-7 | [#48](https://github.com/astrofoley/YSE_PZ/issues/48) |
+| P1-8 | [#49](https://github.com/astrofoley/YSE_PZ/issues/49) |
+| T1-1 | [#50](https://github.com/astrofoley/YSE_PZ/issues/50) |
+| P2-1 | [#51](https://github.com/astrofoley/YSE_PZ/issues/51) |
+| P2-2 | [#52](https://github.com/astrofoley/YSE_PZ/issues/52) |
+| P2-3 | [#53](https://github.com/astrofoley/YSE_PZ/issues/53) |
+| P2-4 | [#54](https://github.com/astrofoley/YSE_PZ/issues/54) |
+| P2-5 | [#55](https://github.com/astrofoley/YSE_PZ/issues/55) |
+| P2-6 | [#56](https://github.com/astrofoley/YSE_PZ/issues/56) |
+| P2-7 | [#57](https://github.com/astrofoley/YSE_PZ/issues/57) |
+| P2-8 | [#58](https://github.com/astrofoley/YSE_PZ/issues/58) |
+| P2-9 | [#59](https://github.com/astrofoley/YSE_PZ/issues/59) |
+| P2-10 | [#60](https://github.com/astrofoley/YSE_PZ/issues/60) |
+| T2-1 | [#61](https://github.com/astrofoley/YSE_PZ/issues/61) |
+| P3-1 | [#62](https://github.com/astrofoley/YSE_PZ/issues/62) |
+| P3-2 | [#63](https://github.com/astrofoley/YSE_PZ/issues/63) |
+| P3-3 | [#64](https://github.com/astrofoley/YSE_PZ/issues/64) |
+| P3-4 | [#65](https://github.com/astrofoley/YSE_PZ/issues/65) |
+| P3-5 | [#66](https://github.com/astrofoley/YSE_PZ/issues/66) |
+| P3-6 | [#67](https://github.com/astrofoley/YSE_PZ/issues/67) |
+| P3-7 | [#68](https://github.com/astrofoley/YSE_PZ/issues/68) |
+| P3-8 | [#69](https://github.com/astrofoley/YSE_PZ/issues/69) |
+| P3-9 | [#70](https://github.com/astrofoley/YSE_PZ/issues/70) |
+| P3-10 | [#71](https://github.com/astrofoley/YSE_PZ/issues/71) |
+| P3-11 | [#72](https://github.com/astrofoley/YSE_PZ/issues/72) |
+| T3-1 | [#73](https://github.com/astrofoley/YSE_PZ/issues/73) |
+| P4-1 | [#74](https://github.com/astrofoley/YSE_PZ/issues/74) |
+| P4-2 | [#75](https://github.com/astrofoley/YSE_PZ/issues/75) |
+| P4-3 | [#76](https://github.com/astrofoley/YSE_PZ/issues/76) |
+| P4-4 | [#77](https://github.com/astrofoley/YSE_PZ/issues/77) |
+| P4-5 | [#78](https://github.com/astrofoley/YSE_PZ/issues/78) |
+| P4-6 | [#79](https://github.com/astrofoley/YSE_PZ/issues/79) |
+| P4-7 | [#80](https://github.com/astrofoley/YSE_PZ/issues/80) |
+| P4-8 | [#81](https://github.com/astrofoley/YSE_PZ/issues/81) |
+| P4-9 | [#82](https://github.com/astrofoley/YSE_PZ/issues/82) |
+| T4-1 | [#83](https://github.com/astrofoley/YSE_PZ/issues/83) |
+| P5-1 | [#84](https://github.com/astrofoley/YSE_PZ/issues/84) |
+| P5-2 | [#85](https://github.com/astrofoley/YSE_PZ/issues/85) |
+| P5-3 | [#86](https://github.com/astrofoley/YSE_PZ/issues/86) |
+| P5-4 | [#87](https://github.com/astrofoley/YSE_PZ/issues/87) |
+| P5-5 | [#88](https://github.com/astrofoley/YSE_PZ/issues/88) |
+| P5-6 | [#89](https://github.com/astrofoley/YSE_PZ/issues/89) |
+| P5-7 | [#90](https://github.com/astrofoley/YSE_PZ/issues/90) |
+| T5-1 | [#91](https://github.com/astrofoley/YSE_PZ/issues/91) |
+| P6-1 | [#92](https://github.com/astrofoley/YSE_PZ/issues/92) |
+| P6-2 | [#93](https://github.com/astrofoley/YSE_PZ/issues/93) |
+| P6-3 | [#94](https://github.com/astrofoley/YSE_PZ/issues/94) |
+| P6-4 | [#95](https://github.com/astrofoley/YSE_PZ/issues/95) |
+| P6-5 | [#96](https://github.com/astrofoley/YSE_PZ/issues/96) |
+| P6-6 | [#97](https://github.com/astrofoley/YSE_PZ/issues/97) |
+| P6-7 | [#98](https://github.com/astrofoley/YSE_PZ/issues/98) |
+| T6-1 | [#99](https://github.com/astrofoley/YSE_PZ/issues/99) |
+| P7-1 | [#100](https://github.com/astrofoley/YSE_PZ/issues/100) |
+| P7-2 | [#101](https://github.com/astrofoley/YSE_PZ/issues/101) |
+| P7-3 | [#102](https://github.com/astrofoley/YSE_PZ/issues/102) |
+| P7-4 | [#103](https://github.com/astrofoley/YSE_PZ/issues/103) |
+| P7-5 | [#104](https://github.com/astrofoley/YSE_PZ/issues/104) |
+| P7-6 | [#105](https://github.com/astrofoley/YSE_PZ/issues/105) |
+| P7-7 | [#106](https://github.com/astrofoley/YSE_PZ/issues/106) |
+| T7-1 | [#107](https://github.com/astrofoley/YSE_PZ/issues/107) |
+| META-1 | [#108](https://github.com/astrofoley/YSE_PZ/issues/108) |
+| META-2 | [#109](https://github.com/astrofoley/YSE_PZ/issues/109) |
+| TEST-GLOBAL | [#110](https://github.com/astrofoley/YSE_PZ/issues/110) |
+
+## Branches
+
+| Phase | Branch |
+|-------|--------|
+| 0 | `ui/phase-0-bugfixes` |
+| 1 | `ui/phase-1-theme` |
+| 2 | `ui/phase-2-comments-slack` |
+| 3 | `ui/phase-3-night-requests` |
+| 4 | `ui/phase-4-classical-scheduler` |
+| 5 | `ui/phase-5-dq-bitmask` |
+| 6 | `ui/phase-6-plots-fits` |
+| 7 | `ui/phase-7-bootstrap5` |

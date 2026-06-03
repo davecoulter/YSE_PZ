@@ -141,11 +141,11 @@ def dashboard(request):
         status = status_by_name.get(statusname)
         if status:
             transients = annotate_dashboard_transient_fields(
-                Transient.objects.filter(status=status).order_by('-disc_date')
+                Transient.objects.filter(status=status).order_by('-disc_date', '-pk')
             )
         else:
             transients = annotate_dashboard_transient_fields(
-                Transient.objects.filter(status=None).order_by('-disc_date')
+                Transient.objects.filter(status=None).order_by('-disc_date', '-pk')
             )
         transientfilter = TransientFilter(
             request.GET, queryset=transients, prefix=statusname.lower()

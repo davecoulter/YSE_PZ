@@ -130,6 +130,14 @@ def _load_heavy_plot_stack():
 
 Q = Queue()
 
+
+
+def _phot_data_quality_label(phot_row):
+    dq_names = list(phot_row.data_quality.values_list("name", flat=True))
+    if not dq_names:
+        return "Good"
+    return ",".join(dq_names)
+
 py2bokeh_symboldict = {"^":"triangle",
                        "+":"cross",
                        "s":"square",
@@ -622,6 +630,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
             "created_by",
             "modified_by",
         )
+        .prefetch_related("data_quality")
         .order_by("-modified_date")
     )
 
@@ -633,18 +642,23 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
     band_data = PhotometricBand.objects.filter(pk__in=band_ids).select_related("instrument")
     band_lookup = {b.pk: b for b in band_data}
 
-    # Extract photometry data efficiently
-    phot_values = photdata.values(
-        "flux",
-        "flux_err",
-        "flux_zero_point",
-        "mag",
-        "mag_err",
-        "discovery_point",
-        "obs_date",
-        "band",
-        "mag_sys__name",
-    )
+    phot_rows = list(photdata)
+    phot_values = [
+        {
+            "id": p.id,
+            "flux": p.flux,
+            "flux_err": p.flux_err,
+            "flux_zero_point": p.flux_zero_point,
+            "mag": p.mag,
+            "mag_err": p.mag_err,
+            "discovery_point": p.discovery_point,
+            "obs_date": p.obs_date,
+            "band": p.band_id,
+            "mag_sys__name": p.mag_sys.name if p.mag_sys_id else None,
+            "dq_label": _phot_data_quality_label(p),
+        }
+        for p in phot_rows
+    ]
 
     # Convert data to NumPy arrays
     flux = np.array([p["flux"] for p in phot_values], dtype=float)
@@ -655,6 +669,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
     discovery_point = np.array([p["discovery_point"] for p in phot_values], dtype=bool)
     obs_date = np.array([p["obs_date"] for p in phot_values], dtype="datetime64")
     mag_sys = np.array([p["mag_sys__name"] or "None" for p in phot_values])
+    dq_labels = np.array([p["dq_label"] for p in phot_values])
     band_ids = np.array([p["band"] for p in phot_values], dtype=int)
 
     # Convert observation dates to MJD
@@ -712,7 +727,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
                 x=band_mjd.tolist(),
                 y=band_mag.tolist(),
                 date=band_obs_date_str.tolist(),
-                data_quality=["Good"] * len(band_mjd),
+                data_quality=dq_labels[band_filter].tolist(),
                 magsys=mag_sys[band_filter].tolist(),
                 band=[f"{band_obj.instrument.name} - {band_obj.name}"] * len(band_mjd),
             )

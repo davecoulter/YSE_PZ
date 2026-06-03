@@ -1214,8 +1214,10 @@
                     base_url = base_url + ":" + port
                 }
 
-                var tag_ids = $("#associated-events-list").children("div").map(function() {return $(this).attr("data-tag_id")})
-                if (tag_id in tag_ids){
+                var tag_ids = $("#associated-events-list").children("div").map(function() {
+                    return String($(this).attr("data-tag_id"));
+                }).get();
+                if (tag_ids.indexOf(String(tag_id)) !== -1){
                     alert("tag has already been applied");
                     return;
                 }
