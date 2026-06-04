@@ -9,6 +9,7 @@ import django
 from django.conf import settings as djangoSettings
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db import models, connection, reset_queries
+from django.db.models import Prefetch
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, get_object_or_404, render
 from django.urls import reverse
@@ -1431,7 +1432,6 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 
 def spectrumplot(request, transient_id):
     _load_heavy_plot_stack()
-    tstart = time.time()
     
     # Fetch data with optimized queries
     transient = Transient.objects.get(pk=transient_id)
@@ -1446,6 +1446,8 @@ def spectrumplot(request, transient_id):
         spec_data = spectrum.transientspecdata_set.all()
         wave = np.array([s.wavelength for s in spec_data])
         flux = np.array([s.flux for s in spec_data])
+        if wave.size == 0 or flux.size == 0:
+            continue
         
         # Vectorized sorting and interpolation
         sort_idx = np.argsort(wave)
@@ -1459,7 +1461,10 @@ def spectrumplot(request, transient_id):
             'wave': wave_interp,
             'flux': flux_interp,
             'mjd': date_to_mjd(spectrum.obs_date.isoformat().split('+')[0]),
+            'label': f'{spectrum.instrument.name} - {spectrum.obs_date.strftime("%Y-%m-%d")}',
         })
+    if not spectra:
+        return django.http.HttpResponse('')
     
     # Process spectra and compute offsets
     dates = np.array([spec['mjd'] for spec in spectra])
@@ -1478,13 +1483,15 @@ def spectrumplot(request, transient_id):
         minval = sort_flux[round(n_pix * 0.05)] * 0.5
         maxval = sort_flux[round(n_pix * 0.95)] * 1.1
         scale = maxval - minval
+        if scale == 0:
+            scale = 1.0
         
         # Normalize flux
         norm_flux = (flux - minval) / scale + offset
         
         # Plot line
         p = ax.line(spec['wave'], norm_flux, color=color, muted_alpha=0.2)
-        legend_items.append((f'{spectrum.instrument.name} - {spectrum.obs_date.strftime("%Y-%m-%d")}', [p]))
+        legend_items.append((spec['label'], [p]))
     
     # Add legend
     legend = Legend(items=legend_items, location="bottom_right")
@@ -1505,7 +1512,6 @@ def spectrumplot(request, transient_id):
 
 def spectrumplot_summary(request, transient_id):
     _load_heavy_plot_stack()
-    tstart = time.time()
     transient = Transient.objects.get(pk=transient_id)
     dbspectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True).select_related()
     spectra = {}
@@ -1622,7 +1628,6 @@ def spectrumplotsingle(request, transient_id, spec_id):
     #transient_id = request.GET.get('transient_id')
     #spec_id = request.GET.get('spec_id')
     
-    tstart = time.time()
     print(transient_id,spec_id)
     transient = Transient.objects.get(pk=transient_id)
     spectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(request.user, transient_id, includeBadData=True)

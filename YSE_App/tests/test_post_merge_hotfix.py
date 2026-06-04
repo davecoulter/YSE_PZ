@@ -1,10 +1,17 @@
 """Regression tests for post-merge dashboard / host photometry fixes."""
 
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.utils import timezone
 
 from YSE_App.data import SpectraService
-from YSE_App.models import Host, HostPhotData, HostPhotometry, Transient
+from YSE_App.models import (
+    Host,
+    HostPhotData,
+    HostPhotometry,
+    Transient,
+    TransientSpecData,
+    TransientSpectrum,
+)
 from YSE_App.table_utils import annotate_dashboard_transient_fields
 from YSE_App.tests.fixtures_minimal import (
     attach_synthetic_photometry,
@@ -78,3 +85,53 @@ class SpectraAuthorizationTests(TestCase):
             user, transient.id, includeBadData=True
         )
         self.assertEqual(spectra.count(), 1)
+
+
+class SpectrumPlotRegressionTests(TestCase):
+    def setUp(self):
+        self.user = create_test_user(username="spectrumplot_regression_user")
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def _add_spec_points(self, spectrum, n_points=20):
+        for i in range(n_points):
+            TransientSpecData.objects.create(
+                spectrum=spectrum,
+                wavelength=4000 + 10 * i,
+                flux=1.0 + 0.1 * i,
+                created_by=self.user,
+                modified_by=self.user,
+            )
+
+    def test_spectrumplot_returns_200_with_valid_points(self):
+        transient = create_transient_with_synthetic_data(
+            self.user, name="specplot-valid", with_spectrum=True
+        )
+        spectrum = TransientSpectrum.objects.filter(transient=transient).first()
+        self._add_spec_points(spectrum)
+
+        response = self.client.get(f"/spectrumplot/{transient.id}/")
+        self.assertEqual(response.status_code, 200)
+
+    def test_spectrumplot_skips_empty_spectrum_and_still_returns_200(self):
+        transient = create_transient_with_synthetic_data(
+            self.user, name="specplot-empty-guard", with_spectrum=True
+        )
+        empty_spectrum = TransientSpectrum.objects.filter(transient=transient).first()
+        self.assertIsNotNone(empty_spectrum)
+
+        nonempty_spectrum = TransientSpectrum.objects.create(
+            transient=transient,
+            instrument=empty_spectrum.instrument,
+            obs_group=empty_spectrum.obs_group,
+            ra=transient.ra,
+            dec=transient.dec,
+            obs_date=timezone.now(),
+            redshift=0.05,
+            created_by=self.user,
+            modified_by=self.user,
+        )
+        self._add_spec_points(nonempty_spectrum)
+
+        response = self.client.get(f"/spectrumplot/{transient.id}/")
+        self.assertEqual(response.status_code, 200)
