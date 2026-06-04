@@ -15,13 +15,13 @@
     </ol>
     <ol class="breadcrumb">
       <form action="{% url 'search' %}" method="get">
-        <input name="q" type="text" placeholder="Name or coord. search">
+        <input name="q" type="text" placeholder="Name or coord. search" aria-label="Search by transient name or coordinates">
       </form>
     </ol>
 {% endblock %}
 
 {% block content %}
-    
+<div class="yse-page-dashboard">
   <!-- Default box -->
   {% for transient_cat in transient_categories %}
 
@@ -51,7 +51,7 @@
     <!-- /.box-footer-->
   </div>
   <!-- /.box -->
-  
+</div>
 {% endblock %}
 
 {% block scripts %}

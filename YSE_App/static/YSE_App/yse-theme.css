@@ -1,0 +1,145 @@
+/**
+ * YSE-PZ theme layer (AdminLTE 3 / Bootstrap 3 compatible).
+ * Loaded after AdminLTE skins in base.html. AJAX partials inherit via base.
+ */
+:root {
+  --yse-font-size-base: 14px;
+  --yse-font-size-sm: 12px;
+  --yse-font-size-xs: 11px;
+  --yse-space-xs: 4px;
+  --yse-space-sm: 8px;
+  --yse-space-md: 12px;
+  --yse-space-lg: 16px;
+  --yse-color-text: #222;
+  --yse-color-muted: #666;
+  --yse-color-accent: #3c8dbc;
+  --yse-table-cell-py: 4px;
+  --yse-table-cell-px: 8px;
+  --yse-table-font-size: var(--yse-font-size-sm);
+  --yse-box-padding: var(--yse-space-md);
+  --yse-box-header-py: var(--yse-space-sm);
+  --yse-focus-ring: 2px solid var(--yse-color-accent);
+  --yse-focus-offset: 2px;
+}
+
+body.yse-theme {
+  font-size: var(--yse-font-size-base);
+  color: var(--yse-color-text);
+}
+
+/* --- Accessibility: focus --- */
+body.yse-theme a:focus-visible,
+body.yse-theme button:focus-visible,
+body.yse-theme input:focus-visible,
+body.yse-theme select:focus-visible,
+body.yse-theme textarea:focus-visible,
+body.yse-theme .btn:focus-visible,
+body.yse-theme .nav-tabs > li > a:focus-visible {
+  outline: var(--yse-focus-ring);
+  outline-offset: var(--yse-focus-offset);
+}
+
+body.yse-theme .text-muted {
+  color: var(--yse-color-muted);
+}
+
+/* --- Compact boxes (dashboard, observing, global) --- */
+body.yse-theme .yse-page-dashboard .box-header,
+body.yse-theme .yse-page-observing-night .box-header,
+body.yse-theme .yse-page-transient-summary .box-header {
+  padding: var(--yse-box-header-py) var(--yse-box-padding);
+}
+
+body.yse-theme .yse-page-dashboard .box-body,
+body.yse-theme .yse-page-observing-night .box-body,
+body.yse-theme .yse-page-transient-summary .box-body {
+  padding: var(--yse-box-padding);
+}
+
+body.yse-theme .yse-page-dashboard .box-footer,
+body.yse-theme .yse-page-observing-night .box-footer {
+  padding: var(--yse-space-sm) var(--yse-box-padding);
+}
+
+body.yse-theme .yse-page-dashboard .box,
+body.yse-theme .yse-page-observing-night .box {
+  margin-bottom: var(--yse-space-md);
+}
+
+/* --- Tables (django-tables2 + plain) --- */
+body.yse-theme .yse-page-dashboard table.table,
+body.yse-theme .yse-page-observing-night table.table,
+body.yse-theme .yse-page-dashboard .table-container table,
+body.yse-theme .yse-page-observing-night .table-container table {
+  font-size: var(--yse-table-font-size);
+  margin-bottom: var(--yse-space-sm);
+}
+
+body.yse-theme .yse-page-dashboard table.table > thead > tr > th,
+body.yse-theme .yse-page-dashboard table.table > tbody > tr > td,
+body.yse-theme .yse-page-observing-night table.table > thead > tr > th,
+body.yse-theme .yse-page-observing-night table.table > tbody > tr > td,
+body.yse-theme .yse-page-dashboard .table-container table > thead > tr > th,
+body.yse-theme .yse-page-dashboard .table-container table > tbody > tr > td,
+body.yse-theme .yse-page-observing-night .table-container table > thead > tr > th,
+body.yse-theme .yse-page-observing-night .table-container table > tbody > tr > td {
+  padding: var(--yse-table-cell-py) var(--yse-table-cell-px);
+  vertical-align: middle;
+}
+
+body.yse-theme .yse-page-dashboard .form-inline,
+body.yse-theme .yse-page-observing-night .form-inline {
+  margin-bottom: var(--yse-space-sm);
+}
+
+body.yse-theme .yse-page-dashboard .pagination,
+body.yse-theme .yse-page-observing-night .pagination {
+  margin: var(--yse-space-sm) 0;
+}
+
+body.yse-theme .yse-page-dashboard .pagination > li > a,
+body.yse-theme .yse-page-observing-night .pagination > li > a {
+  padding: var(--yse-space-xs) var(--yse-space-sm);
+  font-size: var(--yse-font-size-sm);
+}
+
+/* Observing night twilight table */
+body.yse-theme .yse-page-observing-night #telescope_tbl {
+  font-size: var(--yse-font-size-sm);
+}
+
+body.yse-theme .yse-page-observing-night #telescope_tbl > thead > tr > th,
+body.yse-theme .yse-page-observing-night #telescope_tbl > tbody > tr > td {
+  padding: var(--yse-table-cell-py) var(--yse-table-cell-px);
+}
+
+/* --- Transient detail summary --- */
+body.yse-theme .yse-page-transient-summary .nav-tabs-custom {
+  margin-bottom: var(--yse-space-md);
+}
+
+body.yse-theme .yse-page-transient-summary .nav-tabs-custom > .nav-tabs > li > a {
+  padding: var(--yse-space-sm) var(--yse-space-md);
+  font-size: var(--yse-font-size-sm);
+}
+
+body.yse-theme .yse-page-transient-summary .form-group {
+  margin-bottom: var(--yse-space-sm);
+}
+
+body.yse-theme .yse-page-transient-summary .box.box-default.box-solid .box-header,
+body.yse-theme .yse-page-transient-summary .box.box-default.box-solid .box-body {
+  padding: var(--yse-space-sm) var(--yse-space-md);
+}
+
+body.yse-theme .yse-page-transient-summary .box-title {
+  font-size: 15px;
+}
+
+body.yse-theme .yse-page-transient-summary h3.box-title {
+  margin: 0;
+}
+
+body.yse-theme .yse-page-transient-summary .btn {
+  margin-bottom: var(--yse-space-xs);
+}

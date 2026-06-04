@@ -18,7 +18,7 @@ Issue number log: [`docs/ui-workflow-issues-yse.log`](ui-workflow-issues-yse.log
 | Phase | Branch | PR | State |
 |-------|--------|-----|--------|
 | **0** | `ui/phase-0-bugfixes` | [#93](https://github.com/Young-Supernova-Experiment/YSE_PZ/pull/93) → `develop` | **Ready to merge** — CI `docker-test` green; closes #16–#23 |
-| **1** | `ui/phase-1-theme` | [#94](https://github.com/Young-Supernova-Experiment/YSE_PZ/pull/94) → `develop` (draft, stacked on #93) | In progress — rebase after #93 merges |
+| **1** | `ui/phase-1-theme` | [#94](https://github.com/Young-Supernova-Experiment/YSE_PZ/pull/94) → `develop` (draft, stacked on #93) | **Implemented** — rebase after #93; verify locally |
 | 2–7 | see [Branches](#branches-base-ysedevelop) | — | Not started |
 
 ### Phase 0 deliverables (on branch)
@@ -90,6 +90,8 @@ git checkout -b ui/phase-1-theme yse/develop
 | 8 | P1-8 / T1-1 | Run `test_page_load_regression` + `test_performance`; document TTFB/query deltas in PR |
 
 **PR:** `ui/phase-1-theme` → `develop`, body: `Fixes #24` … `Fixes #32` (adjust if any issue deferred).
+
+**Local verification (after phase-1 code complete):** From repo root, `./docker/scripts/yse-docker.sh up` (leave running); test http://127.0.0.1:8080/login/ then `/dashboard/`, `/personaldashboard/`, `/transient_detail/<slug>/`, `/observing_night/...`. After each test run: `./docker/scripts/yse-docker.sh down` then `./docker/scripts/yse-docker.sh prune aggressive` (wraps `prune-yse-docker.sh` — do not use raw `docker system prune`). Per-page checklists: Cursor plan `phase_1_theme_plan`.
 
 ### 4. Phases 2–7 (after prior phase merges)
 
