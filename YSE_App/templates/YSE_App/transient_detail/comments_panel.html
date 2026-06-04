@@ -8,7 +8,7 @@
                     Comments
                     {% if new_comment %}<span class="label label-warning yse-comments-new-badge">New</span>{% endif %}
                 </h3>
-                <p class="text-muted yse-comments-hint">Use <code>@username</code> to notify; <code>@channel</code> emails all users.</p>
+                <p class="text-muted yse-comments-hint"><code>@username</code> notify · <code>@channel</code> all</p>
             </div>
             <div class="box-body">
                 <ul id="yse-comment-thread" class="yse-comment-thread list-unstyled">
@@ -29,11 +29,13 @@
                 <form id="add_transient_comment" action="{% url 'add_transient_comment' %}" method="post" class="yse-comment-composer">
                     <input type="hidden" name="transient" value="{{ transient.id }}"/>
                     {% csrf_token %}
-                    <div class="form-group">
-                        <label for="id_comment">Add comment</label>
-                        {% render_field transient_comment_form.comment class+="form-control" rows="3" placeholder="Comment… Use @username to notify" %}
+                    <div class="yse-comment-composer-row">
+                        <div class="yse-comment-input-wrap">
+                            <label for="id_comment" class="sr-only">Add comment</label>
+                            {% render_field transient_comment_form.comment class+="form-control yse-comment-input" rows="2" placeholder="Comment… @username to notify" %}
+                        </div>
+                        <button type="submit" class="btn btn-primary yse-comment-submit">Submit</button>
                     </div>
-                    <button type="submit" class="btn btn-primary">Submit</button>
                 </form>
             </div>
         </div>

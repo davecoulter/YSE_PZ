@@ -144,19 +144,30 @@ body.yse-theme .yse-page-transient-summary .btn {
   margin-bottom: var(--yse-space-xs);
 }
 
-/* --- Transient comments (Summary tab) --- */
+/* --- Transient comments (Summary tab, right column above host) --- */
+body.yse-theme .yse-summary-side-col {
+  display: flex;
+  flex-direction: column;
+}
+
 body.yse-theme .yse-comments-panel {
-  margin-top: var(--yse-space-lg);
+  margin-top: 0;
+  margin-bottom: var(--yse-space-md);
+  flex-shrink: 0;
+}
+
+body.yse-theme .yse-comments-panel .box {
+  margin-bottom: 0;
 }
 
 body.yse-theme .yse-comments-hint {
-  font-size: var(--yse-font-size-sm);
+  font-size: var(--yse-font-size-xs);
   margin: var(--yse-space-xs) 0 0;
 }
 
 body.yse-theme .yse-comment-thread {
-  margin: 0 0 var(--yse-space-md);
-  max-height: 320px;
+  margin: 0 0 var(--yse-space-sm);
+  max-height: 200px;
   overflow-y: auto;
 }
 
@@ -185,9 +196,30 @@ body.yse-theme .yse-mention {
   font-weight: 600;
 }
 
-body.yse-theme .yse-comment-composer textarea {
-  min-height: 4em;
+body.yse-theme .yse-comment-composer-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: var(--yse-space-sm);
+}
+
+body.yse-theme .yse-comment-input-wrap {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+body.yse-theme .yse-comment-composer textarea,
+body.yse-theme .yse-comment-input {
+  min-height: 2.5em;
   resize: vertical;
+  width: 100%;
+}
+
+body.yse-theme .yse-comment-submit {
+  flex-shrink: 0;
+  margin-bottom: 0;
+  white-space: nowrap;
 }
 
 body.yse-theme .yse-comments-new-badge {
