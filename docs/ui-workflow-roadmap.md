@@ -18,7 +18,7 @@ Issue number log: [`docs/ui-workflow-issues-yse.log`](ui-workflow-issues-yse.log
 | Phase | Branch | PR | State |
 |-------|--------|-----|--------|
 | **0** | `ui/phase-0-bugfixes` | [#93](https://github.com/Young-Supernova-Experiment/YSE_PZ/pull/93) → `develop` | **Ready to merge** — CI `docker-test` green; closes #16–#23 |
-| 1 | `ui/phase-1-theme` | — | Not started (blocked on phase 0 merge) |
+| **1** | `ui/phase-1-theme` | [#94](https://github.com/Young-Supernova-Experiment/YSE_PZ/pull/94) → `develop` (draft, stacked on #93) | In progress — rebase after #93 merges |
 | 2–7 | see [Branches](#branches-base-ysedevelop) | — | Not started |
 
 ### Phase 0 deliverables (on branch)
