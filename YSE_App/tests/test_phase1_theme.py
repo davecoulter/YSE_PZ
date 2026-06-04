@@ -28,6 +28,14 @@ class Phase1ThemeSmokeTests(TestCase):
         response = self.client.get(url)
         self._assert_theme_stylesheet(response)
         self.assertContains(response, "yse-page-transient-summary")
+        self.assertEqual(response.status_code, 200)
+
+    def test_transient_detail_summary_renders_galactic_coords(self):
+        """Regression: summary_tab include must load transient_detail_extras."""
+        url = f"/transient_detail/{self.transient.slug}/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Invalid filter")
 
     def test_dashboard_has_page_wrapper(self):
         response = self.client.get("/dashboard/")
