@@ -1,4 +1,4 @@
-"""Phase 0 UI bugfixes (#34–#41)."""
+"""Phase 0 UI bugfixes (#16–#23)."""
 
 from django.contrib.auth.models import User
 from django.test import TestCase
