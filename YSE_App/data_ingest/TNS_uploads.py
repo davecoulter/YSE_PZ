@@ -48,15 +48,26 @@ import signal
 from shutil import rmtree
 import pandas as pd
 from scipy.stats import gamma, halfnorm, uniform
-from astro_prost.helpers import SnRateAbsmag
-from astro_prost.associate import associate_sample
 
+try:
+    from astro_prost.helpers import SnRateAbsmag
+    from astro_prost.associate import associate_sample
+    HAS_ASTRO_PROST = True
+except ImportError:
+    SnRateAbsmag = None
+    associate_sample = None
+    HAS_ASTRO_PROST = False
 
 import os
 from tendo import singleton
 
 ### new antares search for ZTF matches
-from antares_client.search import cone_search
+try:
+    from antares_client.search import cone_search
+    HAS_ANTARES = True
+except ImportError:
+    cone_search = None
+    HAS_ANTARES = False
 
 reg_obj = "https://www.wis-tns.org/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -274,6 +285,9 @@ class processTNS:
         return TransientDict
 
     def getZTFPhotometry_ANTARES(self,sc):
+
+        if not HAS_ANTARES:
+            return None
 
         for s in cone_search(sc, Angle("5s")):
             PhotUploadAll = {"mjdmatchmin":0.01,
@@ -567,6 +581,9 @@ class processTNS:
         :host_information : ~astropy.coordinates.SkyCoord`
         Host position
         """
+        if not HAS_ASTRO_PROST:
+            print("astro_prost not installed; skipping host association")
+            return None
 
         # Define and create output file root directory
         output_dir = os.path.join(self.ghost_path, objs[0])

@@ -23,8 +23,15 @@ from pathlib import Path
 from django.conf import settings as django_settings
 from django.core.management.base import BaseCommand, CommandError
 
-from YSE_App.data_ingest.TNS_uploads import format_to_json, get, processTNS, search
+from YSE_App.data_ingest import tns_api_client
 from YSE_App.models import Transient
+
+
+def _import_tns_uploads():
+    """Lazy import: TNS_uploads pulls many optional science deps."""
+    from YSE_App.data_ingest.TNS_uploads import HAS_ASTRO_PROST, processTNS
+
+    return processTNS, HAS_ASTRO_PROST
 
 
 class Command(BaseCommand):
@@ -49,7 +56,12 @@ class Command(BaseCommand):
         parser.add_argument(
             "--with-ps",
             action="store_true",
-            help="Fetch Pan-STARRS star/galaxy scores (needs MAST Casjobs env in TNS_uploads)",
+            help="Pan-STARRS score via get_ps_score (always attempted in getTNSData)",
+        )
+        parser.add_argument(
+            "--with-prost",
+            action="store_true",
+            help="Run astro_prost host association (requires astro_prost package)",
         )
         parser.add_argument(
             "--dry-run",
@@ -78,6 +90,7 @@ class Command(BaseCommand):
         config = configparser.ConfigParser()
         config.read(settingsfile)
 
+        processTNS, has_astro_prost = _import_tns_uploads()
         tnsproc = processTNS()
         parser_cli = tnsproc.add_options(config=config)
         tns_opts, _ = parser_cli.parse_known_args([])
@@ -91,8 +104,14 @@ class Command(BaseCommand):
         tnsproc.dburl = options["dburl"] or tns_opts.dburl or "http://127.0.0.1:8000/api/"
         tnsproc.status = tns_opts.status
         tnsproc.noupdatestatus = True
-        tnsproc.redohost = options["with_ps"]
+        if options["with_prost"] and not has_astro_prost:
+            raise CommandError(
+                "--with-prost requires astro_prost (not installed in this container)"
+            )
+        tnsproc.redohost = options["with_prost"]
         tnsproc.clobber = False
+        do_prost = options["with_prost"]
+        do_ebv = True
 
         if not tnsproc.tnsapikey or str(tnsproc.tnsapikey).startswith("<"):
             raise CommandError(
@@ -133,12 +152,17 @@ class Command(BaseCommand):
         if not objs:
             raise CommandError("No objects with coordinates to upload")
 
+        if options["with_ps"]:
+            self.stdout.write(
+                "Note: Pan-STARRS scores are fetched per object in getTNSData "
+                "(MAST Casjobs); --with-ps does not enable astro_prost."
+            )
         tnsproc.GetAndUploadAllData(
             objs,
             ras,
             decs,
-            doProst=options["with_ps"],
-            doEBV=options["with_ps"],
+            doProst=do_prost,
+            doEBV=do_ebv,
             doTNS=True,
         )
 
@@ -188,12 +212,12 @@ class Command(BaseCommand):
         ]
 
         def do_search():
-            return search(api, search_obj, api_key, bot_id, bot_name)
+            return tns_api_client.search(api, search_obj, api_key, bot_id, bot_name)
 
         response = self._tns_request_with_retry(do_search)
         if not response or not getattr(response, "text", None):
             return []
-        data = format_to_json(response.text)
+        data = tns_api_client.format_to_json(response.text)
         names = []
         for row in data.get("data", []):
             name = row.get("objname") or row.get("name")
@@ -205,7 +229,7 @@ class Command(BaseCommand):
         payload = [("objname", name), ("photometry", "0"), ("spectra", "0")]
 
         def do_get():
-            return get(api, payload, api_key, bot_id, bot_name)
+            return tns_api_client.get(api, payload, api_key, bot_id, bot_name)
 
         response = self._tns_request_with_retry(do_get)
         if not response or not getattr(response, "text", None):

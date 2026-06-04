@@ -7,12 +7,19 @@ One-time (or rare) build of a **small real-data** MySQL snapshot for UI tests, p
 - Docker stack running (`./docker/scripts/yse-docker.sh up`)
 - `YSE_PZ/settings.ini` with valid `[main]` TNS API fields (`tnsapi`, `tnsapikey`, `tns_bot_id`, `tns_bot_name`) or `TNS_API_KEY` env
 - `dblogin` / `dbpassword` in settings.ini must match a Django user that can call `/add_transient/` (or create `ci_admin` first)
-- Optional: Pan-STARRS scores via `--with-ps` (uses MAST Casjobs credentials inside `TNS_uploads.get_ps_score`)
+- Pan-STARRS scores: automatic via MAST in `get_ps_score` (no extra flag)
+- Optional: `--with-prost` requires `astro_prost` in the container (not in default Docker image)
 
 ## Build ingest (into running Docker DB)
 
 ```bash
-docker exec ysepz_web_container python3 manage.py build_tns_fixture --prefix 2026f --with-ps
+docker exec ysepz_web_container python3 manage.py build_tns_fixture --prefix 2026f
+```
+
+Pan-STARRS scores are fetched automatically in `getTNSData` when MAST is reachable. Host association via `astro_prost` is optional:
+
+```bash
+docker exec ysepz_web_container python3 manage.py build_tns_fixture --prefix 2026f --with-prost
 ```
 
 Dry-run (list TNS names only):
