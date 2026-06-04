@@ -1,11 +1,13 @@
-FROM ghcr.io/young-supernova-experiment/yse_pz:latest
+ARG YSE_BASE_IMAGE=ghcr.io/young-supernova-experiment/yse_pz:latest
+FROM ${YSE_BASE_IMAGE}
 LABEL description="YSE-PZ web dev layer (Young Supernova Experiment)"
 LABEL org.opencontainers.image.source="https://github.com/Young-Supernova-Experiment/YSE_PZ"
 
 SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update --fix-missing && \
-pip install --upgrade pip
+    apt-get install -y --no-install-recommends libcurl4-openssl-dev && \
+    pip install --upgrade pip
 
 WORKDIR /app
 RUN mkdir -p /app/ghost_logs

@@ -127,7 +127,7 @@ Phases **5** and **6** may start after **4** if team capacity allows; **7** shou
 | Layer | Location | When |
 |-------|----------|------|
 | Unit | `YSE_App/tests/test_phase0_ui_bugfixes.py`, per-phase `T*-1` | Every phase PR |
-| Performance | `test_page_load_regression.py`, `test_performance.py`, `perf_baselines.json` | UI/view/template changes |
+| Performance | `test_page_load_regression.py`, `test_performance.py`, `docs/perf/har_snapshots/*.json` | UI/view/template changes |
 | Smoke | `test_smoke.py` | End of each phase |
 | Global policy | [#48](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/48) | Meta |
 

@@ -12,7 +12,13 @@ from pathlib import Path
 from django.conf import settings
 from django.test import Client, TestCase
 
+from YSE_App.models import Transient
 from YSE_App.tests.fixtures_minimal import create_test_user
+from YSE_App.tests.static_asset_utils import (
+    local_static_paths_from_html,
+    static_asset_available,
+    static_relpath_from_url,
+)
 
 
 def _manifest_path():
@@ -64,3 +70,31 @@ class FixturePageLoadTests(TestCase):
         override = os.environ.get("YSE_FIXTURE_MANIFEST")
         if override:
             self.assertTrue(Path(override).is_file())
+
+    def test_fixture_transient_detail_local_static_assets(self):
+        """First manifest transient: no 404 for local /static/ refs (theme, etc.)."""
+        row = self.slugs[0]
+        if not Transient.objects.filter(slug=row["slug"]).exists():
+            self.skipTest(
+                f"{row['slug']} not in DB (Django tests use test_YSE). "
+                "Ingest fixture into YSE or run synthetic tests: "
+                "YSE_App.tests.test_transient_detail_assets"
+            )
+        url = f"/transient_detail/{row['slug']}/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode("utf-8", errors="replace")
+        self.assertIn("yse-theme.css", html)
+        missing = []
+        for url_path in local_static_paths_from_html(html):
+            rel = static_relpath_from_url(url_path)
+            if rel.endswith(".finder.png") and not static_asset_available(rel):
+                continue
+            if not static_asset_available(rel):
+                missing.append(rel)
+        self.assertEqual(
+            missing,
+            [],
+            "Missing static (Docker: ./docker/scripts/yse-docker.sh collectstatic): "
+            + ", ".join(missing),
+        )

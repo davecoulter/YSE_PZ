@@ -16,6 +16,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCKER_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$DOCKER_DIR"
 
+# Docker Desktop credential helper (macOS); avoids pull failures when /opt/local/bin/docker is first on PATH.
+if [[ -d /Applications/Docker.app/Contents/Resources/bin ]]; then
+  PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
+  export PATH
+fi
+
 YSE_GHCR_IMAGE="${YSE_GHCR_IMAGE:-ghcr.io/young-supernova-experiment/yse_pz:latest}"
 
 COMPOSE=(docker compose -f docker-compose.yml)
@@ -63,11 +69,28 @@ run_prune() {
   bash "$SCRIPT_DIR/prune-yse-docker.sh" "$mode"
 }
 
+ensure_env_secrets() {
+  if [[ ! -f "$DOCKER_DIR/.env.secrets" ]]; then
+    if [[ -f "$DOCKER_DIR/.env.secrets.example" ]]; then
+      cp "$DOCKER_DIR/.env.secrets.example" "$DOCKER_DIR/.env.secrets"
+      echo "==> Created $DOCKER_DIR/.env.secrets — add TNS_API_KEY=... then restart the web container"
+    else
+      echo "# TNS_API_KEY=" >"$DOCKER_DIR/.env.secrets"
+    fi
+  fi
+}
+
 load_dotenv() {
   if [[ -f "$DOCKER_DIR/.env" ]]; then
     set -a
     # shellcheck disable=SC1091
     source "$DOCKER_DIR/.env"
+    set +a
+  fi
+  if [[ -f "$DOCKER_DIR/.env.secrets" ]]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "$DOCKER_DIR/.env.secrets"
     set +a
   fi
 }
@@ -87,6 +110,9 @@ warn_if_static_incomplete() {
   static_root="$(static_vol_path)"
   if [[ ! -f "$static_root/admin/css/base.css" ]]; then
     echo "==> Static files look incomplete under $static_root"
+    echo "    Run: ./docker/scripts/yse-docker.sh collectstatic"
+  elif [[ ! -f "$static_root/YSE_App/yse-theme.css" ]]; then
+    echo "==> Phase 1 theme CSS missing under $static_root"
     echo "    Run: ./docker/scripts/yse-docker.sh collectstatic"
   fi
 }
@@ -129,6 +155,7 @@ shift || true
 case "$cmd" in
   up)
     require_docker_daemon
+    ensure_env_secrets
     load_dotenv
     echo "==> Starting stack (docker compose up -d)..."
     "${COMPOSE[@]}" up -d "$@"
@@ -144,10 +171,17 @@ case "$cmd" in
     ;;
   rebuild)
     require_docker_daemon
+    ensure_env_secrets
     export YSE_DOCKER_BUILD_LOCAL=1
     COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.dev.yml)
+    if ! docker image inspect "$YSE_GHCR_IMAGE" >/dev/null 2>&1; then
+      if docker image inspect local/yse_pz_web:dev >/dev/null 2>&1; then
+        export YSE_BASE_IMAGE=local/yse_pz_web:dev
+        echo "==> Org GHCR base image not local; building from ${YSE_BASE_IMAGE}"
+      fi
+    fi
     echo "==> Building local web image..."
-    "${COMPOSE[@]}" build "$@"
+    "${COMPOSE[@]}" build --pull=false "$@"
     echo "==> Starting stack..."
     "${COMPOSE[@]}" up -d
     run_prune aggressive

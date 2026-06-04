@@ -4,8 +4,7 @@
 {% load widget_tweaks %}
 
 {% block styles %}
-    <!-- include Aladin Lite CSS file in the head section of your page -->
-    <link rel="stylesheet" href="//aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.css" />
+    <link rel="stylesheet" href="{% static 'YSE_App/vendor/aladin-lite/v2-latest/aladin.min.css' %}" />
     <link rel="stylesheet" href="{% static 'YSE_App/bower_components/select2/dist/css/select2.min.css' %}">
     <link rel="stylesheet" href="{% static 'YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
 
@@ -223,10 +222,11 @@
                                   <li><button type="button" class="showObsDetails">Show Observing Details</button></li>
                                 </ul>
 
-                                {% static "" as baseUrl %}
-                                {% with "YSE_App/images/findercharts/"|add:transient.name|add:"/"|add:transient.name|add:".finder.png" as finderfile %}
-                                <img src="{% static finderfile %}" style='width:240px' alt="" />
-                                {% endwith %}
+                                {% if has_finder_chart %}
+                                <img src="{% static finder_chart_static %}" style='width:240px' alt="Finder chart for {{ transient.name }}" />
+                                {% else %}
+                                <p class="help-block">Finder chart not generated yet. Use the link above.</p>
+                                {% endif %}
                                 <br><br>
                             </div>
                             <div class="col-xs-12">
@@ -510,12 +510,84 @@
 
 {% block scripts %}
 
-    <script type="text/javascript" src="//aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.js" charset="utf-8"></script>
-
     <script src="{% static 'YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
     <script src="{% static 'YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'YSE_App/bokeh-2.4.2.min.js' %}"></script>
     <script src="{% static 'YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js' %}"></script>
+
+    <script>
+    /* Load plots and cutout XHRs immediately; do not wait on Aladin or tag UI setup. */
+    (function yseTransientDetailEarlyLoads() {
+        function setPlotHtml(selector, html, emptyMessage) {
+            var $el = $(selector);
+            if (!html || !$.trim(html)) {
+                $el.html(emptyMessage);
+            } else {
+                $el.html(html);
+            }
+        }
+
+        $.get("{% url 'spectrumplot' transient.id %}").done(function (html) {
+            setPlotHtml("#specplot", html,
+                '<p class="text-muted yse-plot-empty">No spectrum data on file for this transient.</p>');
+        });
+        $.get("{% url 'lightcurveplot_detail' transient.id %}").done(function (html) {
+            setPlotHtml("#lcplot", html,
+                '<p class="text-muted yse-plot-empty">No photometry to plot.</p>');
+        });
+        $.get("{% url 'get_ps1_image' transient.id %}").done(function (json) {
+            var rows = $("#ps1_image");
+            var htmltext;
+            if (json["jpegurl"]) {
+                htmltext = "<a href=\"http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color\" class=\"ps1-thumb\" title=\"Link to PanSTARRS-1\" target=\"_blank\"><img src=\"" + json["jpegurl"] + "\" style='width:240px' alt=\"\" /></a>";
+            } else if (json["msg"] === "timeout") {
+                htmltext = "<p class=\"text-muted\">Cutout server timed out</p>";
+            } else {
+                htmltext = "<p class=\"text-muted\">Coordinates are outside the PS1 footprint</p>";
+            }
+            rows.append(htmltext);
+        });
+        $.get("{% url 'get_hst_image' transient.id %}").done(function (json) {
+            var rows = $("#hst_image");
+            var rows_full = $("#hst_image_list");
+            var rows_tab = $("#hst_tab_header");
+            var htmltext = "<p class=\"text-muted\">No HST Images available</p>";
+            if (json.jpegurl[0]) {
+                htmltext = "<img src=\"" + json.jpegurl[0] + "\" style='width:240px' alt=\"\" /></a>";
+            } else {
+                $(rows_tab).prepend("No ");
+            }
+            $(rows).append(htmltext);
+            for (var ju in json.jpegurl) {
+                var htmltextfull = "<tr><td>" + json.obsdate[ju] + "</td><td>" + json.filters[ju] + "</td><td>" + json.inst[ju] + "</td><td><a href='" + json.fitsurl[ju] + "' target='_blank'><img src='" + json.jpegurl[ju] + "' style='width:240px' alt='' /></a></td></tr>";
+                $(rows_full).append(htmltextfull);
+            }
+        });
+        $.get("{% url 'get_chandra_image' transient.id %}").done(function (json) {
+            var rows = $("#chandra_image");
+            var rows_full = $("#chandra_image_list");
+            var rows_exp = $("#totalchandraexp");
+            var rows_tab = $("#chandra_tab_header");
+            var htmltext = "<p class=\"text-muted\">No Chandra Images available</p>";
+            if (json.jpegurl[0]) {
+                htmltext = "<img src=\"" + json.jpegurl[0] + "\" style='width:240px' alt=\"\" /></a>";
+            } else {
+                $(rows_tab).prepend("No ");
+            }
+            $(rows).append(htmltext);
+            for (var ju in json.jpegurl) {
+                var htmltextfull = "<tr><td>" + json.obsdate[ju] + "</td><td>" + json.exptime[ju] + "</td><td><a href='" + json.fitsurl[ju] + "' target='_blank'><img src='" + json.jpegurl[ju] + "' style='width:240px' alt='' /></a></td></tr>";
+                $(rows_full).append(htmltextfull);
+            }
+            $(rows_exp).prepend(json.totalexp + "s ");
+        });
+        $.get("{% url 'get_legacy_image' transient.id %}").done(function (json) {
+            var rows = $("#legacy_image");
+            var htmltext = "<a href=" + json.fitsurl + "><img src=\"" + json.jpegurl + "\" style='width:240px' alt=\"\" /></a>";
+            $(rows).append(htmltext);
+        });
+    })();
+    </script>
 
     <script>
 
@@ -820,8 +892,6 @@
             //   'autoWidth'   : false
             // })
 
-            var aladin = A.aladin('#aladin-lite-div', {survey: "P/DSS2/color", fov:0.017, target: "{{transient.ra}} {{transient.dec}}"});
-
             $('#follow_date_range').daterangepicker({
                 timePicker24Hour: true,
                 timePicker: true,
@@ -945,8 +1015,18 @@
 
           // handle a successful response
           success : function(json) {
-            
-            // Required fields
+              var msg = 'Classical resource saved ('
+                + (json.telescope || 'telescope') + ', '
+                + (json.obs_date || 'night') + ' UT).';
+              msg += ' It appears on the Observing Calendar, not On-Call Calendar (/calendar/).';
+              if (json.observing_calendar_url) {
+                if (window.confirm(msg + '\\n\\nOpen Observing Calendar now?')) {
+                  window.location.href = json.observing_calendar_url;
+                  return;
+                }
+              } else {
+                alert(msg);
+              }
               location.reload();
           },
 
@@ -1721,97 +1801,53 @@
                     }
                 });
             });
-        //});
 
-      $( document ).ready(function(){
-        $.get("{% url 'get_ps1_image' transient.id %}").done(function(json){
-        var rows = $("#ps1_image")
-        if (json["jpegurl"]) {
-        htmltext = "<a href=\"http://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos={{ transient.ra }}%2B{{ transient.dec }}&amp;filter=color\" class=\"ps1-thumb\" title=\"Link to PanSTARRS-1\" target=\"_blank\"><img src=\"" + json["jpegurl"] + "\" style='width:240px' alt=\"\" /></a>"
-          } else if (json["msg"] = 'timeout') {
-            var htmltext = "<p class=\"text-muted\">Cutout server timed out</p>"
-          } else {
-          var htmltext = "<p class=\"text-muted\">Coordinates are outside the PS1 footprint</p>"
+        var yseAladinStaticJs = "{% static 'YSE_App/vendor/aladin-lite/v2-latest/aladin.min.js' %}";
+        var yseAladinInited = false;
+        var yseAladinLoading = false;
+        var yseAladinCallbacks = [];
+
+        function yseRunWhenAladinReady(fn) {
+            if (window.A && window.A.aladin) {
+                fn();
+                return;
+            }
+            yseAladinCallbacks.push(fn);
+            if (yseAladinLoading) {
+                return;
+            }
+            yseAladinLoading = true;
+            var script = document.createElement("script");
+            script.src = yseAladinStaticJs;
+            script.charset = "utf-8";
+            script.onload = function () {
+                yseAladinLoading = false;
+                var queue = yseAladinCallbacks.slice();
+                yseAladinCallbacks.length = 0;
+                queue.forEach(function (cb) { cb(); });
+            };
+            document.head.appendChild(script);
         }
 
-          $(rows).append(htmltext)
-        });
-
-        $.get("{% url 'get_hst_image' transient.id %}").done(function(json){
-            var rows = $("#hst_image")
-            var rows_full = $("#hst_image_list")
-            var rows_tab = $("#hst_tab_header")
-            var htmltext = "<p class=\"text-muted\">No HST Images available</p>"
-            if (json.jpegurl[0]) {
-                var htmltext = "<img src=\"" + json.jpegurl[0] + "\" style='width:240px' alt=\"\" /></a>"
-
-            } else {
-                var headertext = "No "
-                $(rows_tab).prepend(headertext)
+        function yseInitAladin() {
+            if (yseAladinInited) {
+                return;
             }
-            $(rows).append(htmltext)
+            yseRunWhenAladinReady(function () {
+                A.aladin("#aladin-lite-div", {
+                    survey: "P/DSS2/color",
+                    fov: 0.017,
+                    target: "{{transient.ra}} {{transient.dec}}"
+                });
+                yseAladinInited = true;
+            });
+        }
 
-            for(var ju in json.jpegurl){
-                var htmltextfull = "<tr>" +
-                "<td>" + json.obsdate[ju] + "</td>" +
-                "<td>" + json.filters[ju] + "</td>" +
-                "<td>" + json.inst[ju] + "</td>" +
-                "<td><a href='" + json.fitsurl[ju] + "' target='_blank'><img src='" + json.jpegurl[ju] + "' style='width:240px' alt='' /></a></td>" //+
-                "</tr>"
-                $(rows_full).append(htmltextfull)
+        $("#carousel-example-generic").on("slid.bs.carousel", function (e) {
+            if (e.to === 1) {
+                yseInitAladin();
             }
         });
-        $.get("{% url 'get_chandra_image' transient.id %}").done(function(json){
-            var rows = $("#chandra_image")
-            var rows_full = $("#chandra_image_list")
-            var rows_exp = $("#totalchandraexp")
-            var rows_tab = $("#chandra_tab_header")
-            var htmltext = "<p class=\"text-muted\">No Chandra Images available</p>"
-            if (json.jpegurl[0]) {
-                var htmltext = "<img src=\"" + json.jpegurl[0] + "\" style='width:240px' alt=\"\" /></a>"
-
-            } else {
-                var headertext = "No "
-                $(rows_tab).prepend(headertext)
-            }
-            $(rows).append(htmltext)
-
-            for(var ju in json.jpegurl){
-                var htmltextfull = "<tr>" +
-                "<td>" + json.obsdate[ju] + "</td>" +
-                "<td>" + json.exptime[ju] + "</td>" +
-                "<td><a href='" + json.fitsurl[ju] + "' target='_blank'><img src='" + json.jpegurl[ju] + "' style='width:240px' alt='' /></a></td>" +
-                "</tr>"
-                $(rows_full).append(htmltextfull)
-            }
-            $(rows_exp).prepend(json.totalexp+"s ")
-        });
-
-        $.get("{% url 'get_legacy_image' transient.id %}").done(function(json){
-            var rows = $("#legacy_image")
-
-            var htmltext = "<a href="+json.fitsurl+"><img src=\"" + json.jpegurl + "\" style='width:240px' alt=\"\" /></a>"
-
-            $(rows).append(htmltext)
-        });
-
-        $.get("{% url 'spectrumplot' transient.id %}").done(function(htmlresponse){
-            var rows = $("#specplot");
-            $(rows).html(htmlresponse);
-        });
-
-        $.get("{% url 'lightcurveplot_detail' transient.id %}").done(function(htmlresponse){
-            $("#lcplot").html(htmlresponse);
-        });
-
-        //$.get("{% url 'lightcurveplot_detail' transient.id %}").done(function(htmlresponse){
-        //
-        //	$("#biglcplot").html(htmlresponse.replace("width: 500px; height: 400px;","width: 1000px; height: 800px;"));
-        //});
-
-
-      });
-//});
 
     </script>
 {% endblock %}

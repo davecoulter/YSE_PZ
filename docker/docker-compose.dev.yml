@@ -3,8 +3,10 @@ services:
     web:
         container_name: ysepz_web_container
         build:
-          context: ""
+          context: .
           dockerfile: Dockerfile.web.dev
+          args:
+            YSE_BASE_IMAGE: ${YSE_BASE_IMAGE:-ghcr.io/davecoulter/yse_pz:latest}
         image: "local/yse_pz_web:dev"
         volumes:
             - ${VOL}:/app
@@ -21,6 +23,7 @@ services:
           DB_CONFIG: /opt/project/db_configuration
         env_file:
           - ".env"
+          - ".env.secrets"
     yse_db:
       container_name: ysepz_db_container
       image: "mysql:8.0.25"

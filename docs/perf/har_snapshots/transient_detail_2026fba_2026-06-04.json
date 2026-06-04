@@ -1,0 +1,898 @@
+{
+  "label": "transient_detail_2026fba_baseline",
+  "source_har": "127.0.0.1.har",
+  "page_url": "http://127.0.0.1:8080/transient_detail/2026fba/",
+  "captured_at": "2026-06-04T21:56:43.729Z",
+  "entry_count": 90,
+  "page_timings_ms": {
+    "on_content_load": 591.39,
+    "on_load": 593.78
+  },
+  "milestones_ms": {
+    "first_aladin_js_ms": 1269.0,
+    "first_yse_xhr_ms": 3416.0,
+    "first_spectrumplot_ms": 3433.0,
+    "first_lightcurve_ms": 3437.0
+  },
+  "by_category": {
+    "yse_api": {
+      "count": 7,
+      "total_duration_ms": 8814.699999999999,
+      "max_duration_ms": 3622.9
+    },
+    "static": {
+      "count": 62,
+      "total_duration_ms": 1940.3999999999994,
+      "max_duration_ms": 328.3
+    },
+    "fonts": {
+      "count": 1,
+      "total_duration_ms": 261.7,
+      "max_duration_ms": 261.7
+    },
+    "aladin": {
+      "count": 11,
+      "total_duration_ms": 8018.0,
+      "max_duration_ms": 1187.9
+    },
+    "other": {
+      "count": 6,
+      "total_duration_ms": 2117.7999999999997,
+      "max_duration_ms": 430.7
+    },
+    "external_cutout": {
+      "count": 2,
+      "total_duration_ms": 1936.8000000000002,
+      "max_duration_ms": 1323.9
+    },
+    "bokeh_cdn": {
+      "count": 1,
+      "total_duration_ms": 210.1,
+      "max_duration_ms": 210.1
+    }
+  },
+  "slowest": [
+    {
+      "url": "http://127.0.0.1:8080/get_hst_image/105590",
+      "path": "/get_hst_image/105590",
+      "category": "yse_api",
+      "start_ms": 3420.0,
+      "duration_ms": 3622.9,
+      "status": 200
+    },
+    {
+      "url": "https://www.legacysurvey.org/viewer/jpeg-cutout?ra=185.6683417&dec=-13.5215250&pixscale=0.27&bands=grz",
+      "path": "/viewer/jpeg-cutout?\u2026",
+      "category": "external_cutout",
+      "start_ms": 4367.0,
+      "duration_ms": 1323.9,
+      "status": 200
+    },
+    {
+      "url": "http://alasky.cds.unistra.fr/DSS/DSSColor/Norder3/Allsky.jpg",
+      "path": "/DSS/DSSColor/Norder3/Allsky.jpg",
+      "category": "aladin",
+      "start_ms": 3773.0,
+      "duration_ms": 1187.9,
+      "status": 200
+    },
+    {
+      "url": "http://alasky.cds.unistra.fr/DSS/DSSColor/Norder9/Dir1620000/Npix1626172.jpg",
+      "path": "/DSS/DSSColor/Norder9/Dir1620000/Npix1626172.jpg",
+      "category": "aladin",
+      "start_ms": 3788.0,
+      "duration_ms": 1184.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/lightcurveplot_detail/105590/",
+      "path": "/lightcurveplot_detail/105590/",
+      "category": "yse_api",
+      "start_ms": 3437.0,
+      "duration_ms": 1159.1,
+      "status": 200
+    },
+    {
+      "url": "http://aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.js",
+      "path": "/AladinLite/api/v2/latest/aladin.min.js",
+      "category": "aladin",
+      "start_ms": 1269.0,
+      "duration_ms": 1055.7,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/transient_detail/2026fba/",
+      "path": "/transient_detail/2026fba/",
+      "category": "yse_api",
+      "start_ms": 0.0,
+      "duration_ms": 1038.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_chandra_image/105590",
+      "path": "/get_chandra_image/105590",
+      "category": "yse_api",
+      "start_ms": 3424.0,
+      "duration_ms": 1023.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_ps1_image/105590",
+      "path": "/get_ps1_image/105590",
+      "category": "yse_api",
+      "start_ms": 3416.0,
+      "duration_ms": 932.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_legacy_image/105590",
+      "path": "/get_legacy_image/105590",
+      "category": "yse_api",
+      "start_ms": 3428.0,
+      "duration_ms": 932.4,
+      "status": 200
+    },
+    {
+      "url": "http://aladin.cds.unistra.fr/java/nph-aladin.pl?callback=jQuery3210023440398823182718_1780610205583&frame=aladinLiteDic&_=1780610205584",
+      "path": "/java/nph-aladin.pl?\u2026",
+      "category": "aladin",
+      "start_ms": 3369.0,
+      "duration_ms": 859.5,
+      "status": 200
+    },
+    {
+      "url": "http://aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.js",
+      "path": "/AladinLite/api/v2/latest/aladin.min.js",
+      "category": "aladin",
+      "start_ms": 2501.0,
+      "duration_ms": 681.1,
+      "status": 200
+    },
+    {
+      "url": "http://alasky.cds.unistra.fr/DSS/DSSColor/Norder9/Dir1620000/Npix1626166.jpg",
+      "path": "/DSS/DSSColor/Norder9/Dir1620000/Npix1626166.jpg",
+      "category": "aladin",
+      "start_ms": 3782.0,
+      "duration_ms": 626.5,
+      "status": 200
+    },
+    {
+      "url": "http://ps1images.stsci.edu/cgi-bin/fitscut.cgi?red=/rings.v3.skycell/1011/061/rings.v3.skycell.1011.061.stk.y.unconv.fits&blue=/rings.v3.skycell/1011/061/rings.v3.skycell.1011.061.stk.g.unconv.fits&green=/rings.v3.skycell/1011/061/rings.v3.skycell.1011.061.stk.i.unconv.fits&x=185.668342&y=-13.521525&size=240&wcs=1&asinh=True&autoscale=99.750000",
+      "path": "/cgi-bin/fitscut.cgi?\u2026",
+      "category": "external_cutout",
+      "start_ms": 4354.0,
+      "duration_ms": 612.9,
+      "status": 200
+    },
+    {
+      "url": "http://alasky.cds.unistra.fr/MocServer/query?dataproduct_type=image&client_application=AladinLite&fmt=json&fields=ID%2Cobs_title%2Cclient_sort_key%2Cclient_application%2Chips_service_url*%2Chips_order%2Chips_tile_format%2Chips_frame",
+      "path": "/MocServer/query?\u2026",
+      "category": "aladin",
+      "start_ms": 3196.0,
+      "duration_ms": 593.1,
+      "status": 200
+    }
+  ],
+  "entries": [
+    {
+      "url": "http://127.0.0.1:8080/transient_detail/2026fba/",
+      "path": "/transient_detail/2026fba/",
+      "category": "yse_api",
+      "start_ms": 0.0,
+      "duration_ms": 1038.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap/dist/css/bootstrap.min.css",
+      "path": "/static/YSE_App/bower_components/bootstrap/dist/css/bootstrap.min.css",
+      "category": "static",
+      "start_ms": 1112.0,
+      "duration_ms": 50.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/font-awesome/css/font-awesome.min.css",
+      "path": "/static/YSE_App/bower_components/font-awesome/css/font-awesome.min.css",
+      "category": "static",
+      "start_ms": 1116.0,
+      "duration_ms": 80.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/Ionicons/css/ionicons.min.css",
+      "path": "/static/YSE_App/bower_components/Ionicons/css/ionicons.min.css",
+      "category": "static",
+      "start_ms": 1120.0,
+      "duration_ms": 44.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css",
+      "path": "/static/YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.m...",
+      "category": "static",
+      "start_ms": 1124.0,
+      "duration_ms": 83.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/dist/css/AdminLTE.min.css",
+      "path": "/static/YSE_App/dist/css/AdminLTE.min.css",
+      "category": "static",
+      "start_ms": 1128.0,
+      "duration_ms": 59.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/dist/css/skins/_all-skins.min.css",
+      "path": "/static/YSE_App/dist/css/skins/_all-skins.min.css",
+      "category": "static",
+      "start_ms": 1132.0,
+      "duration_ms": 69.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/yse-theme.css",
+      "path": "/static/YSE_App/yse-theme.css",
+      "category": "static",
+      "start_ms": 1136.0,
+      "duration_ms": 54.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/morris.js/morris.css",
+      "path": "/static/YSE_App/bower_components/morris.js/morris.css",
+      "category": "static",
+      "start_ms": 1141.0,
+      "duration_ms": 66.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jvectormap/jquery-jvectormap.css",
+      "path": "/static/YSE_App/bower_components/jvectormap/jquery-jvectormap.css",
+      "category": "static",
+      "start_ms": 1145.0,
+      "duration_ms": 69.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css",
+      "path": "/static/YSE_App/bower_components/bootstrap-datepicker/dist/css/bootstrap-date...",
+      "category": "static",
+      "start_ms": 1149.0,
+      "duration_ms": 57.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.css",
+      "path": "/static/YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.css",
+      "category": "static",
+      "start_ms": 1153.0,
+      "duration_ms": 56.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css",
+      "path": "/static/YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css",
+      "category": "static",
+      "start_ms": 1157.0,
+      "duration_ms": 57.3,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic",
+      "path": "/css?\u2026",
+      "category": "fonts",
+      "start_ms": 1162.0,
+      "duration_ms": 261.7,
+      "status": 200
+    },
+    {
+      "url": "http://aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.css",
+      "path": "/AladinLite/api/v2/latest/aladin.min.css",
+      "category": "aladin",
+      "start_ms": 1166.0,
+      "duration_ms": 449.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/select2/dist/css/select2.min.css",
+      "path": "/static/YSE_App/bower_components/select2/dist/css/select2.min.css",
+      "category": "static",
+      "start_ms": 1171.0,
+      "duration_ms": 42.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css",
+      "path": "/static/YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.m...",
+      "category": "static",
+      "start_ms": 1175.0,
+      "duration_ms": 42.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery/dist/jquery.min.js",
+      "path": "/static/YSE_App/bower_components/jquery/dist/jquery.min.js",
+      "category": "static",
+      "start_ms": 1186.0,
+      "duration_ms": 28.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-ui/jquery-ui.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-ui/jquery-ui.min.js",
+      "category": "static",
+      "start_ms": 1190.0,
+      "duration_ms": 42.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "category": "static",
+      "start_ms": 1194.0,
+      "duration_ms": 23.2,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap/dist/js/bootstrap.min.js",
+      "path": "/static/YSE_App/bower_components/bootstrap/dist/js/bootstrap.min.js",
+      "category": "static",
+      "start_ms": 1198.0,
+      "duration_ms": 34.3,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/raphael/raphael.min.js",
+      "path": "/static/YSE_App/bower_components/raphael/raphael.min.js",
+      "category": "static",
+      "start_ms": 1202.0,
+      "duration_ms": 16.7,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/morris.js/morris.min.js",
+      "path": "/static/YSE_App/bower_components/morris.js/morris.min.js",
+      "category": "static",
+      "start_ms": 1206.0,
+      "duration_ms": 21.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-sparkline/dist/jquery.sparkline.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-sparkline/dist/jquery.sparkline.min.js",
+      "category": "static",
+      "start_ms": 1211.0,
+      "duration_ms": 22.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/jvectormap/jquery-jvectormap-1.2.2.min.js",
+      "path": "/static/YSE_App/plugins/jvectormap/jquery-jvectormap-1.2.2.min.js",
+      "category": "static",
+      "start_ms": 1215.0,
+      "duration_ms": 12.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/jvectormap/jquery-jvectormap-world-mill-en.js",
+      "path": "/static/YSE_App/plugins/jvectormap/jquery-jvectormap-world-mill-en.js",
+      "category": "static",
+      "start_ms": 1219.0,
+      "duration_ms": 13.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-knob/dist/jquery.knob.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-knob/dist/jquery.knob.min.js",
+      "category": "static",
+      "start_ms": 1223.0,
+      "duration_ms": 11.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/moment/min/moment.min.js",
+      "path": "/static/YSE_App/bower_components/moment/min/moment.min.js",
+      "category": "static",
+      "start_ms": 1227.0,
+      "duration_ms": 6.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.js",
+      "path": "/static/YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.js",
+      "category": "static",
+      "start_ms": 1231.0,
+      "duration_ms": 5.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.mi...",
+      "category": "static",
+      "start_ms": 1235.0,
+      "duration_ms": 8.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js",
+      "path": "/static/YSE_App/bower_components/bootstrap-datepicker/dist/js/bootstrap-datep...",
+      "category": "static",
+      "start_ms": 1240.0,
+      "duration_ms": 6.2,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js",
+      "path": "/static/YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js",
+      "category": "static",
+      "start_ms": 1244.0,
+      "duration_ms": 6.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-slimscroll/jquery.slimscroll.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-slimscroll/jquery.slimscroll.min.js",
+      "category": "static",
+      "start_ms": 1248.0,
+      "duration_ms": 3.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/fastclick/lib/fastclick.js",
+      "path": "/static/YSE_App/bower_components/fastclick/lib/fastclick.js",
+      "category": "static",
+      "start_ms": 1252.0,
+      "duration_ms": 11.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/dist/js/adminlte.min.js",
+      "path": "/static/YSE_App/dist/js/adminlte.min.js",
+      "category": "static",
+      "start_ms": 1256.0,
+      "duration_ms": 6.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery/datatables/title-numeric.js",
+      "path": "/static/YSE_App/bower_components/jquery/datatables/title-numeric.js",
+      "category": "static",
+      "start_ms": 1261.0,
+      "duration_ms": 3.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/dist/js/demo.js",
+      "path": "/static/YSE_App/dist/js/demo.js",
+      "category": "static",
+      "start_ms": 1265.0,
+      "duration_ms": 3.8,
+      "status": 200
+    },
+    {
+      "url": "http://aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.js",
+      "path": "/AladinLite/api/v2/latest/aladin.min.js",
+      "category": "aladin",
+      "start_ms": 1269.0,
+      "duration_ms": 1055.7,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "category": "static",
+      "start_ms": 1274.0,
+      "duration_ms": 4.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.mi...",
+      "category": "static",
+      "start_ms": 1278.0,
+      "duration_ms": 3.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bokeh-2.4.2.min.js",
+      "path": "/static/YSE_App/bokeh-2.4.2.min.js",
+      "category": "static",
+      "start_ms": 1282.0,
+      "duration_ms": 18.3,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js",
+      "path": "/static/YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js",
+      "category": "static",
+      "start_ms": 1286.0,
+      "duration_ms": 11.2,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-ui/jquery-ui.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-ui/jquery-ui.min.js",
+      "category": "static",
+      "start_ms": 1859.0,
+      "duration_ms": 14.2,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7lujVj9w.woff2",
+      "path": "/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7lujVj9w.woff2",
+      "category": "other",
+      "start_ms": 1869.0,
+      "duration_ms": 430.7,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/font-awesome/fonts/fontawesome-webfont.woff2?v=4.7.0",
+      "path": "/static/YSE_App/bower_components/font-awesome/fonts/fontawesome-webfont.woff2?\u2026",
+      "category": "static",
+      "start_ms": 1870.0,
+      "duration_ms": 328.3,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwlxdu3cOWxw.woff2",
+      "path": "/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwlxdu3cOWxw.woff2",
+      "category": "other",
+      "start_ms": 1870.0,
+      "duration_ms": 414.8,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xKwdSBYKcSV-LCoeQqfX1RYOo3qPZY4lCds18S0xR41.woff2",
+      "path": "/s/sourcesanspro/v23/6xKwdSBYKcSV-LCoeQqfX1RYOo3qPZY4lCds18S0xR41.woff2",
+      "category": "other",
+      "start_ms": 1870.0,
+      "duration_ms": 426.1,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ik4zwlxdu3cOWxw.woff2",
+      "path": "/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ik4zwlxdu3cOWxw.woff2",
+      "category": "other",
+      "start_ms": 1874.0,
+      "duration_ms": 418.1,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qO67lujVj9_mf.woff2",
+      "path": "/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qO67lujVj9_mf.woff2",
+      "category": "other",
+      "start_ms": 1884.0,
+      "duration_ms": 399.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "category": "static",
+      "start_ms": 1906.0,
+      "duration_ms": 290.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap/dist/js/bootstrap.min.js",
+      "path": "/static/YSE_App/bower_components/bootstrap/dist/js/bootstrap.min.js",
+      "category": "static",
+      "start_ms": 2211.0,
+      "duration_ms": 11.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/raphael/raphael.min.js",
+      "path": "/static/YSE_App/bower_components/raphael/raphael.min.js",
+      "category": "static",
+      "start_ms": 2243.0,
+      "duration_ms": 3.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/morris.js/morris.min.js",
+      "path": "/static/YSE_App/bower_components/morris.js/morris.min.js",
+      "category": "static",
+      "start_ms": 2255.0,
+      "duration_ms": 7.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-sparkline/dist/jquery.sparkline.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-sparkline/dist/jquery.sparkline.min.js",
+      "category": "static",
+      "start_ms": 2279.0,
+      "duration_ms": 6.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/jvectormap/jquery-jvectormap-1.2.2.min.js",
+      "path": "/static/YSE_App/plugins/jvectormap/jquery-jvectormap-1.2.2.min.js",
+      "category": "static",
+      "start_ms": 2308.0,
+      "duration_ms": 2.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/jvectormap/jquery-jvectormap-world-mill-en.js",
+      "path": "/static/YSE_App/plugins/jvectormap/jquery-jvectormap-world-mill-en.js",
+      "category": "static",
+      "start_ms": 2323.0,
+      "duration_ms": 11.0,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwlxdu3cOWxw.woff2",
+      "path": "/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwlxdu3cOWxw.woff2",
+      "category": "other",
+      "start_ms": 2329.0,
+      "duration_ms": 28.2,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-knob/dist/jquery.knob.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-knob/dist/jquery.knob.min.js",
+      "category": "static",
+      "start_ms": 2340.0,
+      "duration_ms": 6.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/moment/min/moment.min.js",
+      "path": "/static/YSE_App/bower_components/moment/min/moment.min.js",
+      "category": "static",
+      "start_ms": 2354.0,
+      "duration_ms": 20.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.js",
+      "path": "/static/YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.js",
+      "category": "static",
+      "start_ms": 2389.0,
+      "duration_ms": 8.2,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.mi...",
+      "category": "static",
+      "start_ms": 2403.0,
+      "duration_ms": 6.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js",
+      "path": "/static/YSE_App/bower_components/bootstrap-datepicker/dist/js/bootstrap-datep...",
+      "category": "static",
+      "start_ms": 2415.0,
+      "duration_ms": 2.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js",
+      "path": "/static/YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js",
+      "category": "static",
+      "start_ms": 2424.0,
+      "duration_ms": 8.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-slimscroll/jquery.slimscroll.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-slimscroll/jquery.slimscroll.min.js",
+      "category": "static",
+      "start_ms": 2453.0,
+      "duration_ms": 6.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/fastclick/lib/fastclick.js",
+      "path": "/static/YSE_App/bower_components/fastclick/lib/fastclick.js",
+      "category": "static",
+      "start_ms": 2465.0,
+      "duration_ms": 7.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/dist/js/adminlte.min.js",
+      "path": "/static/YSE_App/dist/js/adminlte.min.js",
+      "category": "static",
+      "start_ms": 2477.0,
+      "duration_ms": 2.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery/datatables/title-numeric.js",
+      "path": "/static/YSE_App/bower_components/jquery/datatables/title-numeric.js",
+      "category": "static",
+      "start_ms": 2485.0,
+      "duration_ms": 2.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/dist/js/demo.js",
+      "path": "/static/YSE_App/dist/js/demo.js",
+      "category": "static",
+      "start_ms": 2492.0,
+      "duration_ms": 3.2,
+      "status": 200
+    },
+    {
+      "url": "http://aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.js",
+      "path": "/AladinLite/api/v2/latest/aladin.min.js",
+      "category": "aladin",
+      "start_ms": 2501.0,
+      "duration_ms": 681.1,
+      "status": 200
+    },
+    {
+      "url": "http://alasky.cds.unistra.fr/MocServer/query?dataproduct_type=image&client_application=AladinLite&fmt=json&fields=ID%2Cobs_title%2Cclient_sort_key%2Cclient_application%2Chips_service_url*%2Chips_order%2Chips_tile_format%2Chips_frame",
+      "path": "/MocServer/query?\u2026",
+      "category": "aladin",
+      "start_ms": 3196.0,
+      "duration_ms": 593.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "category": "static",
+      "start_ms": 3203.0,
+      "duration_ms": 4.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.mi...",
+      "category": "static",
+      "start_ms": 3212.0,
+      "duration_ms": 3.3,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bokeh-2.4.2.min.js",
+      "path": "/static/YSE_App/bokeh-2.4.2.min.js",
+      "category": "static",
+      "start_ms": 3220.0,
+      "duration_ms": 19.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js",
+      "path": "/static/YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js",
+      "category": "static",
+      "start_ms": 3290.0,
+      "duration_ms": 6.4,
+      "status": 200
+    },
+    {
+      "url": "http://aladin.cds.unistra.fr/java/nph-aladin.pl?callback=jQuery3210023440398823182718_1780610205583&frame=aladinLiteDic&_=1780610205584",
+      "path": "/java/nph-aladin.pl?\u2026",
+      "category": "aladin",
+      "start_ms": 3369.0,
+      "duration_ms": 859.5,
+      "status": 200
+    },
+    {
+      "url": "http://alasky.unistra.fr/cgi/AladinLiteLogger/log.py?action=startup&params=%7B%22survey%22%3A%22P%2FDSS2%2Fcolor%22%2C%22fov%22%3A0.017%2C%22target%22%3A%22185.66834166666666%20-13.521525%22%2C%22version%22%3A%222022-03-25%22%7D&pageUrl=http%3A%2F%2F127.0.0.1%3A8080%2Ftransient_detail%2F2026fba%2F&referer=",
+      "path": "/cgi/AladinLiteLogger/log.py?\u2026",
+      "category": "aladin",
+      "start_ms": 3375.0,
+      "duration_ms": 501.0,
+      "status": 200
+    },
+    {
+      "url": "http://alasky.cds.unistra.fr/DSS/DSSColor/properties",
+      "path": "/DSS/DSSColor/properties",
+      "category": "aladin",
+      "start_ms": 3381.0,
+      "duration_ms": 387.3,
+      "status": 200
+    },
+    {
+      "url": "http://alasky.unistra.fr/cgi/AladinLiteLogger/log.py?action=changeImageSurvey&params=%22P%2FDSS2%2Fcolor%22&pageUrl=http%3A%2F%2F127.0.0.1%3A8080%2Ftransient_detail%2F2026fba%2F&referer=",
+      "path": "/cgi/AladinLiteLogger/log.py?\u2026",
+      "category": "aladin",
+      "start_ms": 3387.0,
+      "duration_ms": 491.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_ps1_image/105590",
+      "path": "/get_ps1_image/105590",
+      "category": "yse_api",
+      "start_ms": 3416.0,
+      "duration_ms": 932.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_hst_image/105590",
+      "path": "/get_hst_image/105590",
+      "category": "yse_api",
+      "start_ms": 3420.0,
+      "duration_ms": 3622.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_chandra_image/105590",
+      "path": "/get_chandra_image/105590",
+      "category": "yse_api",
+      "start_ms": 3424.0,
+      "duration_ms": 1023.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_legacy_image/105590",
+      "path": "/get_legacy_image/105590",
+      "category": "yse_api",
+      "start_ms": 3428.0,
+      "duration_ms": 932.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/spectrumplot/105590/",
+      "path": "/spectrumplot/105590/",
+      "category": "yse_api",
+      "start_ms": 3433.0,
+      "duration_ms": 106.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/lightcurveplot_detail/105590/",
+      "path": "/lightcurveplot_detail/105590/",
+      "category": "yse_api",
+      "start_ms": 3437.0,
+      "duration_ms": 1159.1,
+      "status": 200
+    },
+    {
+      "url": "http://alasky.cds.unistra.fr/DSS/DSSColor/Norder3/Allsky.jpg",
+      "path": "/DSS/DSSColor/Norder3/Allsky.jpg",
+      "category": "aladin",
+      "start_ms": 3773.0,
+      "duration_ms": 1187.9,
+      "status": 200
+    },
+    {
+      "url": "http://alasky.cds.unistra.fr/DSS/DSSColor/Norder9/Dir1620000/Npix1626166.jpg",
+      "path": "/DSS/DSSColor/Norder9/Dir1620000/Npix1626166.jpg",
+      "category": "aladin",
+      "start_ms": 3782.0,
+      "duration_ms": 626.5,
+      "status": 200
+    },
+    {
+      "url": "http://alasky.cds.unistra.fr/DSS/DSSColor/Norder9/Dir1620000/Npix1626172.jpg",
+      "path": "/DSS/DSSColor/Norder9/Dir1620000/Npix1626172.jpg",
+      "category": "aladin",
+      "start_ms": 3788.0,
+      "duration_ms": 1184.6,
+      "status": 200
+    },
+    {
+      "url": "http://ps1images.stsci.edu/cgi-bin/fitscut.cgi?red=/rings.v3.skycell/1011/061/rings.v3.skycell.1011.061.stk.y.unconv.fits&blue=/rings.v3.skycell/1011/061/rings.v3.skycell.1011.061.stk.g.unconv.fits&green=/rings.v3.skycell/1011/061/rings.v3.skycell.1011.061.stk.i.unconv.fits&x=185.668342&y=-13.521525&size=240&wcs=1&asinh=True&autoscale=99.750000",
+      "path": "/cgi-bin/fitscut.cgi?\u2026",
+      "category": "external_cutout",
+      "start_ms": 4354.0,
+      "duration_ms": 612.9,
+      "status": 200
+    },
+    {
+      "url": "https://www.legacysurvey.org/viewer/jpeg-cutout?ra=185.6683417&dec=-13.5215250&pixscale=0.27&bands=grz",
+      "path": "/viewer/jpeg-cutout?\u2026",
+      "category": "external_cutout",
+      "start_ms": 4367.0,
+      "duration_ms": 1323.9,
+      "status": 200
+    },
+    {
+      "url": "https://cdn.bokeh.org/bokeh/release/bokeh-2.4.2.min.js",
+      "path": "/bokeh/release/bokeh-2.4.2.min.js",
+      "category": "bokeh_cdn",
+      "start_ms": 4603.0,
+      "duration_ms": 210.1,
+      "status": 200
+    }
+  ]
+}

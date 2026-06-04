@@ -113,6 +113,18 @@ class SpectrumPlotRegressionTests(TestCase):
         response = self.client.get(f"/spectrumplot/{transient.id}/")
         self.assertEqual(response.status_code, 200)
 
+    def test_spectrumplot_empty_returns_message(self):
+        transient = create_transient_with_synthetic_data(
+            self.user, name="specplot-empty-guard", with_spectrum=True
+        )
+        # Remove spec data points so view returns empty message
+        from YSE_App.models import TransientSpecData
+
+        TransientSpecData.objects.filter(spectrum__transient=transient).delete()
+        response = self.client.get(f"/spectrumplot/{transient.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No spectrum data on file")
+
     def test_spectrumplot_skips_empty_spectrum_and_still_returns_200(self):
         transient = create_transient_with_synthetic_data(
             self.user, name="specplot-empty-guard", with_spectrum=True

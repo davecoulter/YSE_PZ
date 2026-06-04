@@ -13,6 +13,7 @@ from YSE_App.tests.fixtures_minimal import (
     create_transient_with_synthetic_data,
     ensure_transient_statuses,
 )
+from YSE_App.tests.static_asset_utils import static_asset_available
 
 
 class UIPageLoadSmokeTests(TestCase):
@@ -67,6 +68,7 @@ class UIPageLoadSmokeTests(TestCase):
         response = self.client.get(url)
         self._assert_ok_html(response, url)
         self.assertContains(response, "yse-theme.css")
+        self.assertTrue(static_asset_available("YSE_App/yse-theme.css"))
 
     def test_transient_detail_loaded_summary(self):
         url = f"/transient_detail/{self.transient_loaded.slug}/"

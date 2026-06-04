@@ -144,11 +144,13 @@ class AddClassicalResourceFormView(FormView):
 						   'resource':instance,'night_type':ClassicalNightType.objects.filter(name='Full')[0],
 						   'obs_date':form.cleaned_data['observing_date']}
 			ClassicalObservingDate.objects.create(**obsdatedict)
-			
-			print(form.cleaned_data)
 
+			obs_date = form.cleaned_data['observing_date']
 			data = {
 				'message': "Successfully submitted form data.",
+				'observing_calendar_url': '/observing_calendar/',
+				'obs_date': obs_date.strftime('%Y-%m-%d'),
+				'telescope': str(instance.telescope.name),
 			}
 			return JsonResponse(data)
 		else:

@@ -111,6 +111,16 @@ def _load_heavy_plot_stack():
     )
     CDN = _CDN
     cosmo = FlatLambdaCDM(70, 0.3)
+
+
+def _bokeh_ajax_response(ax, title="plot"):
+    """Embed Bokeh using components(); page already loads bokeh-2.4.2.min.js."""
+    _load_heavy_plot_stack()
+    from bokeh.embed import components
+
+    script, div = components(ax)
+    html = f"{div}{script}"
+    return HttpResponse(html.replace("width: 90%", "width: 100%"))
     plot_airmass = _plot_airmass
     hp = _hp
     matplotlib = _matplotlib
@@ -289,6 +299,20 @@ def getTimeUntilRiseSet(ra,dec,date,lat,lon,elev,utc_off):
 #           break
 #
 #   return(can_obs)
+
+
+def finder_chart_static_relpath(transient_name):
+    return f"YSE_App/images/findercharts/{transient_name}/{transient_name}.finder.png"
+
+
+def static_asset_available(relative_path):
+    """True if a static file exists in finders or under STATIC_ROOT (post-collectstatic)."""
+    from django.contrib.staticfiles import finders
+
+    if finders.find(relative_path):
+        return True
+    return os.path.isfile(os.path.join(djangoSettings.STATIC_ROOT, relative_path))
+
 
 class Finder(TemplateView):
     template_name = 'YSE_App/finder.html'
@@ -863,8 +887,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
                           render_mode='css', text_font_size='10pt', text=text)
             ax.add_layout(label)
 
-    g = file_html(ax,CDN,"my plot")
-    return HttpResponse(g.replace('width: 90%','width: 100%'))
+    return _bokeh_ajax_response(ax, "my plot")
 
 
 def lightcurveplot_detail(request, transient_id, salt2=False):
@@ -1152,9 +1175,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
         except Exception:
             pass
 
-    g = file_html(ax,CDN,"my plot")
     print("plotting took %s"%(time.time()-tstart))
-    return HttpResponse(g.replace('width: 90%','width: 100%'))
+    return _bokeh_ajax_response(ax, "my plot")
 
 
 def lightcurveplot_flux(request, transient_id, salt2=False):
@@ -1479,7 +1501,9 @@ def spectrumplot(request, transient_id):
             'label': f'{spectrum.instrument.name} - {spectrum.obs_date.strftime("%Y-%m-%d")}',
         })
     if not spectra:
-        return django.http.HttpResponse('')
+        return django.http.HttpResponse(
+            '<p class="text-muted yse-plot-empty">No spectrum data on file for this transient.</p>'
+        )
     
     # Process spectra and compute offsets
     dates = np.array([spec['mjd'] for spec in spectra])
@@ -1520,10 +1544,8 @@ def spectrumplot(request, transient_id):
     ax.xaxis.axis_label = r'Wavelength (Angstrom)'
     ax.yaxis.axis_label = 'Flux'
     
-    # Render plot
-    g = file_html(ax, CDN, "spectrum plot")
-    return HttpResponse(g.replace('width: 90%', 'width: 100%'))
-    
+    return _bokeh_ajax_response(ax, "spectrum plot")
+
 
 def spectrumplot_summary(request, transient_id):
     _load_heavy_plot_stack()

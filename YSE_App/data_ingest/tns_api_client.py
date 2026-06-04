@@ -16,18 +16,23 @@ def format_to_json(source):
     return json.loads(source, object_pairs_hook=OrderedDict)
 
 
-def search(url, json_list, api_key, tns_bot_id, tns_bot_name):
+def tns_marker_user_agent(tns_id, name, marker_type="bot"):
+    """Build the TNS User-Agent string (identity, not the secret api_key)."""
+    return (
+        'tns_marker{"tns_id":'
+        + str(tns_id)
+        + ', "type":"'
+        + marker_type
+        + '", "name":"'
+        + name
+        + '"}'
+    )
+
+
+def search(url, json_list, api_key, tns_bot_id, tns_bot_name, marker_type="bot"):
     try:
         search_url = url + "/search"
-        headers = {
-            "User-Agent": (
-                'tns_marker{"tns_id":'
-                + str(tns_bot_id)
-                + ', "type":"bot", "name":"'
-                + tns_bot_name
-                + '"}'
-            )
-        }
+        headers = {"User-Agent": tns_marker_user_agent(tns_bot_id, tns_bot_name, marker_type)}
         json_file = OrderedDict(json_list)
         search_data = {"api_key": api_key, "data": json.dumps(json_file)}
         return requests.post(search_url, headers=headers, data=search_data)
@@ -35,18 +40,10 @@ def search(url, json_list, api_key, tns_bot_id, tns_bot_name):
         raise RuntimeError(f"TNS search failed: {exc}") from exc
 
 
-def get(url, json_list, api_key, tns_bot_id, tns_bot_name):
+def get(url, json_list, api_key, tns_bot_id, tns_bot_name, marker_type="bot"):
     try:
         get_url = url + "/object"
-        headers = {
-            "User-Agent": (
-                'tns_marker{"tns_id":'
-                + str(tns_bot_id)
-                + ', "type":"bot", "name":"'
-                + tns_bot_name
-                + '"}'
-            )
-        }
+        headers = {"User-Agent": tns_marker_user_agent(tns_bot_id, tns_bot_name, marker_type)}
         json_file = OrderedDict(json_list)
         get_data = {"api_key": api_key, "data": json.dumps(json_file)}
         return requests.post(get_url, headers=headers, data=get_data)

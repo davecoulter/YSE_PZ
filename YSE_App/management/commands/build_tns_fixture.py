@@ -13,6 +13,7 @@ Then export a static dump (from host):
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -64,6 +65,42 @@ class Command(BaseCommand):
             help="Run astro_prost host association (requires astro_prost package)",
         )
         parser.add_argument(
+            "--with-spectra",
+            action="store_true",
+            help=argparse.SUPPRESS,
+        )
+        parser.add_argument(
+            "--skip-spectra",
+            action="store_true",
+            help="Skip TNS spectrum download (default is to always fetch spectra when present)",
+        )
+        parser.add_argument(
+            "--with-archival-flags",
+            action="store_true",
+            help="Probe MAST/Chandra/Spitzer for has_hst/has_chandra/has_spitzer (no image download)",
+        )
+        parser.add_argument(
+            "--merge-manifest",
+            action="store_true",
+            help="Append/update manifest rows for ingested names; keep other 2026f* entries",
+        )
+        parser.add_argument(
+            "--clobber",
+            action="store_true",
+            help="Replace existing photometry points on re-ingest (same MJD match window)",
+        )
+        parser.add_argument(
+            "--full-ingest",
+            action="store_true",
+            help="Cron-style ingest: archival MAST/Chandra, ZTF/Antares, spectra (default is dashboard-only)",
+        )
+        parser.add_argument(
+            "--max",
+            type=int,
+            default=None,
+            help="Cap number of transients to ingest (default: all matches)",
+        )
+        parser.add_argument(
             "--dry-run",
             action="store_true",
             help="List TNS matches only; do not upload",
@@ -99,8 +136,17 @@ class Command(BaseCommand):
         tnsproc.tnsapikey = os.environ.get("TNS_API_KEY") or tns_opts.tnsapikey
         tnsproc.tns_bot_id = tns_opts.tns_bot_id
         tnsproc.tns_bot_name = tns_opts.tns_bot_name
-        tnsproc.dblogin = tns_opts.dblogin
-        tnsproc.dbpassword = tns_opts.dbpassword
+        marker_type = os.environ.get("TNS_MARKER_TYPE")
+        if not marker_type and config.has_option("main", "tns_marker_type"):
+            marker_type = config.get("main", "tns_marker_type")
+        marker_type = (marker_type or "bot").strip()
+        if str(tnsproc.tns_bot_id).startswith("<") or str(tnsproc.tns_bot_name).startswith("<"):
+            raise CommandError(
+                "TNS marker identity missing. Set [main] tns_bot_id and tns_bot_name "
+                '(e.g. 151 and rfoley for tns_marker{"tns_id":151,"type":"user","name":"rfoley"})'
+            )
+        tnsproc.dblogin = os.environ.get("YSE_DB_LOGIN") or tns_opts.dblogin
+        tnsproc.dbpassword = os.environ.get("YSE_DB_PASSWORD") or tns_opts.dbpassword
         tnsproc.dburl = options["dburl"] or tns_opts.dburl or "http://127.0.0.1:8000/api/"
         tnsproc.status = tns_opts.status
         tnsproc.noupdatestatus = True
@@ -108,9 +154,34 @@ class Command(BaseCommand):
             raise CommandError(
                 "--with-prost requires astro_prost (not installed in this container)"
             )
-        tnsproc.redohost = options["with_prost"]
-        tnsproc.clobber = False
-        do_prost = options["with_prost"]
+        tnsproc.tns_marker_type = marker_type
+        dashboard_only = not options["full_ingest"]
+        include_spectra = not options["skip_spectra"]
+        if dashboard_only:
+            tnsproc.fixture_skip_archival = not (
+                options["full_ingest"] or options["with_archival_flags"]
+            )
+            tnsproc.fixture_skip_ztf_antares = True
+            tnsproc.fixture_skip_spectra = not include_spectra
+            tnsproc.fixture_skip_ps = not options["with_ps"]
+            tnsproc.upload_batch_size = 1
+            skip_parts = ["Antares ZTF"]
+            if tnsproc.fixture_skip_archival:
+                skip_parts.insert(0, "Chandra/HST/Spitzer probes")
+            if options["skip_spectra"]:
+                skip_parts.append("spectra")
+            ingest_bits = "TNS metadata + photometry + E(B-V)"
+            if include_spectra:
+                ingest_bits += " + TNS spectra"
+            if not tnsproc.fixture_skip_archival:
+                ingest_bits += " + archival probes (has_hst, etc.)"
+            self.stdout.write(
+                f"Dashboard-only ingest: {ingest_bits}; "
+                f"skipping {', '.join(skip_parts)}; uploading one transient per POST"
+            )
+        do_prost = options["with_prost"] and not dashboard_only
+        tnsproc.redohost = do_prost
+        tnsproc.clobber = options["clobber"]
         do_ebv = True
 
         if not tnsproc.tnsapikey or str(tnsproc.tnsapikey).startswith("<"):
@@ -124,11 +195,17 @@ class Command(BaseCommand):
             tnsproc.tns_bot_id,
             tnsproc.tns_bot_name,
             prefix,
+            marker_type,
         )
         if not names:
             raise CommandError(f"No TNS objects found for prefix {prefix!r}")
 
-        self.stdout.write(f"Found {len(names)} TNS object(s): {', '.join(names[:10])}...")
+        total = len(names)
+        if options["max"] is not None and options["max"] > 0:
+            names = names[: options["max"]]
+        self.stdout.write(
+            f"Found {total} TNS match(es); ingesting {len(names)}: {', '.join(names[:10])}..."
+        )
         if options["dry_run"]:
             return
 
@@ -140,6 +217,7 @@ class Command(BaseCommand):
                 tnsproc.tns_bot_id,
                 tnsproc.tns_bot_name,
                 name,
+                marker_type,
             )
             if coords is None:
                 self.stderr.write(f"Skipping {name}: no TNS coords")
@@ -147,7 +225,7 @@ class Command(BaseCommand):
             objs.append(name)
             ras.append(coords[0])
             decs.append(coords[1])
-            time.sleep(0.5)
+            time.sleep(1.0)
 
         if not objs:
             raise CommandError("No objects with coordinates to upload")
@@ -171,15 +249,25 @@ class Command(BaseCommand):
             or os.path.join(django_settings.BASE_DIR, "docker", "db_fixtures", "manifest.json")
         )
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
-        rows = list(
-            Transient.objects.filter(name__in=objs).values(
+        new_rows = {
+            r["name"]: r
+            for r in Transient.objects.filter(name__in=objs).values(
                 "id", "name", "slug", "ra", "dec", "status_id"
             )
-        )
+        }
+        if options["merge_manifest"] and manifest_path.is_file():
+            existing = json.loads(manifest_path.read_text())
+            merged = {t["name"]: t for t in existing.get("transients") or []}
+            merged.update(new_rows)
+            rows = sorted(merged.values(), key=lambda r: r["name"].lower())
+            manifest_prefix = existing.get("prefix") or prefix
+        else:
+            rows = sorted(new_rows.values(), key=lambda r: r["name"].lower())
+            manifest_prefix = prefix
         payload = {
             "generated_at": datetime.utcnow().isoformat() + "Z",
-            "prefix": prefix,
-            "tns_count": len(objs),
+            "prefix": manifest_prefix,
+            "tns_count": len(rows),
             "transients": rows,
         }
         manifest_path.write_text(json.dumps(payload, indent=2) + "\n")
@@ -198,9 +286,9 @@ class Command(BaseCommand):
             return response
         return response
 
-    def _tns_names_for_prefix(self, api, api_key, bot_id, bot_name, prefix):
+    def _tns_names_for_prefix(self, api, api_key, bot_id, bot_name, prefix, marker_type="bot"):
         """Search TNS and keep names matching ^prefix + letters."""
-        pattern = re.compile(rf"^{re.escape(prefix)}[A-Za-z]+$")
+        pattern = re.compile(rf"^{re.escape(prefix)}[a-zA-Z0-9]*$", re.IGNORECASE)
         search_obj = [
             ("ra", ""),
             ("dec", ""),
@@ -212,7 +300,9 @@ class Command(BaseCommand):
         ]
 
         def do_search():
-            return tns_api_client.search(api, search_obj, api_key, bot_id, bot_name)
+            return tns_api_client.search(
+                api, search_obj, api_key, bot_id, bot_name, marker_type
+            )
 
         response = self._tns_request_with_retry(do_search)
         if not response or not getattr(response, "text", None):
@@ -225,16 +315,16 @@ class Command(BaseCommand):
                 names.append(name)
         return sorted(set(names))
 
-    def _tns_coords(self, api, api_key, bot_id, bot_name, name):
+    def _tns_coords(self, api, api_key, bot_id, bot_name, name, marker_type="bot"):
         payload = [("objname", name), ("photometry", "0"), ("spectra", "0")]
 
         def do_get():
-            return tns_api_client.get(api, payload, api_key, bot_id, bot_name)
+            return tns_api_client.get(api, payload, api_key, bot_id, bot_name, marker_type)
 
         response = self._tns_request_with_retry(do_get)
         if not response or not getattr(response, "text", None):
             return None
-        jd = format_to_json(response.text)
+        jd = tns_api_client.format_to_json(response.text)
         try:
             d = jd["data"]
             return d["ra"], d["dec"]

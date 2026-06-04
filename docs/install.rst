@@ -292,8 +292,8 @@ and ingest new ZTF data from MARS.  Ingesting new
 ZTF data for existing transients from MARS is relatively
 easy, while creating new transients from TNS requires
 setting up a TNS "bot" for yourself or your group at
-`<https://wis-tns.weizmann.ac.il/bots>`_.  See the TNS bulk
-reports manual at `<https://wis-tns.weizmann.ac.il/sites/default/files/api/TNS_bulk_reports_manual.pdf>`_
+`<https://www.wis-tns.org/bots>`_.  See the TNS bulk
+reports manual at `<https://www.wis-tns.org/sites/default/files/api/TNS_bulk_reports_manual.pdf>`_
 for more information.  Once the API key has been set up,
 paste the key into the :code:`tnsapikey=` line in the :code:`YSE_PZ/settings.ini`
 file.

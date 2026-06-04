@@ -1,0 +1,812 @@
+{
+  "label": "transient_detail_2026fba_after_perf",
+  "source_har": "127.0.0.1.2.har",
+  "page_url": "http://127.0.0.1:8080/transient_detail/2026fba/",
+  "captured_at": "2026-06-04T22:16:07.275Z",
+  "entry_count": 80,
+  "page_timings_ms": {
+    "on_content_load": 1753.69,
+    "on_load": 1753.71
+  },
+  "milestones_ms": {
+    "first_spectrumplot_ms": 1991.0,
+    "first_yse_xhr_ms": 1991.0,
+    "first_lightcurve_ms": 1995.0
+  },
+  "by_category": {
+    "yse_api": {
+      "count": 7,
+      "total_duration_ms": 11306.1,
+      "max_duration_ms": 4697.8
+    },
+    "static": {
+      "count": 63,
+      "total_duration_ms": 599.9999999999999,
+      "max_duration_ms": 56.1
+    },
+    "fonts": {
+      "count": 1,
+      "total_duration_ms": 211.9,
+      "max_duration_ms": 211.9
+    },
+    "other": {
+      "count": 6,
+      "total_duration_ms": 1074.8,
+      "max_duration_ms": 225.7
+    },
+    "bokeh_cdn": {
+      "count": 1,
+      "total_duration_ms": 0.3,
+      "max_duration_ms": 0.3
+    },
+    "external_cutout": {
+      "count": 2,
+      "total_duration_ms": 0.4,
+      "max_duration_ms": 0.3
+    }
+  },
+  "slowest": [
+    {
+      "url": "http://127.0.0.1:8080/get_hst_image/105590",
+      "path": "/get_hst_image/105590",
+      "category": "yse_api",
+      "start_ms": 2004.0,
+      "duration_ms": 4697.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_legacy_image/105590",
+      "path": "/get_legacy_image/105590",
+      "category": "yse_api",
+      "start_ms": 2013.0,
+      "duration_ms": 2156.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_chandra_image/105590",
+      "path": "/get_chandra_image/105590",
+      "category": "yse_api",
+      "start_ms": 2009.0,
+      "duration_ms": 2149.3,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_ps1_image/105590",
+      "path": "/get_ps1_image/105590",
+      "category": "yse_api",
+      "start_ms": 2000.0,
+      "duration_ms": 993.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/transient_detail/2026fba/",
+      "path": "/transient_detail/2026fba/",
+      "category": "yse_api",
+      "start_ms": 0.0,
+      "duration_ms": 810.7,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/lightcurveplot_detail/105590/",
+      "path": "/lightcurveplot_detail/105590/",
+      "category": "yse_api",
+      "start_ms": 1995.0,
+      "duration_ms": 408.8,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7lujVj9w.woff2",
+      "path": "/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7lujVj9w.woff2",
+      "category": "other",
+      "start_ms": 1506.0,
+      "duration_ms": 225.7,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwlxdu3cOWxw.woff2",
+      "path": "/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwlxdu3cOWxw.woff2",
+      "category": "other",
+      "start_ms": 1506.0,
+      "duration_ms": 219.8,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic",
+      "path": "/css?\u2026",
+      "category": "fonts",
+      "start_ms": 942.0,
+      "duration_ms": 211.9,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xKwdSBYKcSV-LCoeQqfX1RYOo3qPZY4lCds18S0xR41.woff2",
+      "path": "/s/sourcesanspro/v23/6xKwdSBYKcSV-LCoeQqfX1RYOo3qPZY4lCds18S0xR41.woff2",
+      "category": "other",
+      "start_ms": 1506.0,
+      "duration_ms": 189.3,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ik4zwlxdu3cOWxw.woff2",
+      "path": "/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ik4zwlxdu3cOWxw.woff2",
+      "category": "other",
+      "start_ms": 1518.0,
+      "duration_ms": 173.1,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qO67lujVj9_mf.woff2",
+      "path": "/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qO67lujVj9_mf.woff2",
+      "category": "other",
+      "start_ms": 1518.0,
+      "duration_ms": 166.1,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwlxdu3cOWxw.woff2",
+      "path": "/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwlxdu3cOWxw.woff2",
+      "category": "other",
+      "start_ms": 1788.0,
+      "duration_ms": 100.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/spectrumplot/105590/",
+      "path": "/spectrumplot/105590/",
+      "category": "yse_api",
+      "start_ms": 1991.0,
+      "duration_ms": 88.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/moment/min/moment.min.js",
+      "path": "/static/YSE_App/bower_components/moment/min/moment.min.js",
+      "category": "static",
+      "start_ms": 1678.0,
+      "duration_ms": 56.1,
+      "status": 200
+    }
+  ],
+  "entries": [
+    {
+      "url": "http://127.0.0.1:8080/transient_detail/2026fba/",
+      "path": "/transient_detail/2026fba/",
+      "category": "yse_api",
+      "start_ms": 0.0,
+      "duration_ms": 810.7,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap/dist/css/bootstrap.min.css",
+      "path": "/static/YSE_App/bower_components/bootstrap/dist/css/bootstrap.min.css",
+      "category": "static",
+      "start_ms": 885.0,
+      "duration_ms": 31.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/font-awesome/css/font-awesome.min.css",
+      "path": "/static/YSE_App/bower_components/font-awesome/css/font-awesome.min.css",
+      "category": "static",
+      "start_ms": 889.0,
+      "duration_ms": 28.3,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/Ionicons/css/ionicons.min.css",
+      "path": "/static/YSE_App/bower_components/Ionicons/css/ionicons.min.css",
+      "category": "static",
+      "start_ms": 895.0,
+      "duration_ms": 28.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css",
+      "path": "/static/YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.m...",
+      "category": "static",
+      "start_ms": 899.0,
+      "duration_ms": 28.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/dist/css/AdminLTE.min.css",
+      "path": "/static/YSE_App/dist/css/AdminLTE.min.css",
+      "category": "static",
+      "start_ms": 906.0,
+      "duration_ms": 19.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/dist/css/skins/_all-skins.min.css",
+      "path": "/static/YSE_App/dist/css/skins/_all-skins.min.css",
+      "category": "static",
+      "start_ms": 913.0,
+      "duration_ms": 13.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/yse-theme.css",
+      "path": "/static/YSE_App/yse-theme.css",
+      "category": "static",
+      "start_ms": 917.0,
+      "duration_ms": 10.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/morris.js/morris.css",
+      "path": "/static/YSE_App/bower_components/morris.js/morris.css",
+      "category": "static",
+      "start_ms": 921.0,
+      "duration_ms": 6.2,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jvectormap/jquery-jvectormap.css",
+      "path": "/static/YSE_App/bower_components/jvectormap/jquery-jvectormap.css",
+      "category": "static",
+      "start_ms": 925.0,
+      "duration_ms": 3.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css",
+      "path": "/static/YSE_App/bower_components/bootstrap-datepicker/dist/css/bootstrap-date...",
+      "category": "static",
+      "start_ms": 929.0,
+      "duration_ms": 3.2,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.css",
+      "path": "/static/YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.css",
+      "category": "static",
+      "start_ms": 934.0,
+      "duration_ms": 3.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css",
+      "path": "/static/YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css",
+      "category": "static",
+      "start_ms": 938.0,
+      "duration_ms": 2.1,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic",
+      "path": "/css?\u2026",
+      "category": "fonts",
+      "start_ms": 942.0,
+      "duration_ms": 211.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/vendor/aladin-lite/v2-latest/aladin.min.css",
+      "path": "/static/YSE_App/vendor/aladin-lite/v2-latest/aladin.min.css",
+      "category": "static",
+      "start_ms": 946.0,
+      "duration_ms": 2.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/select2/dist/css/select2.min.css",
+      "path": "/static/YSE_App/bower_components/select2/dist/css/select2.min.css",
+      "category": "static",
+      "start_ms": 950.0,
+      "duration_ms": 2.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css",
+      "path": "/static/YSE_App/bower_components/datatables.net-bs/css/dataTables.bootstrap.m...",
+      "category": "static",
+      "start_ms": 953.0,
+      "duration_ms": 3.3,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery/dist/jquery.min.js",
+      "path": "/static/YSE_App/bower_components/jquery/dist/jquery.min.js",
+      "category": "static",
+      "start_ms": 965.0,
+      "duration_ms": 6.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-ui/jquery-ui.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-ui/jquery-ui.min.js",
+      "category": "static",
+      "start_ms": 969.0,
+      "duration_ms": 9.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "category": "static",
+      "start_ms": 973.0,
+      "duration_ms": 7.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap/dist/js/bootstrap.min.js",
+      "path": "/static/YSE_App/bower_components/bootstrap/dist/js/bootstrap.min.js",
+      "category": "static",
+      "start_ms": 978.0,
+      "duration_ms": 3.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/raphael/raphael.min.js",
+      "path": "/static/YSE_App/bower_components/raphael/raphael.min.js",
+      "category": "static",
+      "start_ms": 982.0,
+      "duration_ms": 9.2,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/morris.js/morris.min.js",
+      "path": "/static/YSE_App/bower_components/morris.js/morris.min.js",
+      "category": "static",
+      "start_ms": 986.0,
+      "duration_ms": 18.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-sparkline/dist/jquery.sparkline.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-sparkline/dist/jquery.sparkline.min.js",
+      "category": "static",
+      "start_ms": 990.0,
+      "duration_ms": 15.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/jvectormap/jquery-jvectormap-1.2.2.min.js",
+      "path": "/static/YSE_App/plugins/jvectormap/jquery-jvectormap-1.2.2.min.js",
+      "category": "static",
+      "start_ms": 995.0,
+      "duration_ms": 10.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/jvectormap/jquery-jvectormap-world-mill-en.js",
+      "path": "/static/YSE_App/plugins/jvectormap/jquery-jvectormap-world-mill-en.js",
+      "category": "static",
+      "start_ms": 999.0,
+      "duration_ms": 8.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-knob/dist/jquery.knob.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-knob/dist/jquery.knob.min.js",
+      "category": "static",
+      "start_ms": 1003.0,
+      "duration_ms": 4.7,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/moment/min/moment.min.js",
+      "path": "/static/YSE_App/bower_components/moment/min/moment.min.js",
+      "category": "static",
+      "start_ms": 1008.0,
+      "duration_ms": 2.7,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.js",
+      "path": "/static/YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.js",
+      "category": "static",
+      "start_ms": 1012.0,
+      "duration_ms": 3.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.mi...",
+      "category": "static",
+      "start_ms": 1016.0,
+      "duration_ms": 2.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js",
+      "path": "/static/YSE_App/bower_components/bootstrap-datepicker/dist/js/bootstrap-datep...",
+      "category": "static",
+      "start_ms": 1020.0,
+      "duration_ms": 11.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js",
+      "path": "/static/YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js",
+      "category": "static",
+      "start_ms": 1024.0,
+      "duration_ms": 9.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-slimscroll/jquery.slimscroll.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-slimscroll/jquery.slimscroll.min.js",
+      "category": "static",
+      "start_ms": 1028.0,
+      "duration_ms": 5.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/fastclick/lib/fastclick.js",
+      "path": "/static/YSE_App/bower_components/fastclick/lib/fastclick.js",
+      "category": "static",
+      "start_ms": 1032.0,
+      "duration_ms": 5.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/dist/js/adminlte.min.js",
+      "path": "/static/YSE_App/dist/js/adminlte.min.js",
+      "category": "static",
+      "start_ms": 1036.0,
+      "duration_ms": 3.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery/datatables/title-numeric.js",
+      "path": "/static/YSE_App/bower_components/jquery/datatables/title-numeric.js",
+      "category": "static",
+      "start_ms": 1040.0,
+      "duration_ms": 2.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/dist/js/demo.js",
+      "path": "/static/YSE_App/dist/js/demo.js",
+      "category": "static",
+      "start_ms": 1044.0,
+      "duration_ms": 3.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "category": "static",
+      "start_ms": 1048.0,
+      "duration_ms": 10.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.mi...",
+      "category": "static",
+      "start_ms": 1052.0,
+      "duration_ms": 6.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bokeh-2.4.2.min.js",
+      "path": "/static/YSE_App/bokeh-2.4.2.min.js",
+      "category": "static",
+      "start_ms": 1056.0,
+      "duration_ms": 16.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js",
+      "path": "/static/YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js",
+      "category": "static",
+      "start_ms": 1061.0,
+      "duration_ms": 5.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-ui/jquery-ui.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-ui/jquery-ui.min.js",
+      "category": "static",
+      "start_ms": 1494.0,
+      "duration_ms": 8.0,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7lujVj9w.woff2",
+      "path": "/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7lujVj9w.woff2",
+      "category": "other",
+      "start_ms": 1506.0,
+      "duration_ms": 225.7,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/font-awesome/fonts/fontawesome-webfont.woff2?v=4.7.0",
+      "path": "/static/YSE_App/bower_components/font-awesome/fonts/fontawesome-webfont.woff2?\u2026",
+      "category": "static",
+      "start_ms": 1506.0,
+      "duration_ms": 6.1,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwlxdu3cOWxw.woff2",
+      "path": "/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwlxdu3cOWxw.woff2",
+      "category": "other",
+      "start_ms": 1506.0,
+      "duration_ms": 219.8,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xKwdSBYKcSV-LCoeQqfX1RYOo3qPZY4lCds18S0xR41.woff2",
+      "path": "/s/sourcesanspro/v23/6xKwdSBYKcSV-LCoeQqfX1RYOo3qPZY4lCds18S0xR41.woff2",
+      "category": "other",
+      "start_ms": 1506.0,
+      "duration_ms": 189.3,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ik4zwlxdu3cOWxw.woff2",
+      "path": "/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ik4zwlxdu3cOWxw.woff2",
+      "category": "other",
+      "start_ms": 1518.0,
+      "duration_ms": 173.1,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qO67lujVj9_mf.woff2",
+      "path": "/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qO67lujVj9_mf.woff2",
+      "category": "other",
+      "start_ms": 1518.0,
+      "duration_ms": 166.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "category": "static",
+      "start_ms": 1532.0,
+      "duration_ms": 6.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap/dist/js/bootstrap.min.js",
+      "path": "/static/YSE_App/bower_components/bootstrap/dist/js/bootstrap.min.js",
+      "category": "static",
+      "start_ms": 1558.0,
+      "duration_ms": 8.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/raphael/raphael.min.js",
+      "path": "/static/YSE_App/bower_components/raphael/raphael.min.js",
+      "category": "static",
+      "start_ms": 1573.0,
+      "duration_ms": 30.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/morris.js/morris.min.js",
+      "path": "/static/YSE_App/bower_components/morris.js/morris.min.js",
+      "category": "static",
+      "start_ms": 1611.0,
+      "duration_ms": 4.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-sparkline/dist/jquery.sparkline.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-sparkline/dist/jquery.sparkline.min.js",
+      "category": "static",
+      "start_ms": 1624.0,
+      "duration_ms": 6.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/jvectormap/jquery-jvectormap-1.2.2.min.js",
+      "path": "/static/YSE_App/plugins/jvectormap/jquery-jvectormap-1.2.2.min.js",
+      "category": "static",
+      "start_ms": 1638.0,
+      "duration_ms": 4.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/jvectormap/jquery-jvectormap-world-mill-en.js",
+      "path": "/static/YSE_App/plugins/jvectormap/jquery-jvectormap-world-mill-en.js",
+      "category": "static",
+      "start_ms": 1651.0,
+      "duration_ms": 12.6,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-knob/dist/jquery.knob.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-knob/dist/jquery.knob.min.js",
+      "category": "static",
+      "start_ms": 1670.0,
+      "duration_ms": 2.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/moment/min/moment.min.js",
+      "path": "/static/YSE_App/bower_components/moment/min/moment.min.js",
+      "category": "static",
+      "start_ms": 1678.0,
+      "duration_ms": 56.1,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.js",
+      "path": "/static/YSE_App/bower_components/bootstrap-daterangepicker/daterangepicker.js",
+      "category": "static",
+      "start_ms": 1748.0,
+      "duration_ms": 4.7,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.mi...",
+      "category": "static",
+      "start_ms": 1761.0,
+      "duration_ms": 2.2,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js",
+      "path": "/static/YSE_App/bower_components/bootstrap-datepicker/dist/js/bootstrap-datep...",
+      "category": "static",
+      "start_ms": 1768.0,
+      "duration_ms": 2.5,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js",
+      "path": "/static/YSE_App/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js",
+      "category": "static",
+      "start_ms": 1776.0,
+      "duration_ms": 13.3,
+      "status": 200
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwlxdu3cOWxw.woff2",
+      "path": "/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwlxdu3cOWxw.woff2",
+      "category": "other",
+      "start_ms": 1788.0,
+      "duration_ms": 100.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery-slimscroll/jquery.slimscroll.min.js",
+      "path": "/static/YSE_App/bower_components/jquery-slimscroll/jquery.slimscroll.min.js",
+      "category": "static",
+      "start_ms": 1799.0,
+      "duration_ms": 3.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/fastclick/lib/fastclick.js",
+      "path": "/static/YSE_App/bower_components/fastclick/lib/fastclick.js",
+      "category": "static",
+      "start_ms": 1807.0,
+      "duration_ms": 9.3,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/dist/js/adminlte.min.js",
+      "path": "/static/YSE_App/dist/js/adminlte.min.js",
+      "category": "static",
+      "start_ms": 1824.0,
+      "duration_ms": 9.0,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/jquery/datatables/title-numeric.js",
+      "path": "/static/YSE_App/bower_components/jquery/datatables/title-numeric.js",
+      "category": "static",
+      "start_ms": 1839.0,
+      "duration_ms": 3.2,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/dist/js/demo.js",
+      "path": "/static/YSE_App/dist/js/demo.js",
+      "category": "static",
+      "start_ms": 1847.0,
+      "duration_ms": 4.2,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "category": "static",
+      "start_ms": 1856.0,
+      "duration_ms": 6.4,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js",
+      "path": "/static/YSE_App/bower_components/datatables.net-bs/js/dataTables.bootstrap.mi...",
+      "category": "static",
+      "start_ms": 1870.0,
+      "duration_ms": 9.7,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bokeh-2.4.2.min.js",
+      "path": "/static/YSE_App/bokeh-2.4.2.min.js",
+      "category": "static",
+      "start_ms": 1892.0,
+      "duration_ms": 8.9,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/static/YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js",
+      "path": "/static/YSE_App/bower_components/bootstrap-timepicker/js/bootstrap-timepicker.js",
+      "category": "static",
+      "start_ms": 1965.0,
+      "duration_ms": 8.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/spectrumplot/105590/",
+      "path": "/spectrumplot/105590/",
+      "category": "yse_api",
+      "start_ms": 1991.0,
+      "duration_ms": 88.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/lightcurveplot_detail/105590/",
+      "path": "/lightcurveplot_detail/105590/",
+      "category": "yse_api",
+      "start_ms": 1995.0,
+      "duration_ms": 408.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_ps1_image/105590",
+      "path": "/get_ps1_image/105590",
+      "category": "yse_api",
+      "start_ms": 2000.0,
+      "duration_ms": 993.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_hst_image/105590",
+      "path": "/get_hst_image/105590",
+      "category": "yse_api",
+      "start_ms": 2004.0,
+      "duration_ms": 4697.8,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_chandra_image/105590",
+      "path": "/get_chandra_image/105590",
+      "category": "yse_api",
+      "start_ms": 2009.0,
+      "duration_ms": 2149.3,
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8080/get_legacy_image/105590",
+      "path": "/get_legacy_image/105590",
+      "category": "yse_api",
+      "start_ms": 2013.0,
+      "duration_ms": 2156.9,
+      "status": 200
+    },
+    {
+      "url": "https://cdn.bokeh.org/bokeh/release/bokeh-2.4.2.min.js",
+      "path": "/bokeh/release/bokeh-2.4.2.min.js",
+      "category": "bokeh_cdn",
+      "start_ms": 2412.0,
+      "duration_ms": 0.3,
+      "status": 200
+    },
+    {
+      "url": "http://ps1images.stsci.edu/cgi-bin/fitscut.cgi?red=/rings.v3.skycell/1011/061/rings.v3.skycell.1011.061.stk.y.unconv.fits&blue=/rings.v3.skycell/1011/061/rings.v3.skycell.1011.061.stk.g.unconv.fits&green=/rings.v3.skycell/1011/061/rings.v3.skycell.1011.061.stk.i.unconv.fits&x=185.668342&y=-13.521525&size=240&wcs=1&asinh=True&autoscale=99.750000",
+      "path": "/cgi-bin/fitscut.cgi?\u2026",
+      "category": "external_cutout",
+      "start_ms": 3000.0,
+      "duration_ms": 0.1,
+      "status": 200
+    },
+    {
+      "url": "https://www.legacysurvey.org/viewer/jpeg-cutout?ra=185.6683417&dec=-13.5215250&pixscale=0.27&bands=grz",
+      "path": "/viewer/jpeg-cutout?\u2026",
+      "category": "external_cutout",
+      "start_ms": 4178.0,
+      "duration_ms": 0.3,
+      "status": 200
+    }
+  ]
+}

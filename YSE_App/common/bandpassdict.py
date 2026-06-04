@@ -87,6 +87,26 @@ bandpassdict = {'Band: Direct/4Kx4K - B':'bessellb',
 				'Band: ACP - V': 'bessellv',
 				'Band: UVOT - V': 'bessellv',
 				'Band: UVOT - B': 'bessellb',
-				'Band: UVOT - U': 'bessellux'}
+				'Band: UVOT - U': 'bessellux',
+				# TNS ingest short band names (tns_photometry_map.py)
+				'Band: ATLAS-05 - w': 'sdssr',
+				'Band: ATLAS-05 - o': 'sdssr',
+				'Band: ATLAS-05 - c': 'sdssg',
+				'Band: ATLAS-01 - o': 'sdssr',
+				'Band: WFC - r': 'sdssr',
+				'Band: WFC - g': 'sdssg',
+				'Band: GOTO-1 - L': 'sdssz',
+				'Band: GOTO-1 - g': 'sdssg',
+				'Band: BG-Cam3 - q': 'sdssg',
+				'Band: BG-Cam2 - q': 'sdssg',
+				'Band: GPC2 - g': 'sdssg',
+				'Band: GPC2 - r': 'sdssr',
+				'Band: GPC2 - i': 'sdssi',
+				'Band: GPC1 - g': 'sdssg',
+				'Band: GPC1 - r': 'sdssr',
+				'Band: GPC1 - i': 'sdssi',
+				'Band: ZTF-Cam - g': 'sdssg',
+				'Band: ZTF-Cam - r': 'sdssr',
+				'Band: ZTF-Cam - i': 'sdssi'}
 #				'Band: Gaia-Photometric - Other-'}
 

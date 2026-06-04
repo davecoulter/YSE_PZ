@@ -1267,6 +1267,9 @@ def transient_detail(request, slug):
             
         context['automated_spectrum_form'] = automated_spectrum_form
 
+        finder_rel = view_utils.finder_chart_static_relpath(transient_obj.name)
+        context['finder_chart_static'] = finder_rel
+        context['has_finder_chart'] = view_utils.static_asset_available(finder_rel)
 
         # we need to add a submit to TNS button
         # for transients that don't have TNS names
