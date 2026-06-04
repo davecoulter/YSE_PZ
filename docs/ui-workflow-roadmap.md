@@ -1,9 +1,163 @@
-# YSE UI / workflow roadmap — issue index
+# YSE UI / workflow roadmap
 
-**Canonical repo:** https://github.com/Young-Supernova-Experiment/YSE_PZ
-**Generated:** 2026-06-04T02:03Z
+**Canonical repo:** https://github.com/Young-Supernova-Experiment/YSE_PZ  
+**Integration branch:** `develop` (phase PRs merge here)  
+**Release:** `master` after thorough `develop` testing  
+**Last updated:** 2026-06-02
 
-**Workflow:** phase branch → PR to `develop` → test → `develop` → `master`
+**Workflow:** one branch per phase → PR to `develop` → test on `develop` → promote `develop` → `master`  
+**UI sequence:** **A** (phase 1 theme) → **B** (phase 7 Bootstrap 5) → **C** (HTMX islands in phases 2 and 4)
+
+Living plan (full catalog, testing pyramid): `.cursor/plans/yse_ui_workflow_roadmap_2455eacc.plan.md`  
+Issue number log: [`docs/ui-workflow-issues-yse.log`](ui-workflow-issues-yse.log)
+
+---
+
+## Current status
+
+| Phase | Branch | PR | State |
+|-------|--------|-----|--------|
+| **0** | `ui/phase-0-bugfixes` | [#93](https://github.com/Young-Supernova-Experiment/YSE_PZ/pull/93) → `develop` | **Ready to merge** — CI `docker-test` green; closes #16–#23 |
+| 1 | `ui/phase-1-theme` | — | Not started (blocked on phase 0 merge) |
+| 2–7 | see [Branches](#branches-base-ysedevelop) | — | Not started |
+
+### Phase 0 deliverables (on branch)
+
+- Stable table sort (`stable_order_by`, dashboard `-disc_date`, `-pk`)
+- Observing-night / follow-up name sort (`transient__name`)
+- Tag PATCH no-op + JS fix on transient detail
+- Vendored `bokeh-2.4.2.min.js`; summary LC real DQ labels
+- `PhotometricBandSerializer` `disp_symbol` fix
+- Tests: `YSE_App/tests/test_phase0_ui_bugfixes.py` (org issues #16–#23)
+
+**Deferred to later phases:** davecoulter#132 (tag search) → phase 6 #86; #177 (FITS viewer) → phase 6 #87
+
+---
+
+## Next steps (ordered)
+
+### 1. Merge phase 0 (now)
+
+1. Review [PR #93](https://github.com/Young-Supernova-Experiment/YSE_PZ/pull/93); confirm body includes `Fixes #16` … `Fixes #23`.
+2. Merge into **`develop`** (squash or merge commit per team preference).
+3. Locally: `git fetch yse develop && git checkout develop && git pull yse develop`.
+4. Close or verify auto-closed issues **#16–#23**.
+
+**PR test checklist (already run in CI; re-run locally if needed):**
+
+```bash
+docker exec ysepz_web_container python3 manage.py test YSE_App.tests.test_phase0_ui_bugfixes --verbosity=2
+docker exec ysepz_web_container python3 manage.py test YSE_App.tests.test_page_load_regression --verbosity=2
+```
+
+### 2. Deploy / validate on server (after merge to `develop` or `master`)
+
+1. Pull deployed branch; restart Gunicorn (or app container).
+2. `python3 manage.py collectstatic --noinput` — required for new `bokeh-2.4.2.min.js`.
+3. Confirm `/static/YSE_App/bokeh-2.4.2.min.js` returns 200.
+4. Smoke: login, dashboard pagination/sort, observing night name sort, transient detail tags, open light curve (no Bokeh 404).
+5. **Proxy/timeouts:** Apache or nginx `ProxyTimeout` / `proxy_read_timeout` ≥ Gunicorn `GUNICORN_TIMEOUT` (default **120s** in [`docker/entrypoints/docker-compose-up-entrypoint.sh`](../docker/entrypoints/docker-compose-up-entrypoint.sh)).
+6. Production: `IS_DEBUG=False`, `DJANGO_SECRET_KEY` via env; optional `REDIS_URL` if multiple Gunicorn workers.
+
+### 3. Start phase 1 — theme (UI path **A**)
+
+**Branch:** `ui/phase-1-theme` from **`yse/develop`** (after phase 0 merge).
+
+```bash
+git fetch yse develop
+git checkout -b ui/phase-1-theme yse/develop
+git push -u yse ui/phase-1-theme
+```
+
+**Issues (#24–#32):** P1-1 … P1-8, T1-1 — see [issue index](#issue-index) below.
+
+| Step | Issue | Work |
+|------|-------|------|
+| 1 | P1-1 | Add `YSE_App/static/YSE_App/yse-theme.css` (CSS variables: color, spacing, type scale); link from [`base.html`](../YSE_App/templates/YSE_App/base.html) after AdminLTE |
+| 2 | P1-2 | Compact [`dashboard`](../YSE_App/templates/YSE_App/) tables — reduce `.box` padding, tighter `django-tables2` row height |
+| 3 | P1-3 | Compact transient detail **summary** tab layout |
+| 4 | P1-4 | Compact [`observing_night`](../YSE_App/views.py) template |
+| 5 | P1-5 | Apply theme classes to deferred AJAX fragments (dashboard/PFP partials if present on `develop`) |
+| 6 | P1-6 | Split [`transient_detail.html`](../YSE_App/templates/YSE_App/transient_detail.html) into includes (`summary`, `tags`, …) |
+| 7 | P1-7 | a11y: focus rings, `th scope="col"`, contrast in theme CSS |
+| 8 | P1-8 / T1-1 | Run `test_page_load_regression` + `test_performance`; document TTFB/query deltas in PR |
+
+**PR:** `ui/phase-1-theme` → `develop`, body: `Fixes #24` … `Fixes #32` (adjust if any issue deferred).
+
+### 4. Phases 2–7 (after prior phase merges)
+
+| Phase | Branch | Issues | Theme |
+|-------|--------|--------|--------|
+| **2** | `ui/phase-2-comments-slack` | #49–#58, T2-1 #33 | Inline comments on summary; Slack app; DRF comments API (**C**) |
+| **3** | `ui/phase-3-night-requests` | #59–#69, T3-1 #34 | `ClassicalNightRequest`, priority, night-scoped queryset fixes |
+| **4** | `ui/phase-4-classical-scheduler` | #70–#78, T4-1 #35 | Greedy scheduler + planner UI + export (**C**) |
+| **5** | `ui/phase-5-dq-bitmask` | #79–#85, T5-1 #36 | `quality_mask` dual-write, filters, plot muting |
+| **6** | `ui/phase-6-plots-fits` | #86–#92, T6-1 #37 | Markers, FITS viewer (#177), tag Select2 (#132) |
+| **7** | `ui/phase-7-bootstrap5` | #38–#45, T7-1 #45 | Bootstrap 5 + retire AdminLTE shell (**B**) |
+
+Phases **5** and **6** may start after **4** if team capacity allows; **7** should follow **1** (theme tokens inform BS5 migration).
+
+### 5. Release to production
+
+1. Soak test on **`develop`** (Docker or staging).
+2. PR **`develop` → `master`** when stable.
+3. Deploy `master`; repeat collectstatic + smoke from step 2.
+
+### 6. Docs / meta (parallel, low priority)
+
+- [#46](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/46) — optional GitHub Project board  
+- [#47](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/47) — align `CONTRIBUTING.md` with `develop` + org issue tracker  
+- [#48](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/48) — document test pyramid (see [Testing](#testing))
+
+**Interim tracker:** [astrofoley/YSE_PZ #34–#110](https://github.com/astrofoley/YSE_PZ/issues) — superseded by org **#16–#92**; link in PR bodies when referencing old numbers.
+
+---
+
+## Testing
+
+| Layer | Location | When |
+|-------|----------|------|
+| Unit | `YSE_App/tests/test_phase0_ui_bugfixes.py`, per-phase `T*-1` | Every phase PR |
+| Performance | `test_page_load_regression.py`, `test_performance.py`, `perf_baselines.json` | UI/view/template changes |
+| Smoke | `test_smoke.py` | End of each phase |
+| Global policy | [#48](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/48) | Meta |
+
+**Env vars (perf):** `YSE_PERF_SKIP_TIMING=1`, `YSE_PERF_RECORD_PATH=…` — see [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+Each phase PR should include:
+
+```markdown
+## Tests run
+- [ ] manage.py test YSE_App.tests.test_<phase> ...
+- [ ] test_page_load_regression (if views/templates touched)
+## Diagnostics
+- TTFB / query count: unchanged | new baseline (justify)
+```
+
+---
+
+## Phase 0 PR closes
+
+Fixes #16 Fixes #17 Fixes #18 Fixes #19 Fixes #20 Fixes #21 Fixes #22 Fixes #23
+
+---
+
+## Branches (base: `yse/develop`)
+
+| Phase | Branch |
+|-------|--------|
+| 0 | `ui/phase-0-bugfixes` |
+| 1 | `ui/phase-1-theme` |
+| 2 | `ui/phase-2-comments-slack` |
+| 3 | `ui/phase-3-night-requests` |
+| 4 | `ui/phase-4-classical-scheduler` |
+| 5 | `ui/phase-5-dq-bitmask` |
+| 6 | `ui/phase-6-plots-fits` |
+| 7 | `ui/phase-7-bootstrap5` |
+
+---
+
+## Issue index
 
 | Catalog ID | Issue |
 |------------|-------|
@@ -84,20 +238,3 @@
 | META-1 | [#46](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/46) |
 | META-2 | [#47](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/47) |
 | TEST-GLOBAL | [#48](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/48) |
-
-## Phase 0 PR closes
-
-Fixes #16 Fixes #17 Fixes #18 Fixes #19 Fixes #20 Fixes #21 Fixes #22 Fixes #23
-
-## Branches (base: `yse/develop`)
-
-| Phase | Branch |
-|-------|--------|
-| 0 | `ui/phase-0-bugfixes` |
-| 1 | `ui/phase-1-theme` |
-| 2 | `ui/phase-2-comments-slack` |
-| 3 | `ui/phase-3-night-requests` |
-| 4 | `ui/phase-4-classical-scheduler` |
-| 5 | `ui/phase-5-dq-bitmask` |
-| 6 | `ui/phase-6-plots-fits` |
-| 7 | `ui/phase-7-bootstrap5` |
