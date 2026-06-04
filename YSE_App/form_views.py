@@ -552,67 +552,17 @@ class AddTransientCommentFormView(FormView):
 	def form_valid(self, form):
 		response = super(AddTransientCommentFormView, self).form_valid(form)
 		if is_ajax(self.request):
+			from YSE_App.services.comments import create_transient_comment, log_to_comment_dict
 
-			instance = form.save(commit=False)
-			instance.created_by = self.request.user
-			instance.modified_by = self.request.user
-			
-			instance.save() #update_fields=['created_by','modified_by']
-			print(form.cleaned_data)
-
-			# send emails to everyone else on the comments thread
-			logs = Log.objects.filter(transient=instance.transient.id)
-				
-			emaillist = []
-			if '@channel' in instance.comment:
-				for user in User.objects.all():
-					emaillist += [user.email]
-			else:
-				#for log in logs:
-				#	emaillist += [log.created_by.email]
-				for user in re.compile(r"\@(\w+)").findall(instance.comment):
-					usermatch = User.objects.filter(username=user)
-					if len(usermatch):
-						emaillist += [usermatch[0].email]
-			emaillist = np.unique(emaillist)
-
-			transient_name = instance.transient.name
-			base_url = "https://ziggy.ucolick.org/yse/" 
-			if settings.DEBUG:
-				base_url =	"https://ziggy.ucolick.org/yse_test/"
-			subject = "YSE_PZ: new comment added to event %s"%transient_name
-			body = """\
-			<html>
-			<head></head>
-			<body>
-			<h1>Comment added!</h1>
-			<p>
-			<a href='%stransient_detail/%s/'>%s</a><br>
-			%s says:<br>
-			%s <br>
-			</p>
-			<br />
-			<p>Go to <a href='%s/dashboard/'>YSE Dashboard</a></p> 
-			</body>
-			</html>
-			""" % (base_url, transient_name, transient_name,
-				   str(instance.created_by),instance.comment, base_url)
-			for email in emaillist:
-				alert.send_email_simple(email, subject, body)
-
-				
-			# for key,value in form.cleaned_data.items():
-			data_dict = {}
-			data_dict['id'] = instance.id
-			data_dict['created_by'] = str(instance.created_by)
-			data_dict['modified_date'] = instance.modified_date.strftime('%b. %-d, %Y, %H:%M ') + \
-								   instance.modified_date.strftime('%p').lower()[0]+'.'+\
-								   instance.modified_date.strftime('%p').lower()[1]+'.'
-			data_dict['comment'] = instance.comment
-			
+			transient = form.cleaned_data["transient"]
+			log = create_transient_comment(
+				transient=transient,
+				comment=form.cleaned_data["comment"],
+				user=self.request.user,
+			)
 			data = {
-				'message': "Successfully submitted form data.",
-				'data': data_dict
+				"message": "Successfully submitted form data.",
+				"data": log_to_comment_dict(log),
 			}
 			return JsonResponse(data)
 		else:

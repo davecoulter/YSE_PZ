@@ -143,3 +143,54 @@ body.yse-theme .yse-page-transient-summary h3.box-title {
 body.yse-theme .yse-page-transient-summary .btn {
   margin-bottom: var(--yse-space-xs);
 }
+
+/* --- Transient comments (Summary tab) --- */
+body.yse-theme .yse-comments-panel {
+  margin-top: var(--yse-space-lg);
+}
+
+body.yse-theme .yse-comments-hint {
+  font-size: var(--yse-font-size-sm);
+  margin: var(--yse-space-xs) 0 0;
+}
+
+body.yse-theme .yse-comment-thread {
+  margin: 0 0 var(--yse-space-md);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+body.yse-theme .yse-comment-item {
+  padding: var(--yse-space-sm) 0;
+  border-bottom: 1px solid #eee;
+}
+
+body.yse-theme .yse-comment-meta {
+  font-size: var(--yse-font-size-sm);
+  margin-bottom: var(--yse-space-xs);
+}
+
+body.yse-theme .yse-comment-author {
+  margin-right: var(--yse-space-sm);
+}
+
+body.yse-theme .yse-comment-body {
+  font-size: var(--yse-font-size-base);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+body.yse-theme .yse-mention {
+  color: var(--yse-color-accent);
+  font-weight: 600;
+}
+
+body.yse-theme .yse-comment-composer textarea {
+  min-height: 4em;
+  resize: vertical;
+}
+
+body.yse-theme .yse-comments-new-badge {
+  margin-left: var(--yse-space-sm);
+  font-size: var(--yse-font-size-xs);
+}

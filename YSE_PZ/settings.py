@@ -278,6 +278,17 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 ZTFTMPDIR = config.get('ztf','ztfforcedtmpdir')
 
+# Transient comments + Slack (phase 2); disabled in CI unless explicitly enabled
+SLACK_ENABLED = os.environ.get('SLACK_ENABLED', '0').strip() in ('1', 'true', 'yes')
+SLACK_BOT_TOKEN = os.environ.get('SLACK_BOT_TOKEN', '')
+SLACK_SIGNING_SECRET = os.environ.get('SLACK_SIGNING_SECRET', '')
+SLACK_DEFAULT_CHANNEL_ID = os.environ.get('SLACK_DEFAULT_CHANNEL_ID', '')
+SLACK_SERVICE_USERNAME = os.environ.get('SLACK_SERVICE_USERNAME', 'slack_bot')
+YSE_PUBLIC_BASE_URL = os.environ.get(
+    'YSE_PUBLIC_BASE_URL',
+    'http://127.0.0.1:8000' if DEBUG else 'https://ziggy.ucolick.org/yse/',
+)
+
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True

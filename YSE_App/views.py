@@ -1075,9 +1075,9 @@ def transient_detail(request, slug):
 
         transient_obj = transient_matches[0]
         transient_id = transient_obj.id
-        logs = list(
-            Log.objects.filter(transient_id=transient_id).order_by('-modified_date')
-        )
+        from YSE_App.services.comments import transient_comment_queryset
+
+        logs = list(transient_comment_queryset(transient_id))
 
         alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 
@@ -1297,6 +1297,32 @@ def transient_detail(request, slug):
 
     else:
         raise Http404('Transient not found')
+
+
+@login_required
+def comments_fragment(request, slug):
+    """Partial HTML for transient comment thread (polling refresh)."""
+    from YSE_App.forms import TransientCommentForm
+    from YSE_App.services.comments import transient_comment_queryset
+
+    transient = get_object_or_404(Transient, slug=slug)
+    logs = list(transient_comment_queryset(transient.id))
+    from django.utils import timezone as dj_timezone
+
+    comment_cutoff = dj_timezone.now() - datetime.timedelta(days=1)
+    has_new_comment = any(log.modified_date > comment_cutoff for log in logs)
+    form = TransientCommentForm(initial={"transient": transient.id})
+    return render(
+        request,
+        "YSE_App/transient_detail/comments_panel.html",
+        {
+            "transient": transient,
+            "logs": logs,
+            "transient_comment_form": form,
+            "new_comment": has_new_comment,
+        },
+    )
+
 
 @login_required
 def transient_edit(request, transient_id=None):

@@ -486,3 +486,37 @@ class GWCandidateImageViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = GWCandidateImage.objects.all()
     serializer_class = GWCandidateImageSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+
+class TransientCommentListCreate(generics.ListCreateAPIView):
+    """List/create transient-level comments (Log rows, not follow-up comments)."""
+
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = None  # set in get_serializer_class
+
+    def get_serializer_class(self):
+        from YSE_App.serializers.transient_comment_serializers import (
+            TransientCommentSerializer,
+        )
+
+        return TransientCommentSerializer
+
+    def get_queryset(self):
+        from YSE_App.services.comments import transient_comment_queryset
+
+        return transient_comment_queryset(int(self.kwargs["transient_id"]))
+
+    def create(self, request, *args, **kwargs):
+        from YSE_App.services.comments import create_transient_comment
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        log = create_transient_comment(
+            transient=serializer.validated_data["transient"],
+            comment=serializer.validated_data["comment"],
+            user=request.user,
+        )
+        return Response(
+            self.get_serializer(log).data,
+            status=status.HTTP_201_CREATED,
+        )

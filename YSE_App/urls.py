@@ -15,6 +15,7 @@ from . import surveypages
 from YSE_App.yse_utils import yse_pointings, yse_view_utils
 from YSE_App.views import SearchResultsView
 from YSE_App.util import submit_to_tns
+from YSE_App.integrations.slack.handlers import slack_events
 
 schema_view = get_schema_view(title='Young Supernova Experiment (YSE) API')
 
@@ -41,6 +42,11 @@ urlpatterns = [
     re_path(r'^dashboard_example/$', views.dashboard_example, name='dashboard_example'),
     re_path(r'^transient_edit/$', views.transient_edit, name='transient_edit'),
     re_path(r'^transient_edit/(?P<transient_id>[0-9]+)/$', views.transient_edit, name='transient_edit'),
+    re_path(
+        r'^transient_detail/(?P<slug>[^/]+)/comments/$',
+        views.comments_fragment,
+        name='comments_fragment',
+    ),
     re_path(r'^transient_detail/(?P<slug>.*)/$', views.transient_detail, name='transient_detail'),
     re_path(r'^submit_to_tns/(?P<transient_name>.*)/$', submit_to_tns.submit_to_tns, name='submit_to_tns'),
     re_path(r'^transient_summary/(?P<status_or_query_name>.*)/$', views.transient_summary, name='transient_summary'),
@@ -138,6 +144,7 @@ urlpatterns = [
     re_path(r'^add_survey_obs/', AddSurveyObsFormView.as_view(), name='add_survey_obs'),
     re_path(r'^add_oncall_observer/', AddOncallUserFormView.as_view(), name='add_oncall_observer'),
     re_path(r'^add_transient_comment/', AddTransientCommentFormView.as_view(), name='add_transient_comment'),
+    re_path(r'^slack/events/$', slack_events, name='slack_events'),
     re_path(r'^add_dashboard_query/', AddDashboardQueryFormView.as_view(), name='add_dashboard_query'),
     re_path(r'^remove_dashboard_query/(?P<pk>[0-9_-]+)/', RemoveDashboardQueryFormView.as_view(), name='remove_dashboard_query'),
     re_path(r'^add_followup_notice/', AddFollowupNoticeFormView.as_view(), name='add_followup_notice'),
@@ -241,8 +248,18 @@ router.register(r'gwcandidates', api_views.GWCandidateViewSet)
 router.register(r'gwcandidateimages', api_views.GWCandidateImageViewSet)
 
 # Login/Logout
-api_url_patterns = [re_path(r'^api/', include(router.urls)),
-                    re_path(r'^api/schema/$', schema_view),
-                    re_path(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),]
+api_url_patterns = [
+    re_path(
+        r'^api/transients/(?P<transient_id>[0-9]+)/comments/$',
+        api_views.TransientCommentListCreate.as_view(),
+        name='api-transient-comments',
+    ),
+    re_path(r'^api/', include(router.urls)),
+    re_path(r'^api/schema/$', schema_view),
+    re_path(
+        r'^api-auth/',
+        include('rest_framework.urls', namespace='rest_framework'),
+    ),
+]
 
 urlpatterns += api_url_patterns
