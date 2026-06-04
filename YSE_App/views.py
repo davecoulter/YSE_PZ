@@ -1296,7 +1296,7 @@ def transient_detail(request, slug):
             context)
 
     else:
-        return Http404('Transient not found')
+        raise Http404('Transient not found')
 
 @login_required
 def transient_edit(request, transient_id=None):
