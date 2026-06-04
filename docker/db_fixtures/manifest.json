@@ -1,0 +1,7 @@
+{
+  "generated_at": null,
+  "prefix": "2026f",
+  "tns_count": 0,
+  "transients": [],
+  "_note": "Run: docker exec ysepz_web_container python3 manage.py build_tns_fixture --prefix 2026f"
+}

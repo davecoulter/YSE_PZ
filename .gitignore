@@ -18,6 +18,7 @@ docker/old/*
 
 database/*
 database_logs/*
+docker/db_fixtures/yse_2026f_fixture.sql.gz
 *.bak
 *.DS_Store
 
