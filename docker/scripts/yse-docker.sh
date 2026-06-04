@@ -23,6 +23,37 @@ if [[ "${YSE_DOCKER_BUILD_LOCAL:-0}" == "1" ]]; then
   COMPOSE+=( -f docker-compose.dev.yml )
 fi
 
+# Fail fast when Docker Desktop / daemon is stuck (otherwise compose/prune hang with no output).
+require_docker_daemon() {
+  local timeout_sec="${YSE_DOCKER_DAEMON_TIMEOUT:-15}"
+  echo "==> Checking Docker daemon (${timeout_sec}s timeout)..."
+  if command -v timeout >/dev/null 2>&1; then
+    if timeout "$timeout_sec" docker info >/dev/null 2>&1; then
+      return 0
+    fi
+  else
+    docker info >/dev/null 2>&1 &
+    local pid=$!
+    local waited=0
+    while kill -0 "$pid" 2>/dev/null && [[ "$waited" -lt "$timeout_sec" ]]; do
+      sleep 1
+      waited=$((waited + 1))
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+      kill "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+    else
+      wait "$pid" && return 0
+    fi
+  fi
+  echo "ERROR: Docker daemon did not respond within ${timeout_sec}s." >&2
+  echo "  - Start or restart Docker Desktop, then wait until it shows Running." >&2
+  echo "  - Verify: docker info   (must return quickly, not hang)" >&2
+  echo "  - This machine uses: $(command -v docker 2>/dev/null || echo 'docker not in PATH')" >&2
+  echo "  - Context: $(docker context show 2>/dev/null || echo 'unknown')" >&2
+  exit 1
+}
+
 run_prune() {
   local mode="${1:-light}"
   if [[ "${YSE_DOCKER_PRUNE:-1}" == "0" ]]; then
@@ -85,6 +116,7 @@ YSE Docker helper (auto-prunes superseded images after success)
 Environment:
   YSE_DOCKER_PRUNE=0     Disable automatic prune for one command
   YSE_DOCKER_BUILD_LOCAL=1  Use docker-compose.dev.yml (set automatically by rebuild)
+  YSE_DOCKER_DAEMON_TIMEOUT=15  Seconds to wait for docker info before failing
 
 MySQL data lives in VOL_DB from .env and is never removed by these commands.
 Use: docker compose down -v   only if you intentionally want a fresh database.
@@ -96,29 +128,42 @@ shift || true
 
 case "$cmd" in
   up)
+    require_docker_daemon
+    load_dotenv
+    echo "==> Starting stack (docker compose up -d)..."
     "${COMPOSE[@]}" up -d "$@"
     run_prune light
     warn_if_static_incomplete
+    echo "==> Stack up. Open http://127.0.0.1:${LOCAL_HTTP_PORT:-8080}/login/"
     ;;
   pull)
+    require_docker_daemon
+    echo "==> Pulling $YSE_GHCR_IMAGE ..."
     docker pull "$YSE_GHCR_IMAGE"
     run_prune aggressive
     ;;
   rebuild)
+    require_docker_daemon
     export YSE_DOCKER_BUILD_LOCAL=1
     COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.dev.yml)
+    echo "==> Building local web image..."
     "${COMPOSE[@]}" build "$@"
+    echo "==> Starting stack..."
     "${COMPOSE[@]}" up -d
     run_prune aggressive
     ;;
   prune)
+    require_docker_daemon
     aggressive="${1:-light}"
     run_prune "$aggressive"
     ;;
   down)
+    require_docker_daemon
+    echo "==> Stopping stack..."
     "${COMPOSE[@]}" down "$@"
     ;;
   collectstatic)
+    require_docker_daemon
     run_collectstatic "$@"
     ;;
   -h|--help|help)
