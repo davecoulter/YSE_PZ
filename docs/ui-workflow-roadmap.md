@@ -61,12 +61,19 @@ docker exec ysepz_web_container python3 manage.py test YSE_App.tests.test_page_l
 
 ### 3. Start phase 1 — theme (UI path **A**)
 
-**Branch:** `ui/phase-1-theme` from **`yse/develop`** (after phase 0 merge).
+**Branch:** `ui/phase-1-theme` (created; stacked on phase 0 until #93 merges).
+
+**Stacked PR workflow:**
+
+1. Work on `ui/phase-1-theme` (branched from `ui/phase-0-bugfixes`); open draft PR → `develop`.
+2. After **#93** merges: `git fetch yse develop && git rebase yse/develop` on `ui/phase-1-theme`, then `git push --force-with-lease yse ui/phase-1-theme`.
+3. PR diff then shows only phase-1 commits; mark PR ready for review.
+
+If starting fresh after #93 is already on `develop`:
 
 ```bash
 git fetch yse develop
 git checkout -b ui/phase-1-theme yse/develop
-git push -u yse ui/phase-1-theme
 ```
 
 **Issues (#24–#32):** P1-1 … P1-8, T1-1 — see [issue index](#issue-index) below.
