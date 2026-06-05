@@ -20,7 +20,7 @@ fi
 
 echo "==> Removing unused YSE web images (keeping images used by ysepz_* containers)..."
 YSE_REPOS=(
-  "ghcr.io/davecoulter/yse_pz"
+  "ghcr.io/young-supernova-experiment/yse_pz"
   "local/yse_pz_web"
 )
 

@@ -16,6 +16,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCKER_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$DOCKER_DIR"
 
+YSE_GHCR_IMAGE="${YSE_GHCR_IMAGE:-ghcr.io/young-supernova-experiment/yse_pz:latest}"
+
 COMPOSE=(docker compose -f docker-compose.yml)
 if [[ "${YSE_DOCKER_BUILD_LOCAL:-0}" == "1" ]]; then
   COMPOSE+=( -f docker-compose.dev.yml )
@@ -70,11 +72,11 @@ run_collectstatic() {
 }
 
 usage() {
-  cat <<'EOF'
+  cat <<EOF
 YSE Docker helper (auto-prunes superseded images after success)
 
   yse-docker.sh up       Start stack (docker compose up -d)
-  yse-docker.sh pull     Pull published web image (ghcr.io/davecoulter/yse_pz:latest) and prune old copies
+  yse-docker.sh pull     Pull published web image ($YSE_GHCR_IMAGE) and prune old copies
   yse-docker.sh rebuild  Build local dev web image, start stack, aggressive prune
   yse-docker.sh prune    Prune only (--aggressive optional second arg)
   yse-docker.sh down     Stop stack (does not delete MySQL volume)
@@ -99,7 +101,7 @@ case "$cmd" in
     warn_if_static_incomplete
     ;;
   pull)
-    docker pull ghcr.io/davecoulter/yse_pz:latest
+    docker pull "$YSE_GHCR_IMAGE"
     run_prune aggressive
     ;;
   rebuild)

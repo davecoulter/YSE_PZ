@@ -1,6 +1,6 @@
-FROM ghcr.io/davecoulter/yse_pz:latest
-LABEL description="Ubuntu image for YSEPZ"
-LABEL maintainer="Dave Coulter (dcoulter@ucsc.edu)"
+FROM ghcr.io/young-supernova-experiment/yse_pz:latest
+LABEL description="YSE-PZ web dev layer (Young Supernova Experiment)"
+LABEL org.opencontainers.image.source="https://github.com/Young-Supernova-Experiment/YSE_PZ"
 
 SHELL ["/bin/bash", "-c"]
 

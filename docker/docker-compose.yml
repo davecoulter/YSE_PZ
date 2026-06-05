@@ -1,7 +1,7 @@
 services:
     web:
         container_name: ysepz_web_container
-        image: "ghcr.io/davecoulter/yse_pz:latest"
+        image: "ghcr.io/young-supernova-experiment/yse_pz:latest"
         platform: linux/amd64
         working_dir: /app
         volumes:
