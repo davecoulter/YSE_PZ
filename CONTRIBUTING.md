@@ -20,6 +20,8 @@ This fork’s day-to-day development targets **`main`** on [astrofoley/YSE_PZ](h
 
 ## Local Docker
 
+Web container image: **`ghcr.io/young-supernova-experiment/yse_pz:latest`** from [Young-Supernova-Experiment/YSE_PZ](https://github.com/Young-Supernova-Experiment/YSE_PZ) (not the legacy `davecoulter` GHCR image). `yse-docker.sh up` pulls this image; your clone is mounted at `/app`.
+
 ### First-time setup
 
 ```bash
