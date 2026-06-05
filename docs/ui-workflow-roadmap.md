@@ -98,6 +98,7 @@ docker exec ysepz_web_container python3 manage.py test YSE_App.tests.test_page_l
 | Phase | Branch | Issues | Theme |
 |-------|--------|--------|--------|
 | **2** | *(see §4)* | #49–#58, #33 | *(shipped on `ui/phase-2-comments-slack`)* |
+| **2b** | `ui/security-group-access` | [#102](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/102) | Group visibility module, private comments, Explorer staff-only |
 | **3** | `ui/phase-3-night-requests` | #59–#69, T3-1 #34 | `ClassicalNightRequest`, priority, night-scoped queryset fixes |
 | **4** | `ui/phase-4-classical-scheduler` | #70–#78, T4-1 #35 | Greedy scheduler + planner UI + export (**C**) |
 | **5** | `ui/phase-5-dq-bitmask` | #79–#85, T5-1 #36 | `quality_mask` dual-write, filters, plot muting |
@@ -158,6 +159,7 @@ Fixes #16 Fixes #17 Fixes #18 Fixes #19 Fixes #20 Fixes #21 Fixes #22 Fixes #23
 | 0 | `ui/phase-0-bugfixes` |
 | 1 | `ui/phase-1-theme` |
 | 2 | `ui/phase-2-comments-slack` |
+| 2b | `ui/security-group-access` |
 | 3 | `ui/phase-3-night-requests` |
 | 4 | `ui/phase-4-classical-scheduler` |
 | 5 | `ui/phase-5-dq-bitmask` |

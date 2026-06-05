@@ -1,16 +1,7 @@
 from YSE_App.models import *
 from django.db.models import Q
 from YSE_App.models import phot_models
-
-def GetUserGroupQuery(user):
-    user_groups = []
-    for g in user.groups.all():
-        user_groups.append(g.name)
-
-    no_group = Q(groups__isnull=True)
-    contains_group = Q(groups__name__in=user_groups)
-
-    return no_group, contains_group
+from YSE_App.services.visibility import get_user_group_query as GetUserGroupQuery
 
 def GetAuthorizedTransientPhotometry_ByUser(user):
     group_query_tuple = GetUserGroupQuery(user)

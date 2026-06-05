@@ -236,6 +236,12 @@ class LogViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     serializer_class = LogSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
+    def get_queryset(self):
+        from YSE_App.services.visibility import filter_transient_comments_for_user
+
+        qs = Log.objects.all().prefetch_related("groups")
+        return filter_transient_comments_for_user(qs, self.request.user)
+
 ### `Observation Task` ViewSets ###
 class TransientObservationTaskViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = TransientObservationTask.objects.all()
@@ -503,8 +509,12 @@ class TransientCommentListCreate(generics.ListCreateAPIView):
 
     def get_queryset(self):
         from YSE_App.services.comments import transient_comment_queryset
+        from YSE_App.services.visibility import user_can_view_transient
 
-        return transient_comment_queryset(int(self.kwargs["transient_id"]))
+        transient_id = int(self.kwargs["transient_id"])
+        if not user_can_view_transient(self.request.user, transient_id):
+            return Log.objects.none()
+        return transient_comment_queryset(transient_id, user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         from YSE_App.services.comments import create_transient_comment

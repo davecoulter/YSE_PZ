@@ -249,8 +249,13 @@ def personaldashboard(request):
                 )
 
     if all_transient_names:
+        from YSE_App.services.visibility import filter_transients_by_user_access
+
         base_transients = annotate_dashboard_transient_fields(
             Transient.objects.filter(name__in=all_transient_names).order_by('-disc_date')
+        )
+        base_transients = filter_transients_by_user_access(
+            request.user, base_transients
         )
     else:
         base_transients = Transient.objects.none()
@@ -1077,7 +1082,9 @@ def transient_detail(request, slug):
         transient_id = transient_obj.id
         from YSE_App.services.comments import transient_comment_queryset
 
-        logs = list(transient_comment_queryset(transient_id))
+        logs = list(
+            transient_comment_queryset(transient_id, user=request.user)
+        )
 
         alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 
@@ -1306,7 +1313,7 @@ def comments_fragment(request, slug):
     from YSE_App.services.comments import transient_comment_queryset
 
     transient = get_object_or_404(Transient, slug=slug)
-    logs = list(transient_comment_queryset(transient.id))
+    logs = list(transient_comment_queryset(transient.id, user=request.user))
     from django.utils import timezone as dj_timezone
 
     comment_cutoff = dj_timezone.now() - datetime.timedelta(days=1)
@@ -1515,6 +1522,9 @@ def download_bulk_photometry(request, query_title):
         cursor.execute(query[0].sql.replace('%','%%'), ())
         transients = Transient.objects.filter(name__in=(x[0] for x in cursor)).order_by('-disc_date')
         cursor.close()
+        from YSE_App.services.visibility import filter_transients_by_user_access
+
+        transients = filter_transients_by_user_access(user, transients)
 
     elif getattr(yse_python_queries,query_title):
         transients = getattr(yse_python_queries,query_title)()
