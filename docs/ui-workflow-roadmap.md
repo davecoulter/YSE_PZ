@@ -76,9 +76,9 @@ docker exec ysepz_web_container python3 manage.py test YSE_App.tests.test_page_l
 
 **Optional:** refresh SQL fixture — `build_tns_fixture --prefix 2026f --max 50 --merge-manifest --clobber` then `build-test-fixture-db.sh export`.
 
-### 4. Phase 2 — comments + Slack (**C**) — **implemented, PR pending**
+### 4. Phase 2 — comments + Slack (**C**) — **implemented, [PR #103](https://github.com/Young-Supernova-Experiment/YSE_PZ/pull/103)**
 
-**Branch:** `ui/phase-2-comments-slack` → PR to `develop` (**stacked on #94** until #93/#94 merge; base branch `ui/phase-1-theme`).
+**Branch:** `ui/phase-2-comments-slack` → `develop` (**stacked on #94**; PR base `ui/phase-1-theme` until #93/#94 merge).
 
 **Closes:** #49–#58 (P2-1 … P2-10), T2-1 [#33](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/33).
 
