@@ -7,6 +7,7 @@ from astropy.time import Time
 import astropy.units as u
 from django import template
 from ..models import *
+from YSE_App.common.magnitude_format import format_magnitude
 from astropy.cosmology import FlatLambdaCDM
 cosmo = FlatLambdaCDM(70,0.3)
 
@@ -41,6 +42,16 @@ def galcoordsb(coordstring):
 
 	sc = SkyCoord('%s %s'%(coordstring[0],coordstring[1]),frame="fk5",unit=(u.hourangle,u.deg))
 	return '%.7f'%sc.galactic.b.value
+
+
+@register.filter(name='format_mag')
+def format_mag(value):
+    return format_magnitude(value)
+
+
+@register.filter(name='format_mag_err')
+def format_mag_err(value):
+    return format_magnitude(value)
 
 
 @register.filter(name='replace_space')

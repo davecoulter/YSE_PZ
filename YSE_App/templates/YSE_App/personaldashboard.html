@@ -163,9 +163,18 @@
 <script type='text/javascript'>
 {% if personal_dashboard_defer %}
 $(document).ready(function() {
+  function sectionUrl($slot) {
+    var url = $slot.data('url');
+    var search = window.location.search;
+    if (search && search.length > 1) {
+      url += (url.indexOf('?') >= 0 ? '&' : '?') + search.substring(1);
+    }
+    return url;
+  }
+
   $('.pdash-section-loading').each(function() {
     var $slot = $(this);
-    $.get($slot.data('url'), function(html) {
+    $.get(sectionUrl($slot), function(html) {
       $slot.replaceWith(html);
     }).fail(function() {
       $slot.html('<p class="text-danger">Failed to load this section.</p>');

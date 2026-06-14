@@ -1780,19 +1780,46 @@
 
         $.get("{% url 'get_hst_status' transient.id %}").done(function(json) {
             if (!json.has_data) {
-                $("#hst_tab_header").prepend("No ");
+                $("#hst_tab_header").text("No HST");
             }
         });
         $.get("{% url 'get_chandra_status' transient.id %}").done(function(json) {
             if (!json.has_data) {
-                $("#chandra_tab_header").prepend("No ");
+                $("#chandra_tab_header").text("No Chandra");
             }
         });
 
-        // Background: follow-up phased load + summary spectrum dropdown tools.
+        // Background: preload deferred tab fragments for faster tab switches.
         setTimeout(function() {
             loadFollowupTabPhased();
             loadSummarySpectraTools();
+            loadTransientDetailFragment(
+                'resources',
+                "{% url 'transient_detail_resources_fragment' transient.id %}",
+                $('#resources_deferred_tables')
+            );
+            loadTransientDetailFragment(
+                'photometry',
+                "{% url 'transient_detail_photometry_fragment' transient.id %}",
+                $('#photometry_deferred_tables')
+            );
+            loadTransientDetailFragment(
+                'comments',
+                "{% url 'transient_detail_comments_fragment' transient.id %}",
+                $('#comments_list_slot')
+            );
+            loadTransientDetailFragment(
+                'spectra_tab',
+                "{% url 'transient_detail_spectra_tab_fragment' transient.id %}",
+                $('#spectra_tab_content')
+            );
+            {% if has_gw_candidate_tag %}
+            loadTransientDetailFragment(
+                'gw',
+                "{% url 'transient_detail_gw_fragment' transient.id %}",
+                $('#gw_tab_content')
+            );
+            {% endif %}
         }, 0);
 {% else %}
         loadHstImages();

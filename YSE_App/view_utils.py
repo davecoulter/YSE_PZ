@@ -24,6 +24,7 @@ from .models import *
 from .data import PhotometryService, SpectraService, ObservingResourceService
 from .serializers import *
 from .common.bandpassdict import bandpassdict
+from .common.filter_display import band_display_color, telescope_display_symbol
 from .common.utilities import date_to_mjd
 
 import copy
@@ -782,11 +783,12 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 
     for count, band_id in enumerate(unique_bands):
         band_obj = band_lookup[band_id]
-        color = band_obj.disp_color or colorlist[count % len(colorlist)]
-        symbol = band_obj.disp_symbol or "triangle"
-        if band_obj.disp_symbol and band_obj.disp_symbol != 'inverted_triangle':
+        inst_name = band_obj.instrument.name if band_obj.instrument_id else None
+        color = band_display_color(band_obj.name, band_obj.disp_color, fallback_index=count)
+        symbol = telescope_display_symbol(inst_name, band_obj.disp_symbol)
+        if symbol and symbol != 'inverted_triangle':
             try:
-                plotmethod = getattr(ax, band_obj.disp_symbol)
+                plotmethod = getattr(ax, symbol)
             except AttributeError:
                 plotmethod = getattr(ax, 'triangle')  # Default to triangle
         else:
@@ -917,16 +919,15 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
         
         count = 0
         plotmjd = np.arange(result['parameters'][1] - 20, result['parameters'][1] + 50, 0.5)
-        bandunq, idx = np.unique(bandstr, return_index=True)
-        
-        for bs, b, bc in zip(bandunq, band[idx], bandcolor[idx]):
-            color = bc if bc and bc != 'None' else colorlist[count % len(np.unique(colorlist))]
+        for band_id in unique_bands:
+            band_obj = band_lookup[band_id]
+            color = band_display_color(band_obj.name, band_obj.disp_color, fallback_index=count)
             count += 1
-            
-            if bs in bandpassdict.keys() and bandpassdict[bs] in salt2band:
+            bandkey = f'Band: {band_obj.instrument.name} - {band_obj.name}'
+            if bandkey in bandpassdict.keys() and bandpassdict[bandkey] in salt2band:
                 salt2flux = fitted_model.bandflux(
-                    bandpassdict[bs], plotmjd,
-                    zp=27.5, zpsys=zpsys[bandpassdict[bs] == salt2band][0]
+                    bandpassdict[bandkey], plotmjd,
+                    zp=27.5, zpsys=zpsys[bandpassdict[bandkey] == salt2band][0]
                 )
                 ax.line(plotmjd, -2.5 * np.log10(salt2flux) + 27.5, color=color)
         
@@ -1021,16 +1022,13 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
     upperlimmag,upperlimmjd = np.array([]),np.array([])
     for bs,bn,b,bc,bsym,inn in zip(
             bandunq,band_name[idx],band[idx],disp_color[idx],disp_symbol[idx],instrument_name[idx]):
-        if bc != 'None' and bc: color = bc
-        else:
-            coloridx = count % len(np.unique(colorlist))
-            color = colorlist[coloridx]
-            count += 1
-
-        if bsym and bsym != 'inverted_triangle':
+        color = band_display_color(bn, bc, fallback_index=count)
+        count += 1
+        symbol = telescope_display_symbol(inn, bsym)
+        if symbol and symbol != 'inverted_triangle':
             try:
-                plotmethod = getattr(ax, bsym)
-            except:
+                plotmethod = getattr(ax, symbol)
+            except AttributeError:
                 plotmethod = getattr(ax, 'triangle')
         else:
             plotmethod = getattr(ax, 'triangle')
@@ -1198,12 +1196,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
                 bandunq,idx = np.unique(band,return_index=True)
                 for bs,bn,b,bc,bsym,inn in zip(
                         bandunq,band_name[idx],band[idx],disp_color[idx],disp_symbol[idx],instrument_name[idx]):
-                    if bc != 'None' and bc:
-                        color = bc
-                    else:
-                        coloridx = count % len(np.unique(colorlist))
-                        color = colorlist[coloridx]
-                        count += 1
+                    color = band_display_color(bn, bc, fallback_index=count)
+                    count += 1
                     bandkey = 'Band: %s - %s'%(inn,bn)
                     if bandkey in bandpassdict.keys() and bandpassdict[bandkey] in salt2band:
                         model_flux = fitted_model.bandflux(
@@ -1300,11 +1294,16 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
             if p.mag_err: magerr = np.append(magerr,p.mag_err)
             else: magerr = np.append(magerr,0)
             bandstr = np.append(bandstr,str(p.band))
-            bandcolor = np.append(bandcolor,str(p.band.disp_color))
-            if p.band.disp_symbol in py2bokeh_symboldict.keys():
-                bandsym = np.append(bandsym,str(py2bokeh_symboldict[p.band.disp_symbol]))
+            inst_name = p.band.instrument.name if p.band.instrument_id else None
+            bandcolor = np.append(
+                bandcolor,
+                band_display_color(p.band.name, p.band.disp_color),
+            )
+            sym = telescope_display_symbol(inst_name, p.band.disp_symbol)
+            if sym in py2bokeh_symboldict.keys():
+                bandsym = np.append(bandsym, str(py2bokeh_symboldict[sym]))
             else:
-                bandsym = np.append(bandsym,str(p.band.disp_symbol))
+                bandsym = np.append(bandsym, str(sym))
             band = np.append(band,p.band)
             if salt2:
                 if str(p.band) in bandpassdict.keys():
@@ -1326,7 +1325,10 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
             upperlimband = np.append(upperlimband,p.band)
             if p.mag_sys is None: upperlimmagsys = np.append(upperlimmagsys,'None')
             else: upperlimmagsys = np.append(upperlimmagsys,p.mag_sys)
-            upperlimbandcolor = np.append(upperlimbandcolor,p.band.disp_color)
+            upperlimbandcolor = np.append(
+                upperlimbandcolor,
+                band_display_color(p.band.name, p.band.disp_color),
+            )
             if salt2:
                 if str(p.band) in bandpassdict.keys():
                     salt2mjd = np.append(salt2mjd,[dbmjd])
@@ -1343,7 +1345,13 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
         upperlimmagsys = np.append(upperlimmagsys,'None')
         upperlimbandstr = np.append(upperlimbandstr,str(transient.non_detect_band))
         upperlimband = np.append(upperlimband,transient.non_detect_band)
-        upperlimbandcolor = np.append(upperlimbandcolor,transient.non_detect_band.disp_color)
+        upperlimbandcolor = np.append(
+            upperlimbandcolor,
+            band_display_color(
+                transient.non_detect_band.name,
+                transient.non_detect_band.disp_color,
+            ),
+        )
         
     colorlist = ['#8dd3c7','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9']
     count = 0
@@ -1364,16 +1372,15 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
     
     legend_it = []
     for bs,b,bc,bsym in zip(bandunq,allband[idx],allbandcolor[idx],allbandsym[idx]):
-        if bc != 'None' and bc: color = bc
-        else:
-            coloridx = count % len(np.unique(colorlist))
-            color = colorlist[coloridx]
-            count += 1
-
-        if bsym and bsym != 'inverted_triangle':
+        band_name = b.name if hasattr(b, 'name') else str(bs)
+        color = band_display_color(band_name, bc, fallback_index=count)
+        count += 1
+        inst_name = b.instrument.name if hasattr(b, 'instrument_id') and b.instrument_id else None
+        symbol = telescope_display_symbol(inst_name, bsym if bsym != 'None' else None)
+        if symbol and symbol != 'inverted_triangle':
             try:
-                plotmethod = getattr(ax, bsym)
-            except:
+                plotmethod = getattr(ax, symbol)
+            except AttributeError:
                 plotmethod = getattr(ax, 'triangle')
         else:
             plotmethod = getattr(ax, 'triangle')
