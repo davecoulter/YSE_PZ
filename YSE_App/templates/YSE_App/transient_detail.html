@@ -237,6 +237,32 @@
             setPlotHtml("#lcplot", html,
                 '<p class="text-muted yse-plot-empty">No photometry to plot.</p>');
         });
+{% if transient_detail_defer %}
+        function yseUpdateArchiveTabLabel($tab, url, emptyLabel) {
+            if (!$tab.length) {
+                return;
+            }
+            $.ajax({ url: url, dataType: 'json', timeout: 10000 })
+                .done(function(json) {
+                    if (!json || !json.has_data) {
+                        $tab.text(emptyLabel);
+                    }
+                })
+                .fail(function() {
+                    $tab.text(emptyLabel);
+                });
+        }
+        yseUpdateArchiveTabLabel(
+            $("#hst_tab_header"),
+            "{% url 'get_hst_status' transient.id %}",
+            "No HST"
+        );
+        yseUpdateArchiveTabLabel(
+            $("#chandra_tab_header"),
+            "{% url 'get_chandra_status' transient.id %}",
+            "No Chandra"
+        );
+{% endif %}
         $.get("{% url 'get_ps1_image' transient.id %}").done(function (json) {
             var rows = $("#ps1_image");
             var htmltext;
@@ -850,28 +876,38 @@
             //date_picker.setDate(null)
             //$('#obs_date').val(date_picker.getDate())
 
-            // Initialize daterange
+            // Initialize daterange (follow-up forms may load via deferred fragment)
             if ($('#follow_date_range').length) {
-                fdr_picker = $('#follow_date_range').data('daterangepicker')
-                $('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-                $('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+                fdr_picker = $('#follow_date_range').data('daterangepicker');
+                if (fdr_picker) {
+                    $('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                    $('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"));
+                }
             }
 
-            // Intialize Desired Obs Date. Don't initialize Actual Obs Date...
-            otd_picker = $('#obs_task_desired_picker').data('daterangepicker')
-            $('#desired_obs_date').val(otd_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+            if ($('#obs_task_desired_picker').length) {
+                otd_picker = $('#obs_task_desired_picker').data('daterangepicker');
+                if (otd_picker) {
+                    $('#desired_obs_date').val(otd_picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                }
+            }
 
-            //Respond to daterange change events
-            $('#obs_task_desired_picker').on('apply.daterangepicker', function(ev, picker) {
-                $('#desired_obs_date').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-            });
-            $('#obs_task_actual_picker').on('apply.daterangepicker', function(ev, picker) {
-                $('#actual_obs_date').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-            });
-            $('#follow_date_range').on('apply.daterangepicker', function(ev, picker) {
-                $('#valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-                $('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
-            });
+            if ($('#obs_task_desired_picker').length) {
+                $('#obs_task_desired_picker').on('apply.daterangepicker', function(ev, picker) {
+                    $('#desired_obs_date').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                });
+            }
+            if ($('#obs_task_actual_picker').length) {
+                $('#obs_task_actual_picker').on('apply.daterangepicker', function(ev, picker) {
+                    $('#actual_obs_date').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                });
+            }
+            if ($('#follow_date_range').length) {
+                $('#follow_date_range').on('apply.daterangepicker', function(ev, picker) {
+                    $('#valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                    $('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"));
+                });
+            }
             $('#spec_obs_date').on('apply.datetimepicker', function(ev, picker) {
                 $('#obs_date').getDate()
             });
@@ -1681,6 +1717,9 @@
         var followupPhasedLoadPromise = null;
 
         function loadTransientDetailFragment(key, url, $container) {
+            if (!$container.length) {
+                return $.Deferred().resolve().promise();
+            }
             if (transientDetailFragmentsLoaded[key]) {
                 return $.Deferred().resolve().promise();
             }
@@ -1778,17 +1817,6 @@
             );
         }
 
-        $.get("{% url 'get_hst_status' transient.id %}").done(function(json) {
-            if (!json.has_data) {
-                $("#hst_tab_header").text("No HST");
-            }
-        });
-        $.get("{% url 'get_chandra_status' transient.id %}").done(function(json) {
-            if (!json.has_data) {
-                $("#chandra_tab_header").text("No Chandra");
-            }
-        });
-
         // Background: preload deferred tab fragments for faster tab switches.
         setTimeout(function() {
             loadFollowupTabPhased();
@@ -1802,11 +1830,6 @@
                 'photometry',
                 "{% url 'transient_detail_photometry_fragment' transient.id %}",
                 $('#photometry_deferred_tables')
-            );
-            loadTransientDetailFragment(
-                'comments',
-                "{% url 'transient_detail_comments_fragment' transient.id %}",
-                $('#comments_list_slot')
             );
             loadTransientDetailFragment(
                 'spectra_tab',

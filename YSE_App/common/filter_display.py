@@ -137,6 +137,16 @@ def telescope_display_symbol(
     return 'triangle'
 
 
+def display_filter_label(band_name: str | None) -> str:
+    """Short plot label (e.g. r-ZTF -> r). DB band name unchanged."""
+    canonical = normalize_filter_name(band_name)
+    if canonical:
+        return canonical
+    if band_name:
+        return band_name.strip()
+    return '?'
+
+
 def filter_color_groups_for_display() -> list[dict]:
     """Human-readable color groups for docs / chat (filter family -> example names)."""
     groups = []

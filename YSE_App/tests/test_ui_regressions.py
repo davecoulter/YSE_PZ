@@ -10,6 +10,7 @@ from explorer.models import Query
 
 from YSE_App.common.filter_display import (
     band_display_color,
+    display_filter_label,
     normalize_filter_name,
     telescope_display_symbol,
 )
@@ -47,6 +48,11 @@ class FilterDisplayTests(TestCase):
     def test_g_atlas_cyan_maps_to_green(self):
         self.assertEqual(normalize_filter_name('cyan-ATLAS'), 'g')
         self.assertEqual(band_display_color('cyan-ATLAS', None), '#008000')
+
+    def test_display_filter_label_shortens_instrument_suffix(self):
+        self.assertEqual(display_filter_label('r-ZTF'), 'r')
+        self.assertEqual(display_filter_label('g-WFT'), 'g')
+        self.assertEqual(display_filter_label('r'), 'r')
 
 
 class MagnitudeFormatTests(TestCase):

@@ -24,7 +24,7 @@ from .models import *
 from .data import PhotometryService, SpectraService, ObservingResourceService
 from .serializers import *
 from .common.bandpassdict import bandpassdict
-from .common.filter_display import band_display_color, telescope_display_symbol
+from .common.filter_display import band_display_color, display_filter_label, telescope_display_symbol
 from .common.utilities import date_to_mjd
 
 import copy
@@ -784,6 +784,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
     for count, band_id in enumerate(unique_bands):
         band_obj = band_lookup[band_id]
         inst_name = band_obj.instrument.name if band_obj.instrument_id else None
+        short_label = display_filter_label(band_obj.name)
         color = band_display_color(band_obj.name, band_obj.disp_color, fallback_index=count)
         symbol = telescope_display_symbol(inst_name, band_obj.disp_symbol)
         if symbol and symbol != 'inverted_triangle':
@@ -816,7 +817,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
                 date=band_obs_date_str.tolist(),
                 data_quality=dq_labels[band_filter].tolist(),
                 magsys=mag_sys[band_filter].tolist(),
-                band=[f"{band_obj.instrument.name} - {band_obj.name}"] * len(band_mjd),
+                band=[short_label] * len(band_mjd),
             )
         )
         plot_func = getattr(ax, symbol, ax.triangle)
@@ -829,7 +830,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
         err_ys = [(y - yerr, y + yerr) for y, yerr in zip(band_mag, band_mag_err)]
         ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)
 
-        legend_items.append((f"{band_obj.instrument.name} - {band_obj.name}", [plot]))
+        legend_items.append((short_label, [plot]))
 
         # SALT2 processing
         if salt2 and str(band_obj.name) in bandpassdict.keys():
@@ -957,7 +958,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
     cache_key = None
     if not salt2 and _plot_html_cache_enabled():
-        cache_key = f'lc_detail_v1_{transient_id}_{_transient_phot_cache_token(transient_id)}'
+        cache_key = f'lc_detail_v2_{transient_id}_{_transient_phot_cache_token(transient_id)}'
         cached_html = cache.get(cache_key)
         if cached_html is not None:
             return django.http.HttpResponse(cached_html)
@@ -1022,6 +1023,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
     upperlimmag,upperlimmjd = np.array([]),np.array([])
     for bs,bn,b,bc,bsym,inn in zip(
             bandunq,band_name[idx],band[idx],disp_color[idx],disp_symbol[idx],instrument_name[idx]):
+        short_label = display_filter_label(bn)
         color = band_display_color(bn, bc, fallback_index=count)
         count += 1
         symbol = telescope_display_symbol(inn, bsym)
@@ -1065,7 +1067,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
                                             date=obs_dates_str[iPlot].tolist(),
                                             data_quality=data_quality[iPlot].tolist(),
                                             magsys=mag_sys[iPlot].tolist(),
-                                            band=['%s - %s'%(inn,bn)]*len(mjds[iPlot].tolist())))
+                                            band=[short_label]*len(mjds[iPlot].tolist())))
             
         p_det = plotmethod('x','y',source=source,
                    color=color,size=size, muted_alpha=0.2)
@@ -1081,7 +1083,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
                                                 date=obs_dates_str[iPlotUlimFlux][iPlotUlimFlux2][iPlotUlimFlux3].tolist(),
                                                 data_quality=data_quality[iPlotUlimFlux][iPlotUlimFlux2][iPlotUlimFlux3].tolist(),
                                                 magsys=mag_sys[iPlotUlimFlux][iPlotUlimFlux2][iPlotUlimFlux3].tolist(),
-                                                band=['%s - %s'%(inn,bn)]*len(ulim_x)))
+                                                band=[short_label]*len(ulim_x)))
 
             p_ulim = ax.inverted_triangle('x','y',source=source,
                                      color=color,size=5,muted_alpha=0.2)
@@ -1094,7 +1096,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
             err_ys.append((y - yerr, y + yerr))
         ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)#, legend='%s - %s'%(
 
-        legend_it.append(('%s - %s'%(inn,bn), [p_det]))
+        legend_it.append((short_label, [p_det]))
 
     today = Time(datetime.datetime.today()).mjd
     p_today = ax.line(today,20,line_width=3,line_color='black')
@@ -1372,8 +1374,9 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
     
     legend_it = []
     for bs,b,bc,bsym in zip(bandunq,allband[idx],allbandcolor[idx],allbandsym[idx]):
-        band_name = b.name if hasattr(b, 'name') else str(bs)
-        color = band_display_color(band_name, bc, fallback_index=count)
+        raw_band_name = b.name if hasattr(b, 'name') else str(bs)
+        short_label = display_filter_label(raw_band_name)
+        color = band_display_color(raw_band_name, bc, fallback_index=count)
         count += 1
         inst_name = b.instrument.name if hasattr(b, 'instrument_id') and b.instrument_id else None
         symbol = telescope_display_symbol(inst_name, bsym if bsym != 'None' else None)
@@ -1392,7 +1395,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
                                             date=date[bandstr == bs].tolist(),
                                             data_quality=data_quality[bandstr == bs].tolist(),
                                             magsys=magsys[bandstr == bs].tolist(),
-                                            band=[bs.replace('Band: ','')]*len(mjd[bandstr == bs].tolist())))
+                                            band=[short_label]*len(mjd[bandstr == bs].tolist())))
 
         p = plotmethod('x','y',source=source,
                    color=color,size=size, muted_alpha=0.2)#,legend='%s - %s'%(
@@ -1408,7 +1411,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
             err_ys.append((y - yerr, y + yerr))
         ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)
 
-        legend_it.append(('%s - %s'%(b.instrument.telescope.name,b.name), [p]))
+        legend_it.append((short_label, [p]))
         
     today = Time(datetime.datetime.today()).mjd
     p = ax.line(today,20,line_width=3,line_color='black')
@@ -1965,9 +1968,21 @@ def get_ps1_image(request,transient_id):
     jpegurldict = {"jpegurl":jpegurl,"msg":"success"}
     return(JsonResponse(jpegurldict))
 
+def _archive_status_with_timeout(work, *, timeout_seconds=8):
+    """Run a blocking archive lookup with a wall-clock timeout."""
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(work)
+        try:
+            return future.result(timeout=timeout_seconds)
+        except FuturesTimeout:
+            return None
+
+
 def get_hst_status(request, transient_id):
     """Lightweight HST availability for tab label (no JPG fetch)."""
-    cache_key = f'hst_status_v1_{transient_id}'
+    cache_key = f'hst_status_v2_{transient_id}'
     cached = cache.get(cache_key)
     if cached is not None:
         return JsonResponse(cached)
@@ -1975,14 +1990,22 @@ def get_hst_status(request, transient_id):
         t = Transient.objects.get(pk=transient_id)
     except Transient.DoesNotExist:
         raise Http404("Transient id does not exist")
-    try:
+
+    def _lookup():
         from . import common
         hst = common.mast_query.hstImages(t.ra, t.dec, 'Object')
         hst.getObstable()
         count = int(getattr(hst, 'Nimages', 0) or 0)
         if not count and getattr(hst, 'obstable', None) is not None:
             count = len(hst.obstable)
-        payload = {'has_data': count > 0, 'count': count}
+        return count
+
+    try:
+        count = _archive_status_with_timeout(_lookup)
+        if count is None:
+            payload = {'has_data': False, 'count': 0, 'timed_out': True}
+        else:
+            payload = {'has_data': count > 0, 'count': count}
     except Exception:
         payload = {'has_data': False, 'count': 0}
     cache.set(cache_key, payload, timeout=3600)
@@ -1991,7 +2014,7 @@ def get_hst_status(request, transient_id):
 
 def get_chandra_status(request, transient_id):
     """Lightweight Chandra availability for tab label (no image fetch)."""
-    cache_key = f'chandra_status_v1_{transient_id}'
+    cache_key = f'chandra_status_v2_{transient_id}'
     cached = cache.get(cache_key)
     if cached is not None:
         return JsonResponse(cached)
@@ -1999,12 +2022,19 @@ def get_chandra_status(request, transient_id):
         t = Transient.objects.get(pk=transient_id)
     except Transient.DoesNotExist:
         raise Http404("Transient id does not exist")
-    try:
+
+    def _lookup():
         from . import common
         chr = common.chandra_query.chandraImages(t.ra, t.dec, 'Object')
         chr.search_chandra_database()
-        count = int(getattr(chr, 'n_obsid', 0) or 0)
-        payload = {'has_data': count > 0, 'count': count}
+        return int(getattr(chr, 'n_obsid', 0) or 0)
+
+    try:
+        count = _archive_status_with_timeout(_lookup)
+        if count is None:
+            payload = {'has_data': False, 'count': 0, 'timed_out': True}
+        else:
+            payload = {'has_data': count > 0, 'count': count}
     except Exception:
         payload = {'has_data': False, 'count': 0}
     cache.set(cache_key, payload, timeout=3600)
