@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.auth.models import Group
+from django.contrib.auth.models import User
 from YSE_App.models.base import *
 from YSE_App.models.enum_models import *
 from YSE_App.models.telescope_resource_models import *
@@ -38,6 +40,13 @@ class Followup(BaseModel):
 	offset_star_dec = models.FloatField(null=True, blank=True)
 	offset_north = models.FloatField(null=True, blank=True)
 	offset_east = models.FloatField(null=True, blank=True)
+
+	# Collaboration visibility (default public; see YSE_App.services.visibility)
+	is_public = models.BooleanField(default=True)
+	requested_by = models.ForeignKey(
+		User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+	)
+	groups = models.ManyToManyField(Group, blank=True)
 
 class TransientFollowup(Followup):
 	### Entity relationships ###

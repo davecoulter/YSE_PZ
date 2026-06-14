@@ -3,10 +3,12 @@
 from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
 from django.urls import reverse
-from YSE_App.models import Log, TransientPhotometry
+from YSE_App.models import Log, TransientFollowup, TransientPhotometry
 from YSE_App.services.comments import create_transient_comment, transient_comment_queryset
 from YSE_App.services.visibility import (
     filter_transient_comments_for_user,
+    filter_transient_followups_for_user,
+    followup_visible_to_user,
     user_can_view_transient,
 )
 from YSE_App.tests.fixtures_minimal import (
@@ -110,3 +112,66 @@ class GroupVisibilityTests(TestCase):
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 403)
+
+    def _create_followup(self, user, *, is_public=True, groups=None):
+        from YSE_App.models import FollowupStatus
+        from django.utils import timezone
+        from datetime import timedelta
+
+        status, _ = FollowupStatus.objects.get_or_create(
+            name="sec-test-requested",
+            defaults={
+                "created_by": user,
+                "modified_by": user,
+            },
+        )
+        now = timezone.now()
+        followup = TransientFollowup.objects.create(
+            transient=self.transient,
+            status=status,
+            valid_start=now,
+            valid_stop=now + timedelta(days=7),
+            is_public=is_public,
+            requested_by=user,
+            created_by=user,
+            modified_by=user,
+        )
+        if groups:
+            followup.groups.set(groups)
+        return followup
+
+    def test_private_followup_not_visible_to_other_group(self):
+        followup = self._create_followup(
+            self.user_a,
+            is_public=False,
+            groups=[self.group_a],
+        )
+        self.assertFalse(
+            followup_visible_to_user(self.user_b, followup),
+        )
+        qs = filter_transient_followups_for_user(
+            TransientFollowup.objects.filter(transient=self.transient),
+            self.user_b,
+        )
+        self.assertEqual(qs.count(), 0)
+
+    def test_public_followup_visible_to_authorized_user(self):
+        followup = self._create_followup(self.user_a, is_public=True)
+        self.assertTrue(
+            followup_visible_to_user(self.user_a, followup),
+        )
+        qs = filter_transient_followups_for_user(
+            TransientFollowup.objects.filter(transient=self.transient),
+            self.user_a,
+        )
+        self.assertEqual(qs.count(), 1)
+
+    def test_api_followup_list_denied_without_transient_access(self):
+        self._create_followup(self.user_a, is_public=True)
+        client = Client()
+        client.force_login(self.user_b)
+        response = client.get("/api/transientfollowups/")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        results = payload.get("results", payload)
+        self.assertEqual(len(results), 0)

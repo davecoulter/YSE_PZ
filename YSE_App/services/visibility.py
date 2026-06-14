@@ -136,3 +136,59 @@ def filter_transients_by_user_access(
         ]
         return transients.filter(id__in=allowed)
     return [t for t in transients if user_can_view_transient(user, t.id)]
+
+
+def _followup_linked_resource_group_q(user: User) -> Q:
+    """Q for follow-up visible via linked telescope resource groups."""
+    names = user_group_names(user)
+    return (
+        Q(classical_resource__groups__name__in=names)
+        | Q(too_resource__groups__name__in=names)
+        | Q(queued_resource__groups__name__in=names)
+    )
+
+
+def filter_transient_followups_for_user(queryset: QuerySet, user: User) -> QuerySet:
+    """Filter follow-up rows for read access (default public for legacy rows)."""
+    if user.is_staff or user.is_superuser:
+        return queryset
+    from YSE_App.data import PhotometryService, SpectraService
+
+    names = user_group_names(user)
+    phot_transients = PhotometryService.GetAuthorizedTransientPhotometry_ByUser(
+        user
+    ).values_list("transient_id", flat=True)
+    spec_transients = SpectraService.GetAuthorizedTransientSpectrum_ByUser(
+        user
+    ).values_list("transient_id", flat=True)
+    return queryset.filter(
+        Q(transient_id__in=phot_transients) | Q(transient_id__in=spec_transients),
+        Q(is_public=True)
+        | Q(groups__name__in=names)
+        | Q(requested_by=user)
+        | _followup_linked_resource_group_q(user),
+    ).distinct()
+
+
+def followup_visible_to_user(user: User, followup) -> bool:
+    if not user.is_authenticated:
+        return False
+    if user.is_staff or user.is_superuser:
+        return True
+    transient_id = getattr(followup, "transient_id", None)
+    if transient_id is not None and not user_can_view_transient(user, transient_id):
+        return False
+    if getattr(followup, "is_public", True):
+        return True
+    if followup.requested_by_id == user.id:
+        return True
+    if object_has_groups(followup):
+        names = set(user_group_names(user))
+        obj_names = set(followup.groups.values_list("name", flat=True))
+        if names.intersection(obj_names):
+            return True
+    for attr in ("classical_resource", "too_resource", "queued_resource"):
+        res = getattr(followup, attr, None)
+        if res is not None and object_visible_to_user(user, res):
+            return True
+    return False

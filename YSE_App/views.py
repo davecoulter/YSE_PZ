@@ -1081,6 +1081,7 @@ def transient_detail(request, slug):
         transient_obj = transient_matches[0]
         transient_id = transient_obj.id
         from YSE_App.services.comments import transient_comment_queryset
+        from YSE_App.services.visibility import filter_transient_followups_for_user
 
         logs = list(
             transient_comment_queryset(transient_id, user=request.user)
@@ -1120,23 +1121,26 @@ def transient_detail(request, slug):
                     gwimages = GWCandidateImage.objects.filter(gw_candidate__name = gwcand[0].name)
 
         followups = list(
-            TransientFollowup.objects.filter(transient__pk=transient_id)
-            .select_related(
-                'status',
-                'classical_resource',
-                'too_resource',
-                'queued_resource',
-                'classical_resource__telescope',
-                'too_resource__telescope',
-                'queued_resource__telescope',
-            )
-            .prefetch_related(
-                Prefetch(
-                    'transientobservationtask_set',
-                    queryset=TransientObservationTask.objects.select_related(
-                        'instrument_config', 'status'
-                    ),
+            filter_transient_followups_for_user(
+                TransientFollowup.objects.filter(transient__pk=transient_id)
+                .select_related(
+                    'status',
+                    'classical_resource',
+                    'too_resource',
+                    'queued_resource',
+                    'classical_resource__telescope',
+                    'too_resource__telescope',
+                    'queued_resource__telescope',
                 )
+                .prefetch_related(
+                    Prefetch(
+                        'transientobservationtask_set',
+                        queryset=TransientObservationTask.objects.select_related(
+                            'instrument_config', 'status'
+                        ),
+                    )
+                ),
+                request.user,
             )
         )
         if followups:

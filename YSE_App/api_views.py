@@ -186,6 +186,12 @@ class TransientFollowupViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     serializer_class = TransientFollowupSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
+    def get_queryset(self):
+        from YSE_App.services.visibility import filter_transient_followups_for_user
+
+        qs = TransientFollowup.objects.all().prefetch_related("groups")
+        return filter_transient_followups_for_user(qs, self.request.user)
+
 class HostFollowupViewSet(custom_viewsets.ListCreateRetrieveUpdateViewSet):
     queryset = HostFollowup.objects.all()
     serializer_class = HostFollowupSerializer
