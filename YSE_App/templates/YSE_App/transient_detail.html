@@ -30,6 +30,9 @@
 
     <div class="row">
         <div class="col-xs-12">
+            {% if transient_detail_defer %}
+            <input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
+            {% endif %}
             <div class="nav-tabs-custom yse-page-transient-summary">
                 <ul class="nav nav-tabs">
                     <li class="active"><a href="#summary_tab" data-toggle="tab">Summary</a></li>
@@ -237,6 +240,159 @@
             setPlotHtml("#lcplot", html,
                 '<p class="text-muted yse-plot-empty">No photometry to plot.</p>');
         });
+{% if transient_detail_defer %}
+        function yseUpdateArchiveTabLabel($tab, url, emptyLabel) {
+            if (!$tab.length) {
+                return;
+            }
+            $.ajax({ url: url, dataType: 'json', timeout: 10000 })
+                .done(function(json) {
+                    if (!json || !json.has_data) {
+                        $tab.text(emptyLabel);
+                    }
+                })
+                .fail(function() {
+                    $tab.text(emptyLabel);
+                });
+        }
+        yseUpdateArchiveTabLabel(
+            $("#hst_tab_header"),
+            "{% url 'get_hst_status' transient.id %}",
+            "No HST"
+        );
+        yseUpdateArchiveTabLabel(
+            $("#chandra_tab_header"),
+            "{% url 'get_chandra_status' transient.id %}",
+            "No Chandra"
+        );
+
+        var yseDetailFragmentsLoaded = {};
+        function yseLoadDetailFragment(key, url, selector) {
+            var $c = $(selector);
+            var deferred = $.Deferred();
+            if (!$c.length) {
+                deferred.resolve();
+                return deferred.promise();
+            }
+            if (yseDetailFragmentsLoaded[key]) {
+                deferred.resolve();
+                return deferred.promise();
+            }
+            yseDetailFragmentsLoaded[key] = true;
+            $c.html('<p class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading…</p>');
+            $.get(url).done(function(html) {
+                $c.html(html);
+                if (key === 'followup_requests' && $.fn.boxWidget) {
+                    $('.followupbox').boxWidget();
+                }
+                if (key === 'followup_rest' && window.yseInitFollowupTabWidgets) {
+                    window.yseInitFollowupTabWidgets();
+                }
+                deferred.resolve();
+            }).fail(function() {
+                yseDetailFragmentsLoaded[key] = false;
+                $c.html('<p class="text-danger">Failed to load this section.</p>');
+                deferred.reject();
+            });
+            return deferred.promise();
+        }
+
+        var yseFollowupLoadPromise = null;
+        function yseLoadFollowupPhased() {
+            if (yseFollowupLoadPromise) {
+                return yseFollowupLoadPromise;
+            }
+            yseFollowupLoadPromise = yseLoadDetailFragment(
+                'followup_requests',
+                "{% url 'transient_detail_followup_fragment' transient.id %}",
+                '#followup_container'
+            ).then(function() {
+                return yseLoadDetailFragment(
+                    'followup_classical',
+                    "{% url 'transient_detail_followup_classical_fragment' transient.id %}",
+                    '#followup_classical_slot'
+                );
+            }).then(function() {
+                return yseLoadDetailFragment(
+                    'followup_rest',
+                    "{% url 'transient_detail_followup_rest_fragment' transient.id %}",
+                    '#followup_rest_slot'
+                );
+            });
+            return yseFollowupLoadPromise;
+        }
+
+        var yseHstImagesLoaded = false;
+        var yseChandraImagesLoaded = false;
+        $(function() {
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+                var target = $(e.target).attr('href');
+                if (target === '#followup_tab') {
+                    yseLoadFollowupPhased();
+                } else if (target === '#resources_tab') {
+                    yseLoadDetailFragment(
+                        'resources',
+                        "{% url 'transient_detail_resources_fragment' transient.id %}",
+                        '#resources_deferred_tables'
+                    );
+                } else if (target === '#photometry_tab') {
+                    yseLoadDetailFragment(
+                        'photometry',
+                        "{% url 'transient_detail_photometry_fragment' transient.id %}",
+                        '#photometry_deferred_tables'
+                    );
+                } else if (target === '#hst_tab' && !yseHstImagesLoaded) {
+                    yseHstImagesLoaded = true;
+                    if (window.yseLoadHstImages) {
+                        window.yseLoadHstImages();
+                    }
+                } else if (target === '#chandra_tab' && !yseChandraImagesLoaded) {
+                    yseChandraImagesLoaded = true;
+                    if (window.yseLoadChandraImages) {
+                        window.yseLoadChandraImages();
+                    }
+                } else if (target === '#spectra_tab') {
+                    yseLoadDetailFragment(
+                        'spectra_tab',
+                        "{% url 'transient_detail_spectra_tab_fragment' transient.id %}",
+                        '#spectra_tab_content'
+                    );
+                } else if (target === '#gw_tab') {
+                    yseLoadDetailFragment(
+                        'gw',
+                        "{% url 'transient_detail_gw_fragment' transient.id %}",
+                        '#gw_tab_content'
+                    );
+                }
+            });
+
+            setTimeout(function() {
+                yseLoadFollowupPhased();
+                yseLoadDetailFragment(
+                    'resources',
+                    "{% url 'transient_detail_resources_fragment' transient.id %}",
+                    '#resources_deferred_tables'
+                );
+                yseLoadDetailFragment(
+                    'photometry',
+                    "{% url 'transient_detail_photometry_fragment' transient.id %}",
+                    '#photometry_deferred_tables'
+                );
+                yseLoadDetailFragment(
+                    'spectra_tab',
+                    "{% url 'transient_detail_spectra_tab_fragment' transient.id %}",
+                    '#spectra_tab_content'
+                );
+                {% if has_gw_candidate_tag %}
+                yseLoadDetailFragment(
+                    'gw',
+                    "{% url 'transient_detail_gw_fragment' transient.id %}",
+                    '#gw_tab_content'
+                );
+                {% endif %}
+            }, 0);
+        });
+{% endif %}
         $.get("{% url 'get_ps1_image' transient.id %}").done(function (json) {
             var rows = $("#ps1_image");
             var htmltext;
@@ -305,7 +461,11 @@
             // add autocomplete form, no more drag/drop
             function add_tags(){
                 var tags_list = document.getElementById('tags_datalist');
-                var tag_id = document.querySelector("#tags option[value='"+tags_list.value+"']").getAttribute('data-tag_id')
+                var option = document.querySelector("#tags option[value='"+tags_list.value+"']");
+                if (!option) {
+                    return;
+                }
+                var tag_id = option.getAttribute('data-tag_id')
                 //var tag_id = tags.value;
                 //alert("Hi!"+tags_list.value);
                 var transient_id = $('#transient_pk').val();
@@ -579,14 +739,16 @@
 
             })
 
-            $('#example1').DataTable({
-                  'paging'      : false,
-                  'lengthChange': false,
-                  'searching'   : false,
-                  'ordering'    : false,
-                  'info'        : false,
-                  'autoWidth'   : false
-                })
+            if ($('#example1').length) {
+                $('#example1').DataTable({
+                      'paging'      : false,
+                      'lengthChange': false,
+                      'searching'   : false,
+                      'ordering'    : false,
+                      'info'        : false,
+                      'autoWidth'   : false
+                    });
+            }
             // $('#example2').DataTable({
             //   'paging'      : true,
             //   'lengthChange': false,
@@ -639,62 +801,7 @@
             //	}
             //});
 
-            $('#obs_task_desired_picker').daterangepicker({
-                timePicker24Hour: true,
-                timePicker: true,
-                timePickerIncrement: 1,
-                singleDatePicker: true,
-                format: 'MM/DD/YYYY HH:mm',
-                locale: {
-                    format: 'MM/DD/YYYY HH:mm'
-                }
-            });
-
-            $('#obs_task_actual_picker').daterangepicker({
-                timePicker24Hour: true,
-                timePicker: true,
-                timePickerIncrement: 1,
-                singleDatePicker: true,
-                format: 'MM/DD/YYYY HH:mm',
-                locale: {
-                    format: 'MM/DD/YYYY HH:mm'
-                }
-            });
-            // Clear initial value
-            $('#obs_task_actual_picker').val('');
-
-            // too resource
-            $('#too_resource_date_range').daterangepicker({
-                timePicker24Hour: true,
-                timePicker: true,
-                timePickerIncrement: 1,
-                format: 'YYYY-MM-DD HH:mm',
-                locale: {
-                  format: 'YYYY-MM-DD HH:mm'
-                }
-            });
-
-            // Initialize daterange
-              fdr_picker = $('#too_resource_date_range').data('daterangepicker')
-              $('#begin_date_valid').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-              $('#end_date_valid').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
-              $('#too_resource_date_range').on('apply.daterangepicker', function(ev, picker) {
-                $('#begin_date_valid').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-                $('#end_date_valid').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
-              });
-
-            // classical resource
-            $('#observing_date').datepicker({
-              timePicker24Hour: true,
-              timePicker: true,
-              timePickerIncrement: 1,
-              format: 'mm/dd/yyyy',
-              //todayBtn: "linked",
-              locale: {
-                  format: 'mm/dd/yyyy'
-              }
-            });
-
+            // Follow-up form widgets load with deferred fragments (see initFollowupTabWidgets).
       // classical resource
       $('#add_classical_resource').on('submit', function(event){
         event.preventDefault();
@@ -841,37 +948,108 @@
                         format: 'MM/DD/YYYY HH:mm'
                     }
                 });
+                $('#follow_date_range').on('apply.daterangepicker', function(ev, picker) {
+                    $('#valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                    $('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"));
+                });
+                var fdr_picker = $('#follow_date_range').data('daterangepicker');
+                if (fdr_picker) {
+                    $('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                    $('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"));
+                }
+            }
+            if ($('#obs_task_desired_picker').length && !$('#obs_task_desired_picker').data('daterangepicker')) {
+                $('#obs_task_desired_picker').daterangepicker({
+                    timePicker24Hour: true,
+                    timePicker: true,
+                    timePickerIncrement: 1,
+                    singleDatePicker: true,
+                    format: 'MM/DD/YYYY HH:mm',
+                    locale: { format: 'MM/DD/YYYY HH:mm' }
+                });
+                $('#obs_task_desired_picker').on('apply.daterangepicker', function(ev, picker) {
+                    $('#desired_obs_date').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                });
+            }
+            if ($('#obs_task_actual_picker').length && !$('#obs_task_actual_picker').data('daterangepicker')) {
+                $('#obs_task_actual_picker').daterangepicker({
+                    timePicker24Hour: true,
+                    timePicker: true,
+                    timePickerIncrement: 1,
+                    singleDatePicker: true,
+                    format: 'MM/DD/YYYY HH:mm',
+                    locale: { format: 'MM/DD/YYYY HH:mm' }
+                });
+                $('#obs_task_actual_picker').val('');
+                $('#obs_task_actual_picker').on('apply.daterangepicker', function(ev, picker) {
+                    $('#actual_obs_date').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                });
+            }
+            if ($('#too_resource_date_range').length && !$('#too_resource_date_range').data('daterangepicker')) {
+                $('#too_resource_date_range').daterangepicker({
+                    timePicker24Hour: true,
+                    timePicker: true,
+                    timePickerIncrement: 1,
+                    format: 'YYYY-MM-DD HH:mm',
+                    locale: { format: 'YYYY-MM-DD HH:mm' }
+                });
+                $('#too_resource_date_range').on('apply.daterangepicker', function(ev, picker) {
+                    $('#begin_date_valid').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                    $('#end_date_valid').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"));
+                });
+                var too_picker = $('#too_resource_date_range').data('daterangepicker');
+                if (too_picker) {
+                    $('#begin_date_valid').val(too_picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                    $('#end_date_valid').val(too_picker.endDate.format("YYYY-MM-DD HH:mm:00"));
+                }
+            }
+            if ($('#observing_date').length && !$('#observing_date').data('datepicker')) {
+                $('#observing_date').datepicker({
+                    format: 'mm/dd/yyyy',
+                    locale: { format: 'mm/dd/yyyy' }
+                });
             }
             initAutomatedSpectrumDateRange();
         }
+        window.yseInitFollowupTabWidgets = initFollowupTabWidgets;
 
             // Initialize date
             //date_picker = $('#spec_obs_date').data('datetimepicker')
             //date_picker.setDate(null)
             //$('#obs_date').val(date_picker.getDate())
 
-            // Initialize daterange
+            // Initialize daterange (follow-up forms may load via deferred fragment)
             if ($('#follow_date_range').length) {
-                fdr_picker = $('#follow_date_range').data('daterangepicker')
-                $('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-                $('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+                fdr_picker = $('#follow_date_range').data('daterangepicker');
+                if (fdr_picker) {
+                    $('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                    $('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"));
+                }
             }
 
-            // Intialize Desired Obs Date. Don't initialize Actual Obs Date...
-            otd_picker = $('#obs_task_desired_picker').data('daterangepicker')
-            $('#desired_obs_date').val(otd_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+            if ($('#obs_task_desired_picker').length) {
+                otd_picker = $('#obs_task_desired_picker').data('daterangepicker');
+                if (otd_picker) {
+                    $('#desired_obs_date').val(otd_picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                }
+            }
 
-            //Respond to daterange change events
-            $('#obs_task_desired_picker').on('apply.daterangepicker', function(ev, picker) {
-                $('#desired_obs_date').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-            });
-            $('#obs_task_actual_picker').on('apply.daterangepicker', function(ev, picker) {
-                $('#actual_obs_date').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-            });
-            $('#follow_date_range').on('apply.daterangepicker', function(ev, picker) {
-                $('#valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-                $('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
-            });
+            if ($('#obs_task_desired_picker').length) {
+                $('#obs_task_desired_picker').on('apply.daterangepicker', function(ev, picker) {
+                    $('#desired_obs_date').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                });
+            }
+            if ($('#obs_task_actual_picker').length) {
+                $('#obs_task_actual_picker').on('apply.daterangepicker', function(ev, picker) {
+                    $('#actual_obs_date').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                });
+            }
+            if ($('#follow_date_range').length) {
+                $('#follow_date_range').on('apply.daterangepicker', function(ev, picker) {
+                    $('#valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                    $('#valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"));
+                });
+            }
             $('#spec_obs_date').on('apply.datetimepicker', function(ev, picker) {
                 $('#obs_date').getDate()
             });
@@ -941,8 +1119,8 @@
             })();
 
 
-            // Submit post on submit
-            $('#add_transient_followup').on('submit', function(event){
+            // Submit post on submit (delegated — follow-up form may load via fragment)
+            $(document).on('submit', '#add_transient_followup', function(event){
                 event.preventDefault();
                 add_transient_followup();
             });
@@ -1675,126 +1853,10 @@
                 $(rows_exp).prepend(json.totalexp+"s ")
             });
         }
+        window.yseLoadHstImages = loadHstImages;
+        window.yseLoadChandraImages = loadChandraImages;
 
-{% if transient_detail_defer %}
-        var transientDetailFragmentsLoaded = {};
-        var followupPhasedLoadPromise = null;
-
-        function loadTransientDetailFragment(key, url, $container) {
-            if (transientDetailFragmentsLoaded[key]) {
-                return $.Deferred().resolve().promise();
-            }
-            transientDetailFragmentsLoaded[key] = true;
-            $container.html('<p class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading…</p>');
-            return $.get(url).done(function(html) {
-                $container.html(html);
-                if (key === 'followup_requests') {
-                    $('.followupbox').boxWidget();
-                }
-                if (key === 'followup_rest') {
-                    initFollowupTabWidgets();
-                }
-            }).fail(function() {
-                $container.html('<p class="text-danger">Failed to load this section.</p>');
-                transientDetailFragmentsLoaded[key] = false;
-            });
-        }
-
-        function loadFollowupTabPhased() {
-            if (followupPhasedLoadPromise) {
-                return followupPhasedLoadPromise;
-            }
-            // Phase 1: past requests; 2: classical; 3: forms + ToO + automated (classical before ToO).
-            followupPhasedLoadPromise = loadTransientDetailFragment(
-                'followup_requests',
-                "{% url 'transient_detail_followup_fragment' transient.id %}",
-                $('#followup_container')
-            ).then(function() {
-                return loadTransientDetailFragment(
-                    'followup_classical',
-                    "{% url 'transient_detail_followup_classical_fragment' transient.id %}",
-                    $('#followup_classical_slot')
-                );
-            }).then(function() {
-                return loadTransientDetailFragment(
-                    'followup_rest',
-                    "{% url 'transient_detail_followup_rest_fragment' transient.id %}",
-                    $('#followup_rest_slot')
-                );
-            });
-            return followupPhasedLoadPromise;
-        }
-
-        var hstImagesLoaded = false;
-        var chandraImagesLoaded = false;
-        $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
-            var target = $(e.target).attr('href');
-            if (target === '#followup_tab') {
-                loadFollowupTabPhased();
-            } else if (target === '#resources_tab') {
-                loadTransientDetailFragment(
-                    'resources',
-                    "{% url 'transient_detail_resources_fragment' transient.id %}",
-                    $('#resources_deferred_tables')
-                );
-            } else if (target === '#photometry_tab') {
-                loadTransientDetailFragment(
-                    'photometry',
-                    "{% url 'transient_detail_photometry_fragment' transient.id %}",
-                    $('#photometry_deferred_tables')
-                );
-            } else if (target === '#hst_tab' && !hstImagesLoaded) {
-                hstImagesLoaded = true;
-                loadHstImages();
-            } else if (target === '#chandra_tab' && !chandraImagesLoaded) {
-                chandraImagesLoaded = true;
-                loadChandraImages();
-            } else if (target === '#comments_tab') {
-                loadTransientDetailFragment(
-                    'comments',
-                    "{% url 'transient_detail_comments_fragment' transient.id %}",
-                    $('#comments_list_slot')
-                );
-            } else if (target === '#gw_tab') {
-                loadTransientDetailFragment(
-                    'gw',
-                    "{% url 'transient_detail_gw_fragment' transient.id %}",
-                    $('#gw_tab_content')
-                );
-            } else if (target === '#spectra_tab') {
-                loadTransientDetailFragment(
-                    'spectra_tab',
-                    "{% url 'transient_detail_spectra_tab_fragment' transient.id %}",
-                    $('#spectra_tab_content')
-                );
-            }
-        });
-
-        function loadSummarySpectraTools() {
-            return loadTransientDetailFragment(
-                'summary_spectra_tools',
-                "{% url 'transient_detail_summary_spectra_tools_fragment' transient.id %}",
-                $('#summary_spectrum_tools_slot')
-            );
-        }
-
-        $.get("{% url 'get_hst_status' transient.id %}").done(function(json) {
-            if (!json.has_data) {
-                $("#hst_tab_header").prepend("No ");
-            }
-        });
-        $.get("{% url 'get_chandra_status' transient.id %}").done(function(json) {
-            if (!json.has_data) {
-                $("#chandra_tab_header").prepend("No ");
-            }
-        });
-
-        // Background: follow-up phased load + summary spectrum dropdown tools.
-        setTimeout(function() {
-            loadFollowupTabPhased();
-            loadSummarySpectraTools();
-        }, 0);
-{% else %}
+{% if not transient_detail_defer %}
         loadHstImages();
         loadChandraImages();
 {% endif %}

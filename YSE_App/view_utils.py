@@ -24,6 +24,13 @@ from .models import *
 from .data import PhotometryService, SpectraService, ObservingResourceService
 from .serializers import *
 from .common.bandpassdict import bandpassdict
+from .common.filter_display import (
+    band_display_color,
+    display_filter_label,
+    plot_legend_label,
+    telescope_display_name,
+    telescope_display_symbol,
+)
 from .common.utilities import date_to_mjd
 
 import copy
@@ -724,7 +731,9 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 
     # Pre-fetch related band data to avoid repeated lookups
     band_ids = photdata.values_list("band", flat=True).distinct()
-    band_data = PhotometricBand.objects.filter(pk__in=band_ids).select_related("instrument")
+    band_data = PhotometricBand.objects.filter(pk__in=band_ids).select_related(
+        "instrument", "instrument__telescope"
+    )
     band_lookup = {b.pk: b for b in band_data}
 
     phot_rows = list(photdata)
@@ -765,7 +774,8 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
     colorlist = ['#8dd3c7', '#bebada', '#fb8072', '#80b1d3', '#fdb462', '#b3de69', '#fccde5', '#d9d9d9']
     TOOLTIPS = [
         ("mag", "$y"),
-        ("band", "@band"),
+        ("telescope", "@telescope"),
+        ("filter", "@filter"),
         ("date", "@date"),
         ("dq", "@data_quality"),
         ("magsys", "@magsys"),
@@ -782,11 +792,24 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 
     for count, band_id in enumerate(unique_bands):
         band_obj = band_lookup[band_id]
-        color = band_obj.disp_color or colorlist[count % len(colorlist)]
-        symbol = band_obj.disp_symbol or "triangle"
-        if band_obj.disp_symbol and band_obj.disp_symbol != 'inverted_triangle':
+        inst_name = band_obj.instrument.name if band_obj.instrument_id else None
+        tel_name = (
+            band_obj.instrument.telescope.name
+            if band_obj.instrument_id and band_obj.instrument.telescope_id
+            else None
+        )
+        legend_label = plot_legend_label(
+            band_obj.name,
+            instrument_name=inst_name,
+            telescope_name=tel_name,
+        )
+        short_filter = display_filter_label(band_obj.name)
+        tel_label = telescope_display_name(inst_name, tel_name)
+        color = band_display_color(band_obj.name, band_obj.disp_color, fallback_index=count)
+        symbol = telescope_display_symbol(inst_name, band_obj.disp_symbol)
+        if symbol and symbol != 'inverted_triangle':
             try:
-                plotmethod = getattr(ax, band_obj.disp_symbol)
+                plotmethod = getattr(ax, symbol)
             except AttributeError:
                 plotmethod = getattr(ax, 'triangle')  # Default to triangle
         else:
@@ -814,7 +837,8 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
                 date=band_obs_date_str.tolist(),
                 data_quality=dq_labels[band_filter].tolist(),
                 magsys=mag_sys[band_filter].tolist(),
-                band=[f"{band_obj.instrument.name} - {band_obj.name}"] * len(band_mjd),
+                telescope=[tel_label] * len(band_mjd),
+                filter=[short_filter] * len(band_mjd),
             )
         )
         plot_func = getattr(ax, symbol, ax.triangle)
@@ -827,7 +851,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
         err_ys = [(y - yerr, y + yerr) for y, yerr in zip(band_mag, band_mag_err)]
         ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)
 
-        legend_items.append((f"{band_obj.instrument.name} - {band_obj.name}", [plot]))
+        legend_items.append((legend_label, [plot]))
 
         # SALT2 processing
         if salt2 and str(band_obj.name) in bandpassdict.keys():
@@ -917,16 +941,15 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
         
         count = 0
         plotmjd = np.arange(result['parameters'][1] - 20, result['parameters'][1] + 50, 0.5)
-        bandunq, idx = np.unique(bandstr, return_index=True)
-        
-        for bs, b, bc in zip(bandunq, band[idx], bandcolor[idx]):
-            color = bc if bc and bc != 'None' else colorlist[count % len(np.unique(colorlist))]
+        for band_id in unique_bands:
+            band_obj = band_lookup[band_id]
+            color = band_display_color(band_obj.name, band_obj.disp_color, fallback_index=count)
             count += 1
-            
-            if bs in bandpassdict.keys() and bandpassdict[bs] in salt2band:
+            bandkey = f'Band: {band_obj.instrument.name} - {band_obj.name}'
+            if bandkey in bandpassdict.keys() and bandpassdict[bandkey] in salt2band:
                 salt2flux = fitted_model.bandflux(
-                    bandpassdict[bs], plotmjd,
-                    zp=27.5, zpsys=zpsys[bandpassdict[bs] == salt2band][0]
+                    bandpassdict[bandkey], plotmjd,
+                    zp=27.5, zpsys=zpsys[bandpassdict[bandkey] == salt2band][0]
                 )
                 ax.line(plotmjd, -2.5 * np.log10(salt2flux) + 27.5, color=color)
         
@@ -956,7 +979,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
     cache_key = None
     if not salt2 and _plot_html_cache_enabled():
-        cache_key = f'lc_detail_v1_{transient_id}_{_transient_phot_cache_token(transient_id)}'
+        cache_key = f'lc_detail_v4_{transient_id}_{_transient_phot_cache_token(transient_id)}'
         cached_html = cache.get(cache_key)
         if cached_html is not None:
             return django.http.HttpResponse(cached_html)
@@ -983,7 +1006,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
         b.pk: b
         for b in PhotometricBand.objects.filter(
             pk__in={p.band_id for p in phot_rows}
-        ).select_related('instrument')
+        ).select_related('instrument', 'instrument__telescope')
     }
 
     fluxes = np.array([p.flux for p in phot_rows], dtype=object)
@@ -1010,7 +1033,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
     colorlist = ['#8dd3c7','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9']
     TOOLTIPS = [
         ('mag','$y'),
-        ('band','@band'),
+        ('telescope','@telescope'),
+        ('filter','@filter'),
         ('date','@date'),
         ('dq','@data_quality'),
         ('magsys','@magsys')]
@@ -1021,16 +1045,22 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
     upperlimmag,upperlimmjd = np.array([]),np.array([])
     for bs,bn,b,bc,bsym,inn in zip(
             bandunq,band_name[idx],band[idx],disp_color[idx],disp_symbol[idx],instrument_name[idx]):
-        if bc != 'None' and bc: color = bc
-        else:
-            coloridx = count % len(np.unique(colorlist))
-            color = colorlist[coloridx]
-            count += 1
-
-        if bsym and bsym != 'inverted_triangle':
+        band_obj = band_lookup[b]
+        tel_name = (
+            band_obj.instrument.telescope.name
+            if band_obj.instrument.telescope_id
+            else None
+        )
+        legend_label = plot_legend_label(bn, instrument_name=inn, telescope_name=tel_name)
+        short_filter = display_filter_label(bn)
+        tel_label = telescope_display_name(inn, tel_name)
+        color = band_display_color(bn, bc, fallback_index=count)
+        count += 1
+        symbol = telescope_display_symbol(inn, bsym)
+        if symbol and symbol != 'inverted_triangle':
             try:
-                plotmethod = getattr(ax, bsym)
-            except:
+                plotmethod = getattr(ax, symbol)
+            except AttributeError:
                 plotmethod = getattr(ax, 'triangle')
         else:
             plotmethod = getattr(ax, 'triangle')
@@ -1067,7 +1097,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
                                             date=obs_dates_str[iPlot].tolist(),
                                             data_quality=data_quality[iPlot].tolist(),
                                             magsys=mag_sys[iPlot].tolist(),
-                                            band=['%s - %s'%(inn,bn)]*len(mjds[iPlot].tolist())))
+                                            telescope=[tel_label]*len(mjds[iPlot].tolist()),
+                                            filter=[short_filter]*len(mjds[iPlot].tolist())))
             
         p_det = plotmethod('x','y',source=source,
                    color=color,size=size, muted_alpha=0.2)
@@ -1083,7 +1114,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
                                                 date=obs_dates_str[iPlotUlimFlux][iPlotUlimFlux2][iPlotUlimFlux3].tolist(),
                                                 data_quality=data_quality[iPlotUlimFlux][iPlotUlimFlux2][iPlotUlimFlux3].tolist(),
                                                 magsys=mag_sys[iPlotUlimFlux][iPlotUlimFlux2][iPlotUlimFlux3].tolist(),
-                                                band=['%s - %s'%(inn,bn)]*len(ulim_x)))
+                                                telescope=[tel_label]*len(ulim_x),
+                                                filter=[short_filter]*len(ulim_x)))
 
             p_ulim = ax.inverted_triangle('x','y',source=source,
                                      color=color,size=5,muted_alpha=0.2)
@@ -1096,7 +1128,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
             err_ys.append((y - yerr, y + yerr))
         ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)#, legend='%s - %s'%(
 
-        legend_it.append(('%s - %s'%(inn,bn), [p_det]))
+        legend_it.append((legend_label, [p_det]))
 
     today = Time(datetime.datetime.today()).mjd
     p_today = ax.line(today,20,line_width=3,line_color='black')
@@ -1198,12 +1230,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
                 bandunq,idx = np.unique(band,return_index=True)
                 for bs,bn,b,bc,bsym,inn in zip(
                         bandunq,band_name[idx],band[idx],disp_color[idx],disp_symbol[idx],instrument_name[idx]):
-                    if bc != 'None' and bc:
-                        color = bc
-                    else:
-                        coloridx = count % len(np.unique(colorlist))
-                        color = colorlist[coloridx]
-                        count += 1
+                    color = band_display_color(bn, bc, fallback_index=count)
+                    count += 1
                     bandkey = 'Band: %s - %s'%(inn,bn)
                     if bandkey in bandpassdict.keys() and bandpassdict[bandkey] in salt2band:
                         model_flux = fitted_model.bandflux(
@@ -1300,11 +1328,16 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
             if p.mag_err: magerr = np.append(magerr,p.mag_err)
             else: magerr = np.append(magerr,0)
             bandstr = np.append(bandstr,str(p.band))
-            bandcolor = np.append(bandcolor,str(p.band.disp_color))
-            if p.band.disp_symbol in py2bokeh_symboldict.keys():
-                bandsym = np.append(bandsym,str(py2bokeh_symboldict[p.band.disp_symbol]))
+            inst_name = p.band.instrument.name if p.band.instrument_id else None
+            bandcolor = np.append(
+                bandcolor,
+                band_display_color(p.band.name, p.band.disp_color),
+            )
+            sym = telescope_display_symbol(inst_name, p.band.disp_symbol)
+            if sym in py2bokeh_symboldict.keys():
+                bandsym = np.append(bandsym, str(py2bokeh_symboldict[sym]))
             else:
-                bandsym = np.append(bandsym,str(p.band.disp_symbol))
+                bandsym = np.append(bandsym, str(sym))
             band = np.append(band,p.band)
             if salt2:
                 if str(p.band) in bandpassdict.keys():
@@ -1326,7 +1359,10 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
             upperlimband = np.append(upperlimband,p.band)
             if p.mag_sys is None: upperlimmagsys = np.append(upperlimmagsys,'None')
             else: upperlimmagsys = np.append(upperlimmagsys,p.mag_sys)
-            upperlimbandcolor = np.append(upperlimbandcolor,p.band.disp_color)
+            upperlimbandcolor = np.append(
+                upperlimbandcolor,
+                band_display_color(p.band.name, p.band.disp_color),
+            )
             if salt2:
                 if str(p.band) in bandpassdict.keys():
                     salt2mjd = np.append(salt2mjd,[dbmjd])
@@ -1343,7 +1379,13 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
         upperlimmagsys = np.append(upperlimmagsys,'None')
         upperlimbandstr = np.append(upperlimbandstr,str(transient.non_detect_band))
         upperlimband = np.append(upperlimband,transient.non_detect_band)
-        upperlimbandcolor = np.append(upperlimbandcolor,transient.non_detect_band.disp_color)
+        upperlimbandcolor = np.append(
+            upperlimbandcolor,
+            band_display_color(
+                transient.non_detect_band.name,
+                transient.non_detect_band.disp_color,
+            ),
+        )
         
     colorlist = ['#8dd3c7','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9']
     count = 0
@@ -1355,7 +1397,8 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 
     TOOLTIPS = [
         ('mag','$y'),
-        ('band','@band'),
+        ('telescope','@telescope'),
+        ('filter','@filter'),
         ('date','@date'),
         ('dq','@data_quality'),
         ('magsys','@magsys')]
@@ -1364,16 +1407,23 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
     
     legend_it = []
     for bs,b,bc,bsym in zip(bandunq,allband[idx],allbandcolor[idx],allbandsym[idx]):
-        if bc != 'None' and bc: color = bc
-        else:
-            coloridx = count % len(np.unique(colorlist))
-            color = colorlist[coloridx]
-            count += 1
-
-        if bsym and bsym != 'inverted_triangle':
+        raw_band_name = b.name if hasattr(b, 'name') else str(bs)
+        short_filter = display_filter_label(raw_band_name)
+        tel_label = telescope_display_name(
+            b.instrument.name if hasattr(b, 'instrument_id') and b.instrument_id else None,
+            b.instrument.telescope.name
+            if hasattr(b, 'instrument') and getattr(b.instrument, 'telescope_id', None)
+            else None,
+        )
+        legend_label = f'{tel_label} {short_filter}'
+        color = band_display_color(raw_band_name, bc, fallback_index=count)
+        count += 1
+        inst_name = b.instrument.name if hasattr(b, 'instrument_id') and b.instrument_id else None
+        symbol = telescope_display_symbol(inst_name, bsym if bsym != 'None' else None)
+        if symbol and symbol != 'inverted_triangle':
             try:
-                plotmethod = getattr(ax, bsym)
-            except:
+                plotmethod = getattr(ax, symbol)
+            except AttributeError:
                 plotmethod = getattr(ax, 'triangle')
         else:
             plotmethod = getattr(ax, 'triangle')
@@ -1385,7 +1435,8 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
                                             date=date[bandstr == bs].tolist(),
                                             data_quality=data_quality[bandstr == bs].tolist(),
                                             magsys=magsys[bandstr == bs].tolist(),
-                                            band=[bs.replace('Band: ','')]*len(mjd[bandstr == bs].tolist())))
+                                            telescope=[tel_label]*len(mjd[bandstr == bs].tolist()),
+                                            filter=[short_filter]*len(mjd[bandstr == bs].tolist())))
 
         p = plotmethod('x','y',source=source,
                    color=color,size=size, muted_alpha=0.2)#,legend='%s - %s'%(
@@ -1401,7 +1452,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
             err_ys.append((y - yerr, y + yerr))
         ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)
 
-        legend_it.append(('%s - %s'%(b.instrument.telescope.name,b.name), [p]))
+        legend_it.append((legend_label, [p]))
         
     today = Time(datetime.datetime.today()).mjd
     p = ax.line(today,20,line_width=3,line_color='black')
@@ -1958,9 +2009,21 @@ def get_ps1_image(request,transient_id):
     jpegurldict = {"jpegurl":jpegurl,"msg":"success"}
     return(JsonResponse(jpegurldict))
 
+def _archive_status_with_timeout(work, *, timeout_seconds=8):
+    """Run a blocking archive lookup with a wall-clock timeout."""
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(work)
+        try:
+            return future.result(timeout=timeout_seconds)
+        except FuturesTimeout:
+            return None
+
+
 def get_hst_status(request, transient_id):
     """Lightweight HST availability for tab label (no JPG fetch)."""
-    cache_key = f'hst_status_v1_{transient_id}'
+    cache_key = f'hst_status_v2_{transient_id}'
     cached = cache.get(cache_key)
     if cached is not None:
         return JsonResponse(cached)
@@ -1968,14 +2031,22 @@ def get_hst_status(request, transient_id):
         t = Transient.objects.get(pk=transient_id)
     except Transient.DoesNotExist:
         raise Http404("Transient id does not exist")
-    try:
+
+    def _lookup():
         from . import common
         hst = common.mast_query.hstImages(t.ra, t.dec, 'Object')
         hst.getObstable()
         count = int(getattr(hst, 'Nimages', 0) or 0)
         if not count and getattr(hst, 'obstable', None) is not None:
             count = len(hst.obstable)
-        payload = {'has_data': count > 0, 'count': count}
+        return count
+
+    try:
+        count = _archive_status_with_timeout(_lookup)
+        if count is None:
+            payload = {'has_data': False, 'count': 0, 'timed_out': True}
+        else:
+            payload = {'has_data': count > 0, 'count': count}
     except Exception:
         payload = {'has_data': False, 'count': 0}
     cache.set(cache_key, payload, timeout=3600)
@@ -1984,7 +2055,7 @@ def get_hst_status(request, transient_id):
 
 def get_chandra_status(request, transient_id):
     """Lightweight Chandra availability for tab label (no image fetch)."""
-    cache_key = f'chandra_status_v1_{transient_id}'
+    cache_key = f'chandra_status_v2_{transient_id}'
     cached = cache.get(cache_key)
     if cached is not None:
         return JsonResponse(cached)
@@ -1992,12 +2063,19 @@ def get_chandra_status(request, transient_id):
         t = Transient.objects.get(pk=transient_id)
     except Transient.DoesNotExist:
         raise Http404("Transient id does not exist")
-    try:
+
+    def _lookup():
         from . import common
         chr = common.chandra_query.chandraImages(t.ra, t.dec, 'Object')
         chr.search_chandra_database()
-        count = int(getattr(chr, 'n_obsid', 0) or 0)
-        payload = {'has_data': count > 0, 'count': count}
+        return int(getattr(chr, 'n_obsid', 0) or 0)
+
+    try:
+        count = _archive_status_with_timeout(_lookup)
+        if count is None:
+            payload = {'has_data': False, 'count': 0, 'timed_out': True}
+        else:
+            payload = {'has_data': count > 0, 'count': count}
     except Exception:
         payload = {'has_data': False, 'count': 0}
     cache.set(cache_key, payload, timeout=3600)

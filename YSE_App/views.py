@@ -50,6 +50,7 @@ import dateutil.parser
 from astroplan import moon_illumination
 from astropy.time import Time
 from .common.utilities import getRADecBox
+from YSE_App.common.magnitude_format import format_magnitude_with_error
 
 from .table_utils import (
     TransientTable,
@@ -214,6 +215,36 @@ def _personaldashboard_failed_row(q, title):
     return (Transient.objects.none(), title, '', None, q.id, 0)
 
 
+def _personaldashboard_sql_query_prefix(query_title):
+    """django-tables2 uses prefix + page_field; trailing '-' yields {title}-page params."""
+    return query_title.replace(' ', '') + '-'
+
+
+def _personaldashboard_request_get(request, prefix):
+    """Normalize legacy {Title}page=N query params to {Title}-page=N."""
+    qd = request.GET.copy()
+    bare_prefix = prefix.rstrip('-')
+    for suffix in ('page', 'sort', 'per_page'):
+        legacy_key = f'{bare_prefix}{suffix}'
+        modern_key = f'{prefix}{suffix}'
+        if legacy_key in qd and modern_key not in qd:
+            qd[modern_key] = qd[legacy_key]
+    return qd
+
+
+def _personaldashboard_configure_table(request, prefix, queryset):
+    """Build filter + paginated table for one personal-dashboard SQL section."""
+    saved_get = request.GET
+    request.GET = _personaldashboard_request_get(request, prefix)
+    try:
+        transient_filter = TransientFilter(request.GET, queryset=queryset, prefix=prefix)
+        table = TransientTable(transient_filter.qs, prefix=prefix)
+        RequestConfig(request, paginate={'per_page': 10}).configure(table)
+        return table, transient_filter
+    finally:
+        request.GET = saved_get
+
+
 def _personaldashboard_table_for_user_query(request, q):
     """Build one dashboard section tuple for a single UserQuery."""
     if q.query:
@@ -230,20 +261,20 @@ def _personaldashboard_table_for_user_query(request, q):
                 cache.set(cache_key, cached_result, timeout=3600)
                 cursor.close()
             if not cached_result:
-                prefix = q.query.title.replace(' ', '')
+                prefix = _personaldashboard_sql_query_prefix(q.query.title)
                 empty_qs = annotate_dashboard_transient_fields(Transient.objects.none())
-                transient_filter = TransientFilter(request.GET, queryset=empty_qs, prefix=prefix)
-                table = TransientTable(transient_filter.qs, prefix=prefix)
-                RequestConfig(request, paginate={'per_page': 10}).configure(table)
+                table, transient_filter = _personaldashboard_configure_table(
+                    request, prefix, empty_qs
+                )
                 return (table, q.query.title, prefix, transient_filter, q.id, 0)
             base_transients = annotate_dashboard_transient_fields(
                 Transient.objects.filter(name__in=cached_result).order_by('-disc_date')
             )
-            prefix = q.query.title.replace(' ', '')
+            prefix = _personaldashboard_sql_query_prefix(q.query.title)
             section_qs = base_transients.filter(name__in=cached_result)
-            transient_filter = TransientFilter(request.GET, queryset=section_qs, prefix=prefix)
-            table = TransientTable(transient_filter.qs, prefix=prefix)
-            RequestConfig(request, paginate={'per_page': 10}).configure(table)
+            table, transient_filter = _personaldashboard_configure_table(
+                request, prefix, section_qs
+            )
             return (table, q.query.title, prefix, transient_filter, q.id, len(cached_result))
         except Exception as e:
             cache.delete(f'user_query_{QUERY_CACHE_VERSION}_{q.id}')
@@ -317,11 +348,11 @@ def _personaldashboard_build_all_tables(request, queries):
         base_transients = Transient.objects.none()
 
     for q, transient_names in sql_dashboard_sections:
-        prefix = q.query.title.replace(' ', '')
+        prefix = _personaldashboard_sql_query_prefix(q.query.title)
         section_qs = base_transients.filter(name__in=transient_names)
-        transient_filter = TransientFilter(request.GET, queryset=section_qs, prefix=prefix)
-        table = TransientTable(transient_filter.qs, prefix=prefix)
-        RequestConfig(request, paginate={'per_page': 10}).configure(table)
+        table, transient_filter = _personaldashboard_configure_table(
+            request, prefix, section_qs
+        )
         tables.append(
             (table, q.query.title, prefix, transient_filter, q.id, len(transient_names))
         )
@@ -1577,10 +1608,14 @@ def transient_detail(request, slug):
                  transient_followup_form.fields["valid_stop"].initial.strftime('%m/%d/%Y HH:MM'))           
         
         if lastphotdata and firstphotdata:
-            context['recent_mag'] = lastphotdata.mag
+            context['recent_mag'] = format_magnitude_with_error(
+                lastphotdata.mag, lastphotdata.mag_err
+            )
             context['recent_filter'] = lastphotdata.band
             context['recent_magdate'] = lastphotdata.obs_date
-            context['first_mag'] = firstphotdata.mag
+            context['first_mag'] = format_magnitude_with_error(
+                firstphotdata.mag, firstphotdata.mag_err
+            )
             context['first_filter'] = firstphotdata.band
             context['first_magdate'] = firstphotdata.obs_date
             if allphotdata is not None:

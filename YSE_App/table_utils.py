@@ -19,6 +19,7 @@ from matplotlib.figure import Figure
 from matplotlib.dates import DateFormatter
 from matplotlib import rcParams
 from django.db.models.expressions import RawSQL
+from .common.magnitude_format import format_magnitude
 rcParams['figure.figsize'] = (7,7)
 
 
@@ -27,6 +28,13 @@ def stable_order_by(queryset, field, is_descending):
     if is_descending:
         return queryset.order_by(f'-{field}', '-pk')
     return queryset.order_by(field, 'pk')
+
+
+class MagnitudeColumn(tables.Column):
+    """Dashboard magnitude column with two decimal places."""
+
+    def render(self, value):
+        return format_magnitude(value)
 
 
 class TransientTable(tables.Table):
@@ -39,7 +47,7 @@ class TransientTable(tables.Table):
                                verbose_name='DEC',orderable=True,order_by='dec')
     disc_date_string = tables.Column(accessor='disc_date_string',
                                      verbose_name='Disc. Date',orderable=True,order_by='disc_date')
-    recent_mag = tables.Column(accessor='recent_mag',
+    recent_mag = MagnitudeColumn(accessor='recent_mag',
                                verbose_name='Last Mag',orderable=True)
     recent_magdate = tables.Column(accessor='recent_magdate',
                                verbose_name='Last Obs. Date',orderable=True)
@@ -153,7 +161,7 @@ class FieldTransientTable(tables.Table):
                                verbose_name='DEC',orderable=True,order_by='dec')
     disc_date_string = tables.Column(accessor='disc_date_string',
                                      verbose_name='Disc. Date',orderable=True,order_by='disc_date')
-    recent_mag = tables.Column(accessor='recent_mag',
+    recent_mag = MagnitudeColumn(accessor='recent_mag',
                                verbose_name='Last Mag',orderable=True)
     recent_magdate = tables.Column(accessor='recent_magdate',
                                verbose_name='Last Obs. Date',orderable=True)
@@ -275,7 +283,7 @@ class AdjustFieldTransientTable(tables.Table):
                                verbose_name='DEC',orderable=True,order_by='dec')
     disc_date_string = tables.Column(accessor='disc_date_string',
                                      verbose_name='Disc. Date',orderable=True,order_by='disc_date')
-    recent_mag = tables.Column(accessor='recent_mag',
+    recent_mag = MagnitudeColumn(accessor='recent_mag',
                                verbose_name='Last Mag',orderable=True)
     recent_magdate = tables.Column(accessor='recent_magdate',
                                verbose_name='Last Obs. Date',orderable=True)
@@ -398,7 +406,7 @@ class YSETransientTable(tables.Table):
                                verbose_name='DEC',orderable=True,order_by='dec')
     disc_date_string = tables.Column(accessor='disc_date_string',
                                      verbose_name='Disc. Date',orderable=True,order_by='disc_date')
-    recent_mag = tables.Column(accessor='recent_mag',
+    recent_mag = MagnitudeColumn(accessor='recent_mag',
                                verbose_name='Last Mag',orderable=True)
     recent_magdate = tables.Column(accessor='recent_magdate',
                                verbose_name='Last Obs. Date',orderable=True)
@@ -559,7 +567,7 @@ class YSEFullTransientTable(tables.Table):
                                verbose_name='DEC',orderable=True,order_by='dec')
     disc_date_string = tables.Column(accessor='disc_date_string',
                                      verbose_name='Disc. Date',orderable=True,order_by='disc_date')
-    recent_mag = tables.Column(accessor='recent_mag',
+    recent_mag = MagnitudeColumn(accessor='recent_mag',
                                verbose_name='Last Mag',orderable=True)
     recent_magdate = tables.Column(accessor='recent_magdate',
                                verbose_name='Last Obs. Date',orderable=True)
@@ -708,7 +716,7 @@ class YSERisingTransientTable(tables.Table):
                                verbose_name='DEC',orderable=True,order_by='dec')
     disc_date_string = tables.Column(accessor='disc_date_string',
                                      verbose_name='Disc. Date',orderable=True,order_by='disc_date')
-    recent_mag = tables.Column(accessor='recent_mag',
+    recent_mag = MagnitudeColumn(accessor='recent_mag',
                                verbose_name='Last Mag',orderable=True)
     recent_magdate = tables.Column(accessor='recent_magdate',
                                verbose_name='Last Obs. Date',orderable=True)
@@ -868,7 +876,7 @@ class NewTransientTable(tables.Table):
                                verbose_name='DEC',orderable=True,order_by='dec')
     disc_date_string = tables.Column(accessor='disc_date_string',
                                      verbose_name='Disc. Date',orderable=True,order_by='disc_date')
-    recent_mag = tables.Column(accessor='recent_mag',
+    recent_mag = MagnitudeColumn(accessor='recent_mag',
                                verbose_name='Last Mag',orderable=True)
     recent_magdate = tables.Column(accessor='recent_magdate',
                                verbose_name='Last Obs. Date',orderable=True)
