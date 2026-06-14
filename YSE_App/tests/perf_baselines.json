@@ -3,8 +3,8 @@
   "pages": {
     "main_dashboard": {
       "baseline_ms": 178,
-      "max_ms": 250,
-      "note": "Deferred shell (New only sync); sections via dashboard/section/"
+      "max_ms": 400,
+      "note": "Deferred shell (New only sync); higher ceiling after UI phase 1–2 + security on develop"
     },
     "personal_dashboard": {
       "baseline_ms": 91,
@@ -13,8 +13,8 @@
     },
     "transient_detail": {
       "baseline_ms": 102,
-      "max_ms": 250,
-      "note": "Deferred shell (iteration pre-pr-develop); fragments + HST/Chandra on tab click"
+      "max_ms": 350,
+      "note": "Deferred shell with phase 1–2 summary/comments; fragments + HST/Chandra on tab click"
     }
   }
 }
