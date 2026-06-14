@@ -24,7 +24,13 @@ from .models import *
 from .data import PhotometryService, SpectraService, ObservingResourceService
 from .serializers import *
 from .common.bandpassdict import bandpassdict
-from .common.filter_display import band_display_color, display_filter_label, telescope_display_symbol
+from .common.filter_display import (
+    band_display_color,
+    display_filter_label,
+    plot_legend_label,
+    telescope_display_name,
+    telescope_display_symbol,
+)
 from .common.utilities import date_to_mjd
 
 import copy
@@ -725,7 +731,9 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 
     # Pre-fetch related band data to avoid repeated lookups
     band_ids = photdata.values_list("band", flat=True).distinct()
-    band_data = PhotometricBand.objects.filter(pk__in=band_ids).select_related("instrument")
+    band_data = PhotometricBand.objects.filter(pk__in=band_ids).select_related(
+        "instrument", "instrument__telescope"
+    )
     band_lookup = {b.pk: b for b in band_data}
 
     phot_rows = list(photdata)
@@ -766,7 +774,8 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
     colorlist = ['#8dd3c7', '#bebada', '#fb8072', '#80b1d3', '#fdb462', '#b3de69', '#fccde5', '#d9d9d9']
     TOOLTIPS = [
         ("mag", "$y"),
-        ("band", "@band"),
+        ("telescope", "@telescope"),
+        ("filter", "@filter"),
         ("date", "@date"),
         ("dq", "@data_quality"),
         ("magsys", "@magsys"),
@@ -784,7 +793,18 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
     for count, band_id in enumerate(unique_bands):
         band_obj = band_lookup[band_id]
         inst_name = band_obj.instrument.name if band_obj.instrument_id else None
-        short_label = display_filter_label(band_obj.name)
+        tel_name = (
+            band_obj.instrument.telescope.name
+            if band_obj.instrument_id and band_obj.instrument.telescope_id
+            else None
+        )
+        legend_label = plot_legend_label(
+            band_obj.name,
+            instrument_name=inst_name,
+            telescope_name=tel_name,
+        )
+        short_filter = display_filter_label(band_obj.name)
+        tel_label = telescope_display_name(inst_name, tel_name)
         color = band_display_color(band_obj.name, band_obj.disp_color, fallback_index=count)
         symbol = telescope_display_symbol(inst_name, band_obj.disp_symbol)
         if symbol and symbol != 'inverted_triangle':
@@ -817,7 +837,8 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
                 date=band_obs_date_str.tolist(),
                 data_quality=dq_labels[band_filter].tolist(),
                 magsys=mag_sys[band_filter].tolist(),
-                band=[short_label] * len(band_mjd),
+                telescope=[tel_label] * len(band_mjd),
+                filter=[short_filter] * len(band_mjd),
             )
         )
         plot_func = getattr(ax, symbol, ax.triangle)
@@ -830,7 +851,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
         err_ys = [(y - yerr, y + yerr) for y, yerr in zip(band_mag, band_mag_err)]
         ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)
 
-        legend_items.append((short_label, [plot]))
+        legend_items.append((legend_label, [plot]))
 
         # SALT2 processing
         if salt2 and str(band_obj.name) in bandpassdict.keys():
@@ -958,7 +979,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
     cache_key = None
     if not salt2 and _plot_html_cache_enabled():
-        cache_key = f'lc_detail_v2_{transient_id}_{_transient_phot_cache_token(transient_id)}'
+        cache_key = f'lc_detail_v4_{transient_id}_{_transient_phot_cache_token(transient_id)}'
         cached_html = cache.get(cache_key)
         if cached_html is not None:
             return django.http.HttpResponse(cached_html)
@@ -985,7 +1006,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
         b.pk: b
         for b in PhotometricBand.objects.filter(
             pk__in={p.band_id for p in phot_rows}
-        ).select_related('instrument')
+        ).select_related('instrument', 'instrument__telescope')
     }
 
     fluxes = np.array([p.flux for p in phot_rows], dtype=object)
@@ -1012,7 +1033,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
     colorlist = ['#8dd3c7','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9']
     TOOLTIPS = [
         ('mag','$y'),
-        ('band','@band'),
+        ('telescope','@telescope'),
+        ('filter','@filter'),
         ('date','@date'),
         ('dq','@data_quality'),
         ('magsys','@magsys')]
@@ -1023,7 +1045,15 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
     upperlimmag,upperlimmjd = np.array([]),np.array([])
     for bs,bn,b,bc,bsym,inn in zip(
             bandunq,band_name[idx],band[idx],disp_color[idx],disp_symbol[idx],instrument_name[idx]):
-        short_label = display_filter_label(bn)
+        band_obj = band_lookup[b]
+        tel_name = (
+            band_obj.instrument.telescope.name
+            if band_obj.instrument.telescope_id
+            else None
+        )
+        legend_label = plot_legend_label(bn, instrument_name=inn, telescope_name=tel_name)
+        short_filter = display_filter_label(bn)
+        tel_label = telescope_display_name(inn, tel_name)
         color = band_display_color(bn, bc, fallback_index=count)
         count += 1
         symbol = telescope_display_symbol(inn, bsym)
@@ -1067,7 +1097,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
                                             date=obs_dates_str[iPlot].tolist(),
                                             data_quality=data_quality[iPlot].tolist(),
                                             magsys=mag_sys[iPlot].tolist(),
-                                            band=[short_label]*len(mjds[iPlot].tolist())))
+                                            telescope=[tel_label]*len(mjds[iPlot].tolist()),
+                                            filter=[short_filter]*len(mjds[iPlot].tolist())))
             
         p_det = plotmethod('x','y',source=source,
                    color=color,size=size, muted_alpha=0.2)
@@ -1083,7 +1114,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
                                                 date=obs_dates_str[iPlotUlimFlux][iPlotUlimFlux2][iPlotUlimFlux3].tolist(),
                                                 data_quality=data_quality[iPlotUlimFlux][iPlotUlimFlux2][iPlotUlimFlux3].tolist(),
                                                 magsys=mag_sys[iPlotUlimFlux][iPlotUlimFlux2][iPlotUlimFlux3].tolist(),
-                                                band=[short_label]*len(ulim_x)))
+                                                telescope=[tel_label]*len(ulim_x),
+                                                filter=[short_filter]*len(ulim_x)))
 
             p_ulim = ax.inverted_triangle('x','y',source=source,
                                      color=color,size=5,muted_alpha=0.2)
@@ -1096,7 +1128,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
             err_ys.append((y - yerr, y + yerr))
         ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)#, legend='%s - %s'%(
 
-        legend_it.append((short_label, [p_det]))
+        legend_it.append((legend_label, [p_det]))
 
     today = Time(datetime.datetime.today()).mjd
     p_today = ax.line(today,20,line_width=3,line_color='black')
@@ -1365,7 +1397,8 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 
     TOOLTIPS = [
         ('mag','$y'),
-        ('band','@band'),
+        ('telescope','@telescope'),
+        ('filter','@filter'),
         ('date','@date'),
         ('dq','@data_quality'),
         ('magsys','@magsys')]
@@ -1375,7 +1408,14 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
     legend_it = []
     for bs,b,bc,bsym in zip(bandunq,allband[idx],allbandcolor[idx],allbandsym[idx]):
         raw_band_name = b.name if hasattr(b, 'name') else str(bs)
-        short_label = display_filter_label(raw_band_name)
+        short_filter = display_filter_label(raw_band_name)
+        tel_label = telescope_display_name(
+            b.instrument.name if hasattr(b, 'instrument_id') and b.instrument_id else None,
+            b.instrument.telescope.name
+            if hasattr(b, 'instrument') and getattr(b.instrument, 'telescope_id', None)
+            else None,
+        )
+        legend_label = f'{tel_label} {short_filter}'
         color = band_display_color(raw_band_name, bc, fallback_index=count)
         count += 1
         inst_name = b.instrument.name if hasattr(b, 'instrument_id') and b.instrument_id else None
@@ -1395,7 +1435,8 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
                                             date=date[bandstr == bs].tolist(),
                                             data_quality=data_quality[bandstr == bs].tolist(),
                                             magsys=magsys[bandstr == bs].tolist(),
-                                            band=[short_label]*len(mjd[bandstr == bs].tolist())))
+                                            telescope=[tel_label]*len(mjd[bandstr == bs].tolist()),
+                                            filter=[short_filter]*len(mjd[bandstr == bs].tolist())))
 
         p = plotmethod('x','y',source=source,
                    color=color,size=size, muted_alpha=0.2)#,legend='%s - %s'%(
@@ -1411,7 +1452,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
             err_ys.append((y - yerr, y + yerr))
         ax.multi_line(err_xs, err_ys, color=color, muted_alpha=0.2)
 
-        legend_it.append((short_label, [p]))
+        legend_it.append((legend_label, [p]))
         
     today = Time(datetime.datetime.today()).mjd
     p = ax.line(today,20,line_width=3,line_color='black')

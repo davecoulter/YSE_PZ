@@ -12,6 +12,8 @@ from YSE_App.common.filter_display import (
     band_display_color,
     display_filter_label,
     normalize_filter_name,
+    plot_legend_label,
+    telescope_display_name,
     telescope_display_symbol,
 )
 from YSE_App.common.magnitude_format import format_magnitude, format_magnitude_with_error
@@ -53,6 +55,21 @@ class FilterDisplayTests(TestCase):
         self.assertEqual(display_filter_label('r-ZTF'), 'r')
         self.assertEqual(display_filter_label('g-WFT'), 'g')
         self.assertEqual(display_filter_label('r'), 'r')
+
+    def test_telescope_display_name_shortens_instrument(self):
+        self.assertEqual(telescope_display_name('ZTF-Cam', 'ZTF'), 'ZTF')
+        self.assertEqual(telescope_display_name('ZTF-Cam', None), 'ZTF')
+        self.assertEqual(telescope_display_name(None, '1m-SWOPE'), 'Swope')
+
+    def test_plot_legend_label_telescope_and_filter_separate(self):
+        self.assertEqual(
+            plot_legend_label('r-ZTF', instrument_name='ZTF-Cam', telescope_name='ZTF'),
+            'ZTF r',
+        )
+        self.assertEqual(
+            plot_legend_label('g-WFT', instrument_name='WFT', telescope_name=None),
+            'WFT g',
+        )
 
 
 class MagnitudeFormatTests(TestCase):

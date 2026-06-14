@@ -69,6 +69,20 @@ FILTER_ALIASES = {
 
 _BASE_FILTER_KEYS = frozenset({'u', 'b', 'v', 'g', 'r', 'i', 'z', 'y', 'w', 'up', 'gp', 'rp', 'ip', 'zp'})
 
+# Instrument / telescope name substrings -> short legend label (e.g. ZTF-Cam -> ZTF).
+TELESCOPE_SHORT_LABELS = (
+    (('ztf', 'uvot'), 'ZTF'),
+    (('gpc1', 'ps1', 'pan-starrs', 'panstarrs'), 'PS1'),
+    (('swope',), 'Swope'),
+    (('acam', 'atlas'), 'ATLAS'),
+    (('direct', 'p200'), 'P200'),
+    (('sinistro', 'pixis', 'lco', 'lcogt'), 'LCO'),
+    (('acp', 'decam'), 'DECam'),
+    (('sta1600', 'soar'), 'SOAR'),
+    (('ptf',), 'PTF'),
+    (('hst', 'acs', 'wfc3'), 'HST'),
+)
+
 # Instrument / telescope name substrings -> Bokeh glyph.
 TELESCOPE_SYMBOL_RULES = (
     (('ztf',), 'diamond'),
@@ -145,6 +159,34 @@ def display_filter_label(band_name: str | None) -> str:
     if band_name:
         return band_name.strip()
     return '?'
+
+
+def telescope_display_name(
+    instrument_name: str | None = None,
+    telescope_name: str | None = None,
+) -> str:
+    """Short telescope family label for plot legends (e.g. ZTF-Cam -> ZTF)."""
+    for candidate in (telescope_name, instrument_name):
+        if not candidate or not str(candidate).strip():
+            continue
+        lower = str(candidate).strip().lower()
+        for patterns, label in TELESCOPE_SHORT_LABELS:
+            if any(pat in lower for pat in patterns):
+                return label
+        return str(candidate).strip()
+    return 'Unknown'
+
+
+def plot_legend_label(
+    band_name: str | None,
+    *,
+    instrument_name: str | None = None,
+    telescope_name: str | None = None,
+) -> str:
+    """Legend text: telescope + short filter (e.g. 'ZTF r')."""
+    tel = telescope_display_name(instrument_name, telescope_name)
+    filt = display_filter_label(band_name)
+    return f'{tel} {filt}'
 
 
 def filter_color_groups_for_display() -> list[dict]:
