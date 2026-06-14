@@ -143,3 +143,89 @@ body.yse-theme .yse-page-transient-summary h3.box-title {
 body.yse-theme .yse-page-transient-summary .btn {
   margin-bottom: var(--yse-space-xs);
 }
+
+/* --- Transient comments (Summary tab, right column above host) --- */
+body.yse-theme .yse-summary-side-col {
+  display: flex;
+  flex-direction: column;
+}
+
+body.yse-theme .yse-comments-panel {
+  margin-top: 0;
+  margin-bottom: var(--yse-space-md);
+  flex-shrink: 0;
+}
+
+body.yse-theme .yse-comments-panel .box {
+  margin-bottom: 0;
+}
+
+body.yse-theme .yse-comment-thread {
+  margin: 0 0 var(--yse-space-sm);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+body.yse-theme .yse-comment-item {
+  padding: var(--yse-space-sm) 0;
+  border-bottom: 1px solid #eee;
+}
+
+body.yse-theme .yse-comment-meta {
+  font-size: var(--yse-font-size-sm);
+  margin-bottom: var(--yse-space-xs);
+}
+
+body.yse-theme .yse-comment-author {
+  margin-right: var(--yse-space-sm);
+}
+
+body.yse-theme .yse-comment-body {
+  font-size: var(--yse-font-size-base);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+body.yse-theme .yse-mention {
+  color: var(--yse-color-accent);
+  font-weight: 600;
+}
+
+body.yse-theme .yse-comment-composer-row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+body.yse-theme .yse-comment-composer-row > [class*="col-"] {
+  padding-left: var(--yse-space-xs);
+  padding-right: var(--yse-space-xs);
+}
+
+body.yse-theme .yse-comment-composer-row > [class*="col-"]:first-child {
+  padding-left: 0;
+}
+
+body.yse-theme .yse-comment-composer-row > .yse-comment-submit-col {
+  padding-right: 0;
+}
+
+body.yse-theme .yse-comment-submit-col {
+  padding-top: 0;
+}
+
+body.yse-theme .yse-comment-composer textarea,
+body.yse-theme .yse-comment-input {
+  min-height: 2.5em;
+  resize: vertical;
+  margin-bottom: 0;
+}
+
+body.yse-theme .yse-comment-submit {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+body.yse-theme .yse-comments-new-badge {
+  margin-left: var(--yse-space-sm);
+  font-size: var(--yse-font-size-xs);
+}

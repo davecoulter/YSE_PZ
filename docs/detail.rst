@@ -97,9 +97,10 @@ be downloaded.
 
 .. image:: _static/yse_pz_detailarchival.png
 
-Comments Tab
-------------
+Comments (Summary tab)
+----------------------
 
-The comments tab allows conversations about each transient.  The UI
-is not very refined, but using the @username syntax will email a given
-user that their name has been mentioned in connection with this transient.
+Transient comments appear on the **Summary** tab (not a separate tab).
+Use ``@username`` to email that user; ``@channel`` notifies all users.
+Optional Slack integration posts comments to a workspace channel when enabled
+(see ``SLACK_*`` settings).

@@ -3,7 +3,7 @@
 **Canonical repo:** https://github.com/Young-Supernova-Experiment/YSE_PZ  
 **Integration branch:** `develop` (phase PRs merge here)  
 **Release:** `master` after thorough `develop` testing  
-**Last updated:** 2026-06-02
+**Last updated:** 2026-06-04
 
 **Workflow:** one branch per phase → PR to `develop` → test on `develop` → promote `develop` → `master`  
 **UI sequence:** **A** (phase 1 theme) → **B** (phase 7 Bootstrap 5) → **C** (HTMX islands in phases 2 and 4)
@@ -59,45 +59,45 @@ docker exec ysepz_web_container python3 manage.py test YSE_App.tests.test_page_l
 5. **Proxy/timeouts:** Apache or nginx `ProxyTimeout` / `proxy_read_timeout` ≥ Gunicorn `GUNICORN_TIMEOUT` (default **120s** in [`docker/entrypoints/docker-compose-up-entrypoint.sh`](../docker/entrypoints/docker-compose-up-entrypoint.sh)).
 6. Production: `IS_DEBUG=False`, `DJANGO_SECRET_KEY` via env; optional `REDIS_URL` if multiple Gunicorn workers.
 
-### 3. Start phase 1 — theme (UI path **A**)
+### 3. Phase 1 — theme + perf + TNS fixture (UI path **A**) — **implemented, PR #94**
 
-**Branch:** `ui/phase-1-theme` (created; stacked on phase 0 until #93 merges).
+**Branch:** `ui/phase-1-theme` → [PR #94](https://github.com/Young-Supernova-Experiment/YSE_PZ/pull/94) (**ready for review**, stacked on #93).
 
-**Stacked PR workflow:**
+**Closes:** #24–#32 (P1-1 … T1-1) and #95–#99 (transient_detail perf, TNS fixture, photometry map, calendar UX, static fixes).
 
-1. Work on `ui/phase-1-theme` (branched from `ui/phase-0-bugfixes`); open draft PR → `develop`.
-2. After **#93** merges: `git fetch yse develop && git rebase yse/develop` on `ui/phase-1-theme`, then `git push --force-with-lease yse ui/phase-1-theme`.
-3. PR diff then shows only phase-1 commits; mark PR ready for review.
+**Before merge:**
 
-If starting fresh after #93 is already on `develop`:
+1. Merge **#93** into `develop`.
+2. Rebase #94: `git fetch yse develop && git rebase yse/develop && git push --force-with-lease yse ui/phase-1-theme`.
+3. Run PR #94 test plan (theme, TNS map, HAR snapshots, `test_page_load_regression`, `test_performance`).
+4. Manual smoke: `2026fba` / `2026fov` on transient_detail; `collectstatic` for theme + Aladin vendor.
 
-```bash
-git fetch yse develop
-git checkout -b ui/phase-1-theme yse/develop
-```
+**Plans:** `.cursor/plans/phase_1_theme_plan_10271da7.plan.md` (checklists), `.cursor/plans/yse_ui_workflow_roadmap_2455eacc.plan.md` (full roadmap).
 
-**Issues (#24–#32):** P1-1 … P1-8, T1-1 — see [issue index](#issue-index) below.
+**Optional:** refresh SQL fixture — `build_tns_fixture --prefix 2026f --max 50 --merge-manifest --clobber` then `build-test-fixture-db.sh export`.
 
-| Step | Issue | Work |
-|------|-------|------|
-| 1 | P1-1 | Add `YSE_App/static/YSE_App/yse-theme.css` (CSS variables: color, spacing, type scale); link from [`base.html`](../YSE_App/templates/YSE_App/base.html) after AdminLTE |
-| 2 | P1-2 | Compact [`dashboard`](../YSE_App/templates/YSE_App/) tables — reduce `.box` padding, tighter `django-tables2` row height |
-| 3 | P1-3 | Compact transient detail **summary** tab layout |
-| 4 | P1-4 | Compact [`observing_night`](../YSE_App/views.py) template |
-| 5 | P1-5 | Apply theme classes to deferred AJAX fragments (dashboard/PFP partials if present on `develop`) |
-| 6 | P1-6 | Split [`transient_detail.html`](../YSE_App/templates/YSE_App/transient_detail.html) into includes (`summary`, `tags`, …) |
-| 7 | P1-7 | a11y: focus rings, `th scope="col"`, contrast in theme CSS |
-| 8 | P1-8 / T1-1 | Run `test_page_load_regression` + `test_performance`; document TTFB/query deltas in PR |
+### 4. Phase 2 — comments + Slack (**C**) — **implemented, [PR #103](https://github.com/Young-Supernova-Experiment/YSE_PZ/pull/103)**
 
-**PR:** `ui/phase-1-theme` → `develop`, body: `Fixes #24` … `Fixes #32` (adjust if any issue deferred).
+**Branch:** `ui/phase-2-comments-slack` → `develop` (**stacked on #94**; PR base `ui/phase-1-theme` until #93/#94 merge).
 
-**Local verification (after phase-1 code complete):** From repo root, `./docker/scripts/yse-docker.sh up` (leave running); test http://127.0.0.1:8080/login/ then `/dashboard/`, `/personaldashboard/`, `/transient_detail/<slug>/`, `/observing_night/...`. After each test run: `./docker/scripts/yse-docker.sh down` then `./docker/scripts/yse-docker.sh prune aggressive` (wraps `prune-yse-docker.sh` — do not use raw `docker system prune`). Per-page checklists: Cursor plan `phase_1_theme_plan`.
+**Closes:** #49–#58 (P2-1 … P2-10), T2-1 [#33](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/33).
 
-### 4. Phases 2–7 (after prior phase merges)
+**Follow-up issues (not in this PR):** [#102](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/102) (group access security), [#100](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/100) (per-group Slack), [#101](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/101) (Slack ops doc).
+
+**Before merge:**
+
+1. Merge **#93** and **#94** into `develop` (or rebase this branch onto `yse/develop` after they land).
+2. `git fetch yse develop && git rebase yse/develop && git push --force-with-lease yse ui/phase-2-comments-slack`.
+3. Run `YSE_App.tests.test_phase2_comments`; smoke: Summary tab comment thread, optional Slack env in `docker/.env.secrets`.
+4. `python manage.py migrate` for `0004_slackthreadlink`.
+
+**Plans:** `.cursor/plans/phase_2_comments_slack_plan_10271da7.plan.md`, groups security plan (separate track).
+
+### 5. Phases 3–7 (after prior phase merges)
 
 | Phase | Branch | Issues | Theme |
 |-------|--------|--------|--------|
-| **2** | `ui/phase-2-comments-slack` | #49–#58, T2-1 #33 | Inline comments on summary; Slack app; DRF comments API (**C**) |
+| **2** | *(see §4)* | #49–#58, #33 | *(shipped on `ui/phase-2-comments-slack`)* |
 | **3** | `ui/phase-3-night-requests` | #59–#69, T3-1 #34 | `ClassicalNightRequest`, priority, night-scoped queryset fixes |
 | **4** | `ui/phase-4-classical-scheduler` | #70–#78, T4-1 #35 | Greedy scheduler + planner UI + export (**C**) |
 | **5** | `ui/phase-5-dq-bitmask` | #79–#85, T5-1 #36 | `quality_mask` dual-write, filters, plot muting |
@@ -106,13 +106,13 @@ git checkout -b ui/phase-1-theme yse/develop
 
 Phases **5** and **6** may start after **4** if team capacity allows; **7** should follow **1** (theme tokens inform BS5 migration).
 
-### 5. Release to production
+### 6. Release to production
 
 1. Soak test on **`develop`** (Docker or staging).
 2. PR **`develop` → `master`** when stable.
 3. Deploy `master`; repeat collectstatic + smoke from step 2.
 
-### 6. Docs / meta (parallel, low priority)
+### 7. Docs / meta (parallel, low priority)
 
 - [#46](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/46) — optional GitHub Project board  
 - [#47](https://github.com/Young-Supernova-Experiment/YSE_PZ/issues/47) — align `CONTRIBUTING.md` with `develop` + org issue tracker  

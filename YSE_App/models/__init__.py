@@ -19,3 +19,4 @@ from YSE_App.models.transient_models import *
 from YSE_App.models.tag_models import *
 from YSE_App.models.gw_models import *
 from YSE_App.models.survey_models import *
+from YSE_App.models.integration_models import *

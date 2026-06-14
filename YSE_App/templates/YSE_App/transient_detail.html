@@ -42,11 +42,9 @@
                     {% if gw_candidate %}
                         <li><a href="#gw_tab" data-toggle="tab" id="gw_tab_header">GW Info</a></li>
                     {% endif %}
-                    <li><a href="#comments_tab" data-toggle="tab">Comments
-                    {% if new_comment %}
-                    (<b>New</b>)
-                    {% endif %}
-                    </a></li>
+                    <li class="hidden">
+                        <a href="#summary_tab" data-toggle="tab" id="yse-comments-tab-legacy">Comments (on Summary)</a>
+                    </li>
                 </ul>
                 <div class="tab-content">
                     <div class="active tab-pane" id="summary_tab">
@@ -472,31 +470,6 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="tab-pane" id="comments_tab">
-                        <h4>Comments for {{transient.name}}</h4>
-                        {% for l in logs %}
-                        <b>{{ l.created_by }}: </b>{{l.comment }} ({{l.modified_date}} UT)<br>
-                        {% endfor %}
-                        <p id="add_comment_container"></p>
-                        <form id="add_transient_comment" action="{% url 'add_transient_comment' %}" method="post">
-
-                        <input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
-                        {% csrf_token %}
-                        {% for hidden_field in form.hidden_fields %}
-                        {{ hidden_field }}
-                        {% endfor %}
-                        <br>
-                        <div class="form-group">
-
-                            <label>Add Comment:</label>
-                            {% render_field transient_comment_form.comment class+="form-control" %}
-                            <!--<input type="comment" class="form-control" id="comment">-->
-                        </div>
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-block btn-primary btn-lg">Submit</button>
-                        </div>
-                    </form>
-                </div>
             </div>
         </div>
 
@@ -1141,40 +1114,69 @@
                 $('#obs_date').getDate()
             });
 
-            // Submit comment on submit
-            $('#add_transient_comment').on('submit', function(event){
+            // Submit comment (delegated — fragment polling replaces form HTML)
+            $(document).on('submit', '#yse-comments-section #add_transient_comment', function(event){
                 event.preventDefault();
                 add_transient_comment();
             });
 
+            function yseEscapeHtml(text) {
+                return $('<div/>').text(text || '').html();
+            }
+
+            function ysePrependCommentRow(data) {
+                if (!data || !data.comment) {
+                    return;
+                }
+                $('#yse-comment-thread .yse-comment-empty').remove();
+                var row = $('<li class="yse-comment-item"></li>').attr('data-log-id', data.id);
+                row.append(
+                    '<div class="yse-comment-meta"><strong class="yse-comment-author">' +
+                    yseEscapeHtml(data.created_by) +
+                    '</strong> <time class="yse-comment-time text-muted">' +
+                    yseEscapeHtml(data.modified_date) + ' UT</time></div>' +
+                    '<div class="yse-comment-body">' + yseEscapeHtml(data.comment) + '</div>'
+                );
+                $('#yse-comment-thread').prepend(row);
+            }
+
             function add_transient_comment(){
-                var data = $('#add_transient_comment').serialize()
-                var transient_id = $('#transient_pk').val()
-                data = (data + "&transient=" + transient_id)
+                var $form = $('#yse-comments-section #add_transient_comment');
+                if (!$form.length) {
+                    return;
+                }
                 $.ajax({
-                    url : "{% url 'add_transient_comment' %}", // the endpoint
-                    type : "POST", // http method
-                    data : data, // data sent with the post request
-
-                    // handle a successful response
+                    url : "{% url 'add_transient_comment' %}",
+                    type : "POST",
+                    data : $form.serialize(),
                     success : function(json) {
-                        if (json.data['comment']){
-                            // Construct HTML to append container
-                            var commentHTML = "<b>"+json.data['created_by'] + ": </b>" + json.data['comment'] + " (" + json.data['modified_date'] + " UT)<br>"
-
-                            $("#add_comment_container").append(commentHTML)
-                            }
-                            // Close & reset form box
-                        $('#add_transient_comment')[0].reset();
-
+                        if (json.data) {
+                            ysePrependCommentRow(json.data);
+                        }
+                        $form[0].reset();
                     },
-
-                    // handle a non-successful response
-                    error : function(xhr,errmsg,err) {
+                    error : function(xhr) {
                         alert(xhr.status + ": " + xhr.responseText);
                     }
                 });
             };
+
+            (function yseCommentPolling() {
+                var $section = $('#yse-comments-section');
+                if (!$section.length) {
+                    return;
+                }
+                var slug = $section.data('transient-slug');
+                var fragmentUrl = "{% url 'comments_fragment' slug=transient.slug %}";
+                setInterval(function() {
+                    $.get(fragmentUrl, function(html) {
+                        var inner = $(html).find('#yse-comments-panel-inner').html();
+                        if (inner) {
+                            $('#yse-comments-panel-inner').html(inner);
+                        }
+                    });
+                }, 60000);
+            })();
 
 
             // Submit post on submit
