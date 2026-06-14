@@ -22,6 +22,29 @@ def user_group_names(user: User) -> List[str]:
     return list(user.groups.values_list("name", flat=True))
 
 
+def group_access_plot_cache_token(user: User) -> str:
+    """Cache suffix from collaboration-group membership (not user id).
+
+    Users who share the same set of ``auth.Group`` names receive the same token,
+    so plot HTML is reused across users with identical data access.
+    """
+    import hashlib
+
+    if not user.is_authenticated:
+        return "anon"
+    if user.is_staff or user.is_superuser:
+        return "staff"
+    names = sorted(user_group_names(user))
+    if not names:
+        return "nogroups"
+    digest = hashlib.sha256("|".join(names).encode()).hexdigest()[:12]
+    return f"g{digest}"
+
+
+# Backward-compatible alias (deprecated name).
+user_plot_cache_token = group_access_plot_cache_token
+
+
 def get_user_group_query(user: User):
     """Same semantics as PhotometryService: ungrouped OR intersects user groups."""
     names = user_group_names(user)

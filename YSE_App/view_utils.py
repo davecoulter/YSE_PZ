@@ -32,6 +32,7 @@ from .common.filter_display import (
     telescope_display_symbol,
 )
 from .common.utilities import date_to_mjd
+from .services.visibility import group_access_plot_cache_token
 
 import copy
 import functools
@@ -979,7 +980,10 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
 
     cache_key = None
     if not salt2 and _plot_html_cache_enabled():
-        cache_key = f'lc_detail_v4_{transient_id}_{_transient_phot_cache_token(transient_id)}'
+        user_key = group_access_plot_cache_token(request.user)
+        cache_key = (
+            f'lc_detail_v5_{transient_id}_{_transient_phot_cache_token(transient_id)}_{user_key}'
+        )
         cached_html = cache.get(cache_key)
         if cached_html is not None:
             return django.http.HttpResponse(cached_html)
@@ -1582,7 +1586,10 @@ def spectrumplot(request, transient_id):
 
     cache_key = None
     if _plot_html_cache_enabled():
-        cache_key = f'specplot_v1_{transient_id}_{_transient_spectrum_cache_token(transient_id)}'
+        user_key = group_access_plot_cache_token(request.user)
+        cache_key = (
+            f'specplot_v2_{transient_id}_{_transient_spectrum_cache_token(transient_id)}_{user_key}'
+        )
         cached_html = cache.get(cache_key)
         if cached_html is not None:
             return django.http.HttpResponse(cached_html)

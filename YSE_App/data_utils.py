@@ -40,6 +40,11 @@ def _safe_sendemail(*args, **kwargs):
         sendemail(*args, **kwargs)
     except Exception as exc:
         print(f'Email notification failed: {exc}')
+from .common.collaboration_groups import (
+    apply_collaboration_groups_to_photometry,
+    collaboration_groups_from_photometry_upload,
+    normalize_collaboration_group_names,
+)
 from .common.utilities import getRADecBox
 from django.db.models import Q
 from .queries.yse_python_queries import *
@@ -869,6 +874,10 @@ def add_transient_phot_util(photdict,transient,user,do_photdata=True):
                         p['diffimg']['phot_data_id'] = e.id
                         TransientDiffImage.objects.create(**p['diffimg'])
 
+        group_names = collaboration_groups_from_photometry_upload(photometry)
+        if transientphot.pk:
+            apply_collaboration_groups_to_photometry(transientphot, group_names)
+
     return_dict = {"message":"successfully added phot data"}
     return JsonResponse(return_dict),transientphot_entries
 
@@ -890,7 +899,7 @@ def add_transient_spec_util(specdict,transient,user):
 
         allgroups = []
         if 'groups' in spectrum.keys() and spectrum['groups']:
-            for specgroup in spectrum['groups'].split(','):
+            for specgroup in normalize_collaboration_group_names(spectrum['groups']):
                 group = Group.objects.filter(name=specgroup)
                 if not len(group):
                     return_dict = {"message":"group %s is not in DB"%hd['groups']}
@@ -917,6 +926,7 @@ def add_transient_spec_util(specdict,transient,user):
         spectrum['transient'] = transient
         spectrum_copy = spectrum.copy()
         del spectrum_copy['specdata']
+        spectrum_copy.pop('groups', None)
 
         if not len(transientspec):
             transientspec = TransientSpectrum.objects.create(**spectrum_copy)
