@@ -111,6 +111,16 @@ def _load_heavy_plot_stack():
     )
     CDN = _CDN
     cosmo = FlatLambdaCDM(70, 0.3)
+
+
+def _bokeh_ajax_response(ax, title="plot"):
+    """Embed Bokeh using components(); page already loads bokeh-2.4.2.min.js."""
+    _load_heavy_plot_stack()
+    from bokeh.embed import components
+
+    script, div = components(ax)
+    html = f"{div}{script}"
+    return HttpResponse(html.replace("width: 90%", "width: 100%"))
     plot_airmass = _plot_airmass
     hp = _hp
     matplotlib = _matplotlib
@@ -129,6 +139,14 @@ def _load_heavy_plot_stack():
         
 
 Q = Queue()
+
+
+
+def _phot_data_quality_label(phot_row):
+    dq_names = list(phot_row.data_quality.values_list("name", flat=True))
+    if not dq_names:
+        return "Good"
+    return ",".join(dq_names)
 
 py2bokeh_symboldict = {"^":"triangle",
                        "+":"cross",
@@ -281,6 +299,20 @@ def getTimeUntilRiseSet(ra,dec,date,lat,lon,elev,utc_off):
 #           break
 #
 #   return(can_obs)
+
+
+def finder_chart_static_relpath(transient_name):
+    return f"YSE_App/images/findercharts/{transient_name}/{transient_name}.finder.png"
+
+
+def static_asset_available(relative_path):
+    """True if a static file exists in finders or under STATIC_ROOT (post-collectstatic)."""
+    from django.contrib.staticfiles import finders
+
+    if finders.find(relative_path):
+        return True
+    return os.path.isfile(os.path.join(djangoSettings.STATIC_ROOT, relative_path))
+
 
 class Finder(TemplateView):
     template_name = 'YSE_App/finder.html'
@@ -622,6 +654,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
             "created_by",
             "modified_by",
         )
+        .prefetch_related("data_quality")
         .order_by("-modified_date")
     )
 
@@ -633,18 +666,23 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
     band_data = PhotometricBand.objects.filter(pk__in=band_ids).select_related("instrument")
     band_lookup = {b.pk: b for b in band_data}
 
-    # Extract photometry data efficiently
-    phot_values = photdata.values(
-        "flux",
-        "flux_err",
-        "flux_zero_point",
-        "mag",
-        "mag_err",
-        "discovery_point",
-        "obs_date",
-        "band",
-        "mag_sys__name",
-    )
+    phot_rows = list(photdata)
+    phot_values = [
+        {
+            "id": p.id,
+            "flux": p.flux,
+            "flux_err": p.flux_err,
+            "flux_zero_point": p.flux_zero_point,
+            "mag": p.mag,
+            "mag_err": p.mag_err,
+            "discovery_point": p.discovery_point,
+            "obs_date": p.obs_date,
+            "band": p.band_id,
+            "mag_sys__name": p.mag_sys.name if p.mag_sys_id else None,
+            "dq_label": _phot_data_quality_label(p),
+        }
+        for p in phot_rows
+    ]
 
     # Convert data to NumPy arrays
     flux = np.array([p["flux"] for p in phot_values], dtype=float)
@@ -655,6 +693,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
     discovery_point = np.array([p["discovery_point"] for p in phot_values], dtype=bool)
     obs_date = np.array([p["obs_date"] for p in phot_values], dtype="datetime64")
     mag_sys = np.array([p["mag_sys__name"] or "None" for p in phot_values])
+    dq_labels = np.array([p["dq_label"] for p in phot_values])
     band_ids = np.array([p["band"] for p in phot_values], dtype=int)
 
     # Convert observation dates to MJD
@@ -712,7 +751,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
                 x=band_mjd.tolist(),
                 y=band_mag.tolist(),
                 date=band_obs_date_str.tolist(),
-                data_quality=["Good"] * len(band_mjd),
+                data_quality=dq_labels[band_filter].tolist(),
                 magsys=mag_sys[band_filter].tolist(),
                 band=[f"{band_obj.instrument.name} - {band_obj.name}"] * len(band_mjd),
             )
@@ -848,8 +887,7 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
                           render_mode='css', text_font_size='10pt', text=text)
             ax.add_layout(label)
 
-    g = file_html(ax,CDN,"my plot")
-    return HttpResponse(g.replace('width: 90%','width: 100%'))
+    return _bokeh_ajax_response(ax, "my plot")
 
 
 def lightcurveplot_detail(request, transient_id, salt2=False):
@@ -1137,9 +1175,8 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
         except Exception:
             pass
 
-    g = file_html(ax,CDN,"my plot")
     print("plotting took %s"%(time.time()-tstart))
-    return HttpResponse(g.replace('width: 90%','width: 100%'))
+    return _bokeh_ajax_response(ax, "my plot")
 
 
 def lightcurveplot_flux(request, transient_id, salt2=False):
@@ -1464,7 +1501,9 @@ def spectrumplot(request, transient_id):
             'label': f'{spectrum.instrument.name} - {spectrum.obs_date.strftime("%Y-%m-%d")}',
         })
     if not spectra:
-        return django.http.HttpResponse('')
+        return django.http.HttpResponse(
+            '<p class="text-muted yse-plot-empty">No spectrum data on file for this transient.</p>'
+        )
     
     # Process spectra and compute offsets
     dates = np.array([spec['mjd'] for spec in spectra])
@@ -1505,10 +1544,8 @@ def spectrumplot(request, transient_id):
     ax.xaxis.axis_label = r'Wavelength (Angstrom)'
     ax.yaxis.axis_label = 'Flux'
     
-    # Render plot
-    g = file_html(ax, CDN, "spectrum plot")
-    return HttpResponse(g.replace('width: 90%', 'width: 100%'))
-    
+    return _bokeh_ajax_response(ax, "spectrum plot")
+
 
 def spectrumplot_summary(request, transient_id):
     _load_heavy_plot_stack()

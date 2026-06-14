@@ -1,2 +1,5 @@
 # Optional development dependencies layered onto ghcr.io/davecoulter/yse_pz:latest.
 # Add packages here for local dev image builds (one requirement per line).
+# 1.2.x works on Python 3.8; needs libcurl4-openssl-dev in Dockerfile for astro-datalab/pycurl.
+astro-prost==1.2.13
+astro-datalab==2.22.1

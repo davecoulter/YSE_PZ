@@ -21,6 +21,14 @@ from matplotlib import rcParams
 from django.db.models.expressions import RawSQL
 rcParams['figure.figsize'] = (7,7)
 
+
+def stable_order_by(queryset, field, is_descending):
+    """Append pk tie-breaker so pagination stays stable (Fixes #35)."""
+    if is_descending:
+        return queryset.order_by(f'-{field}', '-pk')
+    return queryset.order_by(field, 'pk')
+
+
 class TransientTable(tables.Table):
 
     name_string = tables.TemplateColumn("<a href=\"{% url 'transient_detail' record.slug %}\">{{ record.name }}</a>",
@@ -70,12 +78,16 @@ class TransientTable(tables.Table):
 
         self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
 
+
+    def order_best_spec_class(self, queryset, is_descending):
+        return (stable_order_by(queryset, 'best_spec_class', is_descending), True)
+
     def order_best_redshift(self, queryset, is_descending):
 
         queryset = queryset.annotate(
             best_redshift=Coalesce('redshift', 'host__redshift'),
-        ).order_by(('-' if is_descending else '') + 'best_redshift')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'best_redshift', is_descending), True)
 
 
     def order_recent_mag(self, queryset, is_descending):
@@ -93,9 +105,8 @@ SELECT pd.mag
      )
 """
 
-        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
-
-        return (queryset, True)
+        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,()))
+        return (stable_order_by(queryset, 'recent_mag', is_descending), True)
 
     def order_recent_magdate(self, queryset, is_descending):
 
@@ -105,8 +116,8 @@ SELECT pd.mag
         phot_data_query = Q(transientphotometry__id__in=phot_ids)
         queryset = queryset.annotate(
             recent_magdate=Max('transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
-        ).order_by(('-' if is_descending else '') + 'recent_magdate')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'recent_magdate', is_descending), True)
 
 
     class Meta:
@@ -189,12 +200,16 @@ class FieldTransientTable(tables.Table):
 
         self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
 
+
+    def order_best_spec_class(self, queryset, is_descending):
+        return (stable_order_by(queryset, 'best_spec_class', is_descending), True)
+
     def order_best_redshift(self, queryset, is_descending):
 
         queryset = queryset.annotate(
             best_redshift=Coalesce('redshift', 'host__redshift'),
-        ).order_by(('-' if is_descending else '') + 'best_redshift')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'best_redshift', is_descending), True)
 
 
     def order_recent_mag(self, queryset, is_descending):
@@ -212,9 +227,8 @@ SELECT pd.mag
      )
 """
 
-        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
-
-        return (queryset, True)
+        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,()))
+        return (stable_order_by(queryset, 'recent_mag', is_descending), True)
 
     def order_recent_magdate(self, queryset, is_descending):
 
@@ -224,8 +238,8 @@ SELECT pd.mag
         phot_data_query = Q(transientphotometry__id__in=phot_ids)
         queryset = queryset.annotate(
             recent_magdate=Max('transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
-        ).order_by(('-' if is_descending else '') + 'recent_magdate')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'recent_magdate', is_descending), True)
 
 
     class Meta:
@@ -308,12 +322,16 @@ class AdjustFieldTransientTable(tables.Table):
 
         self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
 
+
+    def order_best_spec_class(self, queryset, is_descending):
+        return (stable_order_by(queryset, 'best_spec_class', is_descending), True)
+
     def order_best_redshift(self, queryset, is_descending):
 
         queryset = queryset.annotate(
             best_redshift=Coalesce('redshift', 'host__redshift'),
-        ).order_by(('-' if is_descending else '') + 'best_redshift')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'best_redshift', is_descending), True)
 
 
     def order_recent_mag(self, queryset, is_descending):
@@ -331,9 +349,8 @@ SELECT pd.mag
      )
 """
 
-        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
-
-        return (queryset, True)
+        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,()))
+        return (stable_order_by(queryset, 'recent_mag', is_descending), True)
 
     def order_recent_magdate(self, queryset, is_descending):
 
@@ -343,8 +360,8 @@ SELECT pd.mag
         phot_data_query = Q(transientphotometry__id__in=phot_ids)
         queryset = queryset.annotate(
             recent_magdate=Max('transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
-        ).order_by(('-' if is_descending else '') + 'recent_magdate')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'recent_magdate', is_descending), True)
 
 
     class Meta:
@@ -426,12 +443,16 @@ class YSETransientTable(tables.Table):
 
         self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
 
+
+    def order_best_spec_class(self, queryset, is_descending):
+        return (stable_order_by(queryset, 'best_spec_class', is_descending), True)
+
     def order_best_redshift(self, queryset, is_descending):
 
         queryset = queryset.annotate(
             best_redshift=Coalesce('redshift', 'host__redshift'),
-        ).order_by(('-' if is_descending else '') + 'best_redshift')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'best_redshift', is_descending), True)
 
     def render_requested_followup_resources(self, value):
 
@@ -490,9 +511,8 @@ SELECT pd.mag
      )
 """
 
-        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
-
-        return (queryset, True)
+        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,()))
+        return (stable_order_by(queryset, 'recent_mag', is_descending), True)
 
     def order_recent_magdate(self, queryset, is_descending):
 
@@ -502,8 +522,8 @@ SELECT pd.mag
         phot_data_query = Q(transientphotometry__id__in=phot_ids)
         queryset = queryset.annotate(
             recent_magdate=Max('transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
-        ).order_by(('-' if is_descending else '') + 'recent_magdate')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'recent_magdate', is_descending), True)
 
 
     class Meta:
@@ -581,12 +601,16 @@ class YSEFullTransientTable(tables.Table):
 
         self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
 
+
+    def order_best_spec_class(self, queryset, is_descending):
+        return (stable_order_by(queryset, 'best_spec_class', is_descending), True)
+
     def order_best_redshift(self, queryset, is_descending):
 
         queryset = queryset.annotate(
             best_redshift=Coalesce('redshift', 'host__redshift'),
-        ).order_by(('-' if is_descending else '') + 'best_redshift')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'best_redshift', is_descending), True)
 
     def render_requested_followup_resources(self, value):
 
@@ -636,9 +660,8 @@ SELECT pd.mag
      )
 """
 
-        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
-
-        return (queryset, True)
+        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,()))
+        return (stable_order_by(queryset, 'recent_mag', is_descending), True)
 
     def order_recent_magdate(self, queryset, is_descending):
 
@@ -648,8 +671,8 @@ SELECT pd.mag
         phot_data_query = Q(transientphotometry__id__in=phot_ids)
         queryset = queryset.annotate(
             recent_magdate=Max('transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
-        ).order_by(('-' if is_descending else '') + 'recent_magdate')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'recent_magdate', is_descending), True)
 
 
     class Meta:
@@ -733,12 +756,16 @@ class YSERisingTransientTable(tables.Table):
 
         self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
 
+
+    def order_best_spec_class(self, queryset, is_descending):
+        return (stable_order_by(queryset, 'best_spec_class', is_descending), True)
+
     def order_best_redshift(self, queryset, is_descending):
 
         queryset = queryset.annotate(
             best_redshift=Coalesce('redshift', 'host__redshift'),
-        ).order_by(('-' if is_descending else '') + 'best_redshift')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'best_redshift', is_descending), True)
 
     def render_requested_followup_resources(self, value):
 
@@ -792,9 +819,8 @@ SELECT pd.mag
      )
 """
 
-        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
-
-        return (queryset, True)
+        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,()))
+        return (stable_order_by(queryset, 'recent_mag', is_descending), True)
 
     def order_recent_magdate(self, queryset, is_descending):
 
@@ -804,8 +830,8 @@ SELECT pd.mag
         phot_data_query = Q(transientphotometry__id__in=phot_ids)
         queryset = queryset.annotate(
             recent_magdate=Max('transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
-        ).order_by(('-' if is_descending else '') + 'recent_magdate')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'recent_magdate', is_descending), True)
 
 
     class Meta:
@@ -883,12 +909,16 @@ class NewTransientTable(tables.Table):
 
         self.base_columns['best_spec_class'].verbose_name = 'Spec. Class'
 
+
+    def order_best_spec_class(self, queryset, is_descending):
+        return (stable_order_by(queryset, 'best_spec_class', is_descending), True)
+
     def order_best_redshift(self, queryset, is_descending):
 
         queryset = queryset.annotate(
             best_redshift=Coalesce('redshift', 'host__redshift'),
-        ).order_by(('-' if is_descending else '') + 'best_redshift')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'best_redshift', is_descending), True)
 
     def order_recent_mag(self, queryset, is_descending):
 
@@ -905,9 +935,8 @@ SELECT pd.mag
      )
 """
 
-        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
-
-        return (queryset, True)
+        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,()))
+        return (stable_order_by(queryset, 'recent_mag', is_descending), True)
 
     def order_recent_magdate(self, queryset, is_descending):
 
@@ -917,8 +946,8 @@ SELECT pd.mag
         phot_data_query = Q(transientphotometry__id__in=phot_ids)
         queryset = queryset.annotate(
             recent_magdate=Max('transientphotometry__transientphotdata__obs_date',filter=phot_data_query), #,filter=phot_data_query
-        ).order_by(('-' if is_descending else '') + 'recent_magdate')
-        return (queryset, True)
+        )
+        return (stable_order_by(queryset, 'recent_magdate', is_descending), True)
 
 
     class Meta:
@@ -948,7 +977,7 @@ SELECT pd.mag
 class FollowupTable(tables.Table):
 
     name_string = tables.TemplateColumn("<a href=\"{% url 'transient_detail' record.transient.slug %}\">{{ record.transient.name }}</a>",
-                                        verbose_name='Name',orderable=True,order_by='name')
+                                        verbose_name='Name',orderable=True,order_by='transient__name')
     ra_string = tables.Column(accessor='transient.CoordString.0',
                               verbose_name='RA',orderable=True,order_by='transient.ra')
     dec_string = tables.Column(accessor='transient.CoordString.1',
@@ -1001,9 +1030,8 @@ SELECT pd.mag
      )
 """
 
-        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
-
-        return (queryset, True)
+        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,()))
+        return (stable_order_by(queryset, 'recent_mag', is_descending), True)
 
     class Meta:
         model = TransientFollowup
@@ -1028,7 +1056,7 @@ SELECT pd.mag
 class ObsNightFollowupTable(tables.Table):
 
     name_string = tables.TemplateColumn("<a href=\"{% url 'transient_detail' record.transient.slug %}\">{{ record.transient.name }}</a>",
-                                        verbose_name='Name',orderable=True,order_by='name')
+                                        verbose_name='Name',orderable=True,order_by='transient__name')
     ra_string = tables.Column(accessor='transient.CoordString.0',
                               verbose_name='RA',orderable=True,order_by='transient.ra')
     dec_string = tables.Column(accessor='transient.CoordString.1',
@@ -1143,9 +1171,8 @@ SELECT pd.mag
      )
 """
 
-        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
-
-        return (queryset, True)
+        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,()))
+        return (stable_order_by(queryset, 'recent_mag', is_descending), True)
 
     class Meta:
         model = TransientFollowup
@@ -1280,9 +1307,8 @@ SELECT pd.mag
      )
 """
 
-        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,())).order_by(('-' if is_descending else '') + 'recent_mag')
-
-        return (queryset, True)
+        queryset = queryset.annotate(recent_mag=RawSQL(raw_query,()))
+        return (stable_order_by(queryset, 'recent_mag', is_descending), True)
 
     class Meta:
         model = TransientFollowup

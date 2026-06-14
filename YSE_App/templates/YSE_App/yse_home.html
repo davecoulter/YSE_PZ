@@ -442,8 +442,10 @@
 
           // handle a successful response
           success : function(json) {
-            
-            // Required fields
+              if (json.observing_calendar_url && window.confirm('Classical resource saved. Open Observing Calendar?')) {
+                window.location.href = json.observing_calendar_url;
+                return;
+              }
               location.reload();
           },
 

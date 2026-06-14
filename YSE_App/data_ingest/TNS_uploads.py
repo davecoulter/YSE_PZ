@@ -40,6 +40,7 @@ from itertools import islice
 from astropy.cosmology import FlatLambdaCDM
 import sys
 from YSE_App.common import mast_query,chandra_query,spitzer_query
+from YSE_App.data_ingest.tns_api_client import tns_marker_user_agent
 from django_cron import CronJobBase, Schedule
 from django.conf import settings as djangoSettings
 import argparse, configparser
@@ -48,15 +49,26 @@ import signal
 from shutil import rmtree
 import pandas as pd
 from scipy.stats import gamma, halfnorm, uniform
-from astro_prost.helpers import SnRateAbsmag
-from astro_prost.associate import associate_sample
 
+try:
+    from astro_prost.helpers import SnRateAbsmag
+    from astro_prost.associate import associate_sample
+    HAS_ASTRO_PROST = True
+except ImportError:
+    SnRateAbsmag = None
+    associate_sample = None
+    HAS_ASTRO_PROST = False
 
 import os
 from tendo import singleton
 
 ### new antares search for ZTF matches
-from antares_client.search import cone_search
+try:
+    from antares_client.search import cone_search
+    HAS_ANTARES = True
+except ImportError:
+    cone_search = None
+    HAS_ANTARES = False
 
 reg_obj = "https://www.wis-tns.org/object/(\w+)"
 reg_ra = "\>\sRA[\=\*a-zA-Z\<\>\" ]+(\d{2}:\d{2}:\d{2}\.\d+)"
@@ -211,35 +223,41 @@ class processTNS:
         else:
             status = self.status
 
-        try:
-            ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
-        except:
+        if getattr(self, 'fixture_skip_ps', False):
             ps_prob = None
+        else:
+            try:
+                ps_prob = get_ps_score(sc.ra.deg,sc.dec.deg)
+            except:
+                ps_prob = None
 
-        # get space archival data
-        try:
-            hst=mast_query.hstImages(sc.ra.deg,sc.dec.deg,'Object')
-            hst.getObstable()
-            if hst.Nimages > 0:
-                has_hst = True
-            else:
-                has_hst = False
-        except: has_hst = None
-        try:
-            chr=chandra_query.chandraImages(sc.ra.deg,sc.dec.deg,'Object')
-            chr.search_chandra_database()
-            if chr.n_obsid > 0:
-                has_chandra = True
-            else:
-                has_chandra = False
-        except: has_chandra = None
-        try:
-            if spitzer_query.get_bool_from_coord(t.ra,t.dec):
-                has_spitzer = True
-            else:
-                has_spitzer = False
-        except:
-            has_spitzer = None
+        # Space archival flags (not shown on main dashboard). Defer to get_archival.py or page visit.
+        if getattr(self, 'fixture_skip_archival', False):
+            has_hst = has_chandra = has_spitzer = None
+        else:
+            try:
+                hst=mast_query.hstImages(sc.ra.deg,sc.dec.deg,'Object')
+                hst.getObstable()
+                if hst.Nimages > 0:
+                    has_hst = True
+                else:
+                    has_hst = False
+            except: has_hst = None
+            try:
+                chr=chandra_query.chandraImages(sc.ra.deg,sc.dec.deg,'Object')
+                chr.search_chandra_database()
+                if chr.n_obsid > 0:
+                    has_chandra = True
+                else:
+                    has_chandra = False
+            except: has_chandra = None
+            try:
+                if spitzer_query.get_bool_from_coord(sc.ra.deg,sc.dec.deg):
+                    has_spitzer = True
+                else:
+                    has_spitzer = False
+            except:
+                has_spitzer = None
 
         TransientDict = {'name':obj,
                          'slug':obj,
@@ -274,6 +292,9 @@ class processTNS:
         return TransientDict
 
     def getZTFPhotometry_ANTARES(self,sc):
+
+        if not HAS_ANTARES:
+            return None
 
         for s in cone_search(sc, Angle("5s")):
             PhotUploadAll = {"mjdmatchmin":0.01,
@@ -373,11 +394,16 @@ class processTNS:
             np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
 
         nondetectmaglim,nondetectdate,nondetectfilt,nondetectins = "","","",""
+        from YSE_App.common.tns_photometry_map import resolve_tns_photometry
+
         for p in jd['photometry']:
-            if p['instrument']['name'] == 'CFH12k':
-                p['filters']['name'] = '%s-PTF'%p['filters']['name']
-            elif p['instrument']['name'] == 'ZTF-Cam':
-                p['filters']['name'] = '%s-ZTF'%p['filters']['name']
+            resolved = resolve_tns_photometry(
+                p['instrument']['name'],
+                p['filters']['name'],
+            )
+            yse_instrument = resolved.instrument
+            yse_band = resolved.band
+            yse_obs_hint = resolved.obs_group_hint
 
             if 'mag' in p['flux_unit']['name'].lower():
                 tmag = np.append(tmag,p['flux'])
@@ -385,17 +411,18 @@ class processTNS:
                 if not p['flux']:
                     nondetectmaglim = p['limflux']
                     nondetectdate = p['obsdate']
-                    nondetectfilt = p['filters']['name']
-                    nondetectins = p['instrument']['name']
+                    nondetectfilt = yse_band
+                    nondetectins = yse_instrument
             else:
                 tmag = np.append(tmag,-99)
                 tmagerr = np.append(tmagerr,-99)
 
             tobsdate = np.append(tobsdate,p['obsdate'])
             mjd = np.append(mjd,date_to_mjd(p['obsdate']))
-            obsgroups = np.append(obsgroups,p['observer'])
-            tinst = np.append(tinst,p['instrument']['name'])
-            tfilt = np.append(tfilt,p['filters']['name'])
+            observer = p.get('observer') or yse_obs_hint
+            obsgroups = np.append(obsgroups, observer)
+            tinst = np.append(tinst, yse_instrument)
+            tfilt = np.append(tfilt, yse_band)
 
         disc_flag = np.zeros(len(tmag))
         iMag = np.where((tmag != -99) & (tmag != None))[0]
@@ -472,11 +499,11 @@ class processTNS:
             os.system('rm spec_tns_upload.txt')
 
             try:
-                dlfileresp = get_file(s,self.tnsapikey,self.tns_bot_id,self.tns_bot_name)
+                dlfileresp = get_file(s,self.tnsapikey,self.tns_bot_id,self.tns_bot_name,getattr(self,'tns_marker_type','bot'))
                 if dlfileresp.status_code == 429:
                     print('TNS request failed.  Waiting 60 seconds to try again...')
                     time.sleep(60)
-                    dlfileresp = get_file(s,self.tnsapikey,self.tns_bot_id,self.tns_bot_name)
+                    dlfileresp = get_file(s,self.tnsapikey,self.tns_bot_id,self.tns_bot_name,getattr(self,'tns_marker_type','bot'))
                 dlfile = dlfileresp.text
             except:
                 continue
@@ -567,6 +594,9 @@ class processTNS:
         :host_information : ~astropy.coordinates.SkyCoord`
         Host position
         """
+        if not HAS_ASTRO_PROST:
+            print("astro_prost not installed; skipping host association")
+            return None
 
         # Define and create output file root directory
         output_dir = os.path.join(self.ghost_path, objs[0])
@@ -786,12 +816,12 @@ class processTNS:
         search_obj=[("ra",""), ("dec",""), ("radius",""), ("units",""),
                     ("objname",""), ("internal_name",""),("public_timestamp",datemin)]
 
-        response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+        response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name, getattr(self,'tns_marker_type','bot'))
         count = 0
         while response.status_code == 429 and count < 5:
             print('TNS request failed.  Waiting 60 seconds to try again...')
             time.sleep(60)
-            response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name, getattr(self,'tns_marker_type','bot'))
             count += 1
         json_data = format_to_json(response.text)
 
@@ -804,11 +834,11 @@ class processTNS:
                             ("photometry","0"),
                             ("spectra","0")]
 
-            response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name, getattr(self,'tns_marker_type','bot'))
             while response_single.status_code == 429:
                 print('TNS request failed.  Waiting 60 seconds to try again...')
                 time.sleep(60)
-                response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+                response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name, getattr(self,'tns_marker_type','bot'))
 
             json_data_single = format_to_json(response_single.text)
 
@@ -825,11 +855,11 @@ class processTNS:
         datemin = (datetime.now() - timedelta(days=ndays)).isoformat() #strftime(date_format)
         search_obj=[("ra",""), ("dec",""), ("radius",""), ("units",""),
                     ("objname",""), ("internal_name",""),("public_timestamp",datemin)]
-        response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+        response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name, getattr(self,'tns_marker_type','bot'))
         if response.status_code == 429:
             print('TNS request failed.  Waiting 60 seconds to try again...')
             time.sleep(60)
-            response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            response=search(self.tnsapi, search_obj, self.tnsapikey, self.tns_bot_id, self.tns_bot_name, getattr(self,'tns_marker_type','bot'))
         json_data = format_to_json(response.text)
 
         objs,ras,decs = [],[],[]
@@ -840,11 +870,11 @@ class processTNS:
                              ("spectra","0")]
 
             
-            response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+            response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name, getattr(self,'tns_marker_type','bot'))
             if response_single.status_code == 429:
                 print('TNS request failed.  Waiting 60 seconds to try again...')
                 time.sleep(60)
-                response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+                response_single=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name, getattr(self,'tns_marker_type','bot'))
 
             json_data_single = format_to_json(response_single.text)
             objs.append(json_data_single['data']['objname'])
@@ -1031,11 +1061,11 @@ class processTNS:
                                     ("spectra","1")]
 
 
-                    response=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+                    response=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name, getattr(self,'tns_marker_type','bot'))
                     if response.status_code == 429:
                         print('TNS failed!  waiting 60 seconds...')
                         time.sleep(60)
-                        response=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name)
+                        response=get(self.tnsapi, TNSGetSingle, self.tnsapikey, self.tns_bot_id, self.tns_bot_name, getattr(self,'tns_marker_type','bot'))
                         
                     json_data += [format_to_json(response.text)]
                     total_objs += 1
@@ -1087,17 +1117,20 @@ class processTNS:
                     jd = None
 
             transientdict = self.getTNSData(jd,obj,sc,ebv)
-            try:
-                photdict = self.getZTFPhotometry_ANTARES(sc)
-            except: photdict = None
+            photdict = None
+            if not getattr(self, 'fixture_skip_ztf_antares', False):
+                try:
+                    photdict = self.getZTFPhotometry_ANTARES(sc)
+                except: photdict = None
 
             try:
                 if jd:
                     photdict,nondetectdate,nondetectmaglim,nondetectfilt,nondetectins = \
                         self.getTNSPhotometry(jd,PhotUploadAll=photdict)
                     transientdict['transientphotometry'] = photdict
-                    specdict = self.getTNSSpectra(jd,sc)
-                    transientdict['transientspectra'] = specdict
+                    if not getattr(self, 'fixture_skip_spectra', False):
+                        specdict = self.getTNSSpectra(jd,sc)
+                        transientdict['transientspectra'] = specdict
 
                     if nondetectdate: transientdict['non_detect_date'] = nondetectdate
                     if nondetectmaglim: transientdict['non_detect_limit'] = nondetectmaglim
@@ -1114,17 +1147,42 @@ class processTNS:
             
 
             TransientUploadDict[obj] = transientdict
-            if not j % 10:
+            batch_size = getattr(self, 'upload_batch_size', 10) or 10
+            if not j % batch_size:
                 TransientUploadDict['noupdatestatus'] = self.noupdatestatus
                 TransientUploadDict['TNS'] = True
                 self.UploadTransients(TransientUploadDict)
                 TransientUploadDict = {}
-        if j % 10:
+        batch_size = getattr(self, 'upload_batch_size', 10) or 10
+        if j % batch_size:
             TransientUploadDict['noupdatestatus'] = self.noupdatestatus
             TransientUploadDict['TNS'] = True
             self.UploadTransients(TransientUploadDict)
 
         return(len(TransientUploadDict))
+
+    @staticmethod
+    def _format_add_transient_error(response):
+        """Summarize /add_transient/ failures without dumping Django DEBUG HTML."""
+        import re
+
+        text = response.text or ''
+        if 'text/html' in (response.headers.get('content-type') or '').lower() or text.lstrip().startswith('<!'):
+            title = re.search(r'<title>([^<]+)</title>', text, re.I)
+            exc_type = re.search(r'Exception Type:</th>\s*<td[^>]*>([^<]+)', text)
+            exc_val = re.search(r'Exception Value:</th>\s*<td[^>]*>([^<]+)', text)
+            parts = [f'HTTP {response.status_code} from /add_transient/']
+            if title:
+                parts.append(title.group(1).strip())
+            if exc_type:
+                parts.append(
+                    f'{exc_type.group(1).strip()}: {exc_val.group(1).strip() if exc_val else ""}'.strip(': ')
+                )
+            parts.append(
+                '(Django DEBUG HTML omitted; fix the error above or set DEBUG=False in Docker)'
+            )
+            return ' '.join(parts)
+        return text[:2000]
 
     def UploadTransients(self,TransientUploadDict):
 
@@ -1133,8 +1191,13 @@ class processTNS:
             r = requests.post(url = url, data = json.dumps(TransientUploadDict),
                               auth=HTTPBasicAuth(self.dblogin,self.dbpassword))
 
-            try: print('YSE_PZ says: %s'%json.loads(r.text)['message'])
-            except: print(r.text)
+            if r.status_code >= 400:
+                print(self._format_add_transient_error(r))
+                return
+            try:
+                print('YSE_PZ says: %s'%json.loads(r.text)['message'])
+            except (json.JSONDecodeError, KeyError, TypeError):
+                print(self._format_add_transient_error(r))
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             nsn = 0
@@ -1216,13 +1279,12 @@ def format_to_json(source):
     return parsed #result
 
 # function for search obj
-def search(url,json_list,api_key,tns_bot_id,tns_bot_name):
+def search(url,json_list,api_key,tns_bot_id,tns_bot_name,marker_type="bot"):
   try:
     # url for search obj
     search_url=url+'/search'
     # headers
-    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_bot_id)+', "type":"bot",'\
-             ' "name":"'+tns_bot_name+'"}'}
+    headers={'User-Agent': tns_marker_user_agent(tns_bot_id, tns_bot_name, marker_type)}
     # change json_list to json format
     json_file=OrderedDict(json_list)
     # construct a dictionary of api key data and search obj data
@@ -1235,13 +1297,12 @@ def search(url,json_list,api_key,tns_bot_id,tns_bot_name):
     return [None,'Error message : \n'+str(e)]
 
 # function for get obj
-def get(url,json_list,api_key,tns_bot_id,tns_bot_name):
+def get(url,json_list,api_key,tns_bot_id,tns_bot_name,marker_type="bot"):
   try:
     # url for get obj
     get_url=url+'/object'
     # headers
-    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_bot_id)+', "type":"bot",'\
-             ' "name":"'+tns_bot_name+'"}'}
+    headers={'User-Agent': tns_marker_user_agent(tns_bot_id, tns_bot_name, marker_type)}
     # change json_list to json format
     json_file=OrderedDict(json_list)
     # construct a dictionary of api key data and get obj data
@@ -1253,13 +1314,12 @@ def get(url,json_list,api_key,tns_bot_id,tns_bot_name):
   except Exception as e:
     return [None,'Error message : \n'+str(e)]
 
-def get_file(url,api_key,tns_bot_id,tns_bot_name):
+def get_file(url,api_key,tns_bot_id,tns_bot_name,marker_type="bot"):
   try:
     # take filename
     filename=os.path.basename(url)
     # headers
-    headers={'User-Agent':'tns_marker{"tns_id":'+str(tns_bot_id)+', "type":"bot",'\
-             ' "name":"'+tns_bot_name+'"}'}
+    headers={'User-Agent': tns_marker_user_agent(tns_bot_id, tns_bot_name, marker_type)}
     # downloading file using request module
     response=requests.post(url, headers=headers, data={'api_key':api_key}, stream=True)
     return response

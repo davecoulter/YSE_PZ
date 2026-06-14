@@ -14,10 +14,12 @@ docker_mysql/*
 !docker_mysql/readme.txt
 db_configuration/*.ini
 docker/.env
+docker/.env.secrets
 docker/old/*
 
 database/*
 database_logs/*
+docker/db_fixtures/yse_2026f_fixture.sql.gz
 *.bak
 *.DS_Store
 

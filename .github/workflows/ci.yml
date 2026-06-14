@@ -40,6 +40,9 @@ jobs:
             > .env
           grep -q '^VOL=' .env
           ! grep -q '^[[:space:]]' .env
+          # compose env_file lists .env.secrets (gitignored locally); CI needs an empty stub
+          cp .env.secrets.example .env.secrets
+          grep -q '^TNS_API_KEY=' .env.secrets
 
       - name: Start database and web services
         working-directory: docker

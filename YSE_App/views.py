@@ -141,11 +141,11 @@ def dashboard(request):
         status = status_by_name.get(statusname)
         if status:
             transients = annotate_dashboard_transient_fields(
-                Transient.objects.filter(status=status).order_by('-disc_date')
+                Transient.objects.filter(status=status).order_by('-disc_date', '-pk')
             )
         else:
             transients = annotate_dashboard_transient_fields(
-                Transient.objects.filter(status=None).order_by('-disc_date')
+                Transient.objects.filter(status=None).order_by('-disc_date', '-pk')
             )
         transientfilter = TransientFilter(
             request.GET, queryset=transients, prefix=statusname.lower()
@@ -1267,6 +1267,9 @@ def transient_detail(request, slug):
             
         context['automated_spectrum_form'] = automated_spectrum_form
 
+        finder_rel = view_utils.finder_chart_static_relpath(transient_obj.name)
+        context['finder_chart_static'] = finder_rel
+        context['has_finder_chart'] = view_utils.static_asset_available(finder_rel)
 
         # we need to add a submit to TNS button
         # for transients that don't have TNS names
@@ -1293,7 +1296,7 @@ def transient_detail(request, slug):
             context)
 
     else:
-        return Http404('Transient not found')
+        raise Http404('Transient not found')
 
 @login_required
 def transient_edit(request, transient_id=None):

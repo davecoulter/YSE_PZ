@@ -19,6 +19,7 @@ services:
           DB_CONFIG: /opt/project/db_configuration
         env_file:
           - ".env"
+          - ".env.secrets"
         depends_on:
           yse_db:
             condition: service_healthy

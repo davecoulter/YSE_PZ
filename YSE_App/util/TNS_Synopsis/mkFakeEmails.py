@@ -91,7 +91,7 @@ if __name__ == "__main__":
 			r = ra_string
 			d = dec_string
 		if '+' not in d and '-' not in d: d = '+%s'%d
-		linetmpl = "<a href=\"https://wis-tns.weizmann.ac.il/object/%s\"><em class=\"placeholder\">%s</em></a> RA=<em class=\"placeholder\">%s</em>, DEC=<em class=\"placeholder\">%s</em>, Discovery date=<em class=\"placeholder\">None</em>, Discovery mag=<em class=\"placeholder\">None</em> <em class=\"placeholder\">None</em>, Filter: <em class=\"placeholder\">None</em>, Reporter: <em class=\"placeholder\">None</em>, Source group: <em class=\"placeholder\">None</em><br/>"%(s,s,r,d)
+		linetmpl = "<a href=\"https://www.wis-tns.org/object/%s\"><em class=\"placeholder\">%s</em></a> RA=<em class=\"placeholder\">%s</em>, DEC=<em class=\"placeholder\">%s</em>, Discovery date=<em class=\"placeholder\">None</em>, Discovery mag=<em class=\"placeholder\">None</em> <em class=\"placeholder\">None</em>, Filter: <em class=\"placeholder\">None</em>, Reporter: <em class=\"placeholder\">None</em>, Source group: <em class=\"placeholder\">None</em><br/>"%(s,s,r,d)
 		emailtext += linetmpl
 	emailtext += """<br/><br/>Best Regards,<br/>The TNS team"""
 		
