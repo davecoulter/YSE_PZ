@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import Group
 from YSE_App.models.base import *
 from YSE_App.models.spectra_models import *
 from YSE_App.models.phot_models import *
@@ -40,6 +41,9 @@ class Log(BaseModel):
 	### Properties ###
 	# Required
 	comment = models.TextField()
+	# Collaboration visibility (see YSE_App.services.visibility)
+	is_public = models.BooleanField(default=True)
+	groups = models.ManyToManyField(Group, blank=True)
 
 	def __str__(self):
 		limit = 20

@@ -199,9 +199,13 @@ else:
 
 EXPLORER_CONNECTIONS = { 'Explorer': 'explorer' }
 EXPLORER_DEFAULT_CONNECTION = 'explorer'
-# Allow all users to access and modify SQL Explorer queries.
-EXPLORER_PERMISSION_VIEW = lambda u: u
-EXPLORER_PERMISSION_CHANGE = lambda u: u
+# SQL Explorer: staff only (see issue #102). Dashboard SQL is post-filtered separately.
+EXPLORER_PERMISSION_VIEW = lambda u: u.is_authenticated and (
+    u.is_staff or u.is_superuser
+)
+EXPLORER_PERMISSION_CHANGE = lambda u: u.is_authenticated and (
+    u.is_staff or u.is_superuser
+)
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
