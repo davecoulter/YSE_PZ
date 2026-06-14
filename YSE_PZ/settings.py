@@ -200,11 +200,11 @@ else:
 EXPLORER_CONNECTIONS = { 'Explorer': 'explorer' }
 EXPLORER_DEFAULT_CONNECTION = 'explorer'
 # SQL Explorer: staff only (see issue #102). Dashboard SQL is post-filtered separately.
-EXPLORER_PERMISSION_VIEW = lambda u: u.is_authenticated and (
-    u.is_staff or u.is_superuser
+EXPLORER_PERMISSION_VIEW = lambda request: request.user.is_authenticated and (
+    request.user.is_staff or request.user.is_superuser
 )
-EXPLORER_PERMISSION_CHANGE = lambda u: u.is_authenticated and (
-    u.is_staff or u.is_superuser
+EXPLORER_PERMISSION_CHANGE = lambda request: request.user.is_authenticated and (
+    request.user.is_staff or request.user.is_superuser
 )
 
 REST_FRAMEWORK = {
