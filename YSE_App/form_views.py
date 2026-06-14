@@ -42,6 +42,14 @@ class AddTransientFollowupFormView(FormView):
 	form_class = TransientFollowupForm
 	template_name = 'YSE_App/form_snippets/transient_followup_form.html'
 	success_url = '/form-success/'
+
+	def get_form_kwargs(self):
+		kwargs = super().get_form_kwargs()
+		kwargs["user"] = self.request.user
+		transient_id = self.request.POST.get("transient") or self.request.GET.get("transient")
+		if transient_id:
+			kwargs["transient_id"] = int(transient_id)
+		return kwargs
 	
 	def form_invalid(self, form):
 		response = super(AddTransientFollowupFormView, self).form_invalid(form)
@@ -61,8 +69,20 @@ class AddTransientFollowupFormView(FormView):
 			if instance.classical_resource:
 				instance.valid_start = instance.classical_resource.begin_date_valid
 				instance.valid_stop = instance.classical_resource.end_date_valid
-			
+
+			from YSE_App.services.audience import resolve_followup_audience
+
+			is_public, audience_groups = resolve_followup_audience(
+				self.request.user,
+				instance.transient_id,
+				is_public=form.cleaned_data.get("is_public", True),
+				audience_groups=form.cleaned_data.get("audience_groups"),
+			)
+			instance.is_public = is_public
 			instance.save() #update_fields=['created_by','modified_by']
+
+			if audience_groups:
+				instance.groups.set(audience_groups)
 
 			if instance.transient.status.name in ['New','Watch','Ignore','Interesting']:
 				instance.transient.status = TransientStatus.objects.filter(name='FollowupRequested')[0]
@@ -543,6 +563,14 @@ class AddTransientCommentFormView(FormView):
 	template_name = 'simple.html'#YSE_App/form_snippets/transient_followup_form.html'
 	success_url = '/form-success/'
 
+	def get_form_kwargs(self):
+		kwargs = super().get_form_kwargs()
+		kwargs["user"] = self.request.user
+		transient_id = self.request.POST.get("transient") or self.request.GET.get("transient")
+		if transient_id:
+			kwargs["transient_id"] = int(transient_id)
+		return kwargs
+
 	def form_invalid(self, form):
 		response = super(AddTransientCommentFormView, self).form_invalid(form)
 		if is_ajax(self.request):
@@ -553,13 +581,22 @@ class AddTransientCommentFormView(FormView):
 	def form_valid(self, form):
 		response = super(AddTransientCommentFormView, self).form_valid(form)
 		if is_ajax(self.request):
+			from YSE_App.services.audience import resolve_comment_audience
 			from YSE_App.services.comments import create_transient_comment, log_to_comment_dict
 
 			transient = form.cleaned_data["transient"]
+			is_public, audience_groups = resolve_comment_audience(
+				self.request.user,
+				transient.id,
+				is_public=form.cleaned_data.get("is_public", False),
+				audience_groups=form.cleaned_data.get("audience_groups"),
+			)
 			log = create_transient_comment(
 				transient=transient,
 				comment=form.cleaned_data["comment"],
 				user=self.request.user,
+				is_public=is_public,
+				audience_groups=audience_groups,
 			)
 			data = {
 				"message": "Successfully submitted form data.",

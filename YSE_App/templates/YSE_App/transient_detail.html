@@ -1060,6 +1060,29 @@
                 add_transient_comment();
             });
 
+            function yseSyncAudiencePanels($root) {
+                $root = $root || $(document);
+                $root.find('.yse-audience-panel').each(function() {
+                    var $panel = $(this);
+                    var $public = $panel.find('.yse-audience-toggle-public');
+                    var $groups = $panel.find('.yse-audience-groups');
+                    if (!$public.length) {
+                        return;
+                    }
+                    var showGroups = !$public.is(':checked');
+                    $groups.toggle(showGroups);
+                    $groups.find('input[type=checkbox]').prop('disabled', !showGroups);
+                });
+            }
+
+            $(document).on('change', '.yse-audience-toggle-public', function() {
+                yseSyncAudiencePanels($(this).closest('.yse-audience-panel'));
+            });
+
+            $(function() {
+                yseSyncAudiencePanels();
+            });
+
             function yseEscapeHtml(text) {
                 return $('<div/>').text(text || '').html();
             }
@@ -1094,6 +1117,7 @@
                             ysePrependCommentRow(json.data);
                         }
                         $form[0].reset();
+                        yseSyncAudiencePanels($form);
                     },
                     error : function(xhr) {
                         alert(xhr.status + ": " + xhr.responseText);
@@ -1113,6 +1137,7 @@
                         var inner = $(html).find('#yse-comments-panel-inner').html();
                         if (inner) {
                             $('#yse-comments-panel-inner').html(inner);
+                            yseSyncAudiencePanels($('#yse-comments-section'));
                         }
                     });
                 }, 60000);
@@ -1663,6 +1688,7 @@
                             // Close & reset form box
                             $("#add_transient_followup_btn").trigger("click")
                             $('#add_transient_followup')[0].reset();
+                            yseSyncAudiencePanels($('#add_transient_followup'));
 
                             // Re-initialize the datepicker
                             $('#valid_start').val("")

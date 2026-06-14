@@ -34,6 +34,18 @@ class TransientForm(ModelForm):
             'postage_stamp_file']
 
 class TransientFollowupForm(ModelForm):
+    is_public = forms.BooleanField(
+        required=False,
+        initial=True,
+        label="Visible to all YSE users who can open this transient",
+    )
+    audience_groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.none(),
+        required=False,
+        label="Collaboration groups",
+        widget=forms.CheckboxSelectMultiple,
+    )
+
     status = forms.ModelChoiceField(
         FollowupStatus.objects.all(),
         initial=FollowupStatus.objects.filter(name='Requested').first())
@@ -52,6 +64,16 @@ class TransientFollowupForm(ModelForm):
         valid_start = forms.DateTimeField()
         valid_stop = forms.DateTimeField()
     comment = forms.CharField(required=False)
+
+    def __init__(self, *args, user=None, transient_id=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.show_audience_picker = False
+        if user is not None and transient_id is not None:
+            from YSE_App.services.audience import selectable_audience_groups
+
+            qs = selectable_audience_groups(user, transient_id)
+            self.fields["audience_groups"].queryset = qs
+            self.show_audience_picker = qs.exists()
 
     class Meta:
         model = TransientFollowup
@@ -167,6 +189,29 @@ class OncallForm(ModelForm):
 
 
 class TransientCommentForm(ModelForm):
+    is_public = forms.BooleanField(
+        required=False,
+        initial=False,
+        label="Visible to all YSE users who can open this transient",
+    )
+    audience_groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.none(),
+        required=False,
+        label="Collaboration groups",
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    def __init__(self, *args, user=None, transient_id=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.show_audience_picker = False
+        if user is not None and transient_id is not None:
+            from YSE_App.services.audience import selectable_audience_groups
+
+            qs = selectable_audience_groups(user, transient_id)
+            self.fields["audience_groups"].queryset = qs
+            self.fields["audience_groups"].initial = list(qs.values_list("pk", flat=True))
+            self.show_audience_picker = qs.count() > 1
+
     class Meta:
         model = Log
         fields = [

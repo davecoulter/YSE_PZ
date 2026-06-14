@@ -52,6 +52,25 @@ docker exec ysepz_web_container python3 manage.py mark_tns_imports_public
 
 Tests: `YSE_App.tests.test_tns_import_groups`.
 
+### v1 create-time audience UI
+
+Comments (Summary tab) and follow-up requests expose **Who can see this?** controls at submit time:
+
+- **Comments:** default private to collaboration groups you share on this transient; opt-in checkbox “Visible to all YSE users who can open this transient”. When you belong to multiple groups, checkboxes list which groups may read the comment.
+- **Follow-ups:** default public (checkbox checked); uncheck to restrict to selected collaboration groups.
+
+Automated tests: `YSE_App.tests.test_audience_ui_v1`.
+
+#### Manual checks (audience UI)
+
+1. Seed matrix: `python3 manage.py seed_security_test_matrix`
+2. As `sec_user_ab` / `sec-test-pass`, open `/transient_detail/secvis-matrix/`
+3. **Comment — default private:** post “test private AB” with no audience checkbox. Log in as `sec_user_d` — comment must **not** appear (no shared group). Log in as `sec_user_ab` — comment **must** appear. Log in as `sec_user_ac` — **may** appear (shares group A with the audience).
+4. **Comment — public:** as `sec_user_ab`, check “Visible to all YSE users…”, post “test public”. As `sec_user_ac`, comment **must** appear.
+5. **Comment — group B only:** as `sec_user_ab`, uncheck public, select only `sec-group-b`, post “test B only”. As `sec_user_b` — visible; as `sec_user_ac` — **not** visible.
+6. **Follow-up — default public:** as `sec_user_ab`, add follow-up with public checked (default). As `sec_user_ac`, follow-up row **must** appear on Follow-up tab.
+7. **Follow-up — restricted:** uncheck public, select `sec-group-b` only, submit. As `sec_user_b` — visible; as `sec_user_ac` — **not** visible.
+
 Backfill existing users on a server snapshot:
 
 ```bash

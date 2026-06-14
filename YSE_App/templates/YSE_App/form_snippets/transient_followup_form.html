@@ -94,6 +94,25 @@
 					</div>
 				</div>-->
 				<div class="col-xs-12">
+					<div class="yse-audience-panel yse-followup-audience">
+						<p class="yse-audience-heading text-muted"><strong>Who can see this follow-up?</strong></p>
+						<div class="checkbox yse-audience-public">
+							<label>
+								{% render_field form.is_public class+="yse-audience-toggle-public" %}
+								{{ form.is_public.label }}
+							</label>
+						</div>
+						<div id="yse-followup-audience-groups" class="yse-audience-groups yse-followup-audience-groups">
+							{% if form.show_audience_picker %}
+								<p class="text-muted small">Restrict to collaboration groups:</p>
+								{% for checkbox in form.audience_groups %}
+								<div class="checkbox">{{ checkbox }}</div>
+								{% endfor %}
+							{% endif %}
+						</div>
+					</div>
+				</div>
+				<div class="col-xs-12">
 					<div class="form-group">
 						<br>
 						<button type="submit" class="btn btn-block btn-primary btn-lg">Submit</button>

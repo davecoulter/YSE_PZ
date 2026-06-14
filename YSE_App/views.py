@@ -1246,7 +1246,10 @@ def _transient_followup_form_context(request, transient_obj):
     """Forms and authorized querysets for follow-up tab fragments."""
     from django.utils import timezone
 
-    transient_followup_form = TransientFollowupForm()
+    transient_followup_form = TransientFollowupForm(
+        user=request.user,
+        transient_id=transient_obj.id,
+    )
     valid_after = timezone.now() - datetime.timedelta(days=1)
     transient_followup_form.fields["too_resource"].queryset = (
         view_utils.get_authorized_too_resources(request.user)
@@ -1448,7 +1451,10 @@ def transient_detail(request, slug):
         alt_names = AlternateTransientNames.objects.filter(transient__pk=transient_id)
 
         if defer_detail:
-            transient_followup_form = TransientFollowupForm()
+            transient_followup_form = TransientFollowupForm(
+                user=request.user,
+                transient_id=transient_id,
+            )
             transient_observation_task_form = TransientObservationTaskForm()
             classical_resource_form = ClassicalResourceForm()
             too_resource_form = ToOResourceForm()
@@ -1470,7 +1476,10 @@ def transient_detail(request, slug):
         transient_status_watch = status_by_name.get("Watch")
         transient_status_interesting = status_by_name.get("Interesting")
         transient_status_ignore = status_by_name.get("Ignore")
-        transient_comment_form = TransientCommentForm()
+        transient_comment_form = TransientCommentForm(
+            user=request.user,
+            transient_id=transient_id,
+        )
         # Transient tag
         all_colors = WebAppColor.objects.all().select_related()
         all_transient_tags = TransientTag.objects.all().select_related()
@@ -1686,7 +1695,11 @@ def comments_fragment(request, slug):
 
     comment_cutoff = dj_timezone.now() - datetime.timedelta(days=1)
     has_new_comment = any(log.modified_date > comment_cutoff for log in logs)
-    form = TransientCommentForm(initial={"transient": transient.id})
+    form = TransientCommentForm(
+        user=request.user,
+        transient_id=transient.id,
+        initial={"transient": transient.id},
+    )
     return render(
         request,
         "YSE_App/transient_detail/comments_panel.html",

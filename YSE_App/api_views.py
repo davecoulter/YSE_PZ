@@ -523,14 +523,24 @@ class TransientCommentListCreate(generics.ListCreateAPIView):
         return transient_comment_queryset(transient_id, user=self.request.user)
 
     def create(self, request, *args, **kwargs):
+        from YSE_App.services.audience import resolve_comment_audience
         from YSE_App.services.comments import create_transient_comment
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        transient = serializer.validated_data["transient"]
+        is_public, audience_groups = resolve_comment_audience(
+            request.user,
+            transient.id,
+            is_public=serializer.validated_data.get("is_public", False),
+            audience_group_ids=serializer.validated_data.get("audience_group_ids"),
+        )
         log = create_transient_comment(
-            transient=serializer.validated_data["transient"],
+            transient=transient,
             comment=serializer.validated_data["comment"],
             user=request.user,
+            is_public=is_public,
+            audience_groups=audience_groups,
         )
         return Response(
             self.get_serializer(log).data,
