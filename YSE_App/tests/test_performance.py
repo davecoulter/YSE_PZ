@@ -156,6 +156,33 @@ class TransientDetailPagePerformanceTests(TestCase):
             max_seconds=MAX_SECONDS_TRANSIENT_DETAIL_SHELL,
         )
 
+    def test_transient_detail_deferred_shell_is_fast(self):
+        """Progressive shell skips follow-ups, resource tables, bulk photometry, and log/GW lists."""
+        url = f"/transient_detail/{self.transient_loaded.slug}/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        self.assertIn(b"perf-detail-loaded", response.content)
+        assert_page_load(
+            self,
+            page="transient_detail (deferred shell)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=40,
+            max_seconds=6.0,
+        )
+
+    def test_transient_detail_rare_tab_fragments_return_200(self):
+        tid = self.transient_loaded.id
+        for path in (
+            f'/transient_detail/{tid}/comments_fragment/',
+            f'/transient_detail/{tid}/spectra_tab_fragment/',
+            f'/transient_detail/{tid}/summary_spectra_tools_fragment/',
+        ):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200, msg=path)
+
+    @unittest.mock.patch.dict(os.environ, {"YSE_TRANSIENT_DETAIL_DEFER": "0"})
     def test_transient_detail_with_synthetic_data_returns_200(self):
         url = f"/transient_detail/{self.transient_loaded.slug}/"
         response, n_queries, elapsed = _profile_get(self.client, url)
@@ -184,6 +211,39 @@ class PersonalDashboardPerformanceTests(TestCase):
         self.client = Client()
         self.client.force_login(self.user)
 
+    def test_personaldashboard_deferred_shell_is_fast(self):
+        """Progressive shell must not run explorer SQL (sections load via AJAX)."""
+        seed_personal_dashboard_queries(self.user, n_queries=5)
+        url = "/personaldashboard/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        assert_page_load(
+            self,
+            page="personaldashboard (deferred shell)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=12,
+            max_seconds=1.0,
+        )
+
+    def test_personaldashboard_section_fragment_returns_200(self):
+        user_queries = seed_personal_dashboard_queries(self.user, n_queries=1)
+        uq = user_queries[0]
+        url = f"/personaldashboard/section/{uq.id}/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        assert_page_load(
+            self,
+            page="personaldashboard section fragment",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=MAX_QUERIES_PERSONAL_DASHBOARD_FIVE_QUERIES_COLD,
+            max_seconds=MAX_SECONDS_PERSONAL_DASHBOARD_FIVE,
+        )
+
+    @unittest.mock.patch.dict(os.environ, {"YSE_PERSONAL_DASHBOARD_DEFER": "0"})
     def test_personaldashboard_empty_returns_200(self):
         url = "/personaldashboard/"
         response, n_queries, elapsed = _profile_get(self.client, url)
@@ -198,6 +258,7 @@ class PersonalDashboardPerformanceTests(TestCase):
             max_seconds=MAX_SECONDS_PERSONAL_DASHBOARD,
         )
 
+    @unittest.mock.patch.dict(os.environ, {"YSE_PERSONAL_DASHBOARD_DEFER": "0"})
     def test_personaldashboard_with_five_saved_queries_warm_cache(self):
         """Five saved queries with cached SQL results (typical repeat visit)."""
         from django.core.cache import cache
@@ -218,6 +279,7 @@ class PersonalDashboardPerformanceTests(TestCase):
             max_seconds=MAX_SECONDS_PERSONAL_DASHBOARD_FIVE,
         )
 
+    @unittest.mock.patch.dict(os.environ, {"YSE_PERSONAL_DASHBOARD_DEFER": "0"})
     def test_personaldashboard_with_five_saved_queries_cold_cache(self):
         """Cold load: runs each saved SQL once (explorer DB mocked to default in tests)."""
         import YSE_App.views as views_module
@@ -354,6 +416,21 @@ class MainDashboardPerformanceTests(TestCase):
         self.client = Client()
         self.client.force_login(self.user)
 
+    def test_main_dashboard_deferred_shell_includes_new_only(self):
+        url = "/dashboard/"
+        response, n_queries, elapsed = _profile_get(self.client, url)
+        assert_page_load(
+            self,
+            page="dashboard (deferred shell)",
+            url=url,
+            response=response,
+            n_queries=n_queries,
+            elapsed=elapsed,
+            max_queries=15,
+            max_seconds=3.0,
+        )
+
+    @unittest.mock.patch.dict(os.environ, {"YSE_MAIN_DASHBOARD_DEFER": "0"})
     def test_main_dashboard_returns_200(self):
         url = "/dashboard/"
         response, n_queries, elapsed = _profile_get(self.client, url)
@@ -368,6 +445,7 @@ class MainDashboardPerformanceTests(TestCase):
             max_seconds=MAX_SECONDS_MAIN_DASHBOARD,
         )
 
+    @unittest.mock.patch.dict(os.environ, {"YSE_MAIN_DASHBOARD_DEFER": "0"})
     def test_main_dashboard_query_count_tight(self):
         url = "/dashboard/"
         response, n_queries, elapsed = _profile_get(self.client, url)

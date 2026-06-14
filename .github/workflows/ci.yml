@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, master, develop, astrofoley-patch-1]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master, develop, perf/progressive-loading]
 
 jobs:
   docker-test:
@@ -83,6 +83,21 @@ jobs:
 
       - name: Run tests
         run: docker exec ysepz_web_container python3 manage.py test YSE_App.tests --verbosity=2
+
+      - name: Page load regression and benchmark plots
+        run: |
+          docker exec ysepz_web_container python3 manage.py test YSE_App.tests.test_page_load_regression -v2
+          docker exec ysepz_web_container python3 manage.py record_perf_benchmark --label "ci-${{ github.sha }}"
+
+      - name: Upload perf metrics artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yse-perf-metrics
+          path: |
+            YSE_App/static/YSE_App/perf/metrics_history.json
+            YSE_App/static/YSE_App/perf/*.png
+          if-no-files-found: ignore
 
       - name: Tear down and prune Docker artifacts
         if: always()

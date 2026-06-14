@@ -7,6 +7,7 @@ from multiprocessing import Process, Queue
 
 import django
 from django.conf import settings as djangoSettings
+from django.core.cache import cache
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db import models, connection, reset_queries
 from django.db.models import Prefetch
@@ -134,7 +135,67 @@ def _bokeh_ajax_response(ax, title="plot"):
     sncosmo = _sncosmo
     _HEAVY_PLOT_LOADED = True
 
-        
+
+MAX_LC_DISPLAY_POINTS = int(os.environ.get('YSE_LC_PLOT_MAX_POINTS', '3000'))
+MAX_SPEC_DISPLAY_PIXELS = int(os.environ.get('YSE_SPEC_PLOT_MAX_PIXELS', '800'))
+PLOT_HTML_CACHE_TIMEOUT = int(os.environ.get('YSE_PLOT_CACHE_SECONDS', '900'))
+
+
+def _plot_html_cache_enabled():
+    return os.environ.get('YSE_PLOT_HTML_CACHE', '1') != '0'
+
+
+def _phot_data_quality_label(phot_row):
+    dq_names = [dq.name for dq in phot_row.data_quality.all()]
+    return 'Good' if not dq_names else ','.join(dq_names)
+
+
+def _downsample_phot_rows_for_display(phot_rows, max_points=MAX_LC_DISPLAY_POINTS):
+    if len(phot_rows) <= max_points:
+        return phot_rows
+    sorted_rows = sorted(phot_rows, key=lambda row: row.obs_date)
+    discovery_ids = {id(row) for row in sorted_rows if row.discovery_point}
+    stride = max(1, len(sorted_rows) // max_points)
+    kept = [
+        row for idx, row in enumerate(sorted_rows)
+        if id(row) in discovery_ids or idx % stride == 0
+    ]
+    if len(kept) > max_points:
+        kept = sorted(kept, key=lambda row: row.obs_date)[-max_points:]
+    return kept
+
+
+def _transient_phot_cache_token(transient_id):
+    from django.db.models import Count, Max
+
+    agg = TransientPhotData.objects.filter(
+        photometry__transient_id=transient_id,
+    ).aggregate(latest=Max('modified_date'), n=Count('id'))
+    latest = agg['latest']
+    latest_key = latest.isoformat() if latest else 'none'
+    return f"{agg['n']}:{latest_key}"
+
+
+def _transient_spectrum_cache_token(transient_id):
+    from django.db.models import Count, Max
+
+    spec_agg = TransientSpectrum.objects.filter(
+        transient_id=transient_id,
+    ).aggregate(latest=Max('modified_date'), n=Count('id'))
+    data_agg = TransientSpecData.objects.filter(
+        spectrum__transient_id=transient_id,
+    ).aggregate(latest=Max('modified_date'), n=Count('id'))
+    spec_latest = spec_agg['latest'].isoformat() if spec_agg['latest'] else 'none'
+    data_latest = data_agg['latest'].isoformat() if data_agg['latest'] else 'none'
+    return f"s{spec_agg['n']}:{spec_latest}:d{data_agg['n']}:{data_latest}"
+
+
+def _cached_plot_http_response(cache_key, html):
+    if _plot_html_cache_enabled() and html:
+        cache.set(cache_key, html, timeout=PLOT_HTML_CACHE_TIMEOUT)
+    return django.http.HttpResponse(html)
+
+
         
         
 
@@ -892,8 +953,13 @@ def lightcurveplot_summary(request, transient_id, salt2=False):
 
 def lightcurveplot_detail(request, transient_id, salt2=False):
     _load_heavy_plot_stack()
-    import time
-    tstart = time.time()
+
+    cache_key = None
+    if not salt2 and _plot_html_cache_enabled():
+        cache_key = f'lc_detail_v1_{transient_id}_{_transient_phot_cache_token(transient_id)}'
+        cached_html = cache.get(cache_key)
+        if cached_html is not None:
+            return django.http.HttpResponse(cached_html)
 
     transient = get_object_or_404(Transient, pk=transient_id)
     photdata = (
@@ -902,7 +968,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
         .prefetch_related('data_quality')
         .order_by('-modified_date')
     )
-    phot_rows = list(photdata)
+    phot_rows = _downsample_phot_rows_for_display(list(photdata))
     if not phot_rows:
         return django.http.HttpResponse('')
 
@@ -931,11 +997,7 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
     disc_points = np.array([p.discovery_point for p in phot_rows], dtype=bool)
     obs_dates_str = np.array([p.obs_date.strftime('%m/%d/%Y') for p in phot_rows])
     mjds = date_to_mjd(np.array([p.obs_date for p in phot_rows]))
-    data_quality = np.array([
-        'Good' if not p.data_quality.all()
-        else ','.join(p.data_quality.values_list('name', flat=True))
-        for p in phot_rows
-    ])
+    data_quality = np.array([_phot_data_quality_label(p) for p in phot_rows])
     mag_sys = np.array([p.mag_sys.name if p.mag_sys else 'None' for p in phot_rows])
     band = np.array([p.band_id for p in phot_rows], dtype=int)
     band_name = np.array([band_lookup[b].name for b in band])
@@ -1175,8 +1237,10 @@ def lightcurveplot_detail(request, transient_id, salt2=False):
         except Exception:
             pass
 
-    print("plotting took %s"%(time.time()-tstart))
-    return _bokeh_ajax_response(ax, "my plot")
+    html = file_html(ax, CDN, "my plot").replace('width: 90%', 'width: 100%')
+    if cache_key:
+        return _cached_plot_http_response(cache_key, html)
+    return django.http.HttpResponse(html)
 
 
 def lightcurveplot_flux(request, transient_id, salt2=False):
@@ -1193,7 +1257,8 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
         )
         .prefetch_related('data_quality')
     )
-    if not photdata:
+    phot_rows = _downsample_phot_rows_for_display(list(photdata))
+    if not phot_rows:
         return django.http.HttpResponse('')
 
     #ax=figure()
@@ -1207,7 +1272,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
         np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
     limmjd = None
 
-    for p in photdata:
+    for p in phot_rows:
         dbmjd = date_to_mjd(p.obs_date)
         if p.flux and np.abs(p.flux) > 1e10: continue
 
@@ -1221,13 +1286,7 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
             if p.mag_sys is None: magsys = np.append(magsys,['None'])
             else: magsys = np.append(magsys,[p.mag_sys])
 
-            dqs = list(p.data_quality.all())
-            if not dqs:
-                data_quality = np.append(data_quality, ['Good'])
-            else:
-                data_quality = np.append(
-                    data_quality, [','.join(pdq.name for pdq in dqs)]
-                )
+            data_quality = np.append(data_quality, [_phot_data_quality_label(p)])
 
             if not p.flux or not p.flux_err:
                 flux_single = 10**(-0.4*(p.mag-27.5))
@@ -1469,8 +1528,14 @@ def lightcurveplot_flux(request, transient_id, salt2=False):
 
 def spectrumplot(request, transient_id):
     _load_heavy_plot_stack()
-    
-    # Fetch data with optimized queries
+
+    cache_key = None
+    if _plot_html_cache_enabled():
+        cache_key = f'specplot_v1_{transient_id}_{_transient_spectrum_cache_token(transient_id)}'
+        cached_html = cache.get(cache_key)
+        if cached_html is not None:
+            return django.http.HttpResponse(cached_html)
+
     transient = Transient.objects.get(pk=transient_id)
     dbspectra = SpectraService.GetAuthorizedTransientSpectrum_ByUser_ByTransient(
         request.user, transient_id, includeBadData=True
@@ -1480,18 +1545,18 @@ def spectrumplot(request, transient_id):
     
     spectra = []
     for spectrum in dbspectra:
-        spec_data = spectrum.transientspecdata_set.all()
+        spec_data = list(spectrum.transientspecdata_set.all())
         wave = np.array([s.wavelength for s in spec_data])
         flux = np.array([s.flux for s in spec_data])
         if wave.size == 0 or flux.size == 0:
             continue
         
-        # Vectorized sorting and interpolation
         sort_idx = np.argsort(wave)
         wave = wave[sort_idx]
         flux = flux[sort_idx]
         
-        wave_interp = np.arange(np.min(wave), np.max(wave) + 5, 5)
+        n_display = min(MAX_SPEC_DISPLAY_PIXELS, max(2, wave.size))
+        wave_interp = np.linspace(np.min(wave), np.max(wave), n_display)
         flux_interp = np.interp(wave_interp, wave, flux)
         
         spectra.append({
@@ -1544,8 +1609,10 @@ def spectrumplot(request, transient_id):
     ax.xaxis.axis_label = r'Wavelength (Angstrom)'
     ax.yaxis.axis_label = 'Flux'
     
-    return _bokeh_ajax_response(ax, "spectrum plot")
-
+    html = file_html(ax, CDN, "spectrum plot").replace('width: 90%', 'width: 100%')
+    if cache_key:
+        return _cached_plot_http_response(cache_key, html)
+    return django.http.HttpResponse(html)
 
 def spectrumplot_summary(request, transient_id):
     _load_heavy_plot_stack()
@@ -1890,6 +1957,52 @@ def get_ps1_image(request,transient_id):
 
     jpegurldict = {"jpegurl":jpegurl,"msg":"success"}
     return(JsonResponse(jpegurldict))
+
+def get_hst_status(request, transient_id):
+    """Lightweight HST availability for tab label (no JPG fetch)."""
+    cache_key = f'hst_status_v1_{transient_id}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return JsonResponse(cached)
+    try:
+        t = Transient.objects.get(pk=transient_id)
+    except Transient.DoesNotExist:
+        raise Http404("Transient id does not exist")
+    try:
+        from . import common
+        hst = common.mast_query.hstImages(t.ra, t.dec, 'Object')
+        hst.getObstable()
+        count = int(getattr(hst, 'Nimages', 0) or 0)
+        if not count and getattr(hst, 'obstable', None) is not None:
+            count = len(hst.obstable)
+        payload = {'has_data': count > 0, 'count': count}
+    except Exception:
+        payload = {'has_data': False, 'count': 0}
+    cache.set(cache_key, payload, timeout=3600)
+    return JsonResponse(payload)
+
+
+def get_chandra_status(request, transient_id):
+    """Lightweight Chandra availability for tab label (no image fetch)."""
+    cache_key = f'chandra_status_v1_{transient_id}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return JsonResponse(cached)
+    try:
+        t = Transient.objects.get(pk=transient_id)
+    except Transient.DoesNotExist:
+        raise Http404("Transient id does not exist")
+    try:
+        from . import common
+        chr = common.chandra_query.chandraImages(t.ra, t.dec, 'Object')
+        chr.search_chandra_database()
+        count = int(getattr(chr, 'n_obsid', 0) or 0)
+        payload = {'has_data': count > 0, 'count': count}
+    except Exception:
+        payload = {'has_data': False, 'count': 0}
+    cache.set(cache_key, payload, timeout=3600)
+    return JsonResponse(payload)
+
 
 def get_hst_image(request,transient_id):
     try:

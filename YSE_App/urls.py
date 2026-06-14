@@ -25,8 +25,18 @@ urlpatterns = [
     # ex: /yse/
     re_path(r'^$', views.index, name='index'),
     re_path(r'^dashboard/$', views.dashboard, name='dashboard'),
+    re_path(
+        r'^dashboard/section/(?P<status_key>[a-zA-Z]+)/$',
+        views.dashboard_section,
+        name='dashboard_section',
+    ),
     re_path(r'^yse_home/$', views.yse_home, name='yse_home'),
     re_path(r'^personaldashboard/$', views.personaldashboard, name='personaldashboard'),
+    re_path(
+        r'^personaldashboard/section/(?P<user_query_id>[0-9]+)/$',
+        views.personaldashboard_section,
+        name='personaldashboard_section',
+    ),
     re_path(r'^calendar/$', views.calendar, name='calendar'),
     re_path(r'^followup/$', views.followup, name='followup'),
     re_path(r'^transient_tags/$', views.transient_tags, name='transient_tags'),
@@ -46,6 +56,51 @@ urlpatterns = [
         r'^transient_detail/(?P<slug>[^/]+)/comments/$',
         views.comments_fragment,
         name='comments_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/followup_fragment/$',
+        views.transient_detail_followup_fragment,
+        name='transient_detail_followup_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/followup_classical_fragment/$',
+        views.transient_detail_followup_classical_fragment,
+        name='transient_detail_followup_classical_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/followup_rest_fragment/$',
+        views.transient_detail_followup_rest_fragment,
+        name='transient_detail_followup_rest_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/comments_fragment/$',
+        views.transient_detail_comments_fragment,
+        name='transient_detail_comments_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/gw_fragment/$',
+        views.transient_detail_gw_fragment,
+        name='transient_detail_gw_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/spectra_tab_fragment/$',
+        views.transient_detail_spectra_tab_fragment,
+        name='transient_detail_spectra_tab_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/summary_spectra_tools_fragment/$',
+        views.transient_detail_summary_spectra_tools_fragment,
+        name='transient_detail_summary_spectra_tools_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/resources_fragment/$',
+        views.transient_detail_resources_fragment,
+        name='transient_detail_resources_fragment',
+    ),
+    re_path(
+        r'^transient_detail/(?P<transient_id>[0-9]+)/photometry_fragment/$',
+        views.transient_detail_photometry_fragment,
+        name='transient_detail_photometry_fragment',
     ),
     re_path(r'^transient_detail/(?P<slug>.*)/$', views.transient_detail, name='transient_detail'),
     re_path(r'^submit_to_tns/(?P<transient_name>.*)/$', submit_to_tns.submit_to_tns, name='submit_to_tns'),
@@ -169,8 +224,12 @@ urlpatterns = [
         view_utils.get_ps1_image, name='get_ps1_image'),
     re_path(r'^get_hst_image/(?P<transient_id>[0-9]+)',
         view_utils.get_hst_image, name='get_hst_image'),
+    re_path(r'^get_hst_status/(?P<transient_id>[0-9]+)',
+        view_utils.get_hst_status, name='get_hst_status'),
     re_path(r'^get_chandra_image/(?P<transient_id>[0-9]+)',
         view_utils.get_chandra_image, name='get_chandra_image'),
+    re_path(r'^get_chandra_status/(?P<transient_id>[0-9]+)',
+        view_utils.get_chandra_status, name='get_chandra_status'),
     re_path(r'^get_legacy_image/(?P<transient_id>[0-9]+)',
         view_utils.get_legacy_image, name='get_legacy_image'),
 

@@ -1,0 +1,5 @@
+{% for l in logs %}
+<b>{{ l.created_by }}: </b>{{ l.comment }} ({{ l.modified_date }} UT)<br>
+{% empty %}
+<p class="text-muted">No comments yet.</p>
+{% endfor %}

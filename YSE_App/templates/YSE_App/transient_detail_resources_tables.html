@@ -1,0 +1,54 @@
+<div class="col-xs-12">
+    <b>Classical Resources</b><br>
+    <table id="telescope_tbl" class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Telescope (Classical)</th>
+                <th>Next Obs. Night</th>
+                <th>Rise Time (UT)</th>
+                <th>Set Time (UT)</th>
+                <th>Moon Angle</th>
+                <th>Airmass Plot</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obsnight in observing_nights %}
+                <tr>
+                    <td>{{ obsnight.resource.telescope }}</td>
+                    <td>{{ obsnight.obs_date }}</td>
+                    <td id="rise_time_{{ obsnight.id }}"></td>
+                    <td id="set_time_{{ obsnight.id }}"></td>
+                    <td id="moon_angle_{{ obsnight.id }}"></td>
+                    <td id="airmass_plot_table_{{obsnight.id}}_{{obsnight.resource.telescope.id}}"><button type="button" class="plotAirmass" telescope_id={{obsnight.resource.telescope.id}} resource_id="{{obsnight.resource.telescope.id}}" obsnight_id="{{obsnight.id}}">Show Plot</button></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="col-xs-12">
+    <b>ToO Resources</b><br>
+    <table id="telescope_tbl" class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Telescope (ToO)</th>
+                <th>ToO Hours Remaining</th>
+                <th>Rise Time (UT)</th>
+                <th>Set Time (UT)</th>
+                <th>Moon Angle</th>
+                <th>Airmass Plot</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for too_resource in too_resource_list %}
+                <tr>
+                    <td>{{ too_resource.telescope }}</td>
+                    <td id="delta_too_hours_{{too_resource.id}}"></td>
+                    <td id="tonight_rise_time_{{too_resource.id}}"></td>
+                    <td id="tonight_set_time_{{too_resource.id}}"></td>
+                    <td id="tonight_moon_angle_{{too_resource.id}}"></td>
+                    <td id="airmass_plot_table_0_{{too_resource.id}}"><button type="button" class="plotAirmass" telescope_id={{too_resource.telescope.id}} resource_id="{{too_resource.id}}" obsnight_id="0">Show Plot</button></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

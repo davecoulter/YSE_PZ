@@ -39,7 +39,7 @@
                     <li><a href="#spectra_tab" data-toggle="tab">Spectra</a></li>
                     <li><a href="#hst_tab" data-toggle="tab" id="hst_tab_header">HST Data</a></li>
                     <li><a href="#chandra_tab" data-toggle="tab" id="chandra_tab_header">Chandra Data</a></li>
-                    {% if gw_candidate %}
+                    {% if has_gw_candidate_tag %}
                         <li><a href="#gw_tab" data-toggle="tab" id="gw_tab_header">GW Info</a></li>
                     {% endif %}
                     <li class="hidden">
@@ -51,6 +51,19 @@
                         {% include "YSE_App/transient_detail/summary_tab.html" %}
                     </div>
                     <div class="tab-pane" id="followup_tab">
+                        {% if transient_detail_defer %}
+                        <div class="row">
+                            <div id="followup_rest_slot" class="col-xs-12"></div>
+                        </div>
+                        <div class="row">
+                            <div id="followup_classical_slot" class="col-xs-12"></div>
+                        </div>
+                        <div class="row">
+                            <div id="followup_container" class="col-xs-12">
+                                <p class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading follow-up requests…</p>
+                            </div>
+                        </div>
+                        {% else %}
                         <div class="row">
                             <div class="col-xs-6">
                                 <input type="hidden" id="transient_pk" value="{{ transient.id }}"/>
@@ -77,137 +90,10 @@
                         </div>
                         <div class="row">
                             <div id="followup_container">
-                                {% for f in followups %}
-                                    <div class="col-xs-12">
-                                        {% if forloop.counter <= 1 %}
-                                            <div class="followupbox box box-primary">
-                                        {% else %}
-                                            <div class="followupbox box box-primary collapsed-box">
-                                        {% endif %}
-                                                <div class="box-header">
-                                                    <div class="col-xs-4">
-                                                        <h3 class="box-title">Follow-up (id: {{f.id}})</h3>
-                                                    </div>
-                                                    <div class="col-xs-4">
-                                                        <h3 class="box-title">Valid: {{ f.valid_start|date:"SHORT_DATE_FORMAT" }} - {{ f.valid_stop|date:"SHORT_DATE_FORMAT" }}</h3>
-                                                    </div>
-                                                    <div class="col-xs-4">
-                                                        <h3 style="float:right;padding-right:10px" class="box-title">Last Modified: {{f.modified_by}}</h3>
-                                                    </div>
-                                                    <div class="box-tools pull-right">
-
-                                                        {% if forloop.counter <= 1 %}
-                                                            <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
-                                                            </button>
-                                                        {% else %}
-                                                            <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
-                                                            </button>
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                                <div class="box-body">
-                                                    <table id="tbl_followup_{{f.id}}" class="table table-bordered table-striped">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Spec. Priority</th>
-                                                                <th>Phot. Priority</th>
-                                                                <th>Offset Star<br>RA</th>
-                                                                <th>Offset Star<br>DEC</th>
-                                                                <th>Offset North</th>
-                                                                <th>Offset East</th>
-                                                                <th>Attached Resource</th>
-                                                                <th>Status</th>
-                                                                <th>Comment</th>
-                                                                <th>Action</th>
-                                                                <th>Delete</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            <tr>
-                                                                <td>{{ f.spec_priority }}</td>
-                                                                <td>{{ f.phot_priority }}</td>
-                                                                <td>{{ f.offset_star_ra }}</td>
-                                                                <td>{{ f.offset_star_dec }}</td>
-                                                                <td>{{ f.offset_north }}</td>
-                                                                <td>{{ f.offset_east }}</td>
-                                                                <td>
-                                                                    {% if f.too_resource %}
-                                                                        {{ f.too_resource }}
-                                                                        <br>
-                                                                    {% endif %}
-                                                                    {% if f.classical_resource %}
-                                                                        {{ f.classical_resource }}
-                                                                        <br>
-                                                                    {% endif %}
-                                                                    {% if f.queued_resource %}
-                                                                        {{ f.queued_resource }}
-                                                                    {% endif %}
-                                                                </td>
-                                                                <td>{{ f.status }}</td>
-                                                                <td>{{ f.comment }}</td>
-                                                                <td><a target='_blank' href="{% url 'admin:YSE_App_transientfollowup_change' f.id %}">Edit</a></td>
-                                                                <td><a href="{% url 'delete_followup' f.id %}">Delete</a></td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                    <hr>
-                                                    <h4 class="box-title">Observation Tasks</h4>
-                                                    <table id="tbl_obs_followup_{{f.id}}" class="table table-bordered table-striped">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>ID</th>
-                                                                <th>Obs.</th>
-                                                                <th>Tel.</th>
-                                                                <th>Inst.</th>
-                                                                <th>Desired Obs.<br>Date (UTC)</th>
-                                                                <th>Actual Obs.<br>Date (UTC)</th>
-                                                                <th>Exp.<br>Time</th>
-                                                                <th>Desc.</th>
-                                                                <th># of<br>Exp.</th>
-                                                                <th>Config. Name</th>
-                                                                <th>Config. Detail</th>
-                                                                <th>Status</th>
-                                                                <th>Last<br>Modified By</th>
-                                                                <th>Action</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {% for o in f.observation_set.all %}
-                                                                <tr>
-                                                                    <td>{{ o.id }}</td>
-                                                                    <td>{{ o.instrument_config.instrument.telescope.observatory.name }}</td>
-                                                                    <td>{{ o.instrument_config.instrument.telescope.name }}</td>
-                                                                    <td>{{ o.instrument_config.instrument.name }}</td>
-                                                                    <td>{{ o.desired_obs_date }}</td>
-                                                                    <td>{{ o.actual_obs_date }}</td>
-                                                                    <td>{{ o.exposure_time }}</td>
-                                                                    <td>{{ o.description }}</td>
-                                                                    <td>{{ o.number_of_exposures }}</td>
-                                                                    <td>{{ o.instrument_config.name }}</td>
-                                                                    <td>
-                                                                        <ul>
-                                                                            {% for c in o.instrument_config.configelement_set.all %}
-                                                                                <li>{{ c.name }}</li>
-                                                                            {% endfor %}
-                                                                        </ul>
-                                                                    </td>
-                                                                    <td>{{ o.status }}</td>
-                                                                    <td>{{ o.modified_by }}</td>
-                                                                    <td><a target='_blank' href="{% url 'admin:YSE_App_transientobservationtask_change' o.id %}">Edit</a></td>
-                                                                </tr>
-                                                            {% endfor %}
-                                                            <tr>
-                                                                <td colspan='13'></td>
-                                                                <td><b><a class="add_task" followup_id="{{f.id}}" href="#">Add</a></b></td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                    </div>
-                                {% endfor %}
+                                {% include "YSE_App/transient_detail_followup_boxes.html" %}
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                     <div class="tab-pane" id="resources_tab">
                         <div class="row">
@@ -227,59 +113,12 @@
                                 {% endif %}
                                 <br><br>
                             </div>
-                            <div class="col-xs-12">
-                                <b>Classical Resources</b><br>
-                                <table id="telescope_tbl" class="table table-bordered table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Telescope (Classical)</th>
-                                            <th>Next Obs. Night</th>
-                                            <th>Rise Time (UT)</th>
-                                            <th>Set Time (UT)</th>
-                                            <th>Moon Angle</th>
-                                            <th>Airmass Plot</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for obsnight in observing_nights %}
-                                            <tr>
-                                                <td>{{ obsnight.resource.telescope }}</td>
-                                                <td>{{ obsnight.obs_date }}</td>
-                                                <td id="rise_time_{{ obsnight.id }}"></td>
-                                                <td id="set_time_{{ obsnight.id }}"></td>
-                                                <td id="moon_angle_{{ obsnight.id }}"></td>
-                                                <td id="airmass_plot_table_{{obsnight.id}}_{{obsnight.resource.telescope.id}}"><button type="button" class="plotAirmass" telescope_id={{obsnight.resource.telescope.id}} resource_id="{{obsnight.resource.telescope.id}}" obsnight_id="{{obsnight.id}}">Show Plot</button></td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="col-xs-12">
-                                <b>ToO Resources</b><br>
-                                <table id="telescope_tbl" class="table table-bordered table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Telescope (ToO)</th>
-                                            <th>ToO Hours Remaining</th>
-                                            <th>Rise Time (UT)</th>
-                                            <th>Set Time (UT)</th>
-                                            <th>Moon Angle</th>
-                                            <th>Airmass Plot</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for too_resource in too_resource_list %}
-                                            <tr>
-                                                <td>{{ too_resource.telescope }}</td>
-                                                <td id="delta_too_hours_{{too_resource.id}}"></td>
-                                                <td id="tonight_rise_time_{{too_resource.id}}"></td>
-                                                <td id="tonight_set_time_{{too_resource.id}}"></td>
-                                                <td id="tonight_moon_angle_{{too_resource.id}}"></td>
-                                                <td id="airmass_plot_table_0_{{too_resource.id}}"><button type="button" class="plotAirmass" telescope_id={{too_resource.telescope.id}} resource_id="{{too_resource.id}}" obsnight_id="0">Show Plot</button></td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                            <div id="resources_deferred_tables">
+                                {% if transient_detail_defer %}
+                                <p class="text-muted"><i class="fa fa-info-circle"></i> Resource tables load when you open this tab.</p>
+                                {% else %}
+                                {% include "YSE_App/transient_detail_resources_tables.html" %}
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -303,116 +142,23 @@
                             </div>
                         </div>
 
-                        {% if diff_images %}
-                        <div class="col-xs-13">
-                            <div class="box box-primary">
-                                <div class="box-header">
-                                    <h3 class="box-title">Forced Photometry and Difference Imaging</h3>
-                                </div>
-                            <div class="box-body">
-                        <table class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Flux</th>
-                                    <th>Flux Error</th>
-                                    <th>Mag</th>
-                                    <th>Mag Error</th>
-                                    <th>Mag Lim</th>
-                                    <th>Filter</th>
-                                    <th>Instrument</th>
-                                    <th>Warp</th>
-                                    <th>Template</th>
-                                    <th>Diff</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {%for diff in diff_images%}
-                                <tr>
-                                    <td>{{diff.phot_data.obs_date|date:"M d, Y H:i:s"}}</td>
-                                    <td>{{diff.phot_data.flux|floatformat:3}}</td>
-                                    <td>{{diff.phot_data.flux_err|floatformat:3}}</td>
-                                    <td>{{diff.phot_data.mag|floatformat:3}}</td>
-                                    <td>{{diff.phot_data.mag_err|floatformat:3}}</td>
-                                    <td>{{diff.phot_data.mag_lim|floatformat:3}}</td>
-                                    <td>{{diff.phot_data.band.name}}</td>
-                                    <td>{{diff.phot_data.band.instrument.name}}</td>
-                                    <td>
-                                     {% if diff.valid_pixels %}
-                                        {% static "" as baseUrl %}
-                                        {% with "YSE_App/images/stamps/"|add:diff.postage_stamp_file as stampfile %}
-                                        {% with "YSE_App/images/stamps/"|add:diff.postage_stamp_file_fits as stampfitsfile %}
-                                        <a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
-                                        {% endwith %}
-                                        {% endwith %}
-                                        {% else %}
-                                        No Valid Pixels
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if diff.valid_pixels %}
-                                        {% static "" as baseUrl %}
-                                        {% with "YSE_App/images/stamps/"|add:diff.postage_stamp_ref as stampfile %}
-                                        {% with "YSE_App/images/stamps/"|add:diff.postage_stamp_ref_fits as stampfitsfile %}
-                                        <a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
-                                        {% endwith %}
-                                        {% endwith %}
-                                        {% else %}
-                                        No Valid Pixels
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if diff.valid_pixels %}
-                                        {% static "" as baseUrl %}
-                                        {% with "YSE_App/images/stamps/"|add:diff.postage_stamp_diff as stampfile %}
-                                        {% with "YSE_App/images/stamps/"|add:diff.postage_stamp_diff_fits as stampfitsfile %}
-                                        <a href="{% static stampfitsfile %}"><img src="{% static stampfile %}" style='width:170px' alt="" /></a>
-                                        {% endwith %}
-                                        {% endwith %}
-                                        {% else %}
-                                        No Valid Pixels
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {%endfor%}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-
-                        {% endif %}
-                        <table class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>MJD</th>
-                                    <th>Mag</th>
-                                    <th>Mag Error</th>
-                                    <th>Filter</th>
-                                    <th>Instrument</th>
-                                    <th>DQ</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {%for allphot in allphotdata%}
-                                <tr>
-                                    <td>{{allphot.obs_date|date:"M d, Y H:i:s"}}</td>
-                                    <td>{{allphot.date_to_mjd|floatformat:1}}</td>
-                                    <td>{{allphot.mag}}</td>
-                                    <td>{{allphot.mag_err}}</td>
-                                    <td>{{allphot.band.name}}</td>
-                                    <td>{{allphot.band.instrument.name}}</td>
-                                    <td>{{ allphot.data_quality.all|join:"," }}</td>
-                                <tr/>
-                            {%endfor%}
-                            </tbody>
-                        </table>
+                        <div id="photometry_deferred_tables">
+                            {% if transient_detail_defer %}
+                            <p class="text-muted"><i class="fa fa-info-circle"></i> Photometry tables load when you open this tab.</p>
+                            {% else %}
+                            {% include "YSE_App/transient_detail_photometry_tables.html" %}
+                            {% endif %}
+                        </div>
 
                     </div>
                     <div class="tab-pane" id="spectra_tab">
-                        <h4>Spectra for {{transient.name}}</h4>
+                        <div id="spectra_tab_content">
+                            {% if transient_detail_defer %}
+                            <p class="text-muted"><i class="fa fa-info-circle"></i> Spectra list loads when you open this tab.</p>
+                            {% else %}
+                            {% include "YSE_App/transient_detail_spectra_tab.html" %}
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="tab-pane" id="hst_tab">
                         <h4>HST Images for {{transient.name}}</h4>
@@ -445,30 +191,13 @@
                         </table>
                     </div>
                     <div class="tab-pane" id="gw_tab">
-                        <h4>GW Candidate Info</h4>
-                        <h4><a href="{{ gw_candidate.websniff_url }}" target="_blank">Websniff URL</a><h4>
-                        <table class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Telescope</th>
-                                    <th>Filter</th>
-                                    <th>DOPHOT Class</th>
-                                    <th>Image</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for gw_image in gw_images %}
-                                <tr>
-                                    <td>{{ gw_image.obs_date }}</td>
-                                    <td>{{ gw_image.image_filter.instrument }}</td>
-                                    <td>{{ gw_image.image_filter }}</td>
-                                    <td>{{ gw_image.dophot_class }}</td>
-                                    <td><img src="{{ gw_image.image_filename }}" style='width:500px' border="0"></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                        <div id="gw_tab_content">
+                            {% if transient_detail_defer %}
+                            <p class="text-muted"><i class="fa fa-info-circle"></i> GW info loads when you open this tab.</p>
+                            {% else %}
+                            {% include "YSE_App/transient_detail_gw_tab.html" %}
+                            {% endif %}
+                        </div>
                     </div>
             </div>
         </div>
@@ -520,6 +249,7 @@
             }
             rows.append(htmltext);
         });
+{% if not transient_detail_defer %}
         $.get("{% url 'get_hst_image' transient.id %}").done(function (json) {
             var rows = $("#hst_image");
             var rows_full = $("#hst_image_list");
@@ -554,6 +284,7 @@
             }
             $(rows_exp).prepend(json.totalexp + "s ");
         });
+{% endif %}
         $.get("{% url 'get_legacy_image' transient.id %}").done(function (json) {
             var rows = $("#legacy_image");
             var htmltext = "<a href=" + json.fitsurl + "><img src=\"" + json.jpegurl + "\" style='width:240px' alt=\"\" /></a>";
@@ -865,6 +596,7 @@
             //   'autoWidth'   : false
             // })
 
+            {% if not transient_detail_defer %}
             $('#follow_date_range').daterangepicker({
                 timePicker24Hour: true,
                 timePicker: true,
@@ -878,17 +610,11 @@
                     format: 'MM/DD/YYYY HH:mm'
                 }
             });
+            {% endif %}
 
-
-            $('#automated_spectrum_date_range').daterangepicker({
-                timePicker24Hour: true,
-                timePicker: true,
-                timePickerIncrement: 1,
-                format: 'MM/DD/YYYY HH:mm',
-                locale: {
-                    format: 'MM/DD/YYYY HH:mm'
-                }
-            });
+            if ($('#automated_spectrum_date_range').length) {
+                initAutomatedSpectrumDateRange();
+            }
 
 
             //$('#spec_obs_date').datetimepicker({
@@ -1078,22 +804,58 @@
         }
 
         // Initialize daterange
-        fdr_spec_picker = $('#automated_spectrum_date_range').data('daterangepicker')
-        $('#spectrum_valid_start').val(fdr_spec_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-        $('#spectrum_valid_stop').val(fdr_spec_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
-        $('#automated_spectrum_date_range').on('apply.daterangepicker', function(ev, picker) {
-            $('#spectrum_valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-            $('#spectrum_valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"))
-        });
+        function initAutomatedSpectrumDateRange() {
+            if (!$('#automated_spectrum_date_range').length) {
+                return;
+            }
+            if (!$('#automated_spectrum_date_range').data('daterangepicker')) {
+                $('#automated_spectrum_date_range').daterangepicker({
+                    timePicker24Hour: true,
+                    timePicker: true,
+                    timePickerIncrement: 1,
+                    format: 'MM/DD/YYYY HH:mm',
+                    locale: {
+                        format: 'MM/DD/YYYY HH:mm'
+                    }
+                });
+            }
+            var fdr_spec_picker = $('#automated_spectrum_date_range').data('daterangepicker');
+            if (fdr_spec_picker) {
+                $('#spectrum_valid_start').val(fdr_spec_picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                $('#spectrum_valid_stop').val(fdr_spec_picker.endDate.format("YYYY-MM-DD HH:mm:00"));
+            }
+            $('#automated_spectrum_date_range').off('apply.daterangepicker.followup').on('apply.daterangepicker.followup', function(ev, picker) {
+                $('#spectrum_valid_start').val(picker.startDate.format("YYYY-MM-DD HH:mm:00"));
+                $('#spectrum_valid_stop').val(picker.endDate.format("YYYY-MM-DD HH:mm:00"));
+            });
+        }
+
+        function initFollowupTabWidgets() {
+            if ($('#follow_date_range').length && !$('#follow_date_range').data('daterangepicker')) {
+                $('#follow_date_range').daterangepicker({
+                    timePicker24Hour: true,
+                    timePicker: true,
+                    timePickerIncrement: 1,
+                    format: 'MM/DD/YYYY HH:mm',
+                    locale: {
+                        format: 'MM/DD/YYYY HH:mm'
+                    }
+                });
+            }
+            initAutomatedSpectrumDateRange();
+        }
+
             // Initialize date
             //date_picker = $('#spec_obs_date').data('datetimepicker')
             //date_picker.setDate(null)
             //$('#obs_date').val(date_picker.getDate())
 
             // Initialize daterange
-            fdr_picker = $('#follow_date_range').data('daterangepicker')
-            $('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-            $('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+            if ($('#follow_date_range').length) {
+                fdr_picker = $('#follow_date_range').data('daterangepicker')
+                $('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
+                $('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
+            }
 
             // Intialize Desired Obs Date. Don't initialize Actual Obs Date...
             otd_picker = $('#obs_task_desired_picker').data('daterangepicker')
@@ -1234,7 +996,8 @@
             });
 
 
-            $('.specPlotChange').on('click', function(event){
+            $(document).on('click', '.specPlotChange', function(event){
+                event.preventDefault();
                 var spec_id = $(this).attr('spec_plot-id')
                 var transient_id = {{transient.id}}
                 if (spec_id == 'all'){
@@ -1352,7 +1115,7 @@
                 });
             });
 
-            $('.plotAirmass').on('click', function(event){
+            $(document).on('click', '.plotAirmass', function(event){
                 //var spec_id = $(this).attr('spec_plot-id')
                 var transient_id = {{transient.id}};
                 var telescope_id = $(this).attr('telescope_id');
@@ -1372,47 +1135,54 @@
                 $(rows).html(urltext);
             });
 
+            function fetchResourceObsDetails() {
+                var riseTimeUrl = "{% url 'rise_time' transient.id 0 %}";
+                var setTimeUrl = "{% url 'set_time' transient.id 0 %}";
+                var moonAngleUrl = "{% url 'moon_angle' transient.id 0 %}";
+                $('[id^="rise_time_"]').each(function() {
+                    var obsnight_id = this.id.slice('rise_time_'.length);
+                    var $cell = $(this);
+                    if ($cell.text().trim()) {
+                        return;
+                    }
+                    $.get(riseTimeUrl.replace('/0', '/' + obsnight_id)).done(function(json) {
+                        $cell.append(json["rise_time"]);
+                    });
+                    $.get(setTimeUrl.replace('/0', '/' + obsnight_id)).done(function(json) {
+                        $("#set_time_" + obsnight_id).append(json["set_time"]);
+                    });
+                    $.get(moonAngleUrl.replace('/0', '/' + obsnight_id)).done(function(json) {
+                        $("#moon_angle_" + obsnight_id).append(json["moon_angle"]);
+                    });
+                });
+
+                var tonightRiseUrl = "{% url 'tonight_rise_time' transient.id 0 %}";
+                var tonightSetUrl = "{% url 'tonight_set_time' transient.id 0 %}";
+                var tonightMoonUrl = "{% url 'tonight_moon_angle' transient.id 0 %}";
+                var deltaTooUrl = "{% url 'delta_too_hours' 0 %}";
+                $('[id^="tonight_rise_time_"]').each(function() {
+                    var too_id = this.id.slice('tonight_rise_time_'.length);
+                    var $cell = $(this);
+                    if ($cell.text().trim()) {
+                        return;
+                    }
+                    $.get(tonightRiseUrl.replace('/0', '/' + too_id)).done(function(json) {
+                        $cell.append(json["rise_time"]);
+                    });
+                    $.get(tonightSetUrl.replace('/0', '/' + too_id)).done(function(json) {
+                        $("#tonight_set_time_" + too_id).append(json["set_time"]);
+                    });
+                    $.get(tonightMoonUrl.replace('/0', '/' + too_id)).done(function(json) {
+                        $("#tonight_moon_angle_" + too_id).append(json["moon_angle"]);
+                    });
+                    $.get(deltaTooUrl.replace('/0', '/' + too_id)).done(function(json) {
+                        $("#delta_too_hours_" + too_id).append(json["delta_too_hours"]);
+                    });
+                });
+            }
+
             $('.showObsDetails').on('click', function(event){
-                {% for obsnight in observing_nights %}
-                    $.get("{% url 'rise_time' transient.id obsnight.id %}").done(function(json){
-                    var rows = $("#rise_time_{{obsnight.id}}")
-                    $(rows).append(json["rise_time"])
-                    });
-                    $.get("{% url 'set_time' transient.id obsnight.id %}").done(function(json){
-                    var rows = $("#set_time_{{obsnight.id}}")
-                    $(rows).append(json["set_time"])
-                    });
-                    $.get("{% url 'moon_angle' transient.id obsnight.id %}").done(function(json){
-                    var rows = $("#moon_angle_{{obsnight.id}}")
-                    $(rows).append(json["moon_angle"])
-                    });
-                {% endfor %}
-
-              {% for too_resource in too_resource_list %}
-                  {% if too_resource.used_too_hours < too_resource.awarded_too_hours %}
-
-                      $.get("{% url 'tonight_rise_time' transient.id too_resource.id %}").done(function(json){
-                          var rows = $("#tonight_rise_time_{{too_resource.id}}")
-                          $(rows).append(json["rise_time"])
-                      });
-
-                      $.get("{% url 'tonight_set_time' transient.id too_resource.id %}").done(function(json){
-                          var rows = $("#tonight_set_time_{{too_resource.id}}")
-                          $(rows).append(json["set_time"])
-                      });
-
-                      $.get("{% url 'tonight_moon_angle' transient.id too_resource.id %}").done(function(json){
-                          var rows = $("#tonight_moon_angle_{{too_resource.id}}")
-                          $(rows).append(json["moon_angle"])
-                      });
-
-                      $.get("{% url 'delta_too_hours' too_resource.id %}").done(function(json){
-                          var rows = $("#delta_too_hours_{{too_resource.id}}")
-                          $(rows).append(json["delta_too_hours"])
-                      });
-                  {% endif %}
-              {% endfor %}
-
+                fetchResourceObsDetails();
             });
 
             function ToggleObservationTaskForm(followup_id,expand)
@@ -1459,7 +1229,7 @@
                 }
             });
 
-            $('.add_task').on('click', function(event){
+            $(document).on('click', '.add_task', function(event){
                 event.preventDefault();
                 var followup_id = $(this).attr('followup_id');
                 ToggleObservationTaskForm(followup_id,true)
@@ -1850,6 +1620,187 @@
                 yseInitAladin();
             }
         });
+
+        function loadHstImages() {
+            $.get("{% url 'get_hst_image' transient.id %}").done(function(json){
+                var rows = $("#hst_image")
+                var rows_full = $("#hst_image_list")
+                var rows_tab = $("#hst_tab_header")
+                var htmltext = "<p class=\"text-muted\">No HST Images available</p>"
+                if (json.jpegurl[0]) {
+                    var htmltext = "<img src=\"" + json.jpegurl[0] + "\" style='width:240px' alt=\"\" /></a>"
+
+                } else {
+                    var headertext = "No "
+                    $(rows_tab).prepend(headertext)
+                }
+                $(rows).append(htmltext)
+
+                for(var ju in json.jpegurl){
+                    var htmltextfull = "<tr>" +
+                    "<td>" + json.obsdate[ju] + "</td>" +
+                    "<td>" + json.filters[ju] + "</td>" +
+                    "<td>" + json.inst[ju] + "</td>" +
+                    "<td><a href='" + json.fitsurl[ju] + "' target='_blank'><img src='" + json.jpegurl[ju] + "' style='width:240px' alt='' /></a></td>" //+
+                    "</tr>"
+                    $(rows_full).append(htmltextfull)
+                }
+            });
+        }
+
+        function loadChandraImages() {
+            $.get("{% url 'get_chandra_image' transient.id %}").done(function(json){
+                var rows = $("#chandra_image")
+                var rows_full = $("#chandra_image_list")
+                var rows_exp = $("#totalchandraexp")
+                var rows_tab = $("#chandra_tab_header")
+                var htmltext = "<p class=\"text-muted\">No Chandra Images available</p>"
+                if (json.jpegurl[0]) {
+                    var htmltext = "<img src=\"" + json.jpegurl[0] + "\" style='width:240px' alt=\"\" /></a>"
+
+                } else {
+                    var headertext = "No "
+                    $(rows_tab).prepend(headertext)
+                }
+                $(rows).append(htmltext)
+
+                for(var ju in json.jpegurl){
+                    var htmltextfull = "<tr>" +
+                    "<td>" + json.obsdate[ju] + "</td>" +
+                    "<td>" + json.exptime[ju] + "</td>" +
+                    "<td><a href='" + json.fitsurl[ju] + "' target='_blank'><img src='" + json.jpegurl[ju] + "' style='width:240px' alt='' /></a></td>" +
+                    "</tr>"
+                    $(rows_full).append(htmltextfull)
+                }
+                $(rows_exp).prepend(json.totalexp+"s ")
+            });
+        }
+
+{% if transient_detail_defer %}
+        var transientDetailFragmentsLoaded = {};
+        var followupPhasedLoadPromise = null;
+
+        function loadTransientDetailFragment(key, url, $container) {
+            if (transientDetailFragmentsLoaded[key]) {
+                return $.Deferred().resolve().promise();
+            }
+            transientDetailFragmentsLoaded[key] = true;
+            $container.html('<p class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading…</p>');
+            return $.get(url).done(function(html) {
+                $container.html(html);
+                if (key === 'followup_requests') {
+                    $('.followupbox').boxWidget();
+                }
+                if (key === 'followup_rest') {
+                    initFollowupTabWidgets();
+                }
+            }).fail(function() {
+                $container.html('<p class="text-danger">Failed to load this section.</p>');
+                transientDetailFragmentsLoaded[key] = false;
+            });
+        }
+
+        function loadFollowupTabPhased() {
+            if (followupPhasedLoadPromise) {
+                return followupPhasedLoadPromise;
+            }
+            // Phase 1: past requests; 2: classical; 3: forms + ToO + automated (classical before ToO).
+            followupPhasedLoadPromise = loadTransientDetailFragment(
+                'followup_requests',
+                "{% url 'transient_detail_followup_fragment' transient.id %}",
+                $('#followup_container')
+            ).then(function() {
+                return loadTransientDetailFragment(
+                    'followup_classical',
+                    "{% url 'transient_detail_followup_classical_fragment' transient.id %}",
+                    $('#followup_classical_slot')
+                );
+            }).then(function() {
+                return loadTransientDetailFragment(
+                    'followup_rest',
+                    "{% url 'transient_detail_followup_rest_fragment' transient.id %}",
+                    $('#followup_rest_slot')
+                );
+            });
+            return followupPhasedLoadPromise;
+        }
+
+        var hstImagesLoaded = false;
+        var chandraImagesLoaded = false;
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+            var target = $(e.target).attr('href');
+            if (target === '#followup_tab') {
+                loadFollowupTabPhased();
+            } else if (target === '#resources_tab') {
+                loadTransientDetailFragment(
+                    'resources',
+                    "{% url 'transient_detail_resources_fragment' transient.id %}",
+                    $('#resources_deferred_tables')
+                );
+            } else if (target === '#photometry_tab') {
+                loadTransientDetailFragment(
+                    'photometry',
+                    "{% url 'transient_detail_photometry_fragment' transient.id %}",
+                    $('#photometry_deferred_tables')
+                );
+            } else if (target === '#hst_tab' && !hstImagesLoaded) {
+                hstImagesLoaded = true;
+                loadHstImages();
+            } else if (target === '#chandra_tab' && !chandraImagesLoaded) {
+                chandraImagesLoaded = true;
+                loadChandraImages();
+            } else if (target === '#comments_tab') {
+                loadTransientDetailFragment(
+                    'comments',
+                    "{% url 'transient_detail_comments_fragment' transient.id %}",
+                    $('#comments_list_slot')
+                );
+            } else if (target === '#gw_tab') {
+                loadTransientDetailFragment(
+                    'gw',
+                    "{% url 'transient_detail_gw_fragment' transient.id %}",
+                    $('#gw_tab_content')
+                );
+            } else if (target === '#spectra_tab') {
+                loadTransientDetailFragment(
+                    'spectra_tab',
+                    "{% url 'transient_detail_spectra_tab_fragment' transient.id %}",
+                    $('#spectra_tab_content')
+                );
+            }
+        });
+
+        function loadSummarySpectraTools() {
+            return loadTransientDetailFragment(
+                'summary_spectra_tools',
+                "{% url 'transient_detail_summary_spectra_tools_fragment' transient.id %}",
+                $('#summary_spectrum_tools_slot')
+            );
+        }
+
+        $.get("{% url 'get_hst_status' transient.id %}").done(function(json) {
+            if (!json.has_data) {
+                $("#hst_tab_header").prepend("No ");
+            }
+        });
+        $.get("{% url 'get_chandra_status' transient.id %}").done(function(json) {
+            if (!json.has_data) {
+                $("#chandra_tab_header").prepend("No ");
+            }
+        });
+
+        // Background: follow-up phased load + summary spectrum dropdown tools.
+        setTimeout(function() {
+            loadFollowupTabPhased();
+            loadSummarySpectraTools();
+        }, 0);
+{% else %}
+        loadHstImages();
+        loadChandraImages();
+{% endif %}
+
+      });
+
 
     </script>
 {% endblock %}

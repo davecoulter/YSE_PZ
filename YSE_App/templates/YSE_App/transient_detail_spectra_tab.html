@@ -1,0 +1,29 @@
+<h4>Spectra for {{ transient.name }}</h4>
+{% if all_transient_spectra %}
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Date (UTC)</th>
+            <th>Instrument</th>
+            <th>Telescope</th>
+            <th>Redshift</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for spec in all_transient_spectra %}
+        <tr>
+            <td>{{ spec.obs_date }}</td>
+            <td>{{ spec.instrument.name }}</td>
+            <td>{{ spec.instrument.telescope.name }}</td>
+            <td>{{ spec.redshift|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<p>
+    <button type="button" class="btn btn-primary specPlotChange" spec_plot-id="all">Plot all on Summary tab</button>
+    <button type="button" class="btn btn-default" onclick="window.open('{% url 'download_spectra' transient.slug %}')">Download spectra</button>
+</p>
+{% else %}
+<p class="text-muted">No authorized spectra for this transient.</p>
+{% endif %}

@@ -1,0 +1,30 @@
+<h4>GW Candidate Info</h4>
+{% if gw_candidate %}
+<h4><a href="{{ gw_candidate.websniff_url }}" target="_blank">Websniff URL</a></h4>
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Telescope</th>
+            <th>Filter</th>
+            <th>DOPHOT Class</th>
+            <th>Image</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for gw_image in gw_images %}
+        <tr>
+            <td>{{ gw_image.obs_date }}</td>
+            <td>{{ gw_image.image_filter.instrument }}</td>
+            <td>{{ gw_image.image_filter }}</td>
+            <td>{{ gw_image.dophot_class }}</td>
+            <td><img src="{{ gw_image.image_filename }}" style='width:500px' border="0" alt=""></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted">No GW images on file.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">No GW candidate record for this transient.</p>
+{% endif %}

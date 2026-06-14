@@ -1,0 +1,20 @@
+{
+  "tolerance_fraction": 0.2,
+  "pages": {
+    "main_dashboard": {
+      "baseline_ms": 178,
+      "max_ms": 400,
+      "note": "Deferred shell (New only sync); higher ceiling after UI phase 1–2 + security on develop"
+    },
+    "personal_dashboard": {
+      "baseline_ms": 91,
+      "max_ms": 200,
+      "note": "Deferred shell; sections via personaldashboard/section/"
+    },
+    "transient_detail": {
+      "baseline_ms": 102,
+      "max_ms": 350,
+      "note": "Deferred shell with phase 1–2 summary/comments; fragments + HST/Chandra on tab click"
+    }
+  }
+}
