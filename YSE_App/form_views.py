@@ -5,7 +5,7 @@ from django.views import generic
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 import requests
 import sys
 from datetime import datetime
@@ -41,7 +41,6 @@ def is_ajax(request):
 class AddTransientFollowupFormView(FormView):
 	form_class = TransientFollowupForm
 	template_name = 'YSE_App/form_snippets/transient_followup_form.html'
-	success_url = '/form-success/'
 
 	def get_form_kwargs(self):
 		kwargs = super().get_form_kwargs()
@@ -50,89 +49,112 @@ class AddTransientFollowupFormView(FormView):
 		if transient_id:
 			kwargs["transient_id"] = int(transient_id)
 		return kwargs
-	
+
+	def _transient_detail_success_url(self, transient):
+		return reverse("transient_detail", kwargs={"slug": transient.slug}) + "#followup_tab"
+
+	def _followup_response_data(self, instance, form):
+		data_dict = {
+			"id": instance.id,
+			"status_id": instance.status.id,
+			"status_name": instance.status.name,
+			"valid_start": instance.valid_start,
+			"valid_stop": instance.valid_stop,
+			"spec_priority": form.cleaned_data["spec_priority"],
+			"phot_priority": form.cleaned_data["phot_priority"],
+			"offset_star_ra": form.cleaned_data["offset_star_ra"],
+			"offset_star_dec": form.cleaned_data["offset_star_dec"],
+			"offset_north": form.cleaned_data["offset_north"],
+			"offset_east": form.cleaned_data["offset_east"],
+			"comment": form.cleaned_data["comment"],
+			"modified_by": instance.modified_by.username,
+		}
+		if instance.too_resource:
+			data_dict["too_resource"] = str(instance.too_resource)
+		if instance.classical_resource:
+			data_dict["classical_resource"] = str(instance.classical_resource)
+		if instance.queued_resource:
+			data_dict["queued_resource"] = str(instance.queued_resource)
+		return data_dict
+
+	def _create_followup_from_form(self, form):
+		from YSE_App.services.audience import resolve_followup_audience
+
+		instance = form.save(commit=False)
+		instance.created_by = self.request.user
+		instance.modified_by = self.request.user
+		instance.requested_by = self.request.user
+		instance.valid_start = form.cleaned_data["valid_start"]
+		instance.valid_stop = form.cleaned_data["valid_stop"]
+
+		is_public, audience_groups = resolve_followup_audience(
+			self.request.user,
+			instance.transient_id,
+			audience_groups=list(form.cleaned_data.get("audience_groups") or []),
+			linked_resource=(
+				form.cleaned_data.get("classical_resource")
+				or form.cleaned_data.get("too_resource")
+				or form.cleaned_data.get("queued_resource")
+			),
+			explicit_audience=True,
+		)
+		instance.is_public = is_public
+		instance.save()
+
+		if audience_groups:
+			instance.groups.set(audience_groups)
+
+		if instance.transient.status.name in ["New", "Watch", "Ignore", "Interesting"]:
+			instance.transient.status = TransientStatus.objects.filter(
+				name="FollowupRequested"
+			)[0]
+			instance.transient.save()
+
+		if form.cleaned_data["comment"]:
+			log = Log(
+				transient_followup=instance,
+				comment=form.cleaned_data["comment"],
+				created_by=self.request.user,
+				modified_by=self.request.user,
+			)
+			log.save()
+
+		return instance
+
 	def form_invalid(self, form):
-		response = super(AddTransientFollowupFormView, self).form_invalid(form)
 		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
-		else:
-			return response
+		transient_id = self.request.POST.get("transient")
+		if transient_id:
+			transient = Transient.objects.filter(pk=transient_id).only("slug").first()
+			if transient:
+				from django.contrib import messages
+
+				messages.error(
+					self.request,
+					"Could not save follow-up: "
+					+ "; ".join(
+						f"{field}: {', '.join(errors)}"
+						for field, errors in form.errors.items()
+					),
+				)
+				return HttpResponseRedirect(self._transient_detail_success_url(transient))
+		referer = self.request.META.get("HTTP_REFERER")
+		if referer:
+			return HttpResponseRedirect(referer)
+		return HttpResponseRedirect(reverse_lazy("dashboard"))
 
 	def form_valid(self, form):
-		response = super(AddTransientFollowupFormView, self).form_valid(form)
+		instance = self._create_followup_from_form(form)
 		if is_ajax(self.request):
-
-			instance = form.save(commit=False)
-			instance.created_by = self.request.user
-			instance.modified_by = self.request.user
-			instance.requested_by = self.request.user
-			if instance.classical_resource:
-				instance.valid_start = instance.classical_resource.begin_date_valid
-				instance.valid_stop = instance.classical_resource.end_date_valid
-
-			from YSE_App.services.audience import resolve_followup_audience
-
-			is_public, audience_groups = resolve_followup_audience(
-				self.request.user,
-				instance.transient_id,
-				is_public=form.cleaned_data.get("is_public", True),
-				audience_groups=form.cleaned_data.get("audience_groups"),
-			)
-			instance.is_public = is_public
-			instance.save() #update_fields=['created_by','modified_by']
-
-			if audience_groups:
-				instance.groups.set(audience_groups)
-
-			if instance.transient.status.name in ['New','Watch','Ignore','Interesting']:
-				instance.transient.status = TransientStatus.objects.filter(name='FollowupRequested')[0]
-				instance.transient.save()
-			
-			if form.cleaned_data['comment']:
-				log = Log(transient_followup=TransientFollowup.objects.get(id=instance.id),
-						  comment=form.cleaned_data['comment'])
-				log.created_by = self.request.user
-				log.modified_by = self.request.user
-				log.save()
-			
-			print(form.cleaned_data)
-
-			# for key,value in form.cleaned_data.items():
-			data_dict = {}
-			data_dict['id'] = instance.id
-			data_dict['status_id'] = instance.status.id
-			data_dict['status_name'] = instance.status.name
-			if instance.too_resource:
-				data_dict['too_resource'] = str(instance.too_resource)
-			if instance.classical_resource:
-				data_dict['classical_resource'] = str(instance.classical_resource)
-			if instance.queued_resource:
-				data_dict['queued_resource'] = str(instance.queued_resource)
-
-			if instance.classical_resource:
-				data_dict['valid_start'] = instance.classical_resource.begin_date_valid
-				data_dict['valid_stop'] = instance.classical_resource.end_date_valid
-			else:
-				data_dict['valid_start'] = form.cleaned_data['valid_start']
-				data_dict['valid_stop'] = form.cleaned_data['valid_stop']
-
-			data_dict['spec_priority'] = form.cleaned_data['spec_priority']
-			data_dict['phot_priority'] = form.cleaned_data['phot_priority']
-			data_dict['offset_star_ra'] = form.cleaned_data['offset_star_ra']
-			data_dict['offset_star_dec'] = form.cleaned_data['offset_star_dec']
-			data_dict['offset_north'] = form.cleaned_data['offset_north']
-			data_dict['offset_east'] = form.cleaned_data['offset_east']
-			data_dict['comment'] = form.cleaned_data['comment']
-			
-			data_dict['modified_by'] = instance.modified_by.username
-
 			data = {
-				'data':data_dict,
-				'message': "Successfully submitted form data.",
+				"data": self._followup_response_data(instance, form),
+				"message": "Successfully submitted form data.",
 			}
 			return JsonResponse(data)
-		else:
-			return response
+		return HttpResponseRedirect(
+			self._transient_detail_success_url(instance.transient)
+		)
 
 class AddClassicalResourceFormView(FormView):
 	form_class = ClassicalResourceForm
@@ -561,7 +583,6 @@ class AddOncallUserFormView(FormView):
 class AddTransientCommentFormView(FormView):
 	form_class = TransientCommentForm
 	template_name = 'simple.html'#YSE_App/form_snippets/transient_followup_form.html'
-	success_url = '/form-success/'
 
 	def get_form_kwargs(self):
 		kwargs = super().get_form_kwargs()
@@ -571,40 +592,43 @@ class AddTransientCommentFormView(FormView):
 			kwargs["transient_id"] = int(transient_id)
 		return kwargs
 
+	def _transient_detail_success_url(self, transient):
+		return reverse("transient_detail", kwargs={"slug": transient.slug})
+
+	def _create_comment_from_form(self, form):
+		from YSE_App.services.audience import resolve_comment_audience
+		from YSE_App.services.comments import create_transient_comment, log_to_comment_dict
+
+		transient = form.cleaned_data["transient"]
+		is_public, audience_groups = resolve_comment_audience(
+			self.request.user,
+			transient.id,
+			is_public=form.cleaned_data.get("is_public", False),
+			audience_groups=form.cleaned_data.get("audience_groups"),
+		)
+		log = create_transient_comment(
+			transient=transient,
+			comment=form.cleaned_data["comment"],
+			user=self.request.user,
+			is_public=is_public,
+			audience_groups=audience_groups,
+		)
+		return log, log_to_comment_dict(log)
+
 	def form_invalid(self, form):
-		response = super(AddTransientCommentFormView, self).form_invalid(form)
 		if is_ajax(self.request):
 			return JsonResponse(form.errors, status=400)
-		else:
-			return response
+		return super(AddTransientCommentFormView, self).form_invalid(form)
 
 	def form_valid(self, form):
-		response = super(AddTransientCommentFormView, self).form_valid(form)
+		log, comment_dict = self._create_comment_from_form(form)
 		if is_ajax(self.request):
-			from YSE_App.services.audience import resolve_comment_audience
-			from YSE_App.services.comments import create_transient_comment, log_to_comment_dict
-
-			transient = form.cleaned_data["transient"]
-			is_public, audience_groups = resolve_comment_audience(
-				self.request.user,
-				transient.id,
-				is_public=form.cleaned_data.get("is_public", False),
-				audience_groups=form.cleaned_data.get("audience_groups"),
-			)
-			log = create_transient_comment(
-				transient=transient,
-				comment=form.cleaned_data["comment"],
-				user=self.request.user,
-				is_public=is_public,
-				audience_groups=audience_groups,
-			)
 			data = {
 				"message": "Successfully submitted form data.",
-				"data": log_to_comment_dict(log),
+				"data": comment_dict,
 			}
 			return JsonResponse(data)
-		else:
-			return response
+		return HttpResponseRedirect(self._transient_detail_success_url(log.transient))
 		
 class AddDashboardQueryFormView(FormView):
 	form_class = AddDashboardQueryForm

@@ -9,7 +9,8 @@
 			</div>
 		</div>
 		<div class="box-body">
-			<form id="add_transient_followup" action="{% url 'add_transient_followup' %}" method="post">
+			{{ form.resource_audience_map|json_script:"yse-followup-resource-audience-map" }}
+			<form id="add_transient_followup" action="{% url 'add_transient_followup' %}" method="post" onsubmit="return false;">
 				{% csrf_token %}
 				{% for hidden_field in form.hidden_fields %}
 					{{ hidden_field }}
@@ -53,8 +54,8 @@
 							</div>
 							<input type="text" class="form-control pull-right" id="follow_date_range">
 						</div>
-						<input type="hidden" id="{{form.valid_start.name}}" name="{{form.valid_start.name}}">
-						<input type="hidden" id="{{form.valid_stop.name}}" name="{{form.valid_stop.name}}">
+						<input type="hidden" id="{{ form.valid_start.id_for_label }}" name="{{ form.valid_start.name }}"{% if form.valid_start.value %} value="{{ form.valid_start.value|date:'Y-m-d H:i:s' }}"{% endif %}>
+						<input type="hidden" id="{{ form.valid_stop.id_for_label }}" name="{{ form.valid_stop.name }}"{% if form.valid_stop.value %} value="{{ form.valid_stop.value|date:'Y-m-d H:i:s' }}"{% endif %}>
 					</div>
 				</div>
 				<!--<div class="col-xs-6">
@@ -94,19 +95,29 @@
 					</div>
 				</div>-->
 				<div class="col-xs-12">
-					<div class="yse-audience-panel yse-followup-audience">
+					<div class="yse-audience-panel yse-followup-audience"{% if form.public_group_id %} data-public-group-id="{{ form.public_group_id }}"{% endif %}>
 						<p class="yse-audience-heading text-muted"><strong>Who can see this follow-up?</strong></p>
-						<div class="checkbox yse-audience-public">
-							<label>
-								{% render_field form.is_public class+="yse-audience-toggle-public" %}
-								{{ form.is_public.label }}
-							</label>
-						</div>
 						<div id="yse-followup-audience-groups" class="yse-audience-groups yse-followup-audience-groups">
 							{% if form.show_audience_picker %}
-								<p class="text-muted small">Restrict to collaboration groups:</p>
-								{% for checkbox in form.audience_groups %}
-								<div class="checkbox">{{ checkbox }}</div>
+								<p class="text-muted small">
+									Select collaboration groups that can see the selected observing resource
+									(default: all eligible groups checked). Check <strong>Public</strong> to share
+									with everyone in the Public group (only available for public observing resources).
+								</p>
+								{% for choice in form.followup_audience_choices %}
+								<div class="checkbox yse-followup-audience-choice" data-group-id="{{ choice.group.pk }}">
+									<label class="yse-followup-audience-label{% if not choice.enabled %} text-muted{% endif %}">
+										<input type="checkbox"
+											name="audience_groups"
+											value="{{ choice.group.pk }}"
+											class="yse-followup-audience-group"
+											{% if choice.checked %}checked{% endif %}
+											{% if not choice.enabled %}disabled{% endif %}
+											data-resource-eligible="{{ choice.enabled|yesno:'true,false' }}"
+											data-is-public-group="{{ choice.is_public_group|yesno:'true,false' }}">
+										{{ choice.group.name }}
+									</label>
+								</div>
 								{% endfor %}
 							{% endif %}
 						</div>
@@ -114,8 +125,9 @@
 				</div>
 				<div class="col-xs-12">
 					<div class="form-group">
+						<div class="yse-followup-submit-error alert alert-danger" role="alert" style="display:none; margin-top:10px;"></div>
 						<br>
-						<button type="submit" class="btn btn-block btn-primary btn-lg">Submit</button>
+						<button type="button" class="btn btn-block btn-primary btn-lg yse-followup-submit-btn">Submit</button>
 					</div>
 				</div>
 			</form>

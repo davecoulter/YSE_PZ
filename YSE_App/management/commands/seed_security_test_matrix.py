@@ -1,4 +1,4 @@
-"""Seed four security-test users and secvis-matrix transient (mag-labeled photometry)."""
+"""Seed four security-test users and secvis-matrix transient (mag-labeled photometry + resources)."""
 
 from __future__ import annotations
 
@@ -16,7 +16,8 @@ from YSE_App.tests.fixtures_security_matrix import (
 class Command(BaseCommand):
     help = (
         "Create security demo users (sec_user_ab, sec_user_ac, sec_user_b, sec_user_d) "
-        f"and transient {TRANSIENT_NAME} with mag-labeled photometry (0=public … 7=overlap)."
+        f"and transient {TRANSIENT_NAME} with mag-labeled photometry and observing "
+        "resources (0=public … 7=overlap)."
     )
 
     def add_arguments(self, parser):
@@ -42,5 +43,10 @@ class Command(BaseCommand):
             self.stdout.write(
                 f"  {username:14} groups={groups:8} expected LC mags: {expected}"
             )
+        self.stdout.write("")
+        self.stdout.write(
+            "Observing resources: SecVis-{Cls|Too|Que}-mag{N}-{suffix} "
+            "(same group rules as LC mags 0–7). Open Follow-up tab on transient detail."
+        )
         self.stdout.write("")
         self.stdout.write("Log in at /login/ and open the transient URL above.")

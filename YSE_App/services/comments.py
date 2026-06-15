@@ -71,6 +71,8 @@ def create_transient_comment(
         if not audience_groups:
             # No collaboration groups to scope to (e.g. public-only transient).
             is_public = True
+    elif audience_groups == [] and not is_public:
+        audience_groups = []
 
     log = Log.objects.create(
         transient=transient,

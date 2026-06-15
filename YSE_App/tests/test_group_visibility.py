@@ -68,6 +68,25 @@ class GroupVisibilityTests(TestCase):
             list(filter_transient_comments_for_user(Log.objects.all(), self.user_a)),
         )
 
+    def test_creator_only_comment_visible_only_to_author(self):
+        log = create_transient_comment(
+            transient=self.transient,
+            comment="only me",
+            user=self.user_a,
+            notify=False,
+            is_public=False,
+            audience_groups=[],
+        )
+        self.assertEqual(log.groups.count(), 0)
+        self.assertEqual(
+            transient_comment_queryset(self.transient.id, user=self.user_a).count(),
+            1,
+        )
+        self.assertEqual(
+            transient_comment_queryset(self.transient.id, user=self.user_b).count(),
+            0,
+        )
+
     def test_public_comment_visible_to_authorized_user(self):
         create_transient_comment(
             transient=self.transient,

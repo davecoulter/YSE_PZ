@@ -240,6 +240,279 @@
             setPlotHtml("#lcplot", html,
                 '<p class="text-muted yse-plot-empty">No photometry to plot.</p>');
         });
+
+    /* Follow-up audience panel — defined before deferred fragments (race with 2nd script block). */
+    (function() {
+        var resourceFields = ['classical_resource', 'too_resource', 'queued_resource'];
+
+        function yseParseFollowupResourceAudienceMap() {
+            var el = document.getElementById('yse-followup-resource-audience-map');
+            if (!el || !el.textContent) {
+                return {};
+            }
+            try {
+                return JSON.parse(el.textContent);
+            } catch (err) {
+                return {};
+            }
+        }
+
+        function yseUpdateActiveFollowupResourceField($form) {
+            var active = null;
+            resourceFields.forEach(function(name) {
+                var val = $form.find('select[name=' + name + ']').val();
+                if (val) {
+                    active = name;
+                }
+            });
+            $form.data('active-resource-field', active);
+            return active;
+        }
+
+        function yseSelectedFollowupResourceMeta($form, map) {
+            map = map || yseParseFollowupResourceAudienceMap();
+            var activeField = $form.data('active-resource-field');
+            if (!activeField) {
+                activeField = yseUpdateActiveFollowupResourceField($form);
+            }
+            if (!activeField) {
+                return { is_public: false, group_ids: [] };
+            }
+            var resourcePk = $form.find('select[name=' + activeField + ']').val();
+            if (!resourcePk) {
+                return { is_public: false, group_ids: [] };
+            }
+            var key = activeField + ':' + resourcePk;
+            return map[key] || { is_public: false, group_ids: [] };
+        }
+
+        function yseGroupIdEligible(groupId, meta) {
+            if (meta.public_group_id && groupId === meta.public_group_id) {
+                return !!meta.is_public;
+            }
+            if (meta.is_public) {
+                return true;
+            }
+            var ids = (meta.group_ids || []).map(function(id) { return parseInt(id, 10); });
+            return ids.indexOf(groupId) >= 0;
+        }
+
+        function yseSyncFollowupAudiencePanel($form, resetEligible) {
+            $form = $form && $form.length ? $form : $('#add_transient_followup');
+            if (!$form.length) {
+                return;
+            }
+            var $panel = $form.find('.yse-followup-audience');
+            if (!$panel.length) {
+                return;
+            }
+            var map = yseParseFollowupResourceAudienceMap();
+            var meta = yseSelectedFollowupResourceMeta($form, map);
+            var publicGroupId = parseInt($panel.data('public-group-id'), 10);
+            if (!isNaN(publicGroupId)) {
+                meta.public_group_id = publicGroupId;
+            }
+
+            $panel.find('.yse-followup-audience-group').each(function() {
+                var $cb = $(this);
+                var groupId = parseInt($cb.val(), 10);
+                var isPublicGroup = $cb.data('is-public-group') === true
+                    || $cb.data('is-public-group') === 'true';
+                var eligible = isPublicGroup ? !!meta.is_public : yseGroupIdEligible(groupId, meta);
+                var $label = $cb.closest('.yse-followup-audience-label');
+                var $choice = $cb.closest('.yse-followup-audience-choice');
+                if (!eligible) {
+                    $cb.prop('disabled', true).prop('checked', false);
+                    $label.addClass('text-muted');
+                    $choice.addClass('yse-followup-audience-ineligible');
+                } else {
+                    $cb.prop('disabled', false);
+                    if (resetEligible) {
+                        $cb.prop('checked', true);
+                    }
+                    $label.removeClass('text-muted');
+                    $choice.removeClass('yse-followup-audience-ineligible');
+                }
+            });
+        }
+
+        function yseInitFollowupResourceAudience($form) {
+            $form = $form && $form.length ? $form : $('#add_transient_followup');
+            if (!$form.length) {
+                return;
+            }
+            yseUpdateActiveFollowupResourceField($form);
+            yseSyncFollowupAudiencePanel($form, true);
+        }
+
+        function yseFollowupShowSubmitError(message) {
+            var $form = $('#add_transient_followup');
+            if (!$form.length) {
+                window.alert(message);
+                return;
+            }
+            var $err = $form.find('.yse-followup-submit-error').first();
+            if (!$err.length) {
+                $err = $('<div class="alert alert-danger yse-followup-submit-error" role="alert" style="margin-top:10px;"></div>');
+                $form.find('.yse-followup-submit-btn').closest('.form-group').prepend($err);
+            }
+            $err.text(message).show();
+        }
+
+        function yseFollowupClearSubmitError() {
+            $('#add_transient_followup .yse-followup-submit-error').hide();
+        }
+
+        function yseFollowupAudienceSelectionValid($form) {
+            $form = $form && $form.length ? $form : $('#add_transient_followup');
+            if (!$form.length) {
+                return false;
+            }
+            var hasResource = false;
+            resourceFields.forEach(function(name) {
+                if ($form.find('select[name=' + name + ']').val()) {
+                    hasResource = true;
+                }
+            });
+            if (!hasResource) {
+                yseFollowupShowSubmitError(
+                    'Select a classical, ToO, or queued resource for this follow-up.'
+                );
+                return false;
+            }
+            var checkedEligible = $form.find(
+                '.yse-followup-audience-group:checked:not(:disabled)'
+            ).length;
+            if ($form.find('.yse-followup-audience-group').length && checkedEligible < 1) {
+                yseFollowupShowSubmitError(
+                    'Select at least one collaboration group for this follow-up.'
+                );
+                return false;
+            }
+            yseFollowupClearSubmitError();
+            return true;
+        }
+        window.yseFollowupAudienceSelectionValid = yseFollowupAudienceSelectionValid;
+        window.yseFollowupShowSubmitError = yseFollowupShowSubmitError;
+        window.yseFollowupClearSubmitError = yseFollowupClearSubmitError;
+
+        function yseSubmitTransientFollowup() {
+            var $form = $('#add_transient_followup');
+            if (!$form.length) {
+                yseFollowupShowSubmitError('Follow-up form is not loaded yet.');
+                return;
+            }
+            if (!yseFollowupAudienceSelectionValid($form)) {
+                return;
+            }
+            yseFollowupClearSubmitError();
+            var submitUrl = $form.attr('action') || "{% url 'add_transient_followup' %}";
+            var data = $form.serialize();
+            var transient_id = $form.find('input[name="transient"]').val() || $('#transient_pk').val();
+            if (transient_id && data.indexOf('transient=') === -1) {
+                data = data + '&transient=' + encodeURIComponent(transient_id);
+            }
+            var $btn = $form.find('.yse-followup-submit-btn');
+            $btn.prop('disabled', true);
+            $.ajax({
+                url: submitUrl,
+                type: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                dataType: 'json',
+                data: data,
+                success: function(json) {
+                    $('a[href="#followup_tab"]').tab('show');
+                    if (typeof window.yseOnTransientFollowupCreated === 'function') {
+                        window.yseOnTransientFollowupCreated(json);
+                    } else if (window.yseResetFollowupFragmentCache && window.yseLoadFollowupPhased) {
+                        window.yseResetFollowupFragmentCache();
+                        window.yseLoadFollowupPhased();
+                    }
+                    $('#add_transient_followup_btn').first().trigger('click');
+                    $form[0].reset();
+                    if (window.yseInitFollowupResourceAudience) {
+                        window.yseInitFollowupResourceAudience($form);
+                    }
+                    if (window.yseInitFollowupTabWidgets) {
+                        window.yseInitFollowupTabWidgets();
+                    }
+                    yseFollowupClearSubmitError();
+                },
+                error: function(xhr) {
+                    var message = xhr.responseText || 'Could not save follow-up.';
+                    try {
+                        var errors = JSON.parse(xhr.responseText);
+                        message = Object.keys(errors).map(function(key) {
+                            var val = errors[key];
+                            return key + ': ' + (Array.isArray(val) ? val.join(', ') : val);
+                        }).join('\n');
+                    } catch (parseErr) {}
+                    yseFollowupShowSubmitError(message);
+                },
+                complete: function() {
+                    $btn.prop('disabled', false);
+                }
+            });
+        }
+        window.yseSubmitTransientFollowup = yseSubmitTransientFollowup;
+        window.add_transient_followup = yseSubmitTransientFollowup;
+
+        function yseTriggerFollowupSubmit() {
+            yseSubmitTransientFollowup();
+        }
+        window.yseTriggerFollowupSubmit = yseTriggerFollowupSubmit;
+
+        if (!window.yseFollowupSubmitDelegationBound) {
+            window.yseFollowupSubmitDelegationBound = true;
+            $(document).on('submit', '#add_transient_followup', function(event) {
+                event.preventDefault();
+                yseTriggerFollowupSubmit();
+                return false;
+            });
+            $(document).on('click', '#add_transient_followup .yse-followup-submit-btn', function(event) {
+                event.preventDefault();
+                yseTriggerFollowupSubmit();
+                return false;
+            });
+        }
+
+        window.yseSyncFollowupAudiencePanel = yseSyncFollowupAudiencePanel;
+        window.yseInitFollowupResourceAudience = yseInitFollowupResourceAudience;
+
+        if (!window.yseFollowupAudienceDelegationBound) {
+            window.yseFollowupAudienceDelegationBound = true;
+            function yseOnFollowupResourceSelected() {
+                var $form = $('#add_transient_followup');
+                if (!$form.length) {
+                    return;
+                }
+                var fieldName = $(this).attr('name');
+                var val = $(this).val();
+                if (val) {
+                    resourceFields.forEach(function(other) {
+                        if (other !== fieldName) {
+                            var $other = $form.find('select[name=' + other + ']');
+                            if ($other.val()) {
+                                $other.val('').trigger('change');
+                            }
+                        }
+                    });
+                    $form.data('active-resource-field', fieldName);
+                } else {
+                    yseUpdateActiveFollowupResourceField($form);
+                }
+                yseSyncFollowupAudiencePanel($form, true);
+            }
+            $(document).on(
+                'change select2:select',
+                '#add_transient_followup select[name=classical_resource], ' +
+                '#add_transient_followup select[name=too_resource], ' +
+                '#add_transient_followup select[name=queued_resource]',
+                yseOnFollowupResourceSelected
+            );
+        }
+    })();
+
 {% if transient_detail_defer %}
         function yseUpdateArchiveTabLabel($tab, url, emptyLabel) {
             if (!$tab.length) {
@@ -285,8 +558,13 @@
                 if (key === 'followup_requests' && $.fn.boxWidget) {
                     $('.followupbox').boxWidget();
                 }
-                if (key === 'followup_rest' && window.yseInitFollowupTabWidgets) {
-                    window.yseInitFollowupTabWidgets();
+                if (key === 'followup_rest') {
+                    if (window.yseInitFollowupTabWidgets) {
+                        window.yseInitFollowupTabWidgets();
+                    }
+                    if (window.yseInitFollowupResourceAudience) {
+                        window.yseInitFollowupResourceAudience();
+                    }
                 }
                 deferred.resolve();
             }).fail(function() {
@@ -321,10 +599,23 @@
             });
             return yseFollowupLoadPromise;
         }
+        window.yseLoadFollowupPhased = yseLoadFollowupPhased;
+        window.yseResetFollowupFragmentCache = function() {
+            yseFollowupLoadPromise = null;
+            delete yseDetailFragmentsLoaded['followup_requests'];
+            delete yseDetailFragmentsLoaded['followup_rest'];
+            delete yseDetailFragmentsLoaded['followup_classical'];
+        };
 
         var yseHstImagesLoaded = false;
         var yseChandraImagesLoaded = false;
         $(function() {
+            if (window.location.hash === '#followup_tab') {
+                if (window.yseResetFollowupFragmentCache) {
+                    window.yseResetFollowupFragmentCache();
+                }
+                $('a[href="#followup_tab"]').tab('show');
+            }
             $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
                 var target = $(e.target).attr('href');
                 if (target === '#followup_tab') {
@@ -1064,6 +1355,12 @@
                 $root = $root || $(document);
                 $root.find('.yse-audience-panel').each(function() {
                     var $panel = $(this);
+                    if ($panel.hasClass('yse-followup-audience')) {
+                        if (window.yseSyncFollowupAudiencePanel) {
+                            window.yseSyncFollowupAudiencePanel($panel.closest('form'), false);
+                        }
+                        return;
+                    }
                     var $public = $panel.find('.yse-audience-toggle-public');
                     var $groups = $panel.find('.yse-audience-groups');
                     if (!$public.length) {
@@ -1081,6 +1378,9 @@
 
             $(function() {
                 yseSyncAudiencePanels();
+                if (window.yseInitFollowupResourceAudience) {
+                    window.yseInitFollowupResourceAudience($('#add_transient_followup'));
+                }
             });
 
             function yseEscapeHtml(text) {
@@ -1111,6 +1411,7 @@
                 $.ajax({
                     url : "{% url 'add_transient_comment' %}",
                     type : "POST",
+                    headers : { "X-Requested-With": "XMLHttpRequest" },
                     data : $form.serialize(),
                     success : function(json) {
                         if (json.data) {
@@ -1144,11 +1445,7 @@
             })();
 
 
-            // Submit post on submit (delegated — follow-up form may load via fragment)
-            $(document).on('submit', '#add_transient_followup', function(event){
-                event.preventDefault();
-                add_transient_followup();
-            });
+            // Follow-up submit is wired in the early script block (yseTriggerFollowupSubmit).
 
             function ChangeErr() {
                 alert("Transient Status may not have changed -- please use YSE Admin and contact Dave C or David J.")
@@ -1566,163 +1863,100 @@
                     });
             }
 
-            function add_transient_followup() {
-                // Grab the form, and associate it with the current transient detail page
-                var data = $('#add_transient_followup').serialize()
-                var transient_id = $('#transient_pk').val()
-                data = (data + "&transient=" + transient_id)
+{% if not transient_detail_defer %}
+            window.yseOnTransientFollowupCreated = function(json) {
+                var followup_pk = json.data["id"];
+                var status_id = json.data["status_id"];
+                var status_name = json.data["status_name"];
+                var valid_start = json.data["valid_start"];
+                var valid_stop = json.data["valid_stop"];
+                var modified_by = json.data["modified_by"];
 
-                $.ajax({
-                    url : "{% url 'add_transient_followup' %}", // the endpoint
-                    type : "POST", // http method
-                    data : data, // data sent with the post request
+                if (!followup_pk || !status_id || !status_name ||
+                    !valid_start || !valid_stop || !modified_by) {
+                    alert("Required fields for `Transient Followup` not found! Please contact administrator.");
+                    return;
+                }
 
-                    // handle a successful response
-                    success : function(json) {
+                var too_resource = json.data["too_resource"];
+                var classical_resource = json.data["classical_resource"];
+                var queued_resource = json.data["queued_resource"];
+                var spec_priority = json.data["spec_priority"] ? json.data["spec_priority"] : "None";
+                var phot_priority = json.data["phot_priority"] ? json.data["phot_priority"] : "None";
+                var offset_star_ra = json.data["offset_star_ra"] ? json.data["offset_star_ra"] : "None";
+                var offset_star_dec = json.data["offset_star_dec"] ? json.data["offset_star_dec"] : "None";
+                var offset_north = json.data["offset_north"] ? json.data["offset_north"] : "None";
+                var offset_east = json.data["offset_east"] ? json.data["offset_east"] : "None";
+                var comment = json.data["comment"] ? json.data["comment"] : "None";
 
-                        // Required fields
-                        var followup_pk = json.data["id"]
-                        var status_id = json.data["status_id"]
-                        var status_name = json.data["status_name"]
-                        var valid_start = json.data["valid_start"]
-                        var valid_stop = json.data["valid_stop"]
-                        var modified_by = json.data["modified_by"]
+                var start_date = new Date(valid_start);
+                var end_date = new Date(valid_stop);
+                var start_date_str = (start_date.getUTCMonth() + 1) + "/" + start_date.getUTCDate() + "/" + start_date.getUTCFullYear();
+                var end_date_str = (end_date.getUTCMonth() + 1) + "/" + end_date.getUTCDate() + "/" + end_date.getUTCFullYear();
 
-                        if (!followup_pk || !status_id || !status_name ||
-                            !valid_start || !valid_stop || !modified_by) {
-                            alert("Required fields for `Transient Followup` not found! Please contact administrator. Exiting...")
-                            throw "Missing required fields from ``AddTransientFollowupFormView"
+                var associated_resouces = "";
+                if (too_resource) {
+                    associated_resouces = associated_resouces + too_resource + "<br>";
+                }
+                if (classical_resource) {
+                    associated_resouces = associated_resouces + classical_resource + "<br>";
+                }
+                if (queued_resource) {
+                    associated_resouces = associated_resouces + queued_resource;
+                }
+
+                var followupHTML = "<div class='col-xs-12'>" +
+                    "<div class='followupbox box box-primary'>" +
+                    "<div class='box-header'>" +
+                    "<div class='col-xs-4'><h3 class='box-title'>Follow-up (id: " + followup_pk + ")</h3></div>" +
+                    "<div class='col-xs-4'><h3 class='box-title'>Valid: " + start_date_str + " - " + end_date_str + "</h3></div>" +
+                    "<div class='col-xs-4'><h3 style='float:right;padding-right:10px' class='box-title'>Last Modified: " + modified_by + "</h3></div>" +
+                    "<div class='box-tools pull-right'><button type='button' class='btn btn-box-tool' data-widget='collapse'><i class='fa fa-minus'></i></button></div>" +
+                    "</div><div class='box-body'>" +
+                    "<table id='tbl_followup_" + followup_pk + "' class='table table-bordered table-striped'>" +
+                    "<thead><tr><th>Spec. Priority</th><th>Phot. Priority</th><th>Offset Star<br>RA</th><th>Offset Star<br>DEC</th><th>Offset North</th><th>Offset East</th><th>Attached Resource</th><th>Status</th><th>Comment</th><th>Action</th><th>Delete</th></tr></thead>" +
+                    "<tbody><tr>" +
+                    "<td>" + spec_priority + "</td><td>" + phot_priority + "</td>" +
+                    "<td>" + offset_star_ra + "</td><td>" + offset_star_dec + "</td>" +
+                    "<td>" + offset_north + "</td><td>" + offset_east + "</td>" +
+                    "<td>" + associated_resouces + "</td><td>" + status_name + "</td><td>" + comment + "</td>" +
+                    "<td><a target='_blank' href='{% url 'admin:YSE_App_transientfollowup_changelist' %}" + followup_pk + "/change/'>Edit</a></td>" +
+                    "<td><a href='{% url 'delete_followup' -1 %}".replace('-1', followup_pk) + "'>Delete</a></td>" +
+                    "</tr></tbody></table><hr>" +
+                    "<h4 class='box-title'>Observation Tasks</h4>" +
+                    "<table id='tbl_obs_followup_" + followup_pk + "' class='table table-bordered table-striped'>" +
+                    "<thead><tr><th>ID</th><th>Obs.</th><th>Tel.</th><th>Inst.</th>" +
+                    "<th>Desired Obs.<br>Date (UTC)</th><th>Actual Obs.<br>Date (UTC)</th>" +
+                    "<th>Exp.<br>Time</th><th>Desc.</th><th># of<br>Exposures</th>" +
+                    "<th>Config. Name</th><th>Config. Detail</th><th>Status</th>" +
+                    "<th>Last<br>Modified By</th><th>Action</th></tr></thead>" +
+                    "<tbody><tr><td colspan='13'></td><td><b><a class='add_task' followup_id='" + followup_pk + "' href='#'>Add</a></b></td></tr>" +
+                    "</tbody></table><br></div></div></div>";
+
+                $('#followup_container .text-muted').remove();
+                $('#followup_container .followupbox').each(function() {
+                    var $box = $(this);
+                    $box.addClass('collapsed-box');
+                    $box.find('.box-body').hide();
+                    $box.find('[data-widget=collapse] i').removeClass('fa-minus').addClass('fa-plus');
+                });
+                var $newRow = $(followupHTML).hide();
+                $newRow.find('.box-body').hide();
+                $('#followup_container').prepend($newRow);
+                $newRow.slideDown(300, function() {
+                    $newRow.find('.box-body').slideDown(300, function() {
+                        var $newBox = $newRow.find('.followupbox');
+                        if ($.fn.boxWidget) {
+                            $newBox.boxWidget();
                         }
-
-                        var too_resource = json.data["too_resource"]
-                        var classical_resource = json.data["classical_resource"]
-                        var queued_resource = json.data["queued_resource"]
-
-                        var spec_priority = json.data["spec_priority"] ? json.data["spec_priority"] : "None"
-                        var phot_priority = json.data["phot_priority"] ? json.data["phot_priority"] : "None"
-                        var offset_star_ra = json.data["offset_star_ra"] ? json.data["offset_star_ra"] : "None"
-                        var offset_star_dec = json.data["offset_star_dec"] ? json.data["offset_star_dec"] : "None"
-                        var offset_north = json.data["offset_north"] ? json.data["offset_north"] : "None"
-                        var offset_east = json.data["offset_east"] ? json.data["offset_east"] : "None"
-                        var comment = json.data["comment"] ? json.data["comment"] : "None"
-
-                        // Construct date strings
-                        var start_date = new Date(valid_start)
-                        var end_date = new Date(valid_stop)
-                        var start_date_str = start_date.getUTCMonth() + "/" + start_date.getUTCDate() + "/" + start_date.getUTCFullYear()
-                        var end_date_str = end_date.getUTCMonth() + "/" + end_date.getUTCDate() + "/" + end_date.getUTCFullYear()
-
-                        // Construct associated resources
-                        var associated_resouces = "";
-                        if (too_resource) {
-                            associated_resouces = (associated_resouces + too_resource + "<br>")
-                        }
-                        if (classical_resource) {
-                            associated_resouces = (associated_resouces + classical_resource + "<br>")
-                        }
-                        if (queued_resource) {
-                            associated_resouces = (associated_resouces + queued_resource)
-                        }
-
-                        // Construct HTML to append container
-                        var followupHTML = "<div class='col-xs-12'>" +
-                            "<div class='followupbox box box-primary'>" +
-                            "<div class='box-header'>" +
-                            "<div class='col-xs-4'>" +
-                            "<h3 class='box-title'>Follow-up (id: " + followup_pk + ")</h3>" +
-                            "</div>" +
-                            "<div class='col-xs-4'>" +
-                            "<h3 class='box-title'>Valid: " + start_date_str + " - " + end_date_str + "</h3>" +
-                            "</div>" +
-                            "<div class='col-xs-4'>" +
-                            "<h3 style='float:right;padding-right:10px' class='box-title'>Last Modified: " + modified_by + "</h3>" +
-                            "</div>" +
-                            "<div class='box-tools pull-right'>" +
-                            "<button type='button' class='btn btn-box-tool' data-widget='collapse'><i class='fa fa-minus'></i></button>" +
-                            "</div>" +
-                            "</div>" +
-                            "<div class='box-body'>" +
-                            "<table id='tbl_followup_" + followup_pk + "' class='table table-bordered table-striped'>" +
-                            "<thead><tr><th>Spec. Priority</th><th>Phot. Priority</th><th>Offset Star<br>RA</th><th>Offset Star<br>DEC</th><th>Offset North</th><th>Offset East</th><th>Attached Resource</th><th>Status</th><th>Comment</th><th>Action</th><th>Delete</th></tr></thead>" +
-                            "<tbody><tr>" +
-                            "<td>" + spec_priority + "</td>" +
-                            "<td>" + phot_priority + "</td>" +
-                            "<td>" + offset_star_ra + "</td>" +
-                            "<td>" + offset_star_dec + "</td>" +
-                            "<td>" + offset_north + "</td>" +
-                            "<td>" + offset_east + "</td>" +
-                            "<td>" + associated_resouces + "</td>" +
-                            "<td>" + status_name + "</td>" +
-                            "<td>" + comment + "</td>" +
-                            "<td><a target='_blank' href='{% url 'admin:YSE_App_transientfollowup_changelist' %}" + followup_pk + "/change/'>Edit</a></td>" +
-                            "<td><a href='{% url 'delete_followup' -1 %}".replace('-1', followup_pk) + "'>Delete</a></td>" +
-                            "</tr></tbody></table><hr>" +
-                            "<h4 class='box-title'>Observation Tasks</h4>" +
-                            "<table id='tbl_obs_followup_" + followup_pk + "' class='table table-bordered table-striped'>" +
-                            "<thead><tr>" +
-                            "<th>ID</th>" +
-                            "<th>Obs.</th>" +
-                            "<th>Tel.</th>" +
-                            "<th>Inst.</th>" +
-                            "<th>Desired Obs.<br>Date (UTC)</th>" +
-                            "<th>Actual Obs.<br>Date (UTC)</th>" +
-                            "<th>Exp.<br>Time</th>" +
-                            "<th>Desc.</th>" +
-                            "<th># of<br>Exposures</th>" +
-                            "<th>Config. Name</th>" +
-                            "<th>Config. Detail</th>" +
-                            "<th>Status</th>" +
-                            "<th>Last<br>Modified By</th>" +
-                            "<th>Action</th>" +
-                            "</tr></thead>" +
-                            "<tbody><tr><td colspan='13'></td><td><b><a class='add_task' followup_id='" + followup_pk + "' href='#'>Add</a></b></td></tr>" +
-                            "</tbody></table><br></div></div></div>"
-
-                            var container_collection = $("#followup_container > div")
-                            if (container_collection.length == 0) {
-                                $("#followup_container").append(followupHTML)
-                            } else {
-                                $("#followup_container").prepend(followupHTML)
-                            }
-
-                            // Close & reset form box
-                            $("#add_transient_followup_btn").trigger("click")
-                            $('#add_transient_followup')[0].reset();
-                            yseSyncAudiencePanels($('#add_transient_followup'));
-
-                            // Re-initialize the datepicker
-                            $('#valid_start').val("")
-                            $('#valid_stop').val("")
-                            $('#follow_date_range').daterangepicker({
-                                timePicker24Hour: true,
-                                timePicker: true,
-                                timePickerIncrement: 1,
-                                format: 'MM/DD/YYYY HH:mm',
-                                locale: {
-                                    format: 'MM/DD/YYYY HH:mm'
-                                }
-                            });
-
-                            // Re-Initialize daterange
-                            fdr_picker = $('#follow_date_range').data('daterangepicker')
-                            $('#valid_start').val(fdr_picker.startDate.format("YYYY-MM-DD HH:mm:00"))
-                            $('#valid_stop').val(fdr_picker.endDate.format("YYYY-MM-DD HH:mm:00"))
-
-                            // Re-wire widget behavior
-                            $('.followupbox').boxWidget()
-                            $('.add_task').on('click', function(event){
-                                event.preventDefault();
-                                var followup_id = $(this).attr('followup_id');
-                                ToggleObservationTaskForm(followup_id,true)
-                            });
-                    },
-
-                    // handle a non-successful response
-                    error : function(xhr,errmsg,err) {
-                        alert(xhr.status + ": " + xhr.responseText);
-                    }
+                        $newRow.find('.add_task').on('click', function(event) {
+                            event.preventDefault();
+                            ToggleObservationTaskForm($(this).attr('followup_id'), true);
+                        });
+                    });
                 });
             };
+{% endif %}
 
             // This function gets cookie with a given name
             function getCookie(name) {

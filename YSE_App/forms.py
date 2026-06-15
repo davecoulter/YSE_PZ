@@ -34,11 +34,6 @@ class TransientForm(ModelForm):
             'postage_stamp_file']
 
 class TransientFollowupForm(ModelForm):
-    is_public = forms.BooleanField(
-        required=False,
-        initial=True,
-        label="Visible to all YSE users who can open this transient",
-    )
     audience_groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.none(),
         required=False,
@@ -67,13 +62,135 @@ class TransientFollowupForm(ModelForm):
 
     def __init__(self, *args, user=None, transient_id=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._user = user
+        self.fields["valid_start"].required = False
+        self.fields["valid_stop"].required = False
+        if transient_id is not None:
+            self.fields["transient"].initial = transient_id
+            self.fields["transient"].widget = forms.HiddenInput()
         self.show_audience_picker = False
-        if user is not None and transient_id is not None:
-            from YSE_App.services.audience import selectable_audience_groups
+        self.followup_audience_choices = []
+        self.resource_audience_map = {}
 
-            qs = selectable_audience_groups(user, transient_id)
-            self.fields["audience_groups"].queryset = qs
-            self.show_audience_picker = qs.exists()
+        if user is not None:
+            from YSE_App import view_utils
+
+            valid_after = timezone.now() - timedelta(days=1)
+            self.fields["classical_resource"].queryset = (
+                view_utils.get_authorized_classical_resources(user)
+                .filter(end_date_valid__gt=valid_after)
+                .order_by("telescope__name")
+            )
+            self.fields["too_resource"].queryset = (
+                view_utils.get_authorized_too_resources(user)
+                .filter(end_date_valid__gt=valid_after)
+                .order_by("telescope__name")
+            )
+            self.fields["queued_resource"].queryset = (
+                view_utils.get_authorized_queued_resources(user)
+                .filter(end_date_valid__gt=valid_after)
+                .order_by("telescope__name")
+            )
+            classical_qs = self.fields["classical_resource"].queryset
+            if classical_qs.exists():
+                initial_resource = classical_qs.first()
+                self.fields["classical_resource"].initial = initial_resource
+                self.fields["valid_start"].initial = initial_resource.begin_date_valid
+                self.fields["valid_stop"].initial = initial_resource.end_date_valid
+
+            self.fields["audience_groups"].queryset = user.groups.order_by("name")
+            self.show_audience_picker = user.groups.exists()
+            from YSE_App.services.audience import (
+                build_followup_audience_choices,
+                build_followup_resource_audience_map,
+            )
+
+            linked_resource = self._linked_resource_from_bound_data()
+            self.followup_audience_choices = build_followup_audience_choices(
+                user, linked_resource
+            )
+            eligible_ids = [
+                choice["group"].pk
+                for choice in self.followup_audience_choices
+                if choice["enabled"]
+            ]
+            self.fields["audience_groups"].initial = eligible_ids
+            self.resource_audience_map = build_followup_resource_audience_map(self)
+            self.public_group_id = next(
+                (
+                    choice["group"].pk
+                    for choice in self.followup_audience_choices
+                    if choice["is_public_group"]
+                ),
+                None,
+            )
+
+    def _linked_resource_from_bound_data(self):
+        data = self.data if self.is_bound else None
+        for field_name in ("classical_resource", "too_resource", "queued_resource"):
+            if data is not None:
+                raw_pk = data.get(field_name)
+                if raw_pk:
+                    return self.fields[field_name].queryset.filter(pk=raw_pk).first()
+            initial = self.fields[field_name].initial
+            if initial is not None:
+                if hasattr(initial, "pk"):
+                    return initial
+                return self.fields[field_name].queryset.filter(pk=initial).first()
+        return None
+
+    def clean(self):
+        cleaned_data = super().clean()
+        classical = cleaned_data.get("classical_resource")
+        too = cleaned_data.get("too_resource")
+        queued = cleaned_data.get("queued_resource")
+        linked_resource = classical or too or queued
+        if classical:
+            cleaned_data["valid_start"] = classical.begin_date_valid
+            cleaned_data["valid_stop"] = classical.end_date_valid
+        elif not cleaned_data.get("valid_start") or not cleaned_data.get("valid_stop"):
+            if too or queued:
+                raise forms.ValidationError(
+                    "Provide a date range for ToO or queued follow-up requests."
+                )
+            raise forms.ValidationError(
+                "Select a classical, ToO, or queued resource for this follow-up."
+            )
+
+        if self._user is not None:
+            from rest_framework.exceptions import ValidationError as DRFValidationError
+            from YSE_App.services.audience import (
+                resolve_followup_audience,
+                resource_is_creator_only,
+            )
+
+            if not linked_resource:
+                raise forms.ValidationError(
+                    "Select a classical, ToO, or queued resource for this follow-up."
+                )
+
+            selected = cleaned_data.get("audience_groups")
+            selected_list = list(selected) if selected is not None else []
+            if not selected_list and not resource_is_creator_only(linked_resource):
+                raise forms.ValidationError(
+                    {
+                        "audience_groups": "Select at least one collaboration group.",
+                    }
+                )
+
+            try:
+                resolve_followup_audience(
+                    self._user,
+                    cleaned_data.get("transient").pk
+                    if cleaned_data.get("transient") is not None
+                    else 0,
+                    audience_groups=selected_list,
+                    linked_resource=linked_resource,
+                    explicit_audience=True,
+                )
+            except DRFValidationError as exc:
+                raise forms.ValidationError(exc.detail) from exc
+        return cleaned_data
 
     class Meta:
         model = TransientFollowup
@@ -210,7 +327,7 @@ class TransientCommentForm(ModelForm):
             qs = selectable_audience_groups(user, transient_id)
             self.fields["audience_groups"].queryset = qs
             self.fields["audience_groups"].initial = list(qs.values_list("pk", flat=True))
-            self.show_audience_picker = qs.count() > 1
+            self.show_audience_picker = qs.exists()
 
     class Meta:
         model = Log

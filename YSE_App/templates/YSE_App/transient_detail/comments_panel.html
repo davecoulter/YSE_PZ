@@ -47,13 +47,13 @@
                         </div>
                         <div id="yse-comment-audience-groups" class="yse-audience-groups">
                             {% if transient_comment_form.show_audience_picker %}
-                                <p class="text-muted small">Collaboration groups (default: groups you share on this transient):</p>
+                                <p class="text-muted small">Restrict to collaboration groups (default: all groups you share on this transient). Uncheck all groups to keep the comment visible only to you.</p>
                                 {% for checkbox in transient_comment_form.audience_groups %}
                                 <div class="checkbox">{{ checkbox }}</div>
                                 {% endfor %}
                             {% else %}
                                 <p class="text-muted small yse-audience-default-note">
-                                    Default: members of your collaboration groups on this transient.
+                                    Default: visible to all YSE users who can open this transient.
                                 </p>
                             {% endif %}
                         </div>

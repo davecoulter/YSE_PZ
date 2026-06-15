@@ -7,13 +7,23 @@ Magnitude on each point equals its test ID (0 = public, 1 = group A only, …).
 from __future__ import annotations
 
 import datetime
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
+import re
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, Union
 
 from django.contrib.auth.models import Group, User
 from django.utils import timezone
 
 from YSE_App.models import (
+    ClassicalObservingDate,
+    ClassicalResource,
+    ClassicalNightType,
+    Observatory,
+    ObservationGroup,
     PhotometricBand,
+    PrincipalInvestigator,
+    QueuedResource,
+    Telescope,
+    ToOResource,
     Transient,
     TransientPhotData,
     TransientPhotometry,
@@ -63,6 +73,14 @@ EXPECTED_MAGS_BY_USER: Dict[str, Set[int]] = {
     "sec_user_b": {0, 2, 5, 7},
     "sec_user_d": {0, 4},
 }
+
+RESOURCE_KINDS: Tuple[Tuple[str, str, Type], ...] = (
+    ("Cls", "classical", ClassicalResource),
+    ("Too", "too", ToOResource),
+    ("Que", "queued", QueuedResource),
+)
+
+_RESOURCE_MAG_RE = re.compile(r"mag(\d+)")
 
 
 def ensure_security_groups() -> Dict[str, Group]:
@@ -143,6 +161,135 @@ def _attach_labeled_series(
     return photometry
 
 
+def _resource_telescope_name(kind_code: str, mag: int, band_suffix: str) -> str:
+    return f"SecVis-{kind_code}-mag{mag}-{band_suffix}"
+
+
+def _resource_mag_from_telescope(telescope_name: str) -> Optional[int]:
+    match = _RESOURCE_MAG_RE.search(telescope_name)
+    if not match:
+        return None
+    return int(match.group(1))
+
+
+def _ensure_secvis_telescope(admin: User, telescope_name: str) -> Telescope:
+    audit = audit_fields(admin)
+    obs_group, _ = ObservationGroup.objects.get_or_create(
+        name=f"secvis-res-{telescope_name}",
+        defaults=audit,
+    )
+    observatory, _ = Observatory.objects.get_or_create(
+        name=f"SecVisObs-{telescope_name}",
+        defaults={"utc_offset": 0, "tz_name": "UTC", **audit},
+    )
+    telescope, _ = Telescope.objects.get_or_create(
+        name=telescope_name,
+        defaults={
+            "observatory": observatory,
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "elevation": 0.0,
+            **audit,
+        },
+    )
+    return telescope
+
+
+def _attach_labeled_resource(
+    admin: User,
+    *,
+    mag: int,
+    group_keys: Sequence[str],
+    band_suffix: str,
+    kind_code: str,
+    kind_label: str,
+    resource_model: Type,
+    groups: Dict[str, Group],
+    principal_investigator: PrincipalInvestigator,
+) -> Union[ClassicalResource, ToOResource, QueuedResource]:
+    audit = audit_fields(admin)
+    telescope_name = _resource_telescope_name(kind_code, mag, band_suffix)
+    telescope = _ensure_secvis_telescope(admin, telescope_name)
+    now = timezone.now()
+    begin = now - datetime.timedelta(days=30)
+    end = now + datetime.timedelta(days=365)
+    description = f"secvis-matrix {kind_label} mag {mag} ({band_suffix})"
+    defaults = {
+        "begin_date_valid": begin,
+        "end_date_valid": end,
+        "description": description,
+        "principal_investigator": principal_investigator,
+        **audit,
+    }
+    if resource_model is ToOResource:
+        defaults.update(
+            {
+                "awarded_too_hours": 20.0,
+                "used_too_hours": 0.0,
+                "awarded_too_triggers": 5.0,
+                "used_too_triggers": 0.0,
+            }
+        )
+    elif resource_model is QueuedResource:
+        defaults.update({"awarded_hours": 40.0, "used_hours": 0.0})
+
+    resource, _ = resource_model.objects.update_or_create(
+        telescope=telescope,
+        defaults=defaults,
+    )
+    resource.groups.clear()
+    for key in group_keys:
+        resource.groups.add(groups[key])
+    if resource_model is ClassicalResource:
+        _ensure_classical_observing_date(admin, resource)
+    return resource
+
+
+def _ensure_classical_observing_date(admin: User, resource: ClassicalResource) -> None:
+    """Observing calendar reads ``ClassicalObservingDate``, not resources alone."""
+    audit = audit_fields(admin)
+    night_type, _ = ClassicalNightType.objects.get_or_create(
+        name="Full",
+        defaults=audit,
+    )
+    begin = resource.begin_date_valid
+    if timezone.is_aware(begin):
+        obs_date = (begin + datetime.timedelta(days=1)).astimezone(datetime.timezone.utc)
+    else:
+        obs_date = begin + datetime.timedelta(days=1)
+    obs_date = obs_date.replace(hour=12, minute=0, second=0, microsecond=0)
+    ClassicalObservingDate.objects.filter(resource=resource).delete()
+    ClassicalObservingDate.objects.create(
+        resource=resource,
+        obs_date=obs_date,
+        night_type=night_type,
+        **audit,
+    )
+
+
+def create_secvis_matrix_resources(admin: User) -> None:
+    """Idempotent: mag-labeled classical / ToO / queued resources for follow-up requests."""
+    groups = ensure_security_groups()
+    audit = audit_fields(admin)
+    pi, _ = PrincipalInvestigator.objects.get_or_create(
+        name="secvis-pi",
+        defaults={"email": "secvis@example.com", **audit},
+    )
+    for mag, group_keys, band_suffix in PHOTOMETRY_SERIES:
+        for kind_code, kind_label, resource_model in RESOURCE_KINDS:
+            _attach_labeled_resource(
+                admin,
+                mag=mag,
+                group_keys=group_keys,
+                band_suffix=band_suffix,
+                kind_code=kind_code,
+                kind_label=kind_label,
+                resource_model=resource_model,
+                groups=groups,
+                principal_investigator=pi,
+            )
+
+
 def create_secvis_matrix_transient(admin: User) -> Transient:
     """Idempotent: one transient with mag-labeled public/private photometry."""
     ensure_transient_statuses(admin)
@@ -165,6 +312,7 @@ def create_secvis_matrix_transient(admin: User) -> Transient:
             band_suffix=band_suffix,
             groups=groups,
         )
+    create_secvis_matrix_resources(admin)
     return transient
 
 
@@ -188,4 +336,27 @@ def authorized_mags_for_user(user: User, transient_id: int) -> Set[int]:
     for row in photdata:
         if row.mag is not None:
             mags.add(int(round(float(row.mag))))
+    return mags
+
+
+def authorized_resource_mags_for_user(
+    user: User,
+    resource_model: Type,
+) -> Set[int]:
+    from YSE_App.data import ObservingResourceService
+
+    if resource_model is ClassicalResource:
+        qs = ObservingResourceService.GetAuthorizedClassicalResource_ByUser(user)
+    elif resource_model is ToOResource:
+        qs = ObservingResourceService.GetAuthorizedToOResource_ByUser(user)
+    elif resource_model is QueuedResource:
+        qs = ObservingResourceService.GetAuthorizedQueuedResource_ByUser(user)
+    else:
+        raise ValueError(f"Unsupported resource model: {resource_model}")
+
+    mags: Set[int] = set()
+    for resource in qs.select_related("telescope"):
+        mag = _resource_mag_from_telescope(resource.telescope.name)
+        if mag is not None:
+            mags.add(mag)
     return mags

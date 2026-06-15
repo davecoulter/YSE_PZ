@@ -3,6 +3,7 @@
 import hashlib
 import hmac
 import json
+import os
 import time
 from unittest.mock import patch
 
@@ -36,6 +37,22 @@ class Phase2CommentTests(TestCase):
         self.assertIn("yse-comment-thread", html)
         self.assertNotIn('id="comments_tab"', html)
 
+    @patch.dict(os.environ, {"YSE_TRANSIENT_DETAIL_DEFER": "1"})
+    def test_deferred_transient_detail_renders_saved_comments(self):
+        Log.objects.filter(transient=self.transient).delete()
+        create_transient_comment(
+            transient=self.transient,
+            comment="visible on deferred shell",
+            user=self.user,
+            notify=False,
+        )
+        url = reverse("transient_detail", kwargs={"slug": self.transient.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("visible on deferred shell", html)
+        self.assertNotIn("No comments yet.", html)
+
     def test_comments_fragment_returns_panel(self):
         url = reverse("comments_fragment", kwargs={"slug": self.transient.slug})
         response = self.client.get(url)
@@ -57,6 +74,28 @@ class Phase2CommentTests(TestCase):
         self.assertIn("comment", data["data"])
         self.assertEqual(
             Log.objects.filter(transient=self.transient).count(),
+            1,
+        )
+
+    def test_add_transient_comment_non_ajax_redirects_to_transient_detail(self):
+        Log.objects.filter(transient=self.transient).delete()
+        response = self.client.post(
+            reverse("add_transient_comment"),
+            {
+                "comment": "Non-AJAX fallback comment",
+                "transient": self.transient.id,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response["Location"],
+            reverse("transient_detail", kwargs={"slug": self.transient.slug}),
+        )
+        self.assertEqual(
+            Log.objects.filter(
+                transient=self.transient,
+                comment="Non-AJAX fallback comment",
+            ).count(),
             1,
         )
 
