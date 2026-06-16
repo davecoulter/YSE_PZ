@@ -181,6 +181,47 @@ class YSE_Scheduler:
 
         return field_list
 
+    def get_requested_ps_obs(self,date_to_schedule,field_list=None,surveyfielddata=None):
+        # get fields requested within the last day
+        
+        nowmjd = date_to_mjd(date_to_schedule)
+            
+        offsetcount = 0
+        r = requests.get(
+            f'{self.options.dburl}surveyobservations/?mjd_requested_gte={nowmjd-1:.1f}&mjd_requested_lte={nowmjd+1:.1f}&limit=1000&obs_group=YSE&instrument={self.options.instrument}&status_in=Requested',
+            auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
+
+        data = json.loads(r.text)
+        data_results = data['results']
+
+        if surveyfielddata is None:
+            r = requests.get(f'{self.options.dburl}surveyfields/?limit=1000&obs_group=YSE&instrument={self.options.instrument}',
+                             auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
+            surveyfielddata = json.loads(r.text)['results']
+            while len(data['results']) == 1000:
+                offsetcount += 1000
+                r = requests.get(f'{self.options.dburl}surveyfields/?limit=1000&offset={offsetcount}&obs_group=YSE&instrument={self.options.instrument}',
+                                 auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
+                surveyfielddata_single = json.loads(r.text)['results']
+                surveyfielddata = np.append(surveyfielddata,surveyfielddata_single)
+
+        
+        fields,obs_mjds,ras,decs,obs_dates = np.array([]),np.array([]),np.array([]),np.array([]),np.array([])
+        for d in data_results:
+            if d['obs_mjd'] is None:
+                obs_mjd = d['mjd_requested']
+                survey_field_url = d['survey_field']
+            obs_mjds = np.append(obs_mjds,obs_mjd)
+            obs_dates = np.append(obs_dates,mjd_to_date(obs_mjd))
+            for s in surveyfielddata:
+                if s['url'] == survey_field_url:
+                    if self.options.instrument == 'GPC2':
+                        fields = np.append(fields,s['ztf_field_id']+'P2')
+                    else:
+                        fields = np.append(fields,s['ztf_field_id'])
+        return np.unique(fields)
+#        import pdb; pdb.set_trace()
+        
     def get_ps_obs(self,date_to_schedule,field_list=None):
 
         nowmjd = date_to_mjd(date_to_schedule)
@@ -263,8 +304,8 @@ class YSE_Scheduler:
                 
         obsmjds = np.array([date_to_mjd(t) for t in last_obs_dates])
         timedeltas = nowmjd-obsmjds
-
-        return unqfields,ras,decs,last_obs_dates,timedeltas
+#        import pdb; pdb.set_trace()
+        return unqfields,ras,decs,last_obs_dates,timedeltas,surveyfielddata
 
     def get_ztf_schedule(self,date_to_schedule,field_list=[],clear=True,ndays=21):
 
@@ -446,14 +487,17 @@ class YSE_Scheduler:
                           data = survey_obs_dict,
                           auth=HTTPBasicAuth(self.options.dblogin,self.options.dbpassword))
 
-    def choose_fields(self,ps_fields,ztf_fields,decam_fields,ps_timedeltas):
+    def choose_fields(self,ps_fields,ztf_fields,decam_fields,ps_timedeltas,fields_already_scheduled=[]):
         if self.options.instrument == 'GPC1':
             field_key = 'daily_fields_ps1'
-            nfields = self.options.nfields_to_schedule_ps1
+            nfields = self.options.nfields_to_schedule_ps1-len(fields_already_scheduled)
         else:
             field_key = 'daily_fields_ps2'
-            nfields = self.options.nfields_to_schedule_ps2
-            
+            nfields = self.options.nfields_to_schedule_ps2-len(fields_already_scheduled)
+
+        if 'Virgo' in ps_fields and nfields <= -1: return []
+        elif 'Virgo' not in ps_fields and nfields <= 0: return []
+        
         daily_set_1 = self.options.__dict__[field_key].split(';')[0].split(',') #['523','525','577']
         if len(self.options.__dict__[field_key].split(';')) > 1:
             daily_set_2 = self.options.__dict__[field_key].split(';')[1].split(',')
@@ -465,6 +509,10 @@ class YSE_Scheduler:
         if 'Virgo' in ps_fields: fields_to_observe = ['Virgo']; timegaps = [ps_timedeltas[ps_fields == 'Virgo'][0]]
         else: fields_to_observe = []; timegaps = []
 
+        if (len(fields_to_observe) == nfields+1 and 'Virgo' in fields_to_observe) or \
+           (len(fields_to_observe) == nfields and 'Virgo' not in fields_to_observe):
+            return fields_to_observe
+        
         add_fields = True
         for cadence in ['daily','normal']:
             if not add_fields: break
@@ -475,7 +523,7 @@ class YSE_Scheduler:
                     
                     iNotRecent = np.where(ps_timedeltas > timegap)[0]
                     for i,field in enumerate(ps_fields[iNotRecent]):
-                        if field in fieldset and field not in fields_to_observe:
+                        if field in fieldset and field not in fields_to_observe and field not in fields_already_scheduled:
                             if cadence == 'normal':
                                 # max 1 field from each of daily set 1 and daily set 2
                                 if field in daily_set_1: continue
@@ -539,9 +587,14 @@ class YSE_Scheduler:
 
         print(f'finding recent {self.options.instrument} observations')
         # get the YSE observing history, important to avoid long gaps
-        ps_fields,ps_ras,ps_decs,ps_dates,ps_timedeltas = self.get_ps_obs(
+        
+        ps_fields,ps_ras,ps_decs,ps_dates,ps_timedeltas,surveyfielddata = self.get_ps_obs(
             date_to_schedule,field_list=field_list)
 
+        ps_fields_already_scheduled = self.get_requested_ps_obs(
+            date_to_schedule,field_list=field_list,surveyfielddata=surveyfielddata)
+
+        
         print('cutting out fields near the moon')
         # remove fields too close to the moon
         
@@ -566,8 +619,9 @@ class YSE_Scheduler:
         print('choosing fields')
         # then weight the ZTF constraints against YSE fields w/o recent data
         # and availability of DECam
-        fields_to_observe = self.choose_fields(ps_fields,likely_ztf_fields,decam_fields,ps_timedeltas)
-
+        fields_to_observe = self.choose_fields(ps_fields,likely_ztf_fields,decam_fields,ps_timedeltas,fields_already_scheduled=ps_fields_already_scheduled)
+        if not len(fields_to_observe):
+            print('no new fields scheduled')
         for i,f in enumerate(fields_to_observe):
             self.add_obs_requests(date_to_schedule-datetime.timedelta(hours=9),f,priority=i+1)
         print('success!')
